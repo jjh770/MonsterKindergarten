@@ -3,14 +3,52 @@
 public class ClickTarget : MonoBehaviour, IClickable
 {
     [SerializeField] private string _name;
+    [SerializeField] private int _level = 1;
+    [SerializeField] private bool _isDragging = false;
 
-    private void Awake()
+    public int Level => _level;
+    public bool IsDragging => _isDragging;
+    public void LevelUp()
     {
+        _level++;
+        Debug.Log($"{_name} 레벨업! 현재 레벨: {_level}");
+        // TODO: 외형 변경 콜백 추가 가능
+    }
+    public void StartDrag()
+    {
+        _isDragging = true;
+        // Rigidbody 속도 정지
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+    }
 
+    public void EndDrag()
+    {
+        _isDragging = false;
+        TryMerge();
+    }
+
+    private void TryMerge()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.5f);
+
+        foreach (var hit in hits)
+        {
+            ClickTarget other = hit.GetComponent<ClickTarget>();
+
+            if (other != null && other != this && other.Level == this.Level)
+            {
+                MergeManager.Instance.Merge(this, other);
+                return;
+            }
+        }
     }
     public bool OnClick(ClickInfo clickInfo)
     {
-        Debug.Log($"{_name} : 히트");
+        Debug.Log($"{_name} 레벨 {_level} 히트 {clickInfo.Damage}데미지");
 
         // 클릭에 대한 피드백
 
