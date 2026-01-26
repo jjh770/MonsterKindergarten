@@ -41,5 +41,14 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: OutLine
+    uniqueID: 2846689969
+    locked: 0
+  - name: Slime
+    uniqueID: 1897595845
+    locked: 0
+  - name: PickUpSlime
+    uniqueID: 1640023385
+    locked: 0
   m_RenderingLayers:
   - Default
