@@ -28,6 +28,6 @@ public class MergeManager : MonoBehaviour
         if (!CanMerge(keeper, removed)) return;
 
         keeper.LevelUp();
-        Destroy(removed.gameObject);
+        SpawnManager.Instance.Despawn(removed);
     }
 }

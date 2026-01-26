@@ -50,5 +50,8 @@ TagManager:
   - name: PickUpSlime
     uniqueID: 1640023385
     locked: 0
+  - name: FloatingText
+    uniqueID: 2305962871
+    locked: 0
   m_RenderingLayers:
   - Default
