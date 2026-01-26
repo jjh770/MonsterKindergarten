@@ -1,17 +1,14 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class Clicker : MonoBehaviour
 {
-    // ¸ñÀû : ¸¶¿ì½º·Î Å¬¸¯ÇÏ¸é Å¬¸¯ Å¸°ÙÀ» Å¬¸¯ÇÏ°í ½Í´Ù.
-    [SerializeField] private LayerMask _clickLayer;
-
-    // 
+    // ëª©ì  : ë§ˆìš°ìŠ¤ë¡œ í´ë¦­í•˜ë©´ í´ë¦­ íƒ€ê²Ÿì„ í´ë¦­í•˜ê³  ì‹¶ë‹¤.
     private void Update()
     {
-        // 1. ¸¶¿ì½º Å¬¸¯À» °¨ÁöÇÑ´Ù.
+        // 1. ë§ˆìš°ìŠ¤ í´ë¦­ì„ ê°ì§€í•œë‹¤.
         if (Input.GetMouseButtonDown(0))
         {
-            // 2. Å¬¸¯ Å¸°ÙÀ» Å¬¸¯Çß´ÂÁö °Ë»çÇÑ´Ù.
+            // 2. í´ë¦­ íƒ€ê²Ÿì„ í´ë¦­í–ˆëŠ”ì§€ ê²€ì‚¬í•œë‹¤.
             Vector2 mousePos = Input.mousePosition;
             TryCLick(mousePos);
         }
@@ -19,17 +16,23 @@ public class Clicker : MonoBehaviour
 
     private void TryCLick(Vector2 mousePos)
     {
-        // ¸¶¿ì½ºÀÇ ½ºÅ©¸° ÁÂÇ¥°è¸¦ ¿øµå ÁÂÇ¥°è·Î ¹Ù²ãÁÙ ÇÊ¿ä°¡ ÀÖÀ½.
+        // ë§ˆìš°ìŠ¤ì˜ ìŠ¤í¬ë¦° ì¢Œí‘œê³„ë¥¼ ì›ë“œ ì¢Œí‘œê³„ë¡œ ë°”ê¿”ì¤„ í•„ìš”ê°€ ìˆìŒ.
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
 
-        // 3. ¸Â´Ù¸é Å¬¸¯ÇÑ´Ù.
-        // 3-1. ¸¶¿ì½º ÁÂÇ¥°¡ Å¬¸¯Å¸°Ù À§Ä¡¿Í ºñ±³ÇßÀ» ¶§ ±ÙÃ³¿¡ ÀÖ´ÂÁö
-        // 3-2. ¸¶¿ì½º ÁÂÇ¥·Î °¡»óÀÇ ·¹ÀÌÀú¸¦ ½÷¼­ ±× ·¹ÀÌÀú°¡ Å¬¸¯Å¸°Ù°ú Ãæµ¹Çß´ÂÁö Ã¼Å© (Unity¿¡¼­ º¸Åë ·¹ÀÌÄ³½ºÆ®¸¦ ´õ ¸¹ÀÌ ¾¸)
+        // 3. ë§ë‹¤ë©´ í´ë¦­í•œë‹¤.
+        // 3-1. ë§ˆìš°ìŠ¤ ì¢Œí‘œê°€ í´ë¦­íƒ€ê²Ÿ ìœ„ì¹˜ì™€ ë¹„êµí–ˆì„ ë•Œ ê·¼ì²˜ì— ìˆëŠ”ì§€
+        // 3-2. ë§ˆìš°ìŠ¤ ì¢Œí‘œë¡œ ê°€ìƒì˜ ë ˆì´ì €ë¥¼ ì´ì„œ ê·¸ ë ˆì´ì €ê°€ í´ë¦­íƒ€ê²Ÿê³¼ ì¶©ëŒí–ˆëŠ”ì§€ ì²´í¬ (Unityì—ì„œ ë³´í†µ ë ˆì´ìºìŠ¤íŠ¸ë¥¼ ë” ë§ì´ ì”€)
         RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero, 0f);
         if (hit == true)
         {
             IClickable clickable = hit.collider.GetComponent<IClickable>();
-            clickable?.OnClick();
+            ClickInfo clickInfo = new ClickInfo
+            {
+                ClickType = EClickType.Manual,
+                Damage = 10
+            };
+
+            clickable?.OnClick(clickInfo);
         }
     }
 }
