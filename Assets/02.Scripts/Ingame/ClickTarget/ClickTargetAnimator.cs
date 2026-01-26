@@ -25,6 +25,7 @@ public class ClickTargetAnimator : MonoBehaviour
     private void Start()
     {
         _clickTarget.OnLevelChanged += UpdateAnimator;
+        _clickTarget.OnInteracted += OnInteracted;
         UpdateAnimator(_clickTarget.Level);
     }
 
@@ -33,6 +34,7 @@ public class ClickTargetAnimator : MonoBehaviour
         if (_clickTarget != null)
         {
             _clickTarget.OnLevelChanged -= UpdateAnimator;
+            _clickTarget.OnInteracted -= OnInteracted;
         }
     }
 
@@ -52,5 +54,10 @@ public class ClickTargetAnimator : MonoBehaviour
 
         int index = Mathf.Clamp(level - 1, 0, _levelAnimators.Length - 1);
         _animator.runtimeAnimatorController = _levelAnimators[index];
+    }
+
+    private void OnInteracted()
+    {
+        _animator.SetTrigger("IsClick");
     }
 }

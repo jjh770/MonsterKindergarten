@@ -148,6 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0040092c77191d41928198ca1c1bc6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Clicker
+  _dragThresholdTime: 0.2
+  _dragThresholdDistance: 0.3
 --- !u!4 &115063079
 Transform:
   m_ObjectHideFlags: 0
@@ -400,7 +402,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.9094471, g: 0.7216981, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -524,7 +526,7 @@ MonoBehaviour:
   m_Intensity: 1
   m_LightVolumeIntensity: 1
   m_LightVolumeEnabled: 0
-  m_ApplyToSortingLayers: 00000000c5031b71b10aada959c5c061
+  m_ApplyToSortingLayers: 00000000c5031b71b10aada959c5c06177337289
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -716,7 +718,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Color: {r: 0.3962264, g: 0.3962264, b: 0.3962264, a: 1}
+  m_Color: {r: 0.7169812, g: 0.4295123, b: 0.4295123, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 1
@@ -803,7 +805,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5107455862393761079, guid: b39db189a409d894fae930a7641bea7b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: b39db189a409d894fae930a7641bea7b, type: 3}
 --- !u!1 &1200708283
 GameObject:
@@ -989,7 +994,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5107455862393761079, guid: b39db189a409d894fae930a7641bea7b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: b39db189a409d894fae930a7641bea7b, type: 3}
 --- !u!1001 &1612843893
 PrefabInstance:
@@ -1050,7 +1058,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5107455862393761079, guid: b39db189a409d894fae930a7641bea7b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: b39db189a409d894fae930a7641bea7b, type: 3}
 --- !u!1 &1762585028
 GameObject:
@@ -1308,7 +1319,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5107455862393761079, guid: b39db189a409d894fae930a7641bea7b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: b39db189a409d894fae930a7641bea7b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
