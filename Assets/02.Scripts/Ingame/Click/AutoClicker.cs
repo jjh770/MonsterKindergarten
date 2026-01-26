@@ -23,7 +23,7 @@ public class AutoClicker : MonoBehaviour
         //        ClickInfo clickInfo = new ClickInfo
         //        {
         //            ClickType = EClickType.Auto,
-        //            Damage = _damage,
+        //            Damage = GameManager.Instance.AutoDamage,
         //        };
 
         //        clickableScript.OnClick(clickInfo);
