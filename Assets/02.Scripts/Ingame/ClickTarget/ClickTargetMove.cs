@@ -1,4 +1,4 @@
-﻿using DG.Tweening;
+using DG.Tweening;
 using System.Collections;
 using UnityEngine;
 
@@ -10,6 +10,7 @@ public class ClickTargetMove : MonoBehaviour
     [SerializeField] private float _maxMoveDuration = 3f;
     [SerializeField] private float _minIdleDuration = 0.3f;
     [SerializeField] private float _maxIdleDuration = 2f;
+    [SerializeField] private float _interactionIdleDuration = 2f;
 
     private Rigidbody2D _rb;
     private Vector2 _lastVelocity;
@@ -22,6 +23,35 @@ public class ClickTargetMove : MonoBehaviour
     {
         _clickTarget = GetComponent<ClickTarget>();
         _rb = GetComponent<Rigidbody2D>();
+
+        _clickTarget.OnInteracted += OnInteracted;
+        _moveCoroutine = StartCoroutine(MoveRoutine());
+    }
+
+    private void OnDestroy()
+    {
+        if (_clickTarget != null)
+        {
+            _clickTarget.OnInteracted -= OnInteracted;
+        }
+    }
+
+    private void OnInteracted()
+    {
+        // 이동 중단하고 Idle 상태로 전환
+        if (_moveCoroutine != null)
+        {
+            StopCoroutine(_moveCoroutine);
+        }
+        _rb.DOKill();
+        _rb.linearVelocity = Vector2.zero;
+        _moveCoroutine = StartCoroutine(IdleThenMoveRoutine());
+    }
+
+    private IEnumerator IdleThenMoveRoutine()
+    {
+        // 상호작용 후 2초 Idle
+        yield return new WaitForSeconds(_interactionIdleDuration);
         _moveCoroutine = StartCoroutine(MoveRoutine());
     }
 
@@ -31,19 +61,23 @@ public class ClickTargetMove : MonoBehaviour
         {
             if (_clickTarget.IsDragging)
             {
+                _rb.linearVelocity = Vector2.zero;
                 yield return null;
                 continue;
             }
+
             float idleDuration = Random.Range(_minIdleDuration, _maxIdleDuration);
             yield return new WaitForSeconds(idleDuration);
+
+            if (_clickTarget.IsDragging) continue;
 
             // 랜덤 방향 계산
             Vector2 randomDirection = Random.insideUnitCircle.normalized;
             Vector2 targetVelocity = randomDirection * _moveSpeed;
             RotateSlime(randomDirection);
 
-            // 부드럽게 가속 (0.3초)
-            _rb.DOKill(); // 이전 트윈 중단
+            // 부드럽게 가속
+            _rb.DOKill();
             DOTween.To(
                 () => _rb.linearVelocity,
                 x => _rb.linearVelocity = x,
@@ -57,7 +91,7 @@ public class ClickTargetMove : MonoBehaviour
 
             if (_clickTarget.IsDragging) continue;
 
-            // 부드럽게 감속 (0.3초)
+            // 부드럽게 감속
             _rb.DOKill();
             DOTween.To(
                 () => _rb.linearVelocity,
@@ -66,15 +100,12 @@ public class ClickTargetMove : MonoBehaviour
                 0.3f
             ).SetEase(_moveEase);
 
-            // 랜덤 시간 동안 대기
-            //float idleDuration = Random.Range(_minIdleDuration, _maxIdleDuration);
-            yield return new WaitForSeconds(idleDuration);
+            yield return new WaitForSeconds(0.3f);
         }
     }
 
     private void FixedUpdate()
     {
-        // 충돌 직전 속도 저장 (반사용)
         if (_rb.linearVelocity.magnitude > 0.1f)
         {
             _lastVelocity = _rb.linearVelocity;
@@ -92,7 +123,6 @@ public class ClickTargetMove : MonoBehaviour
 
     private void RotateSlime(Vector2 direction)
     {
-        // 반사 후 방향에 따라 회전
         if (direction.x > 0)
         {
             transform.DORotate(_rightVector, 0.3f);

@@ -1,23 +1,29 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class ClickTarget : MonoBehaviour, IClickable
 {
     [SerializeField] private string _name;
     [SerializeField] private int _level = 1;
-    [SerializeField] private bool _isDragging = false;
+
+    private bool _isDragging = false;
 
     public int Level => _level;
     public bool IsDragging => _isDragging;
+
+    public event Action<int> OnLevelChanged;
+    public event Action OnInteracted;
+
     public void LevelUp()
     {
         _level++;
         Debug.Log($"{_name} 레벨업! 현재 레벨: {_level}");
-        // TODO: 외형 변경 콜백 추가 가능
+        OnLevelChanged?.Invoke(_level);
     }
+
     public void StartDrag()
     {
         _isDragging = true;
-        // Rigidbody 속도 정지
         var rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -28,6 +34,7 @@ public class ClickTarget : MonoBehaviour, IClickable
     public void EndDrag()
     {
         _isDragging = false;
+        OnInteracted?.Invoke();
         TryMerge();
     }
 
@@ -50,9 +57,9 @@ public class ClickTarget : MonoBehaviour, IClickable
     {
         Debug.Log($"{_name} 레벨 {_level} 히트 {clickInfo.Damage}데미지");
 
-        // 클릭에 대한 피드백
+        OnInteracted?.Invoke();
 
-        // ClickTarget : 타켓에 대한 중앙 관리자이자 소통의 창구 (객체지향 상호작용)
+        // 클릭에 대한 피드백
         var feedbacks = GetComponentsInChildren<IFeedback>();
         foreach (var feedback in feedbacks)
         {

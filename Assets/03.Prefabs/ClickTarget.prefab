@@ -100,6 +100,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7988510677535046569}
+  - component: {fileID: 2692439375680664698}
   - component: {fileID: 1661916043604176313}
   - component: {fileID: 2114016441029914869}
   - component: {fileID: 3903659675861419707}
@@ -109,6 +110,8 @@ GameObject:
   - component: {fileID: 2205505537005354731}
   - component: {fileID: 7731520626090865071}
   - component: {fileID: 5534279088202041158}
+  - component: {fileID: 7290077188626883124}
+  - component: {fileID: 6008348853146703040}
   m_Layer: 7
   m_Name: ClickTarget
   m_TagString: Untagged
@@ -132,6 +135,28 @@ Transform:
   - {fileID: 9084432411616564363}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &2692439375680664698
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 8bd3b9d643f4f174b8d27989d2967c81, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!212 &1661916043604176313
 SpriteRenderer:
   serializedVersion: 2
@@ -431,3 +456,44 @@ MonoBehaviour:
   _maxMoveDuration: 3
   _minIdleDuration: 0.3
   _maxIdleDuration: 2
+--- !u!114 &7290077188626883124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c3275335f5432f418330008296da9c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClickTargetVisual
+  _levelSprites:
+  - {fileID: 21300000, guid: afd793b1787964e44aa4ce39e16e5bcf, type: 3}
+  - {fileID: 21300000, guid: 20806bcda2342d0458201b5f5a78e183, type: 3}
+  - {fileID: 21300000, guid: 4b7c33038949f5b46b4ae43d30c793ad, type: 3}
+  - {fileID: 21300000, guid: 5b091dfa2bab8bb4cb8b7b867d7b95b5, type: 3}
+  - {fileID: 21300000, guid: a527ad10d22088a45801657567c7031d, type: 3}
+  - {fileID: 21300000, guid: 923c215c9d0b9c740aeea9a9368852f2, type: 3}
+  - {fileID: 21300000, guid: 03f87ce11af60a345b3c65eeb9507da2, type: 3}
+  - {fileID: 21300000, guid: 6af3bf16563ecf44997c826460f06dcc, type: 3}
+  - {fileID: 21300000, guid: 1b863f5e680066348b933661c288e811, type: 3}
+  - {fileID: 21300000, guid: b0d1c95a7430d6e4fac32178f0a5baeb, type: 3}
+--- !u!114 &6008348853146703040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcf4b460554936b4b86c9de74fa2304a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClickTargetAnimator
+  _animator: {fileID: 2692439375680664698}
+  _levelAnimators:
+  - {fileID: 22100000, guid: ef6ee8c51d6efed43a7b228b029d57e0, type: 2}
+  - {fileID: 22100000, guid: 89c7973b66ccec641900c224954d8369, type: 2}
+  - {fileID: 22100000, guid: efba8bf0bdf51c244a68931cd6242cbb, type: 2}
+  - {fileID: 22100000, guid: 992ee76333b4aa249b8b0ebc719da899, type: 2}
