@@ -21,6 +21,18 @@ public class ClickTarget : MonoBehaviour, IClickable
         OnLevelChanged?.Invoke(_level);
     }
 
+    public void OnSpawn()
+    {
+        _level = 1;
+        _isDragging = false;
+        OnLevelChanged?.Invoke(_level);
+    }
+
+    public void OnDespawn()
+    {
+        _isDragging = false;
+    }
+
     public void StartDrag()
     {
         _isDragging = true;
