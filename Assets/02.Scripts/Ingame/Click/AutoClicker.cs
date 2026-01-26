@@ -8,26 +8,26 @@ public class AutoClicker : MonoBehaviour
 
     private void Update()
     {
-        _timer += Time.deltaTime;
-        if (_timer >= _interval)
-        {
-            _timer = 0f;
+        //_timer += Time.deltaTime;
+        //if (_timer >= _interval)
+        //{
+        //    _timer = 0f;
 
-            // 2. Clickable 게임 오브젝트를 모두 찾아와서 (여러분들은 캐싱하세요.)
-            GameObject[] clickables = GameObject.FindGameObjectsWithTag("Clickable");
-            // GameObject[] clickables = ClickTargetManager.Instance.GetActiveTargets();
-            foreach (GameObject clickable in clickables)
-            {
-                // 3. 클릭한다.
-                IClickable clickableScript = clickable.GetComponent<IClickable>();
-                ClickInfo clickInfo = new ClickInfo
-                {
-                    ClickType = EClickType.Auto,
-                    Damage = _damage,
-                };
+        //    // 2. Clickable 게임 오브젝트를 모두 찾아와서 (여러분들은 캐싱하세요.)
+        //    GameObject[] clickables = GameObject.FindGameObjectsWithTag("Clickable");
+        //    // GameObject[] clickables = ClickTargetManager.Instance.GetActiveTargets();
+        //    foreach (GameObject clickable in clickables)
+        //    {
+        //        // 3. 클릭한다.
+        //        IClickable clickableScript = clickable.GetComponent<IClickable>();
+        //        ClickInfo clickInfo = new ClickInfo
+        //        {
+        //            ClickType = EClickType.Auto,
+        //            Damage = _damage,
+        //        };
 
-                clickableScript.OnClick(clickInfo);
-            }
-        }
+        //        clickableScript.OnClick(clickInfo);
+        //    }
+        //}
     }
 }
