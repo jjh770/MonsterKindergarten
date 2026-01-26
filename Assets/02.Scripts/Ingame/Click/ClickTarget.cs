@@ -1,15 +1,18 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 public class ClickTarget : MonoBehaviour, IClickable
 {
     [SerializeField] private string _name;
     [SerializeField] private int _level = 1;
+    [SerializeField] private MonsterLevelData _levelData;
 
     private bool _isDragging = false;
 
     public int Level => _level;
     public bool IsDragging => _isDragging;
+    public int Point => _levelData != null ? _levelData.GetPoint(_level) : 1;
+    public float AutoClickInterval => _levelData != null ? _levelData.GetAutoClickInterval(_level) : 0f;
 
     public event Action<int> OnLevelChanged;
     public event Action OnInteracted;
@@ -67,9 +70,12 @@ public class ClickTarget : MonoBehaviour, IClickable
     }
     public bool OnClick(ClickInfo clickInfo)
     {
-        Debug.Log($"{_name} 레벨 {_level} 히트 {clickInfo.Damage}데미지");
+        Debug.Log($"{_name} 레벨 {_level} 히트 {clickInfo.Point}포인트");
 
         OnInteracted?.Invoke();
+
+        // 포인트 적립
+        GameManager.Instance.Point += clickInfo.Point;
 
         // 클릭에 대한 피드백
         var feedbacks = GetComponentsInChildren<IFeedback>();
@@ -85,7 +91,6 @@ public class ClickTarget : MonoBehaviour, IClickable
         // 5. 데미지 플로팅
         // 6. 화면 흔들림
         // 7. 재화 떨구기
-
         return true;
     }
 }
