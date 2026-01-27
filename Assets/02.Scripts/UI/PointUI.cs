@@ -1,32 +1,59 @@
 ﻿using TMPro;
 using UnityEngine;
+using Utility;
 
 public class PointUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _pointText;
 
+    private int _highestLevel = 1;
+
     private void Start()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged += UpdatePointText;
-            UpdatePointText(GameManager.Instance.Point);
+            GameManager.Instance.OnPointChanged += OnPointChanged;
         }
+
+        if (SlimeSpawner.Instance != null)
+        {
+            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
+            _highestLevel = SlimeSpawner.Instance.HighestLevel;
+        }
+
+        UpdateUI();
     }
 
     private void OnDestroy()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged -= UpdatePointText;
+            GameManager.Instance.OnPointChanged -= OnPointChanged;
+        }
+
+        if (SlimeSpawner.Instance != null)
+        {
+            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
         }
     }
 
-    private void UpdatePointText(int point)
+    private void OnPointChanged(double point)
     {
-        if (_pointText != null)
+        UpdateUI();
+    }
+
+    private void OnHighestLevelChanged(int level)
+    {
+        _highestLevel = level;
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        if (_pointText != null && GameManager.Instance != null)
         {
-            _pointText.text = point.ToString();
+            int spriteIndex = _highestLevel - 1;
+            _pointText.text = $"<sprite={spriteIndex}>{GameManager.Instance.Point.ToForamttedString()}";
         }
     }
 }

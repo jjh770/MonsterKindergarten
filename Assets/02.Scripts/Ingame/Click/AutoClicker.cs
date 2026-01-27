@@ -3,10 +3,8 @@ using UnityEngine;
 
 public class AutoClicker : MonoBehaviour
 {
-    [SerializeField] private Vector3 _floaterOffset = new Vector3(0, 0.5f, 0);
-
-    private Dictionary<ClickTarget, float> _timers = new Dictionary<ClickTarget, float>();
-    private HashSet<ClickTarget> _activeTargetsCache = new HashSet<ClickTarget>();
+    private Dictionary<Slime, float> _timers = new Dictionary<Slime, float>();
+    private HashSet<Slime> _activeTargetsCache = new HashSet<Slime>();
 
     private void Update()
     {
@@ -41,23 +39,20 @@ public class AutoClicker : MonoBehaviour
         }
     }
 
-    private void AutoClick(ClickTarget target)
+    private void AutoClick(Slime target)
     {
-        int point = target.Point;
-
-        // 포인트 적립
-        GameManager.Instance.AddPoint(point);
-
-        // 포인트 플로팅만 표시
-        if (PointFloaterPool.Instance != null)
+        ClickInfo clickInfo = new ClickInfo
         {
-            Vector3 spawnPos = target.transform.position + _floaterOffset;
-            PointFloater floater = PointFloaterPool.Instance.Spawn(spawnPos);
-            floater.Play(point, spawnPos);
-        }
+            ClickType = EClickType.Auto,
+            Position = target.transform.position,
+            Point = target.Point,
+            Level = target.Level
+        };
+
+        target.OnClick(clickInfo);
     }
 
-    private void CleanupTimers(List<ClickTarget> activeTargets)
+    private void CleanupTimers(List<Slime> activeTargets)
     {
         // 매 프레임마다 HashSet을 생성하지 않고 미리 캐싱해둔 HashSet을 재사용
         _activeTargetsCache.Clear();
@@ -67,7 +62,7 @@ public class AutoClicker : MonoBehaviour
             _activeTargetsCache.Add(target);
         }
 
-        var keysToRemove = new List<ClickTarget>();
+        var keysToRemove = new List<Slime>();
 
         foreach (var key in _timers.Keys)
         {
@@ -83,7 +78,7 @@ public class AutoClicker : MonoBehaviour
         }
     }
 
-    public void ResetTimer(ClickTarget target)
+    public void ResetTimer(Slime target)
     {
         if (_timers.ContainsKey(target))
         {

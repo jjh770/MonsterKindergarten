@@ -38,34 +38,34 @@ public class SpawnManager : MonoBehaviour
         {
             yield return new WaitForSeconds(_spawnInterval);
 
-            if (ClickTargetPool.Instance != null &&
-                ClickTargetPool.Instance.GetActiveCount() < _maxActiveCount)
+            if (SlimeSpawner.Instance != null &&
+                SlimeSpawner.Instance.GetActiveCount() < _maxActiveCount)
             {
                 Spawn();
             }
         }
     }
 
-    public ClickTarget Spawn()
+    public Slime Spawn()
     {
-        if (ClickTargetPool.Instance == null) return null;
+        if (SlimeSpawner.Instance == null) return null;
 
         Vector2 randomPos = new Vector2(
             Random.Range(_spawnAreaMin.x, _spawnAreaMax.x),
             Random.Range(_spawnAreaMin.y, _spawnAreaMax.y)
         );
 
-        return ClickTargetPool.Instance.Spawn(randomPos);
+        return SlimeSpawner.Instance.Spawn(randomPos);
     }
 
-    public void Despawn(ClickTarget target)
+    public void Despawn(Slime target)
     {
-        if (ClickTargetPool.Instance == null) return;
+        if (SlimeSpawner.Instance == null) return;
 
-        ClickTargetPool.Instance.Despawn(target);
+        SlimeSpawner.Instance.Despawn(target);
     }
 
-    public int GetActiveCount() => ClickTargetPool.Instance.GetActiveCount();
+    public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();
 
-    public List<ClickTarget> GetActiveTargets() => ClickTargetPool.Instance.GetActiveTargets();
+    public List<Slime> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

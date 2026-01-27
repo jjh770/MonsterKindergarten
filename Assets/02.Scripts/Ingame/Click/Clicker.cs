@@ -1,11 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Clicker : MonoBehaviour
 {
     [SerializeField] private float _dragThresholdTime = 0.2f;
     [SerializeField] private float _dragThresholdDistance = 0.3f;
 
-    private ClickTarget _selectedTarget;
+    private Slime _selectedTarget;
     private Camera _mainCamera;
     private Vector2 _mouseDownPos;
     private float _mouseDownTime;
@@ -43,7 +43,7 @@ public class Clicker : MonoBehaviour
 
         if (hit)
         {
-            ClickTarget clickTarget = hit.collider.GetComponent<ClickTarget>();
+            Slime clickTarget = hit.collider.GetComponent<Slime>();
             if (clickTarget != null)
             {
                 _selectedTarget = clickTarget;
@@ -90,7 +90,8 @@ public class Clicker : MonoBehaviour
             {
                 ClickType = EClickType.Manual,
                 Point = _selectedTarget.Point,
-                Position = _mouseDownPos
+                Position = _mouseDownPos,
+                Level = _selectedTarget.Level
             };
             _selectedTarget.OnClick(clickInfo);
         }
