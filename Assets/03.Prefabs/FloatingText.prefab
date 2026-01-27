@@ -197,5 +197,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageFloater
   _text: {fileID: 8196907517993281104}
-  _floatDistance: 1
+  _floatDistance: 0.75
   _duration: 0.5
+  _floatEase: 21
+  _fadeEase: 26
