@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 1661916043604176313}
   - component: {fileID: 2114016441029914869}
   - component: {fileID: 3903659675861419707}
-  - component: {fileID: 5635802972797410536}
   - component: {fileID: 9149453874700810449}
   - component: {fileID: 6326226606403192529}
   - component: {fileID: 2205505537005354731}
@@ -111,7 +110,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 1897595845
-  m_SortingLayer: 2
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: afd793b1787964e44aa4ce39e16e5bcf, type: 3}
@@ -197,103 +196,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!82 &5635802972797410536
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3227736551508964039}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 5819136cba1984d49857e37fd9a58b77, type: 3}
-  m_PlayOnAwake: 1
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!114 &9149453874700810449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -309,6 +211,12 @@ MonoBehaviour:
   _name: Slime
   _level: 1
   _levelData: {fileID: 11400000, guid: 09e12c0d0a62eee499f4f0a2f95a48bc, type: 2}
+  _levelUpSounds:
+  - {fileID: 8300000, guid: 6435b2db8820fe7489cdff8b0b94fcfd, type: 3}
+  - {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
+  - {fileID: 8300000, guid: 198ac9291ac8d2f4e903ae038af79d70, type: 3}
+  - {fileID: 8300000, guid: 47bdd8035ac4d3c4a84535a3b855eb4f, type: 3}
+  _landSound: {fileID: 8300000, guid: 0126e7251fb627f4cb3f5650fbf99feb, type: 3}
 --- !u!114 &6326226606403192529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -346,6 +254,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85faf185084fa804b9acdcdceb81abf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundFeedback
+  _clip:
+  - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
+  - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
+  - {fileID: 8300000, guid: 51312ce1fe3819c4c91a81ab398b61a2, type: 3}
+  - {fileID: 8300000, guid: 325983562d4737047bf416f0bbdf6405, type: 3}
+  - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
+  - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
+  - {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
+  _minPitch: 0.4
+  _maxPitch: 0.8
 --- !u!114 &5534279088202041158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,6 +283,10 @@ MonoBehaviour:
   _minIdleDuration: 0.5
   _maxIdleDuration: 2
   _interactionIdleDuration: 2
+  _boundaryPadding: 0.5
+  _useCustomBounds: 1
+  _customMinBounds: {x: -5, y: -3}
+  _customMaxBounds: {x: 5, y: 3}
 --- !u!114 &6008348853146703040
 MonoBehaviour:
   m_ObjectHideFlags: 0

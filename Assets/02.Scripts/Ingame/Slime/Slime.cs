@@ -6,6 +6,11 @@ public class Slime : MonoBehaviour, IClickable
     [SerializeField] private string _name;
     [SerializeField] private int _level = 1;
     [SerializeField] private MonsterLevelData _levelData;
+    [SerializeField] private AudioClip[] _levelUpSounds;
+    [SerializeField] private AudioClip _landSound;
+
+    private int _randomLevelUpSound = 0;
+    private bool _hasLanded = false;
 
     private bool _isDragging = false;
 
@@ -22,18 +27,38 @@ public class Slime : MonoBehaviour, IClickable
         _level++;
         Debug.Log($"{_name} 레벨업! 현재 레벨: {_level}");
         OnLevelChanged?.Invoke(_level);
+
+        _randomLevelUpSound = UnityEngine.Random.Range(0, _levelUpSounds.Length);
+
+        if (AudioManager.Instance != null && _levelUpSounds != null)
+        {
+            AudioManager.Instance.PlaySFX(_levelUpSounds[_randomLevelUpSound]);
+        }
     }
 
     public void OnSpawn()
     {
         _level = 1;
         _isDragging = false;
+        _hasLanded = false;
         OnLevelChanged?.Invoke(_level);
     }
 
     public void OnDespawn()
     {
         _isDragging = false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (!_hasLanded)
+        {
+            _hasLanded = true;
+            if (AudioManager.Instance != null && _landSound != null)
+            {
+                AudioManager.Instance.PlaySFX(_landSound);
+            }
+        }
     }
 
     public void StartDrag()

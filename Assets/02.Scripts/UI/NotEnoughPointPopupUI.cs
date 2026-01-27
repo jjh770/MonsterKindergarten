@@ -9,6 +9,7 @@ public class NotEnoughPointPopupUI : MonoBehaviour
     [SerializeField] private float _displayDuration = 1.5f;
     [SerializeField] private float _fadeInDuration = 0.2f;
     [SerializeField] private float _fadeOutDuration = 0.2f;
+    [SerializeField] private AudioClip _notEnoughSound;
 
     private CanvasGroup _canvasGroup;
     private Sequence _currentSequence;
@@ -40,6 +41,11 @@ public class NotEnoughPointPopupUI : MonoBehaviour
 
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
+
+        if (AudioManager.Instance != null && _notEnoughSound != null)
+        {
+            AudioManager.Instance.PlaySFX(_notEnoughSound);
+        }
 
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));

@@ -65,19 +65,22 @@ public class SpawnManager : MonoBehaviour
 
     private void Update()
     {
+        if (SlimeSpawner.Instance != null &&
+            SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
+        {
+            // 최대 수에 도달하면 타이머 멈춤
+            return;
+        }
+
         _timer += Time.deltaTime;
 
         if (_timer >= _spawnInterval)
         {
             _timer = 0f;
-
-            if (SlimeSpawner.Instance != null &&
-                SlimeSpawner.Instance.GetActiveCount() < _maxActiveCount)
-            {
-                Spawn();
-                OnSpawned?.Invoke();
-            }
+            Spawn();
+            OnSpawned?.Invoke();
         }
+
         if (!Input.GetKeyDown(KeyCode.F1)) return;
         Spawn();
     }

@@ -14,6 +14,7 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
+    [SerializeField] private AudioClip _unlockSound;
 
     private CanvasGroup _canvasGroup;
 
@@ -54,6 +55,11 @@ public class UnlockPopupUI : MonoBehaviour
     {
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
+
+        if (AudioManager.Instance != null && _unlockSound != null)
+        {
+            AudioManager.Instance.PlaySFX(_unlockSound);
+        }
 
         if (_levelText != null)
         {
