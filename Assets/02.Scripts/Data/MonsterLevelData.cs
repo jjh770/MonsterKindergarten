@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "MonsterLevelData", menuName = "Data/MonsterLevelData")]
 public class MonsterLevelData : ScriptableObject
@@ -25,8 +25,8 @@ public class MonsterLevelData : ScriptableObject
                 return info.Point;
         }
 
-        // 못 찾으면 마지막 레벨 데이터 반환
-        return _levelInfos[_levelInfos.Length - 1].Point;
+        // 못 찾으면 시작 레벨 데이터 반환
+        return _levelInfos[0].Point;
     }
 
     public float GetAutoClickInterval(int level)
@@ -40,6 +40,6 @@ public class MonsterLevelData : ScriptableObject
                 return info.AutoClickInterval;
         }
 
-        return _levelInfos[_levelInfos.Length - 1].AutoClickInterval;
+        return _levelInfos[0].AutoClickInterval;
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -65,7 +65,7 @@ public class SpawnManager : MonoBehaviour
         ClickTargetPool.Instance.Despawn(target);
     }
 
-    public int GetActiveCount() => ClickTargetPool.Instance?.GetActiveCount() ?? 0;
+    public int GetActiveCount() => ClickTargetPool.Instance.GetActiveCount();
 
-    public List<ClickTarget> GetActiveTargets() => ClickTargetPool.Instance?.GetActiveTargets() ?? new List<ClickTarget>();
+    public List<ClickTarget> GetActiveTargets() => ClickTargetPool.Instance.GetActiveTargets();
 }

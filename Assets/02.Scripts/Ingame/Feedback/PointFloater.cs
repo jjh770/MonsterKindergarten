@@ -1,4 +1,4 @@
-using DG.Tweening;
+﻿using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -31,7 +31,8 @@ public class PointFloater : MonoBehaviour
             }
             else
             {
-                Destroy(gameObject);
+                Debug.Log("Pool이 없습니다.");
+                //Destroy(gameObject);
             }
         });
     }

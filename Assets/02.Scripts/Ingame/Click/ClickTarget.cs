@@ -75,7 +75,7 @@ public class ClickTarget : MonoBehaviour, IClickable
         OnInteracted?.Invoke();
 
         // 포인트 적립
-        GameManager.Instance.Point += clickInfo.Point;
+        GameManager.Instance.AddPoint(clickInfo.Point);
 
         // 클릭에 대한 피드백
         var feedbacks = GetComponentsInChildren<IFeedback>();
