@@ -15,31 +15,31 @@ MonoBehaviour:
   _levelInfos:
   - Level: 1
     Point: 10
-    AutoClickInterval: 5
+    AutoClickInterval: 4.9
   - Level: 2
     Point: 20
-    AutoClickInterval: 5
+    AutoClickInterval: 4.7
   - Level: 3
     Point: 40
-    AutoClickInterval: 5
+    AutoClickInterval: 4.5
   - Level: 4
     Point: 80
-    AutoClickInterval: 5
+    AutoClickInterval: 4.3
   - Level: 5
-    Point: 160
-    AutoClickInterval: 5
+    Point: 240
+    AutoClickInterval: 4.1
   - Level: 6
-    Point: 320
-    AutoClickInterval: 5
+    Point: 480
+    AutoClickInterval: 3.9
   - Level: 7
-    Point: 640
-    AutoClickInterval: 5
+    Point: 1440
+    AutoClickInterval: 3.9
   - Level: 8
-    Point: 1280
-    AutoClickInterval: 5
+    Point: 2880
+    AutoClickInterval: 3.9
   - Level: 9
-    Point: 2560
-    AutoClickInterval: 5
+    Point: 8640
+    AutoClickInterval: 3.9
   - Level: 10
-    Point: 5120
-    AutoClickInterval: 5
+    Point: 25920
+    AutoClickInterval: 3.9

@@ -11,6 +11,7 @@ public class SlimeMove : MonoBehaviour
     [SerializeField] private float _minIdleDuration = 0.3f;
     [SerializeField] private float _maxIdleDuration = 2f;
     [SerializeField] private float _interactionIdleDuration = 2f;
+    [SerializeField] private float _boundaryPadding = 0.5f;
 
     private Rigidbody2D _rb;
     private Vector2 _lastVelocity;
@@ -18,14 +19,31 @@ public class SlimeMove : MonoBehaviour
     private Vector3 _rightVector = Vector3.zero;
     private Vector3 _leftVector = new Vector3(0, 180, 0);
     private Coroutine _moveCoroutine;
+    private Camera _mainCamera;
+    private Vector2 _minBounds;
+    private Vector2 _maxBounds;
 
     private void Start()
     {
         _slime = GetComponent<Slime>();
         _rb = GetComponent<Rigidbody2D>();
+        _mainCamera = Camera.main;
+
+        CalculateBounds();
 
         _slime.OnInteracted += OnInteracted;
         _moveCoroutine = StartCoroutine(MoveRoutine());
+    }
+
+    private void CalculateBounds()
+    {
+        if (_mainCamera == null) return;
+
+        Vector2 bottomLeft = _mainCamera.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector2 topRight = _mainCamera.ViewportToWorldPoint(new Vector3(1, 1, 0));
+
+        _minBounds = bottomLeft + Vector2.one * _boundaryPadding;
+        _maxBounds = topRight - Vector2.one * _boundaryPadding;
     }
 
     private void OnDestroy()
@@ -110,6 +128,19 @@ public class SlimeMove : MonoBehaviour
         {
             _lastVelocity = _rb.linearVelocity;
         }
+    }
+
+    private void LateUpdate()
+    {
+        ClampToBounds();
+    }
+
+    private void ClampToBounds()
+    {
+        Vector3 pos = transform.position;
+        pos.x = Mathf.Clamp(pos.x, _minBounds.x, _maxBounds.x);
+        pos.y = Mathf.Clamp(pos.y, _minBounds.y, _maxBounds.y);
+        transform.position = pos;
     }
 
     private void OnCollisionEnter2D(Collision2D coll)

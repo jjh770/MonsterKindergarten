@@ -70,8 +70,6 @@ public class Slime : MonoBehaviour, IClickable
     }
     public bool OnClick(ClickInfo clickInfo)
     {
-        Debug.Log($"{_name} 레벨 {_level} 히트 {clickInfo.Point}포인트");
-
         // 수동 클릭일 때만 멈춤
         if (clickInfo.ClickType == EClickType.Manual)
         {
