@@ -1,11 +1,15 @@
-﻿using Lean.Pool;
+﻿using DG.Tweening;
+using Lean.Pool;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class SlimeSpawner : MonoBehaviour
 {
     public static SlimeSpawner Instance { get; private set; }
+
+    [SerializeField] private float _dropHeight = 3f;
+    [SerializeField] private float _dropDuration = 0.5f;
+    [SerializeField] private Ease _dropEase = Ease.OutBounce;
 
     public event Action<int> OnHighestLevelChanged;
     public int HighestLevel { get; private set; } = 1;
@@ -30,10 +34,14 @@ public class SlimeSpawner : MonoBehaviour
 
     public Slime Spawn(Vector2 position)
     {
-        GameObject slimeObject = _pool.Spawn(position, Quaternion.identity);
+        Vector2 startPosition = new Vector2(position.x, position.y + _dropHeight);
+        GameObject slimeObject = _pool.Spawn(startPosition, Quaternion.identity);
         Slime slime = slimeObject.GetComponent<Slime>();
         slime.OnSpawn();
         slime.OnLevelChanged += OnSlimeLevelChanged;
+
+        // 위에서 떨어지는 효과
+        slimeObject.transform.DOMoveY(position.y, _dropDuration).SetEase(_dropEase);
 
         _activeTargets.Add(slime);
         CheckHighestLevel();

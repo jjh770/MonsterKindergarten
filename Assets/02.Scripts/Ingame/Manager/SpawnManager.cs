@@ -58,6 +58,11 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        Spawn();
+    }
+
     private void Update()
     {
         _timer += Time.deltaTime;
@@ -73,6 +78,8 @@ public class SpawnManager : MonoBehaviour
                 OnSpawned?.Invoke();
             }
         }
+        if (!Input.GetKeyDown(KeyCode.F1)) return;
+        Spawn();
     }
 
     public Slime Spawn()

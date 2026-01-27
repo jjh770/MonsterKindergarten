@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 
 public class MergeManager : MonoBehaviour
 {
@@ -28,6 +29,8 @@ public class MergeManager : MonoBehaviour
         if (!CanMerge(keeper, removed)) return;
 
         keeper.LevelUp();
+        keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
+
         SpawnManager.Instance.Despawn(removed);
     }
 }
