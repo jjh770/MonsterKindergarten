@@ -3,18 +3,13 @@
 public class SlimeVisual : MonoBehaviour
 {
     [SerializeField] private Sprite[] _levelSprites;
-    private SpriteRenderer _spriteRenderer;
+    [SerializeField] private SpriteRenderer _spriteRenderer;
 
     private Slime _slime;
 
     private void Awake()
     {
         _slime = GetComponent<Slime>();
-
-        if (_spriteRenderer == null)
-        {
-            _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        }
     }
 
     private void OnEnable()
