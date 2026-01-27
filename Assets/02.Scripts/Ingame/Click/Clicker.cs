@@ -85,11 +85,11 @@ public class Clicker : MonoBehaviour
         }
         else
         {
-            // 클릭 처리
+            // 클릭 처리 - ClickTarget의 레벨별 포인트 사용
             ClickInfo clickInfo = new ClickInfo
             {
                 ClickType = EClickType.Manual,
-                Damage = GameManager.Instance.ManualDamage,
+                Point = _selectedTarget.Point,
                 Position = _mouseDownPos
             };
             _selectedTarget.OnClick(clickInfo);
