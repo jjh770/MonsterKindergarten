@@ -71,7 +71,7 @@ public class UpgradeManager : MonoBehaviour
         if (IsMaxLevel(type)) return false;
 
         double cost = GetCost(type);
-        return GameManager.Instance.Point >= cost;
+        return CurrencyManager.Instance.Point >= cost;
     }
 
     public bool TryUpgrade(UpgradeType type)
@@ -79,7 +79,7 @@ public class UpgradeManager : MonoBehaviour
         if (!CanUpgrade(type)) return false;
 
         double cost = GetCost(type);
-        GameManager.Instance.SubtractPoint(cost);
+        CurrencyManager.Instance.TrySpend(ECurrencyType.Point, cost);
 
         switch (type)
         {

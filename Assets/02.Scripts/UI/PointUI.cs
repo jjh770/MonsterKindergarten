@@ -10,9 +10,9 @@ public class PointUI : MonoBehaviour
 
     private void Start()
     {
-        if (GameManager.Instance != null)
+        if (CurrencyManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged += OnPointChanged;
+            CurrencyManager.Instance.OnDataChanged += OnPointChanged;
         }
 
         if (SlimeSpawner.Instance != null)
@@ -26,9 +26,9 @@ public class PointUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (GameManager.Instance != null)
+        if (CurrencyManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged -= OnPointChanged;
+            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
         }
 
         if (SlimeSpawner.Instance != null)
@@ -37,7 +37,7 @@ public class PointUI : MonoBehaviour
         }
     }
 
-    private void OnPointChanged(double point)
+    private void OnPointChanged(ECurrencyType type, double point)
     {
         UpdateUI();
     }
@@ -53,7 +53,7 @@ public class PointUI : MonoBehaviour
         if (_pointText != null && GameManager.Instance != null)
         {
             int spriteIndex = _highestLevel - 1;
-            _pointText.text = $"<sprite={spriteIndex}>{GameManager.Instance.Point.ToForamttedString()}";
+            _pointText.text = $"<sprite={spriteIndex}>{CurrencyManager.Instance.Point.ToForamttedString()}";
         }
     }
 }

@@ -25,9 +25,9 @@ public class SpawnMaxButtonUI : MonoBehaviour
             SpawnManager.Instance.OnSpawnMaxChanged += OnMaxChanged;
         }
 
-        if (GameManager.Instance != null)
+        if (CurrencyManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged += OnPointChanged;
+            CurrencyManager.Instance.OnDataChanged += OnPointChanged;
         }
 
         if (SlimeSpawner.Instance != null)
@@ -50,9 +50,9 @@ public class SpawnMaxButtonUI : MonoBehaviour
             SpawnManager.Instance.OnSpawnMaxChanged -= OnMaxChanged;
         }
 
-        if (GameManager.Instance != null)
+        if (CurrencyManager.Instance != null)
         {
-            GameManager.Instance.OnPointChanged -= OnPointChanged;
+            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
         }
 
         if (SlimeSpawner.Instance != null)
@@ -61,7 +61,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
         }
     }
 
-    private void OnPointChanged(double point)
+    private void OnPointChanged(ECurrencyType type, double point)
     {
         UpdateButtonState();
     }

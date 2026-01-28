@@ -102,7 +102,7 @@ public class Slime : MonoBehaviour, IClickable
         }
 
         // 포인트 적립
-        GameManager.Instance.AddPoint(clickInfo.Point);
+        CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
         var feedbacks = GetComponentsInChildren<IFeedback>();
