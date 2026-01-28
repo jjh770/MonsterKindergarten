@@ -61,7 +61,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
         }
     }
 
-    private void OnPointChanged(ECurrencyType type, double point)
+    private void OnPointChanged(ECurrencyType type, Currency point)
     {
         UpdateButtonState();
     }
