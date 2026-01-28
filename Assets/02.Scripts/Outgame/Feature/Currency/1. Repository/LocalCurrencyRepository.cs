@@ -29,16 +29,18 @@ public class LocalCurrencyRepository : ICurrencyRepository
 
     public CurrencySaveData Load()
     {
-
-        CurrencySaveData _data = CurrencySaveData.Default;
+        CurrencySaveData data = CurrencySaveData.Default;
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
-            if (PlayerPrefs.HasKey(i.ToString()))
+            var type = (ECurrencyType)i;
+            string key = type.ToString();
+
+            if (PlayerPrefs.HasKey(key))
             {
-                _data.Currencies[i] = double.Parse(PlayerPrefs.GetString(i.ToString(), "0"));
+                data.Currencies[i] = double.Parse(PlayerPrefs.GetString(key, "0"));
             }
         }
-        return CurrencySaveData.Default;
+        return data;
     }
 }
 
