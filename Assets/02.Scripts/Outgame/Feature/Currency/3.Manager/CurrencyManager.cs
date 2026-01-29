@@ -36,7 +36,7 @@ public class CurrencyManager : MonoBehaviour
         }
         else
         {
-            Destroy(this);
+            Destroy(gameObject);
         }
 
         _repository = new LocalCurrencyRepository();

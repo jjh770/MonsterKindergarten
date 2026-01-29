@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7988510677535046569}
+  - component: {fileID: 2412745364426877625}
   - component: {fileID: 1661916043604176313}
   - component: {fileID: 2114016441029914869}
   - component: {fileID: 3903659675861419707}
@@ -41,6 +42,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &2412745364426877625
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 8bd3b9d643f4f174b8d27989d2967c81, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!212 &1661916043604176313
 SpriteRenderer:
   serializedVersion: 2
@@ -218,7 +241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: caf01d1e60d6b214ab06949da67891b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorFlashFeedback
-  _flashColor: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
+  _flashColor: {r: 1, g: 0.5613208, b: 0.5613208, a: 1}
 --- !u!114 &7731520626090865071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -272,7 +295,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcf4b460554936b4b86c9de74fa2304a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClickTargetAnimator
-  _animator: {fileID: 0}
+  _animator: {fileID: 2412745364426877625}
   _levelAnimators:
   - {fileID: 22100000, guid: ef6ee8c51d6efed43a7b228b029d57e0, type: 2}
   - {fileID: 22100000, guid: 89c7973b66ccec641900c224954d8369, type: 2}
