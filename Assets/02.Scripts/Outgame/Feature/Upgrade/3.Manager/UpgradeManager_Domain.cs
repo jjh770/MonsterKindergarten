@@ -56,7 +56,7 @@ public class UpgradeManager_Domain : MonoBehaviour
 
         Currency cost = upgrade.Cost;
 
-        if (CurrencyManager.Instance.TrySpend(ECurrencyType.Point, cost)) return false;
+        if (!CurrencyManager.Instance.TrySpend(ECurrencyType.Point, cost)) return false;
 
         if (!upgrade.TryLevelUp())
         {
