@@ -41,6 +41,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: BackGround
+    uniqueID: 3331944195
+    locked: 0
+  - name: PlayGround
+    uniqueID: 370106521
+    locked: 0
   - name: OutLine
     uniqueID: 2846689969
     locked: 0
@@ -52,6 +58,9 @@ TagManager:
     locked: 0
   - name: FloatingText
     uniqueID: 2305962871
+    locked: 0
+  - name: PopupUI
+    uniqueID: 3990687337
     locked: 0
   m_RenderingLayers:
   - Default

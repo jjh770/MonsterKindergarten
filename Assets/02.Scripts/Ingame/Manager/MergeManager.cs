@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 
 public class MergeManager : MonoBehaviour
 {
@@ -18,16 +19,18 @@ public class MergeManager : MonoBehaviour
         }
     }
 
-    public bool CanMerge(ClickTarget target1, ClickTarget target2)
+    public bool CanMerge(Slime target1, Slime target2)
     {
         return target1 != null && target2 != null && target1 != target2 && target1.Level == target2.Level && target1.Level < _maxLevel;
     }
 
-    public void Merge(ClickTarget keeper, ClickTarget removed)
+    public void Merge(Slime keeper, Slime removed)
     {
         if (!CanMerge(keeper, removed)) return;
 
         keeper.LevelUp();
+        keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
+
         SpawnManager.Instance.Despawn(removed);
     }
 }

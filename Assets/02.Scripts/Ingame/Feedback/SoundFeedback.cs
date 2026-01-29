@@ -2,17 +2,18 @@
 
 public class SoundFeedback : MonoBehaviour, IFeedback
 {
-    private AudioSource _audio;
+    [SerializeField] private AudioClip[] _clip;
+    [SerializeField] private float _minPitch = 0.4f;
+    [SerializeField] private float _maxPitch = 0.8f;
 
-    private void Awake()
-    {
-        _audio = GetComponent<AudioSource>();
-    }
     public void Play(ClickInfo clickInfo)
     {
         if (clickInfo.ClickType == EClickType.Auto) return;
 
-        _audio.pitch = UnityEngine.Random.Range(0.4f, 0.8f);
-        _audio.Play();
+        if (AudioManager.Instance != null && _clip != null && _clip.Length > 0)
+        {
+            int randomNum = UnityEngine.Random.Range(0, _clip.Length);
+            AudioManager.Instance.PlaySFXRandomPitch(_clip[randomNum], _minPitch, _maxPitch);
+        }
     }
 }

@@ -1,11 +1,15 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Clicker : MonoBehaviour
 {
     [SerializeField] private float _dragThresholdTime = 0.2f;
     [SerializeField] private float _dragThresholdDistance = 0.3f;
 
-    private ClickTarget _selectedTarget;
+    [Header("Drag Bounds")]
+    [SerializeField] private Vector2 _dragMinBounds = new Vector2(-5f, -3f);
+    [SerializeField] private Vector2 _dragMaxBounds = new Vector2(5f, 3f);
+
+    private Slime _selectedTarget;
     private Camera _mainCamera;
     private Vector2 _mouseDownPos;
     private float _mouseDownTime;
@@ -43,7 +47,7 @@ public class Clicker : MonoBehaviour
 
         if (hit)
         {
-            ClickTarget clickTarget = hit.collider.GetComponent<ClickTarget>();
+            Slime clickTarget = hit.collider.GetComponent<Slime>();
             if (clickTarget != null)
             {
                 _selectedTarget = clickTarget;
@@ -73,6 +77,10 @@ public class Clicker : MonoBehaviour
     private void UpdateDrag()
     {
         Vector2 mousePos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+
+        mousePos.x = Mathf.Clamp(mousePos.x, _dragMinBounds.x, _dragMaxBounds.x);
+        mousePos.y = Mathf.Clamp(mousePos.y, _dragMinBounds.y, _dragMaxBounds.y);
+
         _selectedTarget.transform.position = mousePos;
     }
 
@@ -90,7 +98,8 @@ public class Clicker : MonoBehaviour
             {
                 ClickType = EClickType.Manual,
                 Point = _selectedTarget.Point,
-                Position = _mouseDownPos
+                Position = _mouseDownPos,
+                Level = _selectedTarget.Level
             };
             _selectedTarget.OnClick(clickInfo);
         }
