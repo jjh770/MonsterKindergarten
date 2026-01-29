@@ -6,8 +6,9 @@ public class NotEnoughPointPopupUI : MonoBehaviour
     public static NotEnoughPointPopupUI Instance { get; private set; }
 
     [SerializeField] private GameObject _popupPanel;
-    [SerializeField] private float _displayDuration = 1.5f;
     [SerializeField] private float _fadeInDuration = 0.2f;
+    [SerializeField] private float _punchDuration = 0.5f;
+    [SerializeField] private float _displayDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.2f;
     [SerializeField] private AudioClip _notEnoughSound;
 
@@ -49,7 +50,7 @@ public class NotEnoughPointPopupUI : MonoBehaviour
 
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));
-        _currentSequence.Join(_popupPanel.transform.DOPunchPosition(Vector3.one * 15f, 1f, 10, 1));
+        _currentSequence.Join(_popupPanel.transform.DOPunchPosition(Vector3.one * 15f, _punchDuration, 10, 1));
         _currentSequence.AppendInterval(_displayDuration);
         _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
         _currentSequence.OnComplete(() => _popupPanel.SetActive(false));

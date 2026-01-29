@@ -430,8 +430,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NotEnoughPointPopupUI
   _popupPanel: {fileID: 193017435}
-  _displayDuration: 1.5
   _fadeInDuration: 0.2
+  _punchDuration: 0.3
+  _displayDuration: 0.5
   _fadeOutDuration: 0.2
   _notEnoughSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
 --- !u!1 &214733485
@@ -2769,7 +2770,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 93afa2d1c366aba49b137e8d5100d4a3, type: 3}
   - {fileID: 21300000, guid: 8b4b9f505a142ca4db8851313279c47e, type: 3}
   - {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
-  _displayDuration: 2
+  _displayDuration: 1.5
   _fadeInDuration: 0.3
   _fadeOutDuration: 0.3
   _unlockSound: {fileID: 8300000, guid: 42b53dbdea3afc5489924beab357e255, type: 3}
@@ -2883,9 +2884,9 @@ MonoBehaviour:
   _bgmSource: {fileID: 0}
   _sfxSource: {fileID: 0}
   _startBGM: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
-  MasterVolume: 1
-  BGMVolume: 0.5
-  SFXVolume: 1
+  <MasterVolume>k__BackingField: 1
+  <BGMVolume>k__BackingField: 1
+  <SFXVolume>k__BackingField: 1
 --- !u!4 &1466915310
 Transform:
   m_ObjectHideFlags: 0
@@ -4482,6 +4483,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: b16d37c053ee1b24d9cfec4929dcdca0, type: 3}
   - {fileID: 21300000, guid: ef1fd199439e0b44fa7a50179aec2187, type: 3}
   _background: {fileID: 2131310040}
+  _endPosX: -7
+  _duration: 40
 --- !u!212 &2131310040
 SpriteRenderer:
   serializedVersion: 2
