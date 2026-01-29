@@ -19,5 +19,29 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
-    Name: "\uD074\uB9AD"
-    Description: "\uD074\uB9AD \uD3EC\uC778\uD2B8 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+    Name: "\uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 2
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 3
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"

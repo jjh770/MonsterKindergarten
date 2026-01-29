@@ -14,14 +14,14 @@ public class UpgradeItem : MonoBehaviour
     public void Refresh(Upgrade upgrade)
     {
         _upgrade = upgrade;
-
+        // 외부에서는 Get함수만 접근 가능하게 Interface
         _nameTextUI.text = upgrade.SpecData.Name;
         _descriptionTextUI.text = upgrade.SpecData.Description;
-        _levelTextUI.text = upgrade.Level.ToString("N1");
+        _levelTextUI.text = upgrade.Level.ToString("N0");
         _costTextUI.text = upgrade.Cost.ToString();
 
         bool canLevelUp = UpgradeManager_Domain.Instance.CanLevelUp(upgrade.SpecData.Type);
-        _costTextUI.color = canLevelUp ? Color.white : Color.red;
+        _costTextUI.color = canLevelUp ? Color.black : Color.red;
         _upgradeButton.interactable = canLevelUp;
     }
 

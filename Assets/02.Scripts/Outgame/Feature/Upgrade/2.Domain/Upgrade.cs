@@ -33,9 +33,14 @@ public class Upgrade
         if (string.IsNullOrEmpty(specData.Description)) throw new System.ArgumentException($"설명은 비어있을 수 없습니다.");
     }
 
+    public bool CanLevelUp()
+    {
+        return !IsMaxLevel;
+    }
+
     public bool TryLevelUp()
     {
-        if (IsMaxLevel) return false;
+        if (!CanLevelUp()) return false;
 
         Level++;
         return true;

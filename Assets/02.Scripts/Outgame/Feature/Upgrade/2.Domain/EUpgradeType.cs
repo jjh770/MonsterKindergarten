@@ -1,9 +1,11 @@
 ﻿public enum EUpgradeType
 {
-    ManualClickPointPlusAdd,
-    ManualClickPointPercentAdd,
-    AutoClickPointPlusAdd,
-    AutoClickPointPercentAdd,
+    Level1ManualPointPlusAdd,
+    Level1AutoPointPlusAdd,
+    Level2ManualPointPlusAdd,
+    Level2AutoPointPlusAdd,
+    ManualPointPercentAdd,
+    AutoPointPercentAdd,
     SpawnTimeSub,
     MaxCountAdd,
     Count,
