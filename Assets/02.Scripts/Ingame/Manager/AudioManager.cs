@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
@@ -28,7 +27,6 @@ public class AudioManager : MonoBehaviour
     [field: SerializeField, Range(0f, 1f)] public float SFXVolume { get; private set; } = 1f;
 
     private AudioMixer _audioMixer;
-    private float _cachedMasterVolume;
     private bool _isPaused;
 
     private void Awake()
@@ -44,12 +42,10 @@ public class AudioManager : MonoBehaviour
         }
 
         InitializeAudioSources();
-        _cachedMasterVolume = MasterVolume;
     }
 
     private void Start()
     {
-        _cachedMasterVolume = MasterVolume;
         ApplyVolumes();
 
         if (_startBGM != null)
@@ -93,12 +89,23 @@ public class AudioManager : MonoBehaviour
 
         if (pause)
         {
-            _cachedMasterVolume = MasterVolume;
-            SetMasterVolume(0);
+            if (_audioMixer != null)
+            {
+                _audioMixer.SetFloat("MasterVolume", VolumeToDecibel(0f));
+            }
+            else
+            {
+                if (_bgmSource != null) _bgmSource.volume = 0f;
+                if (_sfxSource != null) _sfxSource.volume = 0f;
+            }
         }
         else
         {
-            SetMasterVolume(_cachedMasterVolume);
+            if (_audioMixer != null)
+            {
+                _audioMixer.SetFloat("MasterVolume", VolumeToDecibel(MasterVolume));
+            }
+            ApplyVolumes();
         }
     }
 

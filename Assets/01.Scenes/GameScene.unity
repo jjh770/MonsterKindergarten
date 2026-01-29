@@ -506,10 +506,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NotEnoughPointPopupUI
   _popupPanel: {fileID: 193017435}
   _fadeInDuration: 0.2
-  _punchDuration: 0.3
+  _punchDuration: 0.5
   _displayDuration: 0.5
   _fadeOutDuration: 0.2
   _notEnoughSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
+  _popupRectTransform: {fileID: 193017436}
 --- !u!1 &214733485
 GameObject:
   m_ObjectHideFlags: 0
