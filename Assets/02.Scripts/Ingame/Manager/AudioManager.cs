@@ -1,8 +1,14 @@
-﻿using UnityEngine;
+﻿using System.Runtime.InteropServices;
+using UnityEngine;
 using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
 {
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    private static extern void RegisterVisibilityChangeEvent();
+#endif
+
     public static AudioManager Instance;
 
     [Header("Audio Mixer")]
@@ -22,6 +28,8 @@ public class AudioManager : MonoBehaviour
     [field: SerializeField, Range(0f, 1f)] public float SFXVolume { get; private set; } = 1f;
 
     private AudioMixer _audioMixer;
+    private float _cachedMasterVolume;
+    private bool _isPaused;
 
     private void Awake()
     {
@@ -36,16 +44,22 @@ public class AudioManager : MonoBehaviour
         }
 
         InitializeAudioSources();
+        _cachedMasterVolume = MasterVolume;
     }
 
     private void Start()
     {
+        _cachedMasterVolume = MasterVolume;
         ApplyVolumes();
 
         if (_startBGM != null)
         {
             PlayBGM(_startBGM);
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        RegisterVisibilityChangeEvent();
+#endif
     }
 
     private void ApplyVolumes()
@@ -57,6 +71,34 @@ public class AudioManager : MonoBehaviour
         if (_sfxSource != null)
         {
             _sfxSource.volume = SFXVolume * MasterVolume;
+        }
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        HandlePause(pause);
+    }
+
+
+    // JavaScript visibilitychange 이벤트에서 SendMessage로 호출
+    public void OnBrowserPause(int paused)
+    {
+        HandlePause(paused == 1);
+    }
+
+    private void HandlePause(bool pause)
+    {
+        if (pause == _isPaused) return;
+        _isPaused = pause;
+
+        if (pause)
+        {
+            _cachedMasterVolume = MasterVolume;
+            SetMasterVolume(0);
+        }
+        else
+        {
+            SetMasterVolume(_cachedMasterVolume);
         }
     }
 
