@@ -11,7 +11,7 @@
         };
 
         // double 앞에 this가 필요함 -> double에 ToFormattedString이라는 메서드가 추가됨.
-        public static string ToForamttedString(this double num)
+        public static string ToFormattedString(this double num)
         {
             if (num < 1000)
             {

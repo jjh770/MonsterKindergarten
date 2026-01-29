@@ -23,7 +23,7 @@ public class PointFloater : MonoBehaviour
     public void Play(double point, Vector2 position, int level)
     {
         _levelIndex = level - 1;
-        _text.text = $"<sprite={_levelIndex}>{point.ToForamttedString()}";
+        _text.text = $"<sprite={_levelIndex}>{point.ToFormattedString()}";
         _text.alpha = 1f;
 
         // 위로 떠오르면서 페이드아웃

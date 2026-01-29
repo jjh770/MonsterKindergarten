@@ -132,7 +132,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
             else
             {
                 double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnInterval);
-                _costText.text = $"<sprite={_levelIndex}>{cost.ToForamttedString()}";
+                _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
             }
         }
 

@@ -45,7 +45,7 @@ public readonly struct Currency
     // 이걸 메서드 오버라이딩하여 특정 포맷으로 문자가 변환되게끔 강제한다.
     public override string ToString()
     {
-        return Value.ToForamttedString();
+        return Value.ToFormattedString();
     }
 
     // +@ 기본 연산을 하고 싶다!

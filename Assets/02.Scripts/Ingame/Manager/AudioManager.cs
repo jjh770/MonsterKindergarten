@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
@@ -17,9 +17,9 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip _startBGM;
 
     [Header("Volume Settings")]
-    [Range(0f, 1f)] public float MasterVolume = 1f;
-    [Range(0f, 1f)] public float BGMVolume = 1f;
-    [Range(0f, 1f)] public float SFXVolume = 1f;
+    [field: SerializeField, Range(0f, 1f)] public float MasterVolume { get; private set; } = 1f;
+    [field: SerializeField, Range(0f, 1f)] public float BGMVolume { get; private set; } = 1f;
+    [field: SerializeField, Range(0f, 1f)] public float SFXVolume { get; private set; } = 1f;
 
     private AudioMixer _audioMixer;
 

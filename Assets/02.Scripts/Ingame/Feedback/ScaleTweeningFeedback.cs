@@ -21,14 +21,19 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private void OnDisable()
     {
         // 비활성화 시 Tween 정리 (오브젝트 풀링 대응)
-        _scaleTween?.Kill();
-        _scaleTween = null;
+        CleanupTween();
     }
 
     private void OnDestroy()
     {
         // 파괴 시에도 안전하게 정리
+        CleanupTween();
+    }
+
+    private void CleanupTween()
+    {
         _scaleTween?.Kill();
         _scaleTween = null;
     }
+
 }

@@ -83,7 +83,7 @@ public class UnlockPopupUI : MonoBehaviour
         sequence.OnComplete(() =>
         {
             _popupPanel.SetActive(false);
-            _whiteGlowImage.SetImageScaleToZero();
+            _whiteGlowImage.SetScaleToZero();
         });
     }
 }

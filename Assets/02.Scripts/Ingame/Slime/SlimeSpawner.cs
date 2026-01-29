@@ -44,7 +44,6 @@ public class SlimeSpawner : MonoBehaviour
         slimeObject.transform.DOMoveY(position.y, _dropDuration).SetEase(_dropEase);
 
         _activeTargets.Add(slime);
-        CheckHighestLevel();
         return slime;
     }
 
@@ -52,19 +51,28 @@ public class SlimeSpawner : MonoBehaviour
     {
         if (target == null) return;
 
+        int despawnedLevel = target.Level;
         target.OnLevelChanged -= OnSlimeLevelChanged;
         target.OnDespawn();
         _activeTargets.Remove(target);
         _pool.Despawn(target.gameObject);
-        CheckHighestLevel();
+
+        if (despawnedLevel >= HighestLevel)
+        {
+            RecalculateHighestLevel();
+        }
     }
 
     private void OnSlimeLevelChanged(int level)
     {
-        CheckHighestLevel();
+        if (level > HighestLevel)
+        {
+            HighestLevel = level;
+            OnHighestLevelChanged?.Invoke(HighestLevel);
+        }
     }
 
-    private void CheckHighestLevel()
+    private void RecalculateHighestLevel()
     {
         int highest = 1;
         foreach (var slime in _activeTargets)

@@ -131,7 +131,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
             else
             {
                 double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnMax);
-                _costText.text = $"<sprite={_levelIndex}>{cost.ToForamttedString()}";
+                _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
             }
         }
 

@@ -3,9 +3,9 @@ using UnityEngine.UI;
 
 namespace Utility
 {
-    public static class SetImageScaleZero
+    public static class SetScaleZero
     {
-        public static void SetImageScaleToZero(this Image image)
+        public static void SetScaleToZero(this Image image)
         {
             image.transform.localScale = Vector3.zero;
             image.transform.localRotation = Quaternion.identity;
