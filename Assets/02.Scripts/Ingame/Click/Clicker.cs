@@ -94,11 +94,10 @@ public class Clicker : MonoBehaviour
         else
         {
             // 클릭 처리 - ClickTarget의 레벨별 포인트 사용
-            ESlimeGrade grade = (ESlimeGrade)_selectedTarget.Level;
             ClickInfo clickInfo = new ClickInfo
             {
                 ClickType = EClickType.Manual,
-                Point = PointCalculator.Calculate(_selectedTarget.Point, grade, EClickType.Manual),
+                Point = PointCalculator.Calculate(_selectedTarget.Point, _selectedTarget.Grade, EClickType.Manual),
                 Position = _mouseDownPos,
                 Level = _selectedTarget.Level
             };

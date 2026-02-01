@@ -15,6 +15,7 @@ public class Slime : MonoBehaviour, IClickable
     private bool _isDragging = false;
 
     public int Level => _level;
+    public ESlimeGrade Grade => (ESlimeGrade)_level;
     public bool IsDragging => _isDragging;
     public int Point => _levelData != null ? _levelData.GetPoint(_level) : 1;
     public float AutoClickInterval => _levelData != null ? _levelData.GetAutoClickInterval(_level) : 0f;
