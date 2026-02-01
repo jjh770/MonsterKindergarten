@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeSpecTableSO
   Datas:
   - Type: 0
+    SlimeGrade: 1
     MaxLevel: 10
     BaseCost: 100
     BasePoint: 10
@@ -22,6 +23,7 @@ MonoBehaviour:
     Name: "\uC2AC\uB77C\uC784"
     Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
+    SlimeGrade: 1
     MaxLevel: 10
     BaseCost: 100
     BasePoint: 10
@@ -29,7 +31,8 @@ MonoBehaviour:
     PointMultiplier: 2
     Name: "\uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
-  - Type: 2
+  - Type: 0
+    SlimeGrade: 2
     MaxLevel: 10
     BaseCost: 100
     BasePoint: 10
@@ -37,11 +40,48 @@ MonoBehaviour:
     PointMultiplier: 2
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
     Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
-  - Type: 3
+  - Type: 1
+    SlimeGrade: 2
     MaxLevel: 10
     BaseCost: 100
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 3
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 3
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 4
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 4
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"

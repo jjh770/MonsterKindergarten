@@ -41,11 +41,12 @@ public class AutoClicker : MonoBehaviour
 
     private void AutoClick(Slime target)
     {
+        ESlimeGrade grade = (ESlimeGrade)target.Level;
         ClickInfo clickInfo = new ClickInfo
         {
             ClickType = EClickType.Auto,
             Position = target.transform.position,
-            Point = target.Point,
+            Point = PointCalculator.Calculate(target.Point, grade, EClickType.Auto),
             Level = target.Level
         };
 

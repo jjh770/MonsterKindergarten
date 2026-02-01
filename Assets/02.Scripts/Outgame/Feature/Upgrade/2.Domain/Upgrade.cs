@@ -16,7 +16,10 @@ public class Upgrade
 
     // 업그레이드 비용 : 기본 비용 + 증가량^레벨
     public Currency Cost => SpecData.BaseCost + Math.Pow(SpecData.CostMultiplier, Level); // 지수 공식 : 기본 비용 + 증가량 ^ 레벨
-    public double Point => SpecData.BasePoint + Level * SpecData.PointMultiplier;         // 선형 공식 : 기본 비용 + 레벨 * 증가량 (* 프레스티지 팩터)
+    // 레벨 0이면 보너스 없음
+    // 선형 공식 : 기본 비용 + 레벨 * 증가량 (* 프레스티지 팩터)
+    public double Point => Level == 0 ? 0 : SpecData.BasePoint + Level * SpecData.PointMultiplier;
+    public double NextPoint => IsMaxLevel ? Point : SpecData.BasePoint + (Level + 1) * SpecData.PointMultiplier;
     public bool IsMaxLevel => Level >= SpecData.MaxLevel;
 
     // 2. 핵심 규칙을 작성한다.
