@@ -10,7 +10,7 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _levelText;
     [SerializeField] private Image _levelImage;
     [SerializeField] private Image _whiteGlowImage;
-    [SerializeField] private Sprite[] _levelSprites;
+    [SerializeField] private MonsterLevelData _monsterLevelData;
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
@@ -66,10 +66,9 @@ public class UnlockPopupUI : MonoBehaviour
             _levelText.text = $"Lv.{level} 해금!";
         }
 
-        if (_levelImage != null && _levelSprites != null && _levelSprites.Length > 0)
+        if (_levelImage != null && _monsterLevelData != null)
         {
-            int spriteIndex = Mathf.Clamp(level - 1, 0, _levelSprites.Length - 1);
-            _levelImage.sprite = _levelSprites[spriteIndex];
+            _levelImage.sprite = _monsterLevelData.GetSprite(level);
         }
 
         _whiteGlowImage.transform.DOScale(Vector3.one, 1f);

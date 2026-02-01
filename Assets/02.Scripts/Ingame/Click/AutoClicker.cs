@@ -45,7 +45,7 @@ public class AutoClicker : MonoBehaviour
         {
             ClickType = EClickType.Auto,
             Position = target.transform.position,
-            Point = target.Point,
+            Point = PointCalculator.Calculate(target.Point, target.Grade, EClickType.Auto),
             Level = target.Level
         };
 

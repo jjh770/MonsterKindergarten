@@ -97,7 +97,7 @@ public class Clicker : MonoBehaviour
             ClickInfo clickInfo = new ClickInfo
             {
                 ClickType = EClickType.Manual,
-                Point = _selectedTarget.Point,
+                Point = PointCalculator.Calculate(_selectedTarget.Point, _selectedTarget.Grade, EClickType.Manual),
                 Position = _mouseDownPos,
                 Level = _selectedTarget.Level
             };

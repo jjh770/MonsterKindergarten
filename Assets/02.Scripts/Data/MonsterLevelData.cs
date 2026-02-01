@@ -9,6 +9,7 @@ public class MonsterLevelData : ScriptableObject
         public int Level;
         public int Point;
         public float AutoClickInterval;
+        public Sprite Sprite;
     }
 
     [SerializeField] private LevelInfo[] _levelInfos;
@@ -41,5 +42,19 @@ public class MonsterLevelData : ScriptableObject
         }
 
         return _levelInfos[0].AutoClickInterval;
+    }
+
+    public Sprite GetSprite(int level)
+    {
+        if (_levelInfos == null || _levelInfos.Length == 0)
+            return null;
+
+        foreach (var info in _levelInfos)
+        {
+            if (info.Level == level)
+                return info.Sprite;
+        }
+
+        return _levelInfos[0].Sprite;
     }
 }
