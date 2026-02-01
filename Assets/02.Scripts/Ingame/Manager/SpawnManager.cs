@@ -60,7 +60,26 @@ public class SpawnManager : MonoBehaviour
 
     private void Start()
     {
+        UpgradeManager.OnUpgraded += OnUpgraded;
         Spawn();
+    }
+
+    private void OnDestroy()
+    {
+        UpgradeManager.OnUpgraded -= OnUpgraded;
+    }
+
+    private void OnUpgraded(EUpgradeType type, ESlimeGrade grade)
+    {
+        switch (type)
+        {
+            case EUpgradeType.SpawnTimeSub:
+                DecreaseInterval();
+                break;
+            case EUpgradeType.MaxCountAdd:
+                IncreaseMaxCount();
+                break;
+        }
     }
 
     private void Update()

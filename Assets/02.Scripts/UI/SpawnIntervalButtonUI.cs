@@ -15,10 +15,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
     {
         _button.onClick.AddListener(OnClickUpgrade);
 
-        if (UpgradeManager.Instance != null)
-        {
-            UpgradeManager.Instance.OnUpgraded += OnUpgraded;
-        }
+        UpgradeManager.OnUpgraded += OnUpgraded;
 
         if (SpawnManager.Instance != null)
         {
@@ -40,10 +37,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
-        {
-            UpgradeManager.Instance.OnUpgraded -= OnUpgraded;
-        }
+        UpgradeManager.OnUpgraded -= OnUpgraded;
 
         if (SpawnManager.Instance != null)
         {
@@ -69,7 +63,9 @@ public class SpawnIntervalButtonUI : MonoBehaviour
     private void UpdateButtonState()
     {
         if (UpgradeManager.Instance == null) return;
-        bool isMax = UpgradeManager.Instance.IsMaxLevel(UpgradeType.SpawnInterval);
+        var upgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
+        if (upgrade == null) return;
+        bool isMax = upgrade.IsMaxLevel;
         _button.interactable = !isMax;
     }
 
@@ -77,16 +73,19 @@ public class SpawnIntervalButtonUI : MonoBehaviour
     {
         if (UpgradeManager.Instance == null) return;
 
-        if (!UpgradeManager.Instance.TryUpgrade(UpgradeType.SpawnInterval))
+        if (!UpgradeManager.Instance.TryLevelUp(EUpgradeType.SpawnTimeSub, ESlimeGrade.None))
         {
-            double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnInterval);
-            NotEnoughPointPopupUI.Instance?.Show(cost);
+            var upgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
+            if (upgrade != null)
+            {
+                NotEnoughPointPopupUI.Instance?.Show((double)upgrade.Cost);
+            }
         }
     }
 
-    private void OnUpgraded(UpgradeType type, int level, double cost)
+    private void OnUpgraded(EUpgradeType type, ESlimeGrade grade)
     {
-        if (type == UpgradeType.SpawnInterval)
+        if (type == EUpgradeType.SpawnTimeSub)
         {
             UpdateUI();
         }
@@ -107,9 +106,17 @@ public class SpawnIntervalButtonUI : MonoBehaviour
     {
         if (UpgradeManager.Instance == null || SpawnManager.Instance == null) return;
 
-        bool isMax = UpgradeManager.Instance.IsMaxLevel(UpgradeType.SpawnInterval);
+        var upgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
+        if (upgrade == null) return;
+
+        bool isMax = upgrade.IsMaxLevel;
         float interval = SpawnManager.Instance.SpawnInterval;
         float minInterval = SpawnManager.Instance.MinSpawnInterval;
+
+        if (isMax || interval <= minInterval)
+        {
+            isMax = true;
+        }
 
         if (_spawnIntervalText != null)
         {
@@ -131,7 +138,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
             }
             else
             {
-                double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnInterval);
+                double cost = (double)upgrade.Cost;
                 _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
             }
         }

@@ -47,7 +47,7 @@ public class UpgradeItem : MonoBehaviour
                 _slimeImage.sprite = _unlockedSprite;
 
             // 외부에서는 Get함수만 접근 가능하게 Interface
-            bool canLevelUp = UpgradeManager_Domain.Instance.CanLevelUp(upgrade.SpecData);
+            bool canLevelUp = UpgradeManager.Instance.CanLevelUp(upgrade.SpecData);
             _costTextUI.color = canLevelUp ? Color.black : Color.red;
             _upgradeButton.interactable = canLevelUp;
         }
@@ -70,9 +70,9 @@ public class UpgradeItem : MonoBehaviour
     {
         if (_upgrade == null) return;
 
-        if (UpgradeManager_Domain.Instance.CanLevelUp(_upgrade.SpecData))
+        if (UpgradeManager.Instance.CanLevelUp(_upgrade.SpecData))
         {
-            UpgradeManager_Domain.Instance.TryLevelUp(_upgrade.SpecData);
+            UpgradeManager.Instance.TryLevelUp(_upgrade.SpecData);
         }
     }
 }

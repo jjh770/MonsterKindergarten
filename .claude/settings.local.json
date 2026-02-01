@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(ls -la \"E:\\\\Unity\\\\MonsterKindergarten\\\\Assets\\\\02.Scripts\\\\Outgame\\\\Feature\"\" 2>/dev/null || find \"E:UnityMonsterKindergartenAssets02.ScriptsOutgame \" -type d)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

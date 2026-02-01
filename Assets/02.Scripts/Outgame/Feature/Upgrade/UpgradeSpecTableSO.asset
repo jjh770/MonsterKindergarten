@@ -13,6 +13,26 @@ MonoBehaviour:
   m_Name: UpgradeSpecTableSO
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeSpecTableSO
   Datas:
+  - Type: 4
+    SlimeGrade: 0
+    MaxLevel: 10
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 1.15
+    PointMultiplier: 2
+    PointFormula: 0
+    Name: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
+    Description: "\uC2A4\uD3F0 \uC2DC\uAC04\uC774 \uB2E8\uCD95\uB429\uB2C8\uB2E4."
+  - Type: 5
+    SlimeGrade: 0
+    MaxLevel: 70
+    BaseCost: 100
+    BasePoint: 10
+    CostMultiplier: 2
+    PointMultiplier: 0
+    PointFormula: 1
+    Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 0
     SlimeGrade: 1
     MaxLevel: 10
@@ -20,6 +40,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uC2AC\uB77C\uC784"
     Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
@@ -29,6 +50,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 0
@@ -38,6 +60,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
     Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
@@ -47,6 +70,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 0
@@ -56,6 +80,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
@@ -65,6 +90,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 0
@@ -74,6 +100,7 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
@@ -83,5 +110,6 @@ MonoBehaviour:
     BasePoint: 10
     CostMultiplier: 1.15
     PointMultiplier: 2
+    PointFormula: 0
     Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"

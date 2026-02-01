@@ -16,11 +16,22 @@ public class Upgrade
 
     // 업그레이드 비용 : 기본 비용 + 증가량^레벨
     public Currency Cost => SpecData.BaseCost + Math.Pow(SpecData.CostMultiplier, Level); // 지수 공식 : 기본 비용 + 증가량 ^ 레벨
+
     // 레벨 0이면 보너스 없음
-    // 선형 공식 : 기본 비용 + 레벨 * 증가량 (* 프레스티지 팩터)
-    public double Point => Level == 0 ? 0 : SpecData.BasePoint + Level * SpecData.PointMultiplier;
-    public double NextPoint => IsMaxLevel ? Point : SpecData.BasePoint + (Level + 1) * SpecData.PointMultiplier;
+    // Linear : 선형 공식 (BasePoint + Level * PointMultiplier)
+    // Fixed  : 고정값 공식 (레벨과 무관하게 항상 BasePoint)
+    public double Point => Level == 0 ? 0 : CalculatePoint(Level);
+    public double NextPoint => IsMaxLevel ? Point : CalculatePoint(Level + 1);
     public bool IsMaxLevel => Level >= SpecData.MaxLevel;
+
+    private double CalculatePoint(int level)
+    {
+        return SpecData.PointFormula switch
+        {
+            EPointFormula.Fixed => SpecData.BasePoint,
+            _ => SpecData.BasePoint + level * SpecData.PointMultiplier, // Linear
+        };
+    }
 
     // 2. 핵심 규칙을 작성한다.
     public Upgrade(UpgradeSpecData specData)
@@ -31,7 +42,9 @@ public class Upgrade
         if (specData.BaseCost <= 0) throw new System.ArgumentException($"기본 비용은 0보다 크거나 같아야 합니다. : {specData.BaseCost}");
         if (specData.BasePoint <= 0) throw new System.ArgumentException($"기본 포인트는 0보다 크거나 같아야 합니다. : {specData.BasePoint}");
         if (specData.CostMultiplier <= 0) throw new System.ArgumentException($"비용 증가량은 0보다 크거나 같아야 합니다. : {specData.CostMultiplier}");
-        if (specData.PointMultiplier <= 0) throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");
+        // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
+        if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)
+            throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");
         if (string.IsNullOrEmpty(specData.Name)) throw new System.ArgumentException($"이름은 비어있을 수 없습니다.");
         if (string.IsNullOrEmpty(specData.Description)) throw new System.ArgumentException($"설명은 비어있을 수 없습니다.");
     }
