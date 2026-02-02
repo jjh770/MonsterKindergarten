@@ -48,11 +48,6 @@ public class CurrencyManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-
-    }
-
     // 재화 조회
     public Currency Get(ECurrencyType currencyType)
     {
