@@ -11,7 +11,7 @@ public class UpgradeManager : MonoBehaviour
     // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
     public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
     [SerializeField] private UpgradeSpecTableSO _specTable;
-
+    private IUpgradeRepository _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
 
     private void Awake()
@@ -25,6 +25,16 @@ public class UpgradeManager : MonoBehaviour
             Destroy(gameObject);
         }
 
+        _repository = new JsonUpgradeRepository(AccountManager.Instance.Email);
+
+        var saveData = _repository.Load();
+        // Entries를 딕셔너리로 변환해서 빠르게 조회
+        var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
+        foreach (var entry in saveData.Entries)
+        {
+            savedLevels[(entry.Type, entry.Grade)] = entry.Level;
+        }
+
         foreach (var specData in _specTable.Datas)
         {
             var key = (specData.Type, specData.SlimeGrade);
@@ -32,8 +42,11 @@ public class UpgradeManager : MonoBehaviour
             {
                 throw new Exception($"이미 같은 타입의 업그레이드 정보를 가지고 있습니다. {specData.Type}, {specData.SlimeGrade}");
             }
-            _upgrades.Add(key, new Upgrade(specData));
+
+            int savedLevel = savedLevels.TryGetValue(key, out var lv) ? lv : 0;
+            _upgrades.Add(key, new Upgrade(specData, savedLevel));
         }
+
         OnDataChanged?.Invoke();
     }
 
@@ -103,9 +116,25 @@ public class UpgradeManager : MonoBehaviour
             CurrencyManager.Instance.Add(ECurrencyType.Point, cost);
             return false;
         }
+        Save();
         OnDataChanged?.Invoke();
         OnUpgraded?.Invoke(type, grade);
 
         return true;
+    }
+
+    private void Save()
+    {
+        var data = new UpgradeSaveData();
+        foreach (var pair in _upgrades)
+        {
+            data.Entries.Add(new UpgradeEntry
+            {
+                Type = pair.Key.Item1,
+                Grade = pair.Key.Item2,
+                Level = pair.Value.Level
+            });
+        }
+        _repository.Save(data);
     }
 }

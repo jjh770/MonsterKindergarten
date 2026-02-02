@@ -34,9 +34,10 @@ public class Upgrade
     }
 
     // 2. 핵심 규칙을 작성한다.
-    public Upgrade(UpgradeSpecData specData)
+    public Upgrade(UpgradeSpecData specData, int level)
     {
         SpecData = specData;
+        Level = level;
 
         if (specData.MaxLevel < 0) throw new System.ArgumentException($"최대 레벨은 0보다 커야합니다. : {specData.MaxLevel}");
         if (specData.BaseCost <= 0) throw new System.ArgumentException($"기본 비용은 0보다 크거나 같아야 합니다. : {specData.BaseCost}");

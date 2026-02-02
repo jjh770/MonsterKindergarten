@@ -16,6 +16,12 @@ using UnityEngine;
 
 public class LocalCurrencyRepository : ICurrencyRepository
 {
+    private readonly string _userId;
+    public LocalCurrencyRepository(string userId)
+    {
+        _userId = userId;
+    }
+
     public void Save(CurrencySaveData saveData)
     {
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
@@ -23,7 +29,7 @@ public class LocalCurrencyRepository : ICurrencyRepository
             var type = (ECurrencyType)i;
 
             // 소수점 17자리까지 저장
-            PlayerPrefs.SetString(type.ToString(), saveData.Currencies[i].ToString("G17"));
+            PlayerPrefs.SetString($"{_userId}_{type.ToString()}", saveData.Currencies[i].ToString("G17"));
         }
     }
 
@@ -33,7 +39,7 @@ public class LocalCurrencyRepository : ICurrencyRepository
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
             var type = (ECurrencyType)i;
-            string key = type.ToString();
+            string key = $"{_userId}_{type.ToString()}";
 
             if (PlayerPrefs.HasKey(key))
             {

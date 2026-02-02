@@ -31,8 +31,8 @@ MonoBehaviour:
     CostMultiplier: 2
     PointMultiplier: 0
     PointFormula: 1
-    Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
-    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+    Name: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218"
+    Description: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218 \uC99D\uAC00"
   - Type: 0
     SlimeGrade: 1
     MaxLevel: 10
@@ -102,7 +102,7 @@ MonoBehaviour:
     PointMultiplier: 2
     PointFormula: 0
     Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
-    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
     SlimeGrade: 4
     MaxLevel: 10

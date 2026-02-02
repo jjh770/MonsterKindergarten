@@ -18,13 +18,13 @@ public class AccountEmailSpecification
     {
         if (string.IsNullOrEmpty(email))
         {
-            _errorMessage = "이메일은 비어있을 수 없습니다.";
+            _errorMessage = "<color=#FF5F5F>이메일</color>은 비어있을 수\n 없습니다.";
             return false;
         }
 
         if (!EmailRegex.IsMatch(email))
         {
-            _errorMessage = "올바르지 않은 이메일 형식입니다.";
+            _errorMessage = "올바르지 않은\n<color=#FF5F5F>이메일 형식</color>입니다.";
             return false;
         }
 

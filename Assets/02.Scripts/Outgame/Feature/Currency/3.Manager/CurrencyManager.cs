@@ -39,7 +39,7 @@ public class CurrencyManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        _repository = new LocalCurrencyRepository();
+        _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
     }
 
     private void Start()
