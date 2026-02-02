@@ -40,15 +40,17 @@ public class CurrencyManager : MonoBehaviour
         }
 
         _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
-    }
 
-    private void Start()
-    {
         double[] currencyValues = _repository.Load().Currencies;
         for (int i = 0; i < _currencies.Length; i++)
         {
             _currencies[i] = currencyValues[i];
         }
+    }
+
+    private void Start()
+    {
+
     }
 
     // 재화 조회

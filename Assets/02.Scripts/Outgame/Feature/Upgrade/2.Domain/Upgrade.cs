@@ -41,7 +41,7 @@ public class Upgrade
 
         if (specData.MaxLevel < 0) throw new System.ArgumentException($"최대 레벨은 0보다 커야합니다. : {specData.MaxLevel}");
         if (specData.BaseCost <= 0) throw new System.ArgumentException($"기본 비용은 0보다 크거나 같아야 합니다. : {specData.BaseCost}");
-        if (specData.BasePoint <= 0) throw new System.ArgumentException($"기본 포인트는 0보다 크거나 같아야 합니다. : {specData.BasePoint}");
+        if (specData.BasePoint < 0) throw new System.ArgumentException($"기본 포인트는 0보다 작을 순 없습니다. : {specData.BasePoint}");
         if (specData.CostMultiplier <= 0) throw new System.ArgumentException($"비용 증가량은 0보다 크거나 같아야 합니다. : {specData.CostMultiplier}");
         // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
         if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)

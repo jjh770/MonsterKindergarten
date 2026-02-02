@@ -95,6 +95,7 @@ public class UpgradeManager : MonoBehaviour
             CurrencyManager.Instance.Add(ECurrencyType.Point, cost);
             return false;
         }
+        Save();
         OnDataChanged?.Invoke();
         OnUpgraded?.Invoke(specData.Type, specData.SlimeGrade);
 

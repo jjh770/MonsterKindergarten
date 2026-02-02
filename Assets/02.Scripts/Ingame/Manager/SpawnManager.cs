@@ -61,12 +61,28 @@ public class SpawnManager : MonoBehaviour
     private void Start()
     {
         UpgradeManager.OnUpgraded += OnUpgraded;
+        ApplySavedUpgrades(); // 저장된 레벨 반영
         Spawn();
     }
 
     private void OnDestroy()
     {
         UpgradeManager.OnUpgraded -= OnUpgraded;
+    }
+
+    private void ApplySavedUpgrades()
+    {
+        var intervalUpgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
+        if (intervalUpgrade != null)
+        {
+            SpawnInterval -= _spawnIntervalDecreaseValue * intervalUpgrade.Level;
+        }
+
+        var maxCountUpgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
+        if (maxCountUpgrade != null)
+        {
+            MaxActiveCount += _spawnMaxIncreaseValue * maxCountUpgrade.Level;
+        }
     }
 
     private void OnUpgraded(EUpgradeType type, ESlimeGrade grade)
