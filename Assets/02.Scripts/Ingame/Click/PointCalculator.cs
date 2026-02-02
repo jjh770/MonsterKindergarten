@@ -28,9 +28,9 @@
 
     private static double GetUpgradePoint(EUpgradeType type, ESlimeGrade grade)
     {
-        if (UpgradeManager_Domain.Instance == null) return 0;
+        if (UpgradeManager.Instance == null) return 0;
 
-        var upgrade = UpgradeManager_Domain.Instance.Get(type, grade);
+        var upgrade = UpgradeManager.Instance.Get(type, grade);
         return upgrade?.Point ?? 0;
     }
 }

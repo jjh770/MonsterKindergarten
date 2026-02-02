@@ -39,11 +39,8 @@ public class CurrencyManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        _repository = new LocalCurrencyRepository();
-    }
+        _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
 
-    private void Start()
-    {
         double[] currencyValues = _repository.Load().Currencies;
         for (int i = 0; i < _currencies.Length; i++)
         {

@@ -15,7 +15,7 @@ public class UpgradePanel : MonoBehaviour
         Refresh();
 
         CurrencyManager.Instance.OnDataChanged += RefreshCurrency;
-        UpgradeManager_Domain.OnDataChanged += Refresh;
+        UpgradeManager.OnDataChanged += Refresh;
         if (SlimeSpawner.Instance != null)
             SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
     }
@@ -27,7 +27,7 @@ public class UpgradePanel : MonoBehaviour
 
     private void CreateItems()
     {
-        var upgrades = UpgradeManager_Domain.Instance.GetAll();
+        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
 
         foreach (var upgrade in upgrades)
         {
@@ -46,7 +46,7 @@ public class UpgradePanel : MonoBehaviour
 
     private void Refresh()
     {
-        var upgrades = UpgradeManager_Domain.Instance.GetAll();
+        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
 
         int highestLevel = SlimeSpawner.Instance != null ? SlimeSpawner.Instance.HighestLevel : 1;
 

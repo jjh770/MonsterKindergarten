@@ -1,9 +1,9 @@
-﻿using UnityEngine;
+﻿using System.Runtime.InteropServices;
+using UnityEngine;
 using UnityEngine.Audio;
-
 public class AudioManager : MonoBehaviour
 {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL 
     [DllImport("__Internal")]
     private static extern void RegisterVisibilityChangeEvent();
 #endif

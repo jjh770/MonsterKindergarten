@@ -15,10 +15,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
     {
         _button.onClick.AddListener(OnClickUpgrade);
 
-        if (UpgradeManager.Instance != null)
-        {
-            UpgradeManager.Instance.OnUpgraded += OnUpgraded;
-        }
+        UpgradeManager.OnUpgraded += OnUpgraded;
 
         if (SpawnManager.Instance != null)
         {
@@ -40,10 +37,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
-        {
-            UpgradeManager.Instance.OnUpgraded -= OnUpgraded;
-        }
+        UpgradeManager.OnUpgraded -= OnUpgraded;
 
         if (SpawnManager.Instance != null)
         {
@@ -69,7 +63,9 @@ public class SpawnMaxButtonUI : MonoBehaviour
     private void UpdateButtonState()
     {
         if (UpgradeManager.Instance == null) return;
-        bool isMax = UpgradeManager.Instance.IsMaxLevel(UpgradeType.SpawnMax);
+        var upgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
+        if (upgrade == null) return;
+        bool isMax = upgrade.IsMaxLevel;
         _button.interactable = !isMax;
     }
 
@@ -77,16 +73,19 @@ public class SpawnMaxButtonUI : MonoBehaviour
     {
         if (UpgradeManager.Instance == null) return;
 
-        if (!UpgradeManager.Instance.TryUpgrade(UpgradeType.SpawnMax))
+        if (!UpgradeManager.Instance.TryLevelUp(EUpgradeType.MaxCountAdd, ESlimeGrade.None))
         {
-            double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnMax);
-            NotEnoughPointPopupUI.Instance?.Show(cost);
+            var upgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
+            if (upgrade != null)
+            {
+                NotEnoughPointPopupUI.Instance?.Show((double)upgrade.Cost);
+            }
         }
     }
 
-    private void OnUpgraded(UpgradeType type, int level, double cost)
+    private void OnUpgraded(EUpgradeType type, ESlimeGrade grade)
     {
-        if (type == UpgradeType.SpawnMax)
+        if (type == EUpgradeType.MaxCountAdd)
         {
             UpdateUI();
         }
@@ -107,7 +106,10 @@ public class SpawnMaxButtonUI : MonoBehaviour
     {
         if (UpgradeManager.Instance == null || SpawnManager.Instance == null) return;
 
-        bool isMax = UpgradeManager.Instance.IsMaxLevel(UpgradeType.SpawnMax);
+        var upgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
+        if (upgrade == null) return;
+
+        bool isMax = upgrade.IsMaxLevel;
         int maxCount = SpawnManager.Instance.MaxActiveCount;
 
         if (_spawnMaxText != null)
@@ -130,7 +132,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
             }
             else
             {
-                double cost = UpgradeManager.Instance.GetCost(UpgradeType.SpawnMax);
+                double cost = (double)upgrade.Cost;
                 _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
             }
         }

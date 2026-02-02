@@ -13,72 +13,26 @@ public class AccountManager : MonoBehaviour
     public bool IsLogin => _currentAccount != null;
     public string Email => _currentAccount?.Email ?? string.Empty;
 
+    private IAccountRepository _repository;
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        _repository = new LocalAccountRepository();
     }
 
 
     public AuthResult TryLogin(string email, string password)
     {
-        Account account = null;
-
-        try
-        {
-            account = new Account(email, password);
-        }
-        catch (Exception ex)
-        {
-            return new AuthResult
-            {
-                Success = false,
-                ErrorMessage = ex.Message,
-            };
-        }
-
-        // 2. 가입한적 없다면 실패!
-        if (!PlayerPrefs.HasKey(email))
-        {
-            return new AuthResult
-            {
-                Success = false,
-                ErrorMessage = "아이디와 비밀번호를 확인해주세요.",
-            };
-        }
-
-        // 3. 비밀번호 틀렸다면 실패.
-        string myPassword = PlayerPrefs.GetString(email);
-        if (myPassword != account.Password)
-        {
-            return new AuthResult
-            {
-                Success = false,
-                ErrorMessage = "아이디와 비밀번호를 확인해주세요.",
-            };
-        }
-
-        _currentAccount = account;
-
-        return new AuthResult
-        {
-            Success = true,
-            Account = _currentAccount,
-        };
-    }
-
-    public AuthResult TryRegister(string email, string password)
-    {
-        // 1. 이메일 중복검사
-        if (PlayerPrefs.HasKey(email))
-        {
-            return new AuthResult
-            {
-                Success = false,
-                ErrorMessage = "중복된 계정입니다.",
-            };
-        }
-
+        // 1. 유효성 검사
         try
         {
             Account account = new Account(email, password);
@@ -92,17 +46,64 @@ public class AccountManager : MonoBehaviour
             };
         }
 
-        // 3. 성공하면 저장!
-        PlayerPrefs.SetString(email, password);
-
-        return new AuthResult()
+        // 2. 레포지토리를 이용한 로그인
+        AuthResult result = _repository.Login(email, password);
+        if (result.Success)
         {
-            Success = true,
-        };
+            _currentAccount = result.Account;
+            return new AuthResult
+            {
+                Success = true,
+                Account = _currentAccount,
+            };
+        }
+        else
+        {
+            return new AuthResult
+            {
+                Success = false,
+                ErrorMessage = result.ErrorMessage,
+            };
+        }
+    }
+
+    public AuthResult TryRegister(string email, string password)
+    {
+        // 1. 유효성 검사
+        try
+        {
+            Account account = new Account(email, password);
+        }
+        catch (Exception ex)
+        {
+            return new AuthResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message,
+            };
+        }
+
+        // 2. 레포지토리를 이용한 회원가입
+        AuthResult result = _repository.Register(email, password);
+        if (result.Success)
+        {
+            return new AuthResult
+            {
+                Success = true
+            };
+        }
+        else
+        {
+            return new AuthResult
+            {
+                Success = false,
+                ErrorMessage = result.ErrorMessage,
+            };
+        }
     }
 
     public void Logout()
     {
-
+        _repository.Logout();
     }
 }
