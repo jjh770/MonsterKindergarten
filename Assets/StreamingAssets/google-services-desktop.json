@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "488583529454",
+    "project_id": "monsterkindergarten-ff1b2",
+    "storage_bucket": "monsterkindergarten-ff1b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488583529454:android:e5c375e9b6daceca1f04ff",
+        "android_client_info": {
+          "package_name": "com.skku_say.Monster_Kindergarten"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr7omn1gFPtUq2cQl821japi19KBjIu3Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
