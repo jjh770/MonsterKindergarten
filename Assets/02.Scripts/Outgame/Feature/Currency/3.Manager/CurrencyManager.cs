@@ -28,7 +28,7 @@ public class CurrencyManager : MonoBehaviour
     //public Currency Point { get; private set; }
     public event Action<ECurrencyType, Currency> OnDataChanged;
 
-    private void Awake()
+    private async void Awake()
     {
         if (Instance == null)
         {
@@ -39,9 +39,11 @@ public class CurrencyManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
+        // _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
+        _repository = new FirebaseCurrencyRepository();
 
-        double[] currencyValues = _repository.Load().Currencies;
+        CurrencySaveData saveData = await _repository.Load();
+        double[] currencyValues = saveData.Currencies;
         for (int i = 0; i < _currencies.Length; i++)
         {
             _currencies[i] = currencyValues[i];

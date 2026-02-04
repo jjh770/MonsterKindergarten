@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Cysharp.Threading.Tasks;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -44,8 +45,8 @@ public class LobbyScene : MonoBehaviour
     {
         _signupButton.onClick.AddListener(() => ChangeSceneMode(LobbySceneMode.Signup));
         _cancelButton.onClick.AddListener(() => ChangeSceneMode(LobbySceneMode.Login));
-        _loginButton.onClick.AddListener(Login);
-        _registerSignupButton.onClick.AddListener(Signup);
+        _loginButton.onClick.AddListener(() => _ = Login());
+        _registerSignupButton.onClick.AddListener(() => _ = Signup());
     }
 
     private void ChangeSceneMode(LobbySceneMode mode)
@@ -68,12 +69,12 @@ public class LobbyScene : MonoBehaviour
         }
     }
 
-    private void Login()
+    private async UniTask Login()
     {
         string email = _loginEmailInputField.text;
         string password = _loginPasswordInputField.text;
 
-        var result = AccountManager.Instance.TryLogin(email, password);
+        var result = await AccountManager.Instance.TryLogin(email, password);
         if (result.Success)
         {
             SceneManagerEx.Instance.LoadGameScene();
@@ -83,10 +84,9 @@ public class LobbyScene : MonoBehaviour
             _popupText = result.ErrorMessage;
             ShowLobbyPopup();
         }
-
     }
 
-    private void Signup()
+    private async UniTask Signup()
     {
         string email = _signupEmailInputField.text;
         string password = _signupPasswordInputField.text;
@@ -108,7 +108,7 @@ public class LobbyScene : MonoBehaviour
             return;
         }
 
-        var result = AccountManager.Instance.TryRegister(email, password);
+        var result = await AccountManager.Instance.TryRegister(email, password);
         if (result.Success)
         {
             //SuccessSignup();

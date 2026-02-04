@@ -12,6 +12,7 @@
 // 비즈니스 로직은 매니저에게.
 // 저장 로직은 레포지토리에게.
 // 1. 코드가 깔끔해지고 유지보수가 쉬워진다.
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class LocalCurrencyRepository : ICurrencyRepository
@@ -22,7 +23,7 @@ public class LocalCurrencyRepository : ICurrencyRepository
         _userId = userId;
     }
 
-    public void Save(CurrencySaveData saveData)
+    public async UniTaskVoid Save(CurrencySaveData saveData)
     {
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
@@ -33,7 +34,7 @@ public class LocalCurrencyRepository : ICurrencyRepository
         }
     }
 
-    public CurrencySaveData Load()
+    public async UniTask<CurrencySaveData> Load()
     {
         CurrencySaveData data = CurrencySaveData.Default;
         for (int i = 0; i < (int)ECurrencyType.Count; i++)

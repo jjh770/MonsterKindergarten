@@ -1,15 +1,47 @@
-﻿public class FirebaseCurrencyRepository : ICurrencyRepository
+﻿using Cysharp.Threading.Tasks;
+using Firebase.Auth;
+using Firebase.Firestore;
+using System;
+using UnityEngine;
+
+public class FirebaseCurrencyRepository : ICurrencyRepository
 {
-    public void Save(CurrencySaveData saveData)
+    private string CURRENCY_COLLECTION_NAME = "Currency";
+    private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
+    private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
+    public async UniTaskVoid Save(CurrencySaveData saveData)
     {
-        // Firebase : 데이터를 서버에 저장하는 플랫폼
-        // TODO : 차주에 Firebase 수업 후 채워넣기
+        try
+        {
+            string email = _auth.CurrentUser.Email;
+
+            await _db.Collection(CURRENCY_COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
+        }
+        catch (Exception e)
+        {
+            Debug.Log("저장 실패" + e.Message);
+        }
     }
 
-    public CurrencySaveData Load()
+    public async UniTask<CurrencySaveData> Load()
     {
-        // TODO : 차주에 Firebase 수업 후 채워넣기
-        return CurrencySaveData.Default;
-    }
+        try
+        {
+            string email = _auth.CurrentUser.Email;
+            DocumentSnapshot snapshot = await _db.Collection(CURRENCY_COLLECTION_NAME).Document(email).GetSnapshotAsync().AsUniTask();
 
+            CurrencySaveData data = snapshot.ConvertTo<CurrencySaveData>();
+
+            if (data != null)
+            {
+                return data;
+            }
+            return CurrencySaveData.Default;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Currency 로드 실패" + e.Message);
+            return CurrencySaveData.Default;
+        }
+    }
 }
