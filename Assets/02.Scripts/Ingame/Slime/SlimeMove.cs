@@ -14,14 +14,14 @@ public class SlimeMove : MonoBehaviour
 
     private Rigidbody2D _rb;
     private Vector2 _lastVelocity;
-    private Slime _slime;
+    private SlimeController _slime;
     private Vector3 _rightVector = Vector3.zero;
     private Vector3 _leftVector = new Vector3(0, 180, 0);
     private Coroutine _moveCoroutine;
 
     private void Start()
     {
-        _slime = GetComponent<Slime>();
+        _slime = GetComponent<SlimeController>();
         _rb = GetComponent<Rigidbody2D>();
 
         _slime.OnInteracted += OnInteracted;

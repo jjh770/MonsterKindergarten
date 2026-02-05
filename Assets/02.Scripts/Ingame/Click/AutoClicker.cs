@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class AutoClicker : MonoBehaviour
 {
-    private Dictionary<Slime, float> _timers = new Dictionary<Slime, float>();
-    private HashSet<Slime> _activeTargetsCache = new HashSet<Slime>();
+    private Dictionary<SlimeController, float> _timers = new Dictionary<SlimeController, float>();
+    private HashSet<SlimeController> _activeTargetsCache = new HashSet<SlimeController>();
 
     private void Update()
     {
@@ -39,7 +39,7 @@ public class AutoClicker : MonoBehaviour
         }
     }
 
-    private void AutoClick(Slime target)
+    private void AutoClick(SlimeController target)
     {
         ClickInfo clickInfo = new ClickInfo
         {
@@ -52,7 +52,7 @@ public class AutoClicker : MonoBehaviour
         target.OnClick(clickInfo);
     }
 
-    private void CleanupTimers(List<Slime> activeTargets)
+    private void CleanupTimers(List<SlimeController> activeTargets)
     {
         // 매 프레임마다 HashSet을 생성하지 않고 미리 캐싱해둔 HashSet을 재사용
         _activeTargetsCache.Clear();
@@ -62,7 +62,7 @@ public class AutoClicker : MonoBehaviour
             _activeTargetsCache.Add(target);
         }
 
-        var keysToRemove = new List<Slime>();
+        var keysToRemove = new List<SlimeController>();
 
         foreach (var key in _timers.Keys)
         {
@@ -78,7 +78,7 @@ public class AutoClicker : MonoBehaviour
         }
     }
 
-    public void ResetTimer(Slime target)
+    public void ResetTimer(SlimeController target)
     {
         if (_timers.ContainsKey(target))
         {

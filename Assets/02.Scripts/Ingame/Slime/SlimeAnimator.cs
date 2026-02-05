@@ -5,7 +5,7 @@ public class SlimeAnimator : MonoBehaviour
     [SerializeField] private Animator _animator;
     [SerializeField] private AnimatorOverrideController[] _levelAnimators;
 
-    private Slime _slime;
+    private SlimeController _slime;
     private Rigidbody2D _rb;
 
     private static readonly int IsMoving = Animator.StringToHash("IsMoving");
@@ -13,7 +13,7 @@ public class SlimeAnimator : MonoBehaviour
 
     private void Awake()
     {
-        _slime = GetComponent<Slime>();
+        _slime = GetComponent<SlimeController>();
         _rb = GetComponent<Rigidbody2D>();
 
         if (_animator == null)

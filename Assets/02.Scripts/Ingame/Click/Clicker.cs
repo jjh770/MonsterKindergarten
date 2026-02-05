@@ -9,7 +9,7 @@ public class Clicker : MonoBehaviour
     [SerializeField] private Vector2 _dragMinBounds = new Vector2(-5f, -3f);
     [SerializeField] private Vector2 _dragMaxBounds = new Vector2(5f, 3f);
 
-    private Slime _selectedTarget;
+    private SlimeController _selectedTarget;
     private Camera _mainCamera;
     private Vector2 _mouseDownPos;
     private float _mouseDownTime;
@@ -47,7 +47,7 @@ public class Clicker : MonoBehaviour
 
         if (hit)
         {
-            Slime clickTarget = hit.collider.GetComponent<Slime>();
+            SlimeController clickTarget = hit.collider.GetComponent<SlimeController>();
             if (clickTarget != null)
             {
                 _selectedTarget = clickTarget;
