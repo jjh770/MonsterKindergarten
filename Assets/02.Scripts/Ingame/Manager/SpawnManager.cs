@@ -61,13 +61,13 @@ public class SpawnManager : MonoBehaviour
     private void Start()
     {
         UpgradeManager.OnUpgraded += OnUpgraded;
-        ApplySavedUpgrades(); // 저장된 레벨 반영
-        Spawn();
+        UpgradeManager.OnDataInitialized += OnDataInitialized;
     }
 
     private void OnDestroy()
     {
         UpgradeManager.OnUpgraded -= OnUpgraded;
+        UpgradeManager.OnDataInitialized -= OnDataInitialized;
     }
 
     private void ApplySavedUpgrades()
@@ -98,6 +98,11 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    private void OnDataInitialized()
+    {
+        ApplySavedUpgrades(); // 저장된 레벨 반영
+        Spawn();
+    }
     private void Update()
     {
         if (SlimeSpawner.Instance != null &&

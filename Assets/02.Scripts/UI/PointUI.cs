@@ -12,6 +12,7 @@ public class PointUI : MonoBehaviour
         if (CurrencyManager.Instance != null)
         {
             CurrencyManager.Instance.OnDataChanged += OnPointChanged;
+            CurrencyManager.Instance.OnDataInitialized += OnDataInitialized;
         }
 
         if (SlimeSpawner.Instance != null)
@@ -28,12 +29,18 @@ public class PointUI : MonoBehaviour
         if (CurrencyManager.Instance != null)
         {
             CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
+            CurrencyManager.Instance.OnDataInitialized -= OnDataInitialized;
         }
 
         if (SlimeSpawner.Instance != null)
         {
             SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
         }
+    }
+
+    private void OnDataInitialized()
+    {
+        UpdateUI();
     }
 
     private void OnPointChanged(ECurrencyType type, Currency point)

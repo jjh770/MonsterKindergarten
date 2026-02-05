@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class UpgradeManager : MonoBehaviour
 
     // 이벤트는 도메인이 아닌 매니저가 가져야함.
     public static event Action OnDataChanged;
+    public static event Action OnDataInitialized;
     // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
     public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
     [SerializeField] private UpgradeSpecTableSO _specTable;
@@ -24,15 +26,20 @@ public class UpgradeManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        // _repository = new JsonUpgradeRepository(AccountManager.Instance.Email);
 
-        _repository = new JsonUpgradeRepository(AccountManager.Instance.Email);
+        _repository = new FirebaseUpgradeRepository();
+        _ = InitAsync();
+    }
 
-        var saveData = _repository.Load();
+    private async UniTaskVoid InitAsync()
+    {
+        var saveData = await _repository.Load();
         // Entries를 딕셔너리로 변환해서 빠르게 조회
         var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
         foreach (var entry in saveData.Entries)
         {
-            savedLevels[(entry.Type, entry.Grade)] = entry.Level;
+            savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
         }
 
         foreach (var specData in _specTable.Datas)
@@ -48,6 +55,7 @@ public class UpgradeManager : MonoBehaviour
         }
 
         OnDataChanged?.Invoke();
+        OnDataInitialized?.Invoke();
     }
 
     // 업그레이드를 가져오기
@@ -129,13 +137,8 @@ public class UpgradeManager : MonoBehaviour
         var data = new UpgradeSaveData();
         foreach (var pair in _upgrades)
         {
-            data.Entries.Add(new UpgradeEntry
-            {
-                Type = pair.Key.Item1,
-                Grade = pair.Key.Item2,
-                Level = pair.Value.Level
-            });
+            data.Entries.Add(new UpgradeEntry(pair.Key.Item1, pair.Key.Item2, pair.Value.Level));
         }
-        _repository.Save(data);
+        _repository.Save(data).Forget();
     }
 }

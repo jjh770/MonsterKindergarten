@@ -16,6 +16,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
         _button.onClick.AddListener(OnClickUpgrade);
 
         UpgradeManager.OnUpgraded += OnUpgraded;
+        UpgradeManager.OnDataInitialized += OnDataInitialized;
 
         if (SpawnManager.Instance != null)
         {
@@ -31,13 +32,12 @@ public class SpawnMaxButtonUI : MonoBehaviour
         {
             SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
         }
-
-        UpdateUI();
     }
 
     private void OnDestroy()
     {
         UpgradeManager.OnUpgraded -= OnUpgraded;
+        UpgradeManager.OnDataInitialized -= OnDataInitialized;
 
         if (SpawnManager.Instance != null)
         {
@@ -99,6 +99,11 @@ public class SpawnMaxButtonUI : MonoBehaviour
     private void OnHighestLevelChanged(int level)
     {
         _levelIndex = level - 1;
+        UpdateUI();
+    }
+
+    private void OnDataInitialized()
+    {
         UpdateUI();
     }
 

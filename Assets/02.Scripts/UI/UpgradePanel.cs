@@ -11,17 +11,31 @@ public class UpgradePanel : MonoBehaviour
 
     private void Start()
     {
-        CreateItems();
-        Refresh();
-
         CurrencyManager.Instance.OnDataChanged += RefreshCurrency;
+        CurrencyManager.Instance.OnDataInitialized += Refresh;
         UpgradeManager.OnDataChanged += Refresh;
+        UpgradeManager.OnDataInitialized += OnDataInitialized;
         if (SlimeSpawner.Instance != null)
             SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
+    }
+    private void OnDestroy()
+    {
+        CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
+        CurrencyManager.Instance.OnDataInitialized -= Refresh;
+        UpgradeManager.OnDataChanged -= Refresh;
+        UpgradeManager.OnDataInitialized -= OnDataInitialized;
+        if (SlimeSpawner.Instance != null)
+            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
     }
 
     private void OnHighestLevelChanged(int level)
     {
+        Refresh();
+    }
+
+    private void OnDataInitialized()
+    {
+        CreateItems();
         Refresh();
     }
 

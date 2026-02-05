@@ -1,20 +1,44 @@
-﻿using System;
+using Firebase.Firestore;
+using System;
 using System.Collections.Generic;
 
 [Serializable]
-public struct UpgradeEntry
+[FirestoreData]
+public class UpgradeEntry
 {
-    public EUpgradeType Type;
-    public ESlimeGrade Grade;
-    public int Level;
+    [FirestoreProperty]
+    public int Type { get; set; }
+
+    [FirestoreProperty]
+    public int Grade { get; set; }
+
+    [FirestoreProperty]
+    public int Level { get; set; }
+
+    // Firebase 역직렬화용 기본 생성자
+    public UpgradeEntry() { }
+
+    public UpgradeEntry(EUpgradeType type, ESlimeGrade grade, int level)
+    {
+        Type = (int)type;
+        Grade = (int)grade;
+        Level = level;
+    }
+
+    public EUpgradeType GetUpgradeType() => (EUpgradeType)Type;
+    public ESlimeGrade GetSlimeGrade() => (ESlimeGrade)Grade;
 }
 
 [Serializable]
+[FirestoreData]
 public class UpgradeSaveData
 {
     // 레벨 배열 (EUpgradeType 순서대로 저장)
-    public List<UpgradeEntry> Entries = new();
-    public string LastSaveTime;
+    [FirestoreProperty]
+    public List<UpgradeEntry> Entries { get; set; } = new();
+
+    [FirestoreProperty]
+    public string LastSaveTime { get; set; }
 
     /// <summary>기본값 (새 게임)</summary>
     public static UpgradeSaveData Default => new UpgradeSaveData

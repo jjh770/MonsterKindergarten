@@ -27,6 +27,7 @@ public class CurrencyManager : MonoBehaviour
 
     //public Currency Point { get; private set; }
     public event Action<ECurrencyType, Currency> OnDataChanged;
+    public event Action OnDataInitialized;
 
     private async void Awake()
     {
@@ -48,6 +49,8 @@ public class CurrencyManager : MonoBehaviour
         {
             _currencies[i] = currencyValues[i];
         }
+
+        OnDataInitialized?.Invoke();
     }
 
     // 재화 조회
