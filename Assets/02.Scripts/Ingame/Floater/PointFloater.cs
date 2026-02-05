@@ -2,7 +2,6 @@
 using Lean.Pool;
 using TMPro;
 using UnityEngine;
-using Utility;
 
 public class PointFloater : MonoBehaviour
 {
@@ -20,15 +19,15 @@ public class PointFloater : MonoBehaviour
         _pool = pool;
     }
 
-    public void Play(double point, Vector2 position, int level)
+    public void Play(ClickInfo clickInfo)
     {
-        _levelIndex = level - 1;
-        _text.text = $"<sprite={_levelIndex}>{point.ToFormattedString()}";
+        _levelIndex = (int)clickInfo.Grade - 1;
+        _text.text = $"<sprite={_levelIndex}>{clickInfo.Point}";
         _text.alpha = 1f;
 
         // 위로 떠오르면서 페이드아웃
-        transform.DOMoveY(position.y + _floatDistance, _duration).SetEase(_floatEase);
-        transform.DOMoveX(position.x + UnityEngine.Random.Range(-_sideDistance, _sideDistance), _duration).SetEase(_floatEase);
+        transform.DOMoveY(clickInfo.Position.y + _floatDistance, _duration).SetEase(_floatEase);
+        transform.DOMoveX(clickInfo.Position.x + UnityEngine.Random.Range(-_sideDistance, _sideDistance), _duration).SetEase(_floatEase);
         _text.DOFade(0f, _duration).SetEase(_fadeEase).OnComplete(() =>
         {
             _pool.Despawn(gameObject);

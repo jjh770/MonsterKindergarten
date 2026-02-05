@@ -28,6 +28,6 @@ public class PointFloaterSpawner : MonoBehaviour
         // 2. 풀 참조 설정
         floater.SetPool(_pool);
         // 3. 클릭한 위치에 생성하기
-        floater.Play(clickInfo.Point, clickInfo.Position, clickInfo.Level);
+        floater.Play(clickInfo);
     }
 }

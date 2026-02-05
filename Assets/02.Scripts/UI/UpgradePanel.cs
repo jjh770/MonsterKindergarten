@@ -16,7 +16,7 @@ public class UpgradePanel : MonoBehaviour
         UpgradeManager.OnDataChanged += Refresh;
         UpgradeManager.OnDataInitialized += OnDataInitialized;
         if (SlimeSpawner.Instance != null)
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
+            SlimeSpawner.OnHighestLevelChanged += OnHighestLevelChanged;
     }
     private void OnDestroy()
     {
@@ -25,10 +25,10 @@ public class UpgradePanel : MonoBehaviour
         UpgradeManager.OnDataChanged -= Refresh;
         UpgradeManager.OnDataInitialized -= OnDataInitialized;
         if (SlimeSpawner.Instance != null)
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
+            SlimeSpawner.OnHighestLevelChanged -= OnHighestLevelChanged;
     }
 
-    private void OnHighestLevelChanged(int level)
+    private void OnHighestLevelChanged(ESlimeGrade grade)
     {
         Refresh();
     }
@@ -62,12 +62,11 @@ public class UpgradePanel : MonoBehaviour
     {
         var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
 
-        int highestLevel = SlimeSpawner.Instance != null ? SlimeSpawner.Instance.HighestLevel : 1;
+        ESlimeGrade highestLevel = SlimeSpawner.Instance != null ? SlimeSpawner.Instance.HighestGrade : ESlimeGrade.Grade1;
 
         for (int i = 0; i < _items.Count; ++i)
         {
-            bool isUnlocked = (int)upgrades[i].SpecData.SlimeGrade <= highestLevel
-                              || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
+            bool isUnlocked = upgrades[i].SpecData.SlimeGrade <= highestLevel || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
             _items[i].Refresh(upgrades[i], isUnlocked);
         }
     }

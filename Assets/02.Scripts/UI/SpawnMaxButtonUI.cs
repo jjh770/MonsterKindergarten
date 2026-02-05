@@ -9,7 +9,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _spawnMaxText;
     [SerializeField] private TextMeshProUGUI _costText;
 
-    private int _levelIndex = 0;
+    private int _gradeIndex = 0;
 
     private void Start()
     {
@@ -27,11 +27,6 @@ public class SpawnMaxButtonUI : MonoBehaviour
         {
             CurrencyManager.Instance.OnDataChanged += OnPointChanged;
         }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
-        }
     }
 
     private void OnDestroy()
@@ -47,11 +42,6 @@ public class SpawnMaxButtonUI : MonoBehaviour
         if (CurrencyManager.Instance != null)
         {
             CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
         }
     }
 
@@ -96,9 +86,9 @@ public class SpawnMaxButtonUI : MonoBehaviour
         UpdateUI();
     }
 
-    private void OnHighestLevelChanged(int level)
+    private void OnHighestLevelChanged(ESlimeGrade grade)
     {
-        _levelIndex = level - 1;
+        _gradeIndex = (int)grade;
         UpdateUI();
     }
 
@@ -133,12 +123,12 @@ public class SpawnMaxButtonUI : MonoBehaviour
         {
             if (isMax)
             {
-                _costText.text = $"<sprite={_levelIndex}>MAX";
+                _costText.text = $"<sprite={_gradeIndex}>MAX";
             }
             else
             {
                 double cost = (double)upgrade.Cost;
-                _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
+                _costText.text = $"<sprite={_gradeIndex}>{cost.ToFormattedString()}";
             }
         }
 

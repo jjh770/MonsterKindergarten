@@ -5,7 +5,7 @@ public class PointUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _pointText;
 
-    private int _highestLevel = 1;
+    private ESlimeGrade _highestGrade = ESlimeGrade.Grade1;
 
     private void Start()
     {
@@ -17,8 +17,7 @@ public class PointUI : MonoBehaviour
 
         if (SlimeSpawner.Instance != null)
         {
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
-            _highestLevel = SlimeSpawner.Instance.HighestLevel;
+            _highestGrade = SlimeSpawner.Instance.HighestGrade;
         }
 
         UpdateUI();
@@ -30,11 +29,6 @@ public class PointUI : MonoBehaviour
         {
             CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
             CurrencyManager.Instance.OnDataInitialized -= OnDataInitialized;
-        }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
         }
     }
 
@@ -48,17 +42,11 @@ public class PointUI : MonoBehaviour
         UpdateUI();
     }
 
-    private void OnHighestLevelChanged(int level)
-    {
-        _highestLevel = level;
-        UpdateUI();
-    }
-
     private void UpdateUI()
     {
         if (_pointText != null && GameManager.Instance != null)
         {
-            int spriteIndex = _highestLevel - 1;
+            int spriteIndex = (int)_highestGrade;
             // 최종 사용자 입장에서 double은 그냥 숫자일 뿐이지 '재화'인지 모름
             // 재화는 0미만일 수 없지만, 음수가 가능해질 수 있음.
             // 재화는 표현할 떄 무조건 ToFormattinedString()을 써야함. 하지만 ToString() 과 같이 임의로 수행할 수 있음.

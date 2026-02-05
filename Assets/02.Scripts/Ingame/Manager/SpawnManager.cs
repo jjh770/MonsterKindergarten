@@ -62,12 +62,14 @@ public class SpawnManager : MonoBehaviour
     {
         UpgradeManager.OnUpgraded += OnUpgraded;
         UpgradeManager.OnDataInitialized += OnDataInitialized;
+        SlimeManager.OnDataInitialized += OnDataInitialized;
     }
 
     private void OnDestroy()
     {
         UpgradeManager.OnUpgraded -= OnUpgraded;
         UpgradeManager.OnDataInitialized -= OnDataInitialized;
+        SlimeManager.OnDataInitialized -= OnDataInitialized;
     }
 
     private void ApplySavedUpgrades()
@@ -82,6 +84,22 @@ public class SpawnManager : MonoBehaviour
         if (maxCountUpgrade != null)
         {
             MaxActiveCount += _spawnMaxIncreaseValue * maxCountUpgrade.Level;
+        }
+    }
+
+
+    private void InitSlimeSpawns()
+    {
+        SlimeStatus status = SlimeManager.Instance.Status;
+
+        foreach (var item in status.ActiveSlimes)
+        {
+            int count = item.Value;
+
+            for (int i = 0; i < count; ++i)
+            {
+                Spawn(item.Key);
+            }
         }
     }
 
@@ -101,7 +119,8 @@ public class SpawnManager : MonoBehaviour
     private void OnDataInitialized()
     {
         ApplySavedUpgrades(); // 저장된 레벨 반영
-        Spawn();
+        InitSlimeSpawns();
+        Spawn(ESlimeGrade.Grade1);
     }
     private void Update()
     {
@@ -117,15 +136,15 @@ public class SpawnManager : MonoBehaviour
         if (_timer >= _spawnInterval)
         {
             _timer = 0f;
-            Spawn();
+            Spawn(ESlimeGrade.Grade1);
             OnSpawned?.Invoke();
         }
 
         if (!Input.GetKeyDown(KeyCode.F1)) return;
-        Spawn();
+        Spawn(ESlimeGrade.Grade1);
     }
 
-    public Slime Spawn()
+    public SlimeController Spawn(ESlimeGrade grade)
     {
         if (SlimeSpawner.Instance == null) return null;
 
@@ -134,10 +153,10 @@ public class SpawnManager : MonoBehaviour
             UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y)
         );
 
-        return SlimeSpawner.Instance.Spawn(randomPos);
+        return SlimeSpawner.Instance.Spawn(grade, randomPos);
     }
 
-    public void Despawn(Slime target)
+    public void Despawn(SlimeController target)
     {
         if (SlimeSpawner.Instance == null) return;
 
@@ -155,5 +174,5 @@ public class SpawnManager : MonoBehaviour
     }
     public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();
 
-    public List<Slime> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
+    public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

@@ -11,11 +11,12 @@ public class SlimeSpawner : MonoBehaviour
     [SerializeField] private float _dropDuration = 0.5f;
     [SerializeField] private Ease _dropEase = Ease.OutBounce;
 
-    public event Action<int> OnHighestLevelChanged;
-    public int HighestLevel { get; private set; } = 1;
+    public ESlimeGrade HighestGrade { get; private set; }
 
     private LeanGameObjectPool _pool;
-    private List<Slime> _activeTargets = new List<Slime>();
+    private List<SlimeController> _activeTargets = new List<SlimeController>();
+
+    public static Action<ESlimeGrade> OnHighestLevelChanged;
 
     private void Awake()
     {
@@ -32,65 +33,36 @@ public class SlimeSpawner : MonoBehaviour
         _pool = GetComponent<LeanGameObjectPool>();
     }
 
-    public Slime Spawn(Vector2 position)
+    public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position)
     {
         Vector2 startPosition = new Vector2(position.x, position.y + _dropHeight);
         GameObject slimeObject = _pool.Spawn(startPosition, Quaternion.identity);
-        Slime slime = slimeObject.GetComponent<Slime>();
-        slime.OnSpawn();
-        slime.OnLevelChanged += OnSlimeLevelChanged;
+
+        SlimeController slimeController = slimeObject.GetComponent<SlimeController>();
+        Slime startSlime = SlimeManager.Instance.Get(slimeGrade);
+
+        slimeController.SetSlime(startSlime);
+        SlimeManager.Instance.TryUpdateHighestLevel(startSlime.SpecData.Grade);
+        slimeController.OnSpawn();
 
         // 위에서 떨어지는 효과
         slimeObject.transform.DOMoveY(position.y, _dropDuration).SetEase(_dropEase);
 
-        _activeTargets.Add(slime);
-        return slime;
+        _activeTargets.Add(slimeController);
+        return slimeController;
     }
 
-    public void Despawn(Slime target)
+    public void Despawn(SlimeController target)
     {
         if (target == null) return;
 
-        int despawnedLevel = target.Level;
-        target.OnLevelChanged -= OnSlimeLevelChanged;
+        ESlimeGrade despawnedGrade = target.Grade;
         target.OnDespawn();
         _activeTargets.Remove(target);
         _pool.Despawn(target.gameObject);
-
-        if (despawnedLevel >= HighestLevel)
-        {
-            RecalculateHighestLevel();
-        }
-    }
-
-    private void OnSlimeLevelChanged(int level)
-    {
-        if (level > HighestLevel)
-        {
-            HighestLevel = level;
-            OnHighestLevelChanged?.Invoke(HighestLevel);
-        }
-    }
-
-    private void RecalculateHighestLevel()
-    {
-        int highest = 1;
-        foreach (var slime in _activeTargets)
-        {
-            if (slime != null && slime.Level > highest)
-            {
-                highest = slime.Level;
-            }
-        }
-
-        if (highest != HighestLevel)
-        {
-            HighestLevel = highest;
-            OnHighestLevelChanged?.Invoke(HighestLevel);
-        }
     }
 
     public int GetActiveCount() => _activeTargets.Count;
 
-    public List<Slime> GetActiveTargets() => _activeTargets;
+    public List<SlimeController> GetActiveTargets() => _activeTargets;
 }

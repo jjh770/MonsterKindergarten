@@ -19,18 +19,18 @@ public class MergeManager : MonoBehaviour
         }
     }
 
-    public bool CanMerge(Slime target1, Slime target2)
-    {
-        return target1 != null && target2 != null && target1 != target2 && target1.Level == target2.Level && target1.Level < _maxLevel;
-    }
 
-    public void Merge(Slime keeper, Slime removed)
+    public void Merge(SlimeController keeper, SlimeController removed)
     {
-        if (!CanMerge(keeper, removed)) return;
+        // UI나 게임 오브젝트에는 규칙이 들어가면 안된다.
+        // 규칙의 표현에 있어서만 로직이 들어간다.
 
-        keeper.LevelUp();
+        if (!SlimeManager.Instance.CanMerge(keeper.Slime, removed.Slime)) return;
+
+        Slime nextSlime = SlimeManager.Instance.Get(keeper.Slime.SpecData.Grade + 1);
+        keeper.SetSlime(nextSlime);
         keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
-
+        SlimeManager.Instance.TryUpdateHighestLevel(nextSlime.SpecData.Grade);
         SpawnManager.Instance.Despawn(removed);
     }
 }

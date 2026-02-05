@@ -27,11 +27,6 @@ public class SpawnIntervalButtonUI : MonoBehaviour
         {
             CurrencyManager.Instance.OnDataChanged += OnPointChanged;
         }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
-        }
     }
 
     private void OnDestroy()
@@ -47,11 +42,6 @@ public class SpawnIntervalButtonUI : MonoBehaviour
         if (CurrencyManager.Instance != null)
         {
             CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
         }
     }
 
@@ -93,12 +83,6 @@ public class SpawnIntervalButtonUI : MonoBehaviour
 
     private void OnIntervalChanged(float interval, float minInterval)
     {
-        UpdateUI();
-    }
-
-    private void OnHighestLevelChanged(int level)
-    {
-        _levelIndex = level - 1;
         UpdateUI();
     }
 

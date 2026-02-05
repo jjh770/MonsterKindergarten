@@ -146,6 +146,13 @@ public class LobbyScene : MonoBehaviour
                         _signupEmailInputField.Select();
                 }
             }
+            if (Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                if (_mode == LobbySceneMode.Login)
+                {
+                    _ = Login();
+                }
+            }
             yield return null;
         }
     }

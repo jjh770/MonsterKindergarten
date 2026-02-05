@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54995f24169f1c2439bedcf658e0da77, type: 3}
+  m_Name: SlimeSpecTable
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeSpecTable
+  slimeSpecs:
+  - Name: 1
+    Grade: 1
+    Point: 10
+    AutoClickInterval: 5
+  - Name: 2
+    Grade: 2
+    Point: 20
+    AutoClickInterval: 4.8
+  - Name: 3
+    Grade: 3
+    Point: 40
+    AutoClickInterval: 4.6
+  - Name: 4
+    Grade: 4
+    Point: 120
+    AutoClickInterval: 4.4
+  - Name: 5
+    Grade: 5
+    Point: 240
+    AutoClickInterval: 4.2
+  - Name: 6
+    Grade: 6
+    Point: 720
+    AutoClickInterval: 4
+  - Name: 7
+    Grade: 7
+    Point: 1440
+    AutoClickInterval: 3.8
+  - Name: 8
+    Grade: 8
+    Point: 5320
+    AutoClickInterval: 3.6
+  - Name: 9
+    Grade: 9
+    Point: 10640
+    AutoClickInterval: 3.4
+  - Name: 10
+    Grade: 10
+    Point: 31920
+    AutoClickInterval: 3.2
