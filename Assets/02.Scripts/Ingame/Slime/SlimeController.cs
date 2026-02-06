@@ -1,11 +1,12 @@
 ﻿using System;
 using UnityEngine;
 
-public class Slime : MonoBehaviour, IClickable
+// 슬라임 도메인을 가지고 있고 실제 갖가지 기능을 동작하게하는 슬라임 컨트롤러
+public class SlimeController : MonoBehaviour, IClickable
 {
-    [SerializeField] private string _name;
-    [SerializeField] private int _level = 1;
-    [SerializeField] private MonsterLevelData _levelData;
+    private Slime _slime;
+    public Slime Slime => _slime;
+
     [SerializeField] private AudioClip[] _levelUpSounds;
     [SerializeField] private AudioClip _landSound;
 
@@ -14,23 +15,20 @@ public class Slime : MonoBehaviour, IClickable
 
     private bool _isDragging = false;
 
-    public int Level => _level;
-    public ESlimeGrade Grade => (ESlimeGrade)_level;
+    public ESlimeGrade Grade => _slime.SpecData.Grade;
     public bool IsDragging => _isDragging;
-    public int Point => _levelData != null ? _levelData.GetPoint(_level) : 1;
-    public float AutoClickInterval => _levelData != null ? _levelData.GetAutoClickInterval(_level) : 0f;
+    public int Point => _slime != null ? _slime.SpecData.Point : 1;
+    public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
 
-    public event Action<int> OnLevelChanged;
+    public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnInteracted;
 
-    public void LevelUp()
+    public void SetSlime(Slime slime)
     {
-        _level++;
-        Debug.Log($"{_name} 레벨업! 현재 레벨: {_level}");
-        OnLevelChanged?.Invoke(_level);
+        _slime = slime;
 
+        OnGradeChanged?.Invoke(_slime.SpecData.Grade);
         _randomLevelUpSound = UnityEngine.Random.Range(0, _levelUpSounds.Length);
-
         if (AudioManager.Instance != null && _levelUpSounds != null)
         {
             AudioManager.Instance.PlaySFX(_levelUpSounds[_randomLevelUpSound]);
@@ -39,10 +37,10 @@ public class Slime : MonoBehaviour, IClickable
 
     public void OnSpawn()
     {
-        _level = 1;
+        // _level = 1;
         _isDragging = false;
         _hasLanded = false;
-        OnLevelChanged?.Invoke(_level);
+        //  OnLevelChanged?.Invoke(_level);
     }
 
     public void OnDespawn()
@@ -85,9 +83,9 @@ public class Slime : MonoBehaviour, IClickable
 
         foreach (var hit in hits)
         {
-            Slime other = hit.GetComponent<Slime>();
+            SlimeController other = hit.GetComponent<SlimeController>();
 
-            if (other != null && other != this && other.Level == this.Level)
+            if (other != null && other != this && other.Grade == this.Grade)
             {
                 MergeManager.Instance.Merge(this, other);
                 return;

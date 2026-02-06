@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using Firebase.Auth;
 using Firebase.Firestore;
 using System;
@@ -10,12 +10,11 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
     private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
     private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
 
-    public async UniTaskVoid Save(UpgradeSaveData saveData)
+    public async UniTask Save(UpgradeSaveData saveData)
     {
         try
         {
             string email = _auth.CurrentUser.Email;
-            saveData.LastSaveTime = DateTime.Now.ToString("o");
             await _db.Collection(UPGRADE_COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
         }
         catch (Exception e)

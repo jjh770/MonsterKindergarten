@@ -1,0 +1,55 @@
+﻿using Firebase.Firestore;
+using System;
+using System.Collections.Generic;
+
+[Serializable]
+[FirestoreData]
+public class SlimeEntry
+{
+    [FirestoreProperty]
+    public int Grade { get; set; }
+
+    [FirestoreProperty]
+    public int Count { get; set; }
+
+    public SlimeEntry() { }
+
+    public SlimeEntry(ESlimeGrade grade, int count)
+    {
+        Grade = (int)grade;
+        Count = count;
+    }
+
+    public ESlimeGrade GetGrade() => (ESlimeGrade)Grade;
+}
+
+[Serializable]
+[FirestoreData]
+public class SlimeStatusSaveData : ISaveData
+{
+    [FirestoreProperty]
+    public int HighestGrade { get; set; }
+
+    [FirestoreProperty]
+    public List<SlimeEntry> ActiveSlimes { get; set; } = new();
+
+    public ESlimeGrade GetHighestGrade() => (ESlimeGrade)HighestGrade;
+
+    public Dictionary<ESlimeGrade, int> GetActiveSlimesDict()
+    {
+        var dict = new Dictionary<ESlimeGrade, int>();
+        foreach (var entry in ActiveSlimes)
+        {
+            dict[entry.GetGrade()] = entry.Count;
+        }
+        return dict;
+    }
+
+    public static SlimeStatusSaveData Default => new SlimeStatusSaveData
+    {
+        HighestGrade = (int)ESlimeGrade.Grade1,
+        ActiveSlimes = new List<SlimeEntry>(),
+    };
+
+    public string LastSaveTime { get; set; }
+}

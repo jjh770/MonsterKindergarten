@@ -11,8 +11,8 @@ public class AccountManager : MonoBehaviour
     public static AccountManager Instance { get; private set; }
 
     private Account _currentAccount = null;
-    public bool IsLogin => _currentAccount != null;
-    public string Email => _currentAccount?.Email ?? string.Empty;
+    //public bool IsLogin => _currentAccount != null;
+    public string Email => _currentAccount?.Email;
 
     private IAccountRepository _repository;
 

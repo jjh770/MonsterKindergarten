@@ -9,47 +9,57 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eaeea2c0fa9cdd5489cff900ff94224a, type: 3}
-  m_Name: MonsterLevelData
-  m_EditorClassIdentifier: Assembly-CSharp::MonsterLevelData
-  _levelInfos:
-  - Level: 1
+  m_Script: {fileID: 11500000, guid: 54995f24169f1c2439bedcf658e0da77, type: 3}
+  m_Name: SlimeSpecTable
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeSpecTable
+  slimeSpecs:
+  - Name: 1
+    Grade: 1
     Point: 10
-    AutoClickInterval: 4.9
+    AutoClickInterval: 5
     Sprite: {fileID: 21300000, guid: 2b153a5f3cc3ee846a5725b61d2b865d, type: 3}
-  - Level: 2
+  - Name: 2
+    Grade: 2
     Point: 20
-    AutoClickInterval: 4.7
+    AutoClickInterval: 4.8
     Sprite: {fileID: 21300000, guid: 5ce8d1bb62b42d04492bcdc3ced21459, type: 3}
-  - Level: 3
+  - Name: 3
+    Grade: 3
     Point: 40
-    AutoClickInterval: 4.5
+    AutoClickInterval: 4.6
     Sprite: {fileID: 21300000, guid: b222af5c33ef5b9419651d2ed4eab1b6, type: 3}
-  - Level: 4
-    Point: 80
-    AutoClickInterval: 4.3
+  - Name: 4
+    Grade: 4
+    Point: 120
+    AutoClickInterval: 4.4
     Sprite: {fileID: 21300000, guid: f133a359f93e3cd42a59f4e153c5faa2, type: 3}
-  - Level: 5
+  - Name: 5
+    Grade: 5
     Point: 240
-    AutoClickInterval: 4.1
+    AutoClickInterval: 4.2
     Sprite: {fileID: 21300000, guid: 5e12c4b1d9e1dbb4d9a648801498583f, type: 3}
-  - Level: 6
-    Point: 480
-    AutoClickInterval: 3.9
+  - Name: 6
+    Grade: 6
+    Point: 720
+    AutoClickInterval: 4
     Sprite: {fileID: 21300000, guid: 770663566eef1004f9cfb809696558d5, type: 3}
-  - Level: 7
+  - Name: 7
+    Grade: 7
     Point: 1440
-    AutoClickInterval: 3.9
+    AutoClickInterval: 3.8
     Sprite: {fileID: 21300000, guid: c691518a846b8a64cb1c8eb4e96fff80, type: 3}
-  - Level: 8
-    Point: 2880
-    AutoClickInterval: 3.9
+  - Name: 8
+    Grade: 8
+    Point: 5320
+    AutoClickInterval: 3.6
     Sprite: {fileID: 21300000, guid: 93afa2d1c366aba49b137e8d5100d4a3, type: 3}
-  - Level: 9
-    Point: 8640
-    AutoClickInterval: 3.9
+  - Name: 9
+    Grade: 9
+    Point: 10640
+    AutoClickInterval: 3.4
     Sprite: {fileID: 21300000, guid: 8b4b9f505a142ca4db8851313279c47e, type: 3}
-  - Level: 10
-    Point: 25920
-    AutoClickInterval: 3.9
+  - Name: 10
+    Grade: 10
+    Point: 31920
+    AutoClickInterval: 3.2
     Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}

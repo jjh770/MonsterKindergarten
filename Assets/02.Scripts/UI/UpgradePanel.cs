@@ -5,37 +5,41 @@ public class UpgradePanel : MonoBehaviour
 {
     [SerializeField] private UpgradeItem _itemPrefab;
     [SerializeField] private Transform _content;
-    [SerializeField] private MonsterLevelData _monsterLevelData;
 
     private List<UpgradeItem> _items = new();
+    private bool _isInitialized;
 
     private void Start()
     {
+        GameManager.OnAllDataInitialized += OnAllDataInitialized;
         CurrencyManager.Instance.OnDataChanged += RefreshCurrency;
-        CurrencyManager.Instance.OnDataInitialized += Refresh;
         UpgradeManager.OnDataChanged += Refresh;
-        UpgradeManager.OnDataInitialized += OnDataInitialized;
-        if (SlimeSpawner.Instance != null)
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
-    }
-    private void OnDestroy()
-    {
-        CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
-        CurrencyManager.Instance.OnDataInitialized -= Refresh;
-        UpgradeManager.OnDataChanged -= Refresh;
-        UpgradeManager.OnDataInitialized -= OnDataInitialized;
-        if (SlimeSpawner.Instance != null)
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
+        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+
+        // 이미 초기화가 완료된 경우
+        if (GameManager.Instance.IsAllDataInitialized)
+        {
+            OnAllDataInitialized();
+        }
     }
 
-    private void OnHighestLevelChanged(int level)
+    private void OnDestroy()
     {
+        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
+        CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
+        UpgradeManager.OnDataChanged -= Refresh;
+        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+    }
+
+    private void OnAllDataInitialized()
+    {
+        _isInitialized = true;
+        CreateItems();
         Refresh();
     }
 
-    private void OnDataInitialized()
+    private void OnHighestGradeChanged(ESlimeGrade grade)
     {
-        CreateItems();
         Refresh();
     }
 
@@ -46,8 +50,7 @@ public class UpgradePanel : MonoBehaviour
         foreach (var upgrade in upgrades)
         {
             var item = Instantiate(_itemPrefab, _content);
-            int slimeLevel = (int)upgrade.SpecData.SlimeGrade;
-            item.SetSprite(_monsterLevelData.GetSprite(slimeLevel));
+            item.SetSprite(SlimeManager.Instance.Get(upgrade.SpecData.SlimeGrade)?.SpecData.Sprite);
             item.Refresh(upgrade);
             _items.Add(item);
         }
@@ -60,14 +63,14 @@ public class UpgradePanel : MonoBehaviour
 
     private void Refresh()
     {
-        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
+        if (!_isInitialized) return;
 
-        int highestLevel = SlimeSpawner.Instance != null ? SlimeSpawner.Instance.HighestLevel : 1;
+        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
+        ESlimeGrade highestGrade = SlimeManager.Instance.Status.HighestGrade;
 
         for (int i = 0; i < _items.Count; ++i)
         {
-            bool isUnlocked = (int)upgrades[i].SpecData.SlimeGrade <= highestLevel
-                              || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
+            bool isUnlocked = upgrades[i].SpecData.SlimeGrade <= highestGrade || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
             _items[i].Refresh(upgrades[i], isUnlocked);
         }
     }

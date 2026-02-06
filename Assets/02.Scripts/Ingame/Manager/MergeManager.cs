@@ -19,17 +19,19 @@ public class MergeManager : MonoBehaviour
         }
     }
 
-    public bool CanMerge(Slime target1, Slime target2)
+    public void Merge(SlimeController keeper, SlimeController removed)
     {
-        return target1 != null && target2 != null && target1 != target2 && target1.Level == target2.Level && target1.Level < _maxLevel;
-    }
+        if (!SlimeManager.Instance.CanMerge(keeper.Slime, removed.Slime)) return;
 
-    public void Merge(Slime keeper, Slime removed)
-    {
-        if (!CanMerge(keeper, removed)) return;
+        ESlimeGrade fromGrade = keeper.Slime.SpecData.Grade;
+        ESlimeGrade toGrade = fromGrade + 1;
 
-        keeper.LevelUp();
+        Slime nextSlime = SlimeManager.Instance.Get(toGrade);
+        keeper.SetSlime(nextSlime);
         keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
+
+        SlimeManager.Instance.TryUpdateHighestLevel(toGrade);
+        SlimeManager.Instance.MergeSlime(fromGrade, toGrade);
 
         SpawnManager.Instance.Despawn(removed);
     }

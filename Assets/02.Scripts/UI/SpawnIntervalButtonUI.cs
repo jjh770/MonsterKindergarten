@@ -9,50 +9,38 @@ public class SpawnIntervalButtonUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _spawnIntervalText;
     [SerializeField] private TextMeshProUGUI _costText;
 
-    private int _levelIndex = 0;
+    private ESlimeGrade _highestGrade;
+    private bool _isInitialized;
 
     private void Start()
     {
         _button.onClick.AddListener(OnClickUpgrade);
 
+        GameManager.OnAllDataInitialized += OnAllDataInitialized;
         UpgradeManager.OnUpgraded += OnUpgraded;
-        UpgradeManager.OnDataInitialized += OnDataInitialized;
-
-        if (SpawnManager.Instance != null)
+        SpawnManager.Instance.OnSpawnIntervalChanged += OnIntervalChanged;
+        CurrencyManager.Instance.OnDataChanged += OnPointChanged;
+        SlimeManager.OnHighestGradeChanged += OnHighestLevelChanged;
+        if (GameManager.Instance.IsAllDataInitialized)
         {
-            SpawnManager.Instance.OnSpawnIntervalChanged += OnIntervalChanged;
-        }
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged += OnPointChanged;
-        }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
+            OnAllDataInitialized();
         }
     }
 
     private void OnDestroy()
     {
+        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         UpgradeManager.OnUpgraded -= OnUpgraded;
-        UpgradeManager.OnDataInitialized -= OnDataInitialized;
+        SpawnManager.Instance.OnSpawnIntervalChanged -= OnIntervalChanged;
+        CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
+        SlimeManager.OnHighestGradeChanged -= OnHighestLevelChanged;
+    }
 
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.OnSpawnIntervalChanged -= OnIntervalChanged;
-        }
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        }
-
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
-        }
+    private void OnAllDataInitialized()
+    {
+        _isInitialized = true;
+        _highestGrade = SlimeManager.Instance.Status.HighestGrade;
+        UpdateUI();
     }
 
     private void OnPointChanged(ECurrencyType type, Currency point)
@@ -96,19 +84,16 @@ public class SpawnIntervalButtonUI : MonoBehaviour
         UpdateUI();
     }
 
-    private void OnHighestLevelChanged(int level)
+    private void OnHighestLevelChanged(ESlimeGrade grade)
     {
-        _levelIndex = level - 1;
-        UpdateUI();
-    }
-
-    private void OnDataInitialized()
-    {
+        _highestGrade = grade;
         UpdateUI();
     }
 
     private void UpdateUI()
     {
+        if (!_isInitialized) return;
+
         if (UpgradeManager.Instance == null || SpawnManager.Instance == null) return;
 
         var upgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
@@ -139,12 +124,12 @@ public class SpawnIntervalButtonUI : MonoBehaviour
         {
             if (isMax)
             {
-                _costText.text = $"<sprite={_levelIndex}>MAX";
+                _costText.text = $"<sprite={(int)_highestGrade}>MAX";
             }
             else
             {
                 double cost = (double)upgrade.Cost;
-                _costText.text = $"<sprite={_levelIndex}>{cost.ToFormattedString()}";
+                _costText.text = $"<sprite={(int)_highestGrade}>{cost.ToFormattedString()}";
             }
         }
 

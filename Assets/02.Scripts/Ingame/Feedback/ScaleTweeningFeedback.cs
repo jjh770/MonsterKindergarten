@@ -3,11 +3,11 @@ using UnityEngine;
 
 public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
 {
-    private Slime _owner;
+    private SlimeController _owner;
     private Tween _scaleTween;
     private void Awake()
     {
-        _owner = GetComponent<Slime>();
+        _owner = GetComponent<SlimeController>();
     }
 
     // 역할 : 스케일 트위닝 피드백에 대한 로직을 담당

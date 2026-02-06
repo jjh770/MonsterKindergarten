@@ -7,10 +7,9 @@ using Utility;
 public class UnlockPopupUI : MonoBehaviour
 {
     [SerializeField] private GameObject _popupPanel;
-    [SerializeField] private TextMeshProUGUI _levelText;
-    [SerializeField] private Image _levelImage;
+    [SerializeField] private TextMeshProUGUI _gradeText;
+    [SerializeField] private Image _gradeImage;
     [SerializeField] private Image _whiteGlowImage;
-    [SerializeField] private MonsterLevelData _monsterLevelData;
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
@@ -29,29 +28,11 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void Start()
     {
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged += OnHighestLevelChanged;
-        }
+        SlimeManager.OnHighestGradeChanged += ShowPopup;
         _popupPanel.SetActive(false);
     }
 
-    private void OnDestroy()
-    {
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.OnHighestLevelChanged -= OnHighestLevelChanged;
-        }
-    }
-
-    private void OnHighestLevelChanged(int level)
-    {
-        if (level <= 1) return;
-
-        ShowPopup(level);
-    }
-
-    private void ShowPopup(int level)
+    private void ShowPopup(ESlimeGrade grade)
     {
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
@@ -61,14 +42,14 @@ public class UnlockPopupUI : MonoBehaviour
             AudioManager.Instance.PlaySFX(_unlockSound);
         }
 
-        if (_levelText != null)
+        if (_gradeText != null)
         {
-            _levelText.text = $"Lv.{level} 해금!";
+            _gradeText.text = $"Lv.{(int)grade} 해금!";
         }
 
-        if (_levelImage != null && _monsterLevelData != null)
+        if (_gradeImage != null)
         {
-            _levelImage.sprite = _monsterLevelData.GetSprite(level);
+            _gradeImage.sprite = SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
         }
 
         _whiteGlowImage.transform.DOScale(Vector3.one, 1f);

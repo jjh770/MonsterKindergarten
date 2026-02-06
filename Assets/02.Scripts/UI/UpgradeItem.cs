@@ -72,7 +72,7 @@ public class UpgradeItem : MonoBehaviour
 
         if (UpgradeManager.Instance.CanLevelUp(_upgrade.SpecData))
         {
-            UpgradeManager.Instance.TryLevelUp(_upgrade.SpecData);
+            UpgradeManager.Instance.TryLevelUp(_upgrade.SpecData.Type, _upgrade.SpecData.SlimeGrade);
         }
     }
 }

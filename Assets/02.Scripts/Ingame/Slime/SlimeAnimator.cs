@@ -5,7 +5,7 @@ public class SlimeAnimator : MonoBehaviour
     [SerializeField] private Animator _animator;
     [SerializeField] private AnimatorOverrideController[] _levelAnimators;
 
-    private Slime _slime;
+    private SlimeController _slime;
     private Rigidbody2D _rb;
 
     private static readonly int IsMoving = Animator.StringToHash("IsMoving");
@@ -13,7 +13,7 @@ public class SlimeAnimator : MonoBehaviour
 
     private void Awake()
     {
-        _slime = GetComponent<Slime>();
+        _slime = GetComponent<SlimeController>();
         _rb = GetComponent<Rigidbody2D>();
 
         if (_animator == null)
@@ -24,16 +24,16 @@ public class SlimeAnimator : MonoBehaviour
 
     private void Start()
     {
-        _slime.OnLevelChanged += UpdateAnimator;
+        _slime.OnGradeChanged += UpdateAnimator;
         _slime.OnInteracted += OnInteracted;
-        UpdateAnimator(_slime.Level);
+        UpdateAnimator(_slime.Grade);
     }
 
     private void OnDestroy()
     {
         if (_slime != null)
         {
-            _slime.OnLevelChanged -= UpdateAnimator;
+            _slime.OnGradeChanged -= UpdateAnimator;
             _slime.OnInteracted -= OnInteracted;
         }
     }
@@ -47,12 +47,13 @@ public class SlimeAnimator : MonoBehaviour
         _animator.SetBool(IsDragging, _slime.IsDragging);
     }
 
-    private void UpdateAnimator(int level)
+    private void UpdateAnimator(ESlimeGrade grade)
     {
         if (_levelAnimators == null || _levelAnimators.Length == 0 || _animator == null)
             return;
 
-        int index = Mathf.Clamp(level - 1, 0, _levelAnimators.Length - 1);
+        // TODO 변경 
+        int index = Mathf.Clamp((int)grade - 1, 0, _levelAnimators.Length - 1);
         _animator.runtimeAnimatorController = _levelAnimators[index];
     }
 
