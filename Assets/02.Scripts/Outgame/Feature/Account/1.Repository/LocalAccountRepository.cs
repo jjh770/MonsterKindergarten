@@ -61,7 +61,7 @@ public class LocalAccountRepository : IAccountRepository
         });
     }
 
-    public bool IsEmailAvailable(string email)
+    private bool IsEmailAvailable(string email)
     {
         if (PlayerPrefs.HasKey(email))
         {

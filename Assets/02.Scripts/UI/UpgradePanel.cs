@@ -7,33 +7,39 @@ public class UpgradePanel : MonoBehaviour
     [SerializeField] private Transform _content;
 
     private List<UpgradeItem> _items = new();
+    private bool _isInitialized;
 
     private void Start()
     {
+        GameManager.OnAllDataInitialized += OnAllDataInitialized;
         CurrencyManager.Instance.OnDataChanged += RefreshCurrency;
-        CurrencyManager.Instance.OnDataInitialized += Refresh;
         UpgradeManager.OnDataChanged += Refresh;
-        UpgradeManager.OnDataInitialized += OnDataInitialized;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+
+        // 이미 초기화가 완료된 경우
+        if (GameManager.Instance.IsAllDataInitialized)
+        {
+            OnAllDataInitialized();
+        }
     }
 
     private void OnDestroy()
     {
+        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
-        CurrencyManager.Instance.OnDataInitialized -= Refresh;
         UpgradeManager.OnDataChanged -= Refresh;
-        UpgradeManager.OnDataInitialized -= OnDataInitialized;
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+    }
+
+    private void OnAllDataInitialized()
+    {
+        _isInitialized = true;
+        CreateItems();
+        Refresh();
     }
 
     private void OnHighestGradeChanged(ESlimeGrade grade)
     {
-        Refresh();
-    }
-
-    private void OnDataInitialized()
-    {
-        CreateItems();
         Refresh();
     }
 
@@ -44,7 +50,7 @@ public class UpgradePanel : MonoBehaviour
         foreach (var upgrade in upgrades)
         {
             var item = Instantiate(_itemPrefab, _content);
-            item.SetSprite(UpgradeManager.Instance.GetSprite(upgrade.SpecData.SlimeGrade));
+            item.SetSprite(SlimeManager.Instance.Get(upgrade.SpecData.SlimeGrade)?.SpecData.Sprite);
             item.Refresh(upgrade);
             _items.Add(item);
         }
@@ -57,8 +63,9 @@ public class UpgradePanel : MonoBehaviour
 
     private void Refresh()
     {
-        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
+        if (!_isInitialized) return;
 
+        var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
         ESlimeGrade highestGrade = SlimeManager.Instance.Status.HighestGrade;
 
         for (int i = 0; i < _items.Count; ++i)

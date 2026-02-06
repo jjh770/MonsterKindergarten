@@ -1,22 +1,57 @@
-﻿using System;
+using Firebase.Firestore;
+using System;
 using System.Collections.Generic;
 
 [Serializable]
+[FirestoreData]
+public class SlimeEntry
+{
+    [FirestoreProperty]
+    public int Grade { get; set; }
+
+    [FirestoreProperty]
+    public int Count { get; set; }
+
+    public SlimeEntry() { }
+
+    public SlimeEntry(ESlimeGrade grade, int count)
+    {
+        Grade = (int)grade;
+        Count = count;
+    }
+
+    public ESlimeGrade GetGrade() => (ESlimeGrade)Grade;
+}
+
+[Serializable]
+[FirestoreData]
 public class SlimeStatusSaveData
 {
-    // 최고 해금 등급 (한번 올라가면 내려가지 않음)
-    public ESlimeGrade HighestGrade { get; set; }
+    [FirestoreProperty]
+    public int HighestGrade { get; set; }
 
-    // 활성 슬라임: Grade별 개수
-    public Dictionary<ESlimeGrade, int> ActiveSlimes = new();
+    [FirestoreProperty]
+    public List<SlimeEntry> ActiveSlimes { get; set; } = new();
 
+    [FirestoreProperty]
+    public string LastSaveTime { get; set; }
 
-    public static SlimeStatusSaveData Default()
+    public ESlimeGrade GetHighestGrade() => (ESlimeGrade)HighestGrade;
+
+    public Dictionary<ESlimeGrade, int> GetActiveSlimesDict()
     {
-        SlimeStatusSaveData saveData = new SlimeStatusSaveData();
-        saveData.HighestGrade = ESlimeGrade.Grade1;
-        saveData.ActiveSlimes = new();
-
-        return saveData;
+        var dict = new Dictionary<ESlimeGrade, int>();
+        foreach (var entry in ActiveSlimes)
+        {
+            dict[entry.GetGrade()] = entry.Count;
+        }
+        return dict;
     }
+
+    public static SlimeStatusSaveData Default => new SlimeStatusSaveData
+    {
+        HighestGrade = (int)ESlimeGrade.Grade1,
+        ActiveSlimes = new List<SlimeEntry>(),
+        LastSaveTime = DateTime.Now.ToString("o")
+    };
 }

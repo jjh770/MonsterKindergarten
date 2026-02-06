@@ -1,22 +1,26 @@
-﻿using UnityEngine;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 
-public class MockSlimeStatusRepostiroy : ISlimeStatusRepository
+public class MockSlimeStatusRepository : ISlimeStatusRepository
 {
-    public void Save()
+    public UniTaskVoid Save(SlimeStatusSaveData saveData)
     {
-        Debug.Log("저장됐습니다.");
+        Debug.Log("MockSlimeStatusRepository: 저장됐습니다.");
+        return default;
     }
 
-
-    public SlimeStatusSaveData Load()
+    public UniTask<SlimeStatusSaveData> Load()
     {
-        SlimeStatusSaveData data = new SlimeStatusSaveData();
+        var data = new SlimeStatusSaveData
+        {
+            HighestGrade = (int)ESlimeGrade.Grade2,
+            ActiveSlimes = new()
+            {
+                new SlimeEntry(ESlimeGrade.Grade1, 3),
+                new SlimeEntry(ESlimeGrade.Grade2, 2)
+            }
+        };
 
-        data.HighestGrade = ESlimeGrade.Grade2;
-        data.ActiveSlimes.Add(ESlimeGrade.Grade1, 3);
-        data.ActiveSlimes.Add(ESlimeGrade.Grade2, 2);
-
-
-        return data;
+        return UniTask.FromResult(data);
     }
 }

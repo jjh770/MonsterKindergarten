@@ -49,7 +49,7 @@ public class UnlockPopupUI : MonoBehaviour
 
         if (_gradeImage != null)
         {
-            _gradeImage.sprite = UpgradeManager.Instance.GetSprite(grade);
+            _gradeImage.sprite = SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
         }
 
         _whiteGlowImage.transform.DOScale(Vector3.one, 1f);

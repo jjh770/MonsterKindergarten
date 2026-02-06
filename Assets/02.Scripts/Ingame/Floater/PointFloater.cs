@@ -13,7 +13,7 @@ public class PointFloater : MonoBehaviour
     [SerializeField] private Ease _fadeEase;
 
     private LeanGameObjectPool _pool;
-    private int _levelIndex;
+    private int _gradeIndex;
     public void SetPool(LeanGameObjectPool pool)
     {
         _pool = pool;
@@ -21,8 +21,8 @@ public class PointFloater : MonoBehaviour
 
     public void Play(ClickInfo clickInfo)
     {
-        _levelIndex = (int)clickInfo.Grade - 1;
-        _text.text = $"<sprite={_levelIndex}>{clickInfo.Point}";
+        _gradeIndex = (int)clickInfo.Grade;
+        _text.text = $"<sprite={_gradeIndex}>{clickInfo.Point}";
         _text.alpha = 1f;
 
         // 위로 떠오르면서 페이드아웃

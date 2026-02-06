@@ -9,40 +9,39 @@ public class SpawnMaxButtonUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _spawnMaxText;
     [SerializeField] private TextMeshProUGUI _costText;
 
-    private int _gradeIndex = 0;
+    private ESlimeGrade _highestGrade;
+    private bool _isInitialized;
 
     private void Start()
     {
         _button.onClick.AddListener(OnClickUpgrade);
 
+        GameManager.OnAllDataInitialized += OnAllDataInitialized;
         UpgradeManager.OnUpgraded += OnUpgraded;
-        UpgradeManager.OnDataInitialized += OnDataInitialized;
+        SpawnManager.Instance.OnSpawnMaxChanged += OnMaxChanged;
+        CurrencyManager.Instance.OnDataChanged += OnPointChanged;
+        SlimeManager.OnHighestGradeChanged += OnHighestLevelChanged;
 
-        if (SpawnManager.Instance != null)
+        if (GameManager.Instance.IsAllDataInitialized)
         {
-            SpawnManager.Instance.OnSpawnMaxChanged += OnMaxChanged;
-        }
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged += OnPointChanged;
+            OnAllDataInitialized();
         }
     }
 
     private void OnDestroy()
     {
+        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         UpgradeManager.OnUpgraded -= OnUpgraded;
-        UpgradeManager.OnDataInitialized -= OnDataInitialized;
+        SpawnManager.Instance.OnSpawnMaxChanged -= OnMaxChanged;
+        CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
+        SlimeManager.OnHighestGradeChanged -= OnHighestLevelChanged;
+    }
 
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.OnSpawnMaxChanged -= OnMaxChanged;
-        }
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        }
+    private void OnAllDataInitialized()
+    {
+        _isInitialized = true;
+        _highestGrade = SlimeManager.Instance.Status.HighestGrade;
+        UpdateUI();
     }
 
     private void OnPointChanged(ECurrencyType type, Currency point)
@@ -88,17 +87,13 @@ public class SpawnMaxButtonUI : MonoBehaviour
 
     private void OnHighestLevelChanged(ESlimeGrade grade)
     {
-        _gradeIndex = (int)grade;
-        UpdateUI();
-    }
-
-    private void OnDataInitialized()
-    {
+        _highestGrade = grade;
         UpdateUI();
     }
 
     private void UpdateUI()
     {
+        if (!_isInitialized) return;
         if (UpgradeManager.Instance == null || SpawnManager.Instance == null) return;
 
         var upgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
@@ -123,12 +118,12 @@ public class SpawnMaxButtonUI : MonoBehaviour
         {
             if (isMax)
             {
-                _costText.text = $"<sprite={_gradeIndex}>MAX";
+                _costText.text = $"<sprite={(int)_highestGrade}>MAX";
             }
             else
             {
                 double cost = (double)upgrade.Cost;
-                _costText.text = $"<sprite={_gradeIndex}>{cost.ToFormattedString()}";
+                _costText.text = $"<sprite={(int)_highestGrade}>{cost.ToFormattedString()}";
             }
         }
 

@@ -1,10 +1,7 @@
-﻿using System;
+using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-
-// [슬라임 스테이터스 매니저 + 슬라임 매니저 통합] -> 현재 슬라임 현황 저장, 로드 + 슬라임 규칙, 행동 정의
-// 슬라임이 가지고 있는 규칙을 통해 다른 매니저들과 새로운 규칙을 정의하거나
-// 슬라임이 할 수 있는 다양한 기능들을 정의해놓은 슬라임 매니저
 
 public class SlimeManager : MonoBehaviour
 {
@@ -13,13 +10,9 @@ public class SlimeManager : MonoBehaviour
     [SerializeField] private SlimeSpecTable _specTable;
     private List<Slime> _slimes = new();
 
-
     private ISlimeStatusRepository _statusRepository;
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
-
-    private ESlimeGrade _highestGrade;
-    public ESlimeGrade HighestGrade => _highestGrade;
 
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
@@ -32,13 +25,18 @@ public class SlimeManager : MonoBehaviour
         {
             _slimes.Add(new Slime(specData));
         }
-        _statusRepository = new MockSlimeStatusRepostiroy();
+        _statusRepository = new FirebaseSlimeStatusRepository();
     }
 
-    public void Start()
+    private void Start()
     {
-        SlimeStatusSaveData saveData = _statusRepository.Load();
-        _status = new SlimeStatus(saveData.HighestGrade, saveData.ActiveSlimes);
+        _ = InitAsync();
+    }
+
+    private async UniTaskVoid InitAsync()
+    {
+        SlimeStatusSaveData saveData = await _statusRepository.Load();
+        _status = new SlimeStatus(saveData.GetHighestGrade(), saveData.GetActiveSlimesDict());
 
         OnDataInitialized?.Invoke();
     }
@@ -48,12 +46,6 @@ public class SlimeManager : MonoBehaviour
         return _slimes.Find(s => s.SpecData.Grade == grade);
     }
 
-
-    public void SetSlime(Dictionary<ESlimeGrade, int> currentSlimes)
-    {
-        //_statu
-    }
-
     public bool CanMerge(Slime slime1, Slime slime2)
     {
         ESlimeGrade maxGrade = _slimes[^1].SpecData.Grade;
@@ -61,15 +53,13 @@ public class SlimeManager : MonoBehaviour
         return slime1.CanMerge(slime2) && slime1.SpecData.Grade < maxGrade;
     }
 
-    // 합성 후 최고 등급 갱신 시도
     public bool TryUpdateHighestLevel(ESlimeGrade newGrade)
     {
-        // 판별: 새 등급이 현재 최고 등급보다 높은가?
         if (newGrade <= _status.HighestGrade) return false;
 
         _status.UpdateHighestGrade(newGrade);
         OnHighestGradeChanged?.Invoke(newGrade);
-        _highestGrade = newGrade;
+        Save();
         return true;
     }
 
@@ -77,5 +67,44 @@ public class SlimeManager : MonoBehaviour
     {
         ESlimeGrade maxGrade = _slimes[^1].SpecData.Grade;
         return _status.HighestGrade >= maxGrade;
+    }
+
+    // 슬라임 스폰 시 호출
+    public void AddSlime(ESlimeGrade grade)
+    {
+        _status.AddSlime(grade);
+        Save();
+    }
+
+    // 슬라임 디스폰 시 호출
+    public void RemoveSlime(ESlimeGrade grade)
+    {
+        _status.RemoveSlime(grade);
+        Save();
+    }
+
+    // 머지 시 호출 (두 슬라임 제거 + 새 슬라임 추가)
+    public void MergeSlime(ESlimeGrade fromGrade, ESlimeGrade toGrade)
+    {
+        _status.RemoveSlime(fromGrade); // keeper 기존 등급 제거
+        _status.RemoveSlime(fromGrade); // removed 슬라임 제거
+        _status.AddSlime(toGrade);      // 새 등급 추가
+        Save();
+    }
+
+    private void Save()
+    {
+        var saveData = new SlimeStatusSaveData
+        {
+            HighestGrade = (int)_status.HighestGrade,
+            ActiveSlimes = new List<SlimeEntry>()
+        };
+
+        foreach (var pair in _status.ActiveSlimes)
+        {
+            saveData.ActiveSlimes.Add(new SlimeEntry(pair.Key, pair.Value));
+        }
+
+        _statusRepository.Save(saveData).Forget();
     }
 }

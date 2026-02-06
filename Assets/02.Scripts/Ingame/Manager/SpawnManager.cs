@@ -20,6 +20,8 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private float _minSpawnInterval = 0.5f;
     private float _timer;
 
+    private bool _isInitialized;
+
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
     public float MinSpawnInterval => _minSpawnInterval;
@@ -60,16 +62,28 @@ public class SpawnManager : MonoBehaviour
 
     private void Start()
     {
+        GameManager.OnAllDataInitialized += OnAllDataInitialized;
         UpgradeManager.OnUpgraded += OnUpgraded;
-        UpgradeManager.OnDataInitialized += OnDataInitialized;
-        SlimeManager.OnDataInitialized += OnDataInitialized;
+
+        // 이미 초기화가 완료된 경우
+        if (GameManager.Instance.IsAllDataInitialized)
+        {
+            OnAllDataInitialized();
+        }
     }
 
     private void OnDestroy()
     {
+        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         UpgradeManager.OnUpgraded -= OnUpgraded;
-        UpgradeManager.OnDataInitialized -= OnDataInitialized;
-        SlimeManager.OnDataInitialized -= OnDataInitialized;
+    }
+
+    private void OnAllDataInitialized()
+    {
+        _isInitialized = true;
+        ApplySavedUpgrades();
+        InitSlimeSpawns();
+        Spawn(ESlimeGrade.Grade1);
     }
 
     private void ApplySavedUpgrades()
@@ -87,7 +101,6 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-
     private void InitSlimeSpawns()
     {
         SlimeStatus status = SlimeManager.Instance.Status;
@@ -98,7 +111,7 @@ public class SpawnManager : MonoBehaviour
 
             for (int i = 0; i < count; ++i)
             {
-                Spawn(item.Key);
+                Spawn(item.Key, shouldSave: false);
             }
         }
     }
@@ -116,18 +129,13 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-    private void OnDataInitialized()
-    {
-        ApplySavedUpgrades(); // 저장된 레벨 반영
-        InitSlimeSpawns();
-        Spawn(ESlimeGrade.Grade1);
-    }
     private void Update()
     {
+        if (!_isInitialized) return;
+
         if (SlimeSpawner.Instance != null &&
             SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
         {
-            // 최대 수에 도달하면 타이머 멈춤
             return;
         }
 
@@ -144,7 +152,7 @@ public class SpawnManager : MonoBehaviour
         Spawn(ESlimeGrade.Grade1);
     }
 
-    public SlimeController Spawn(ESlimeGrade grade)
+    public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
     {
         if (SlimeSpawner.Instance == null) return null;
 
@@ -153,7 +161,7 @@ public class SpawnManager : MonoBehaviour
             UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y)
         );
 
-        return SlimeSpawner.Instance.Spawn(grade, randomPos);
+        return SlimeSpawner.Instance.Spawn(grade, randomPos, shouldSave);
     }
 
     public void Despawn(SlimeController target)
@@ -172,6 +180,7 @@ public class SpawnManager : MonoBehaviour
     {
         MaxActiveCount += _spawnMaxIncreaseValue;
     }
+
     public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();
 
     public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();

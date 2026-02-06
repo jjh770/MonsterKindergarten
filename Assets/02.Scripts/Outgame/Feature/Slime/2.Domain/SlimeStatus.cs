@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 public class SlimeStatus
@@ -10,7 +10,6 @@ public class SlimeStatus
     // 활성 슬라임: Grade별 개수
     private readonly Dictionary<ESlimeGrade, int> _activeSlimes = new();
     public Dictionary<ESlimeGrade, int> ActiveSlimes => _activeSlimes;
-
 
     public SlimeStatus(ESlimeGrade highestGrade, Dictionary<ESlimeGrade, int> activeSlimes)
     {
@@ -38,6 +37,7 @@ public class SlimeStatus
             }
         }
     }
+
     // 최고 등급 갱신 (올라가기만 가능)
     public void UpdateHighestGrade(ESlimeGrade newGrade)
     {
@@ -47,5 +47,31 @@ public class SlimeStatus
             throw new ArgumentException($"새 등급은 현재 최고 등급보다 높아야 합니다. : {newGrade} <= {HighestGrade}");
 
         HighestGrade = newGrade;
+    }
+
+    // 슬라임 추가
+    public void AddSlime(ESlimeGrade grade)
+    {
+        if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
+            throw new ArgumentException($"유효하지 않은 슬라임 등급입니다. : {grade}");
+
+        if (_activeSlimes.ContainsKey(grade))
+            _activeSlimes[grade]++;
+        else
+            _activeSlimes[grade] = 1;
+    }
+
+    // 슬라임 제거
+    public void RemoveSlime(ESlimeGrade grade)
+    {
+        if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
+            throw new ArgumentException($"유효하지 않은 슬라임 등급입니다. : {grade}");
+
+        if (!_activeSlimes.ContainsKey(grade) || _activeSlimes[grade] <= 0)
+            throw new InvalidOperationException($"제거할 슬라임이 없습니다. : {grade}");
+
+        _activeSlimes[grade]--;
+        if (_activeSlimes[grade] <= 0)
+            _activeSlimes.Remove(grade);
     }
 }

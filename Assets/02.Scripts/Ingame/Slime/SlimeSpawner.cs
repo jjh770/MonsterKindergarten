@@ -2,6 +2,7 @@
 using Lean.Pool;
 using System.Collections.Generic;
 using UnityEngine;
+
 public class SlimeSpawner : MonoBehaviour
 {
     public static SlimeSpawner Instance { get; private set; }
@@ -28,7 +29,7 @@ public class SlimeSpawner : MonoBehaviour
         _pool = GetComponent<LeanGameObjectPool>();
     }
 
-    public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position)
+    public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position, bool shouldSave = true)
     {
         Vector2 startPosition = new Vector2(position.x, position.y + _dropHeight);
         GameObject slimeObject = _pool.Spawn(startPosition, Quaternion.identity);
@@ -44,6 +45,13 @@ public class SlimeSpawner : MonoBehaviour
         slimeObject.transform.DOMoveY(position.y, _dropDuration).SetEase(_dropEase);
 
         _activeTargets.Add(slimeController);
+
+        // 새로 스폰된 슬라임만 저장 (초기 로드 시에는 저장하지 않음)
+        if (shouldSave)
+        {
+            SlimeManager.Instance.AddSlime(slimeGrade);
+        }
+
         return slimeController;
     }
 
@@ -51,7 +59,6 @@ public class SlimeSpawner : MonoBehaviour
     {
         if (target == null) return;
 
-        ESlimeGrade despawnedGrade = target.Grade;
         target.OnDespawn();
         _activeTargets.Remove(target);
         _pool.Despawn(target.gameObject);

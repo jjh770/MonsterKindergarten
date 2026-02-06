@@ -1,5 +1,7 @@
-﻿public interface ISlimeStatusRepository
+using Cysharp.Threading.Tasks;
+
+public interface ISlimeStatusRepository
 {
-    public void Save();
-    public SlimeStatusSaveData Load();
+    UniTaskVoid Save(SlimeStatusSaveData data);
+    UniTask<SlimeStatusSaveData> Load();
 }
