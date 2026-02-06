@@ -1,4 +1,4 @@
-using Firebase.Firestore;
+﻿using Firebase.Firestore;
 using System;
 using System.Collections.Generic;
 
@@ -31,19 +31,17 @@ public class UpgradeEntry
 
 [Serializable]
 [FirestoreData]
-public class UpgradeSaveData
+public class UpgradeSaveData : ISaveData
 {
     // 레벨 배열 (EUpgradeType 순서대로 저장)
     [FirestoreProperty]
     public List<UpgradeEntry> Entries { get; set; } = new();
 
-    [FirestoreProperty]
-    public string LastSaveTime { get; set; }
-
     /// <summary>기본값 (새 게임)</summary>
     public static UpgradeSaveData Default => new UpgradeSaveData
     {
         Entries = new List<UpgradeEntry>(),
-        LastSaveTime = DateTime.Now.ToString("o")
     };
+
+    public string LastSaveTime { get; set; }
 }

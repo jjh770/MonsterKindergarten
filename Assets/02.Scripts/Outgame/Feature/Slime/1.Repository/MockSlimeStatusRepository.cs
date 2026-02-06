@@ -1,9 +1,9 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class MockSlimeStatusRepository : ISlimeStatusRepository
 {
-    public UniTaskVoid Save(SlimeStatusSaveData saveData)
+    public UniTask Save(SlimeStatusSaveData saveData)
     {
         Debug.Log("MockSlimeStatusRepository: 저장됐습니다.");
         return default;

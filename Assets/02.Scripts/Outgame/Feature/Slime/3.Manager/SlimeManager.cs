@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +10,8 @@ public class SlimeManager : MonoBehaviour
     [SerializeField] private SlimeSpecTable _specTable;
     private List<Slime> _slimes = new();
 
-    private ISlimeStatusRepository _statusRepository;
+    //private ISlimeStatusRepository _statusRepository;
+    private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
 
@@ -25,7 +26,8 @@ public class SlimeManager : MonoBehaviour
         {
             _slimes.Add(new Slime(specData));
         }
-        _statusRepository = new FirebaseSlimeStatusRepository();
+        //_statusRepository = new FirebaseSlimeStatusRepository();
+        _statusRepository = new HybridRepository<SlimeStatusSaveData>(new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.Email), new FirebaseSlimeStatusRepository());
     }
 
     private void Start()

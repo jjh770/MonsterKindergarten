@@ -1,8 +1,4 @@
-﻿// 저장소가 가져야할 약속
-using Cysharp.Threading.Tasks;
-
-public interface ICurrencyRepository
+﻿// 저장소가 가져야할 약속 -> IRepository에서 한번 더 묶음
+public interface ICurrencyRepository : IRepository<CurrencySaveData>
 {
-    public UniTaskVoid Save(CurrencySaveData saveData);
-    public UniTask<CurrencySaveData> Load();
 }

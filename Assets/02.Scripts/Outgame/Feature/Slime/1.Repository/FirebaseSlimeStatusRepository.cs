@@ -10,12 +10,11 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
     private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
     private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
 
-    public async UniTaskVoid Save(SlimeStatusSaveData saveData)
+    public async UniTask Save(SlimeStatusSaveData saveData)
     {
         try
         {
             string email = _auth.CurrentUser.Email;
-            saveData.LastSaveTime = DateTime.Now.ToString("o");
             await _db.Collection(COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
             Debug.Log("SlimeStatus 저장 성공");
         }

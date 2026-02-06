@@ -1,4 +1,4 @@
-using Firebase.Firestore;
+﻿using Firebase.Firestore;
 using System;
 using System.Collections.Generic;
 
@@ -25,16 +25,13 @@ public class SlimeEntry
 
 [Serializable]
 [FirestoreData]
-public class SlimeStatusSaveData
+public class SlimeStatusSaveData : ISaveData
 {
     [FirestoreProperty]
     public int HighestGrade { get; set; }
 
     [FirestoreProperty]
     public List<SlimeEntry> ActiveSlimes { get; set; } = new();
-
-    [FirestoreProperty]
-    public string LastSaveTime { get; set; }
 
     public ESlimeGrade GetHighestGrade() => (ESlimeGrade)HighestGrade;
 
@@ -52,6 +49,7 @@ public class SlimeStatusSaveData
     {
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeEntry>(),
-        LastSaveTime = DateTime.Now.ToString("o")
     };
+
+    public string LastSaveTime { get; set; }
 }

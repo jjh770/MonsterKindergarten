@@ -13,7 +13,8 @@ public class UpgradeManager : MonoBehaviour
     // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
     public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
     [SerializeField] private UpgradeSpecTableSO _specTable;
-    private IUpgradeRepository _repository;
+    //private IUpgradeRepository _repository;
+    private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
 
     private void Awake()
@@ -28,7 +29,8 @@ public class UpgradeManager : MonoBehaviour
         }
 
         // _repository = new JsonUpgradeRepository(AccountManager.Instance.Email);
-        _repository = new FirebaseUpgradeRepository();
+        // _repository = new FirebaseUpgradeRepository();
+        _repository = new HybridRepository<UpgradeSaveData>(new JsonUpgradeRepository(AccountManager.Instance.Email), new FirebaseUpgradeRepository());
         _ = InitAsync();
     }
 

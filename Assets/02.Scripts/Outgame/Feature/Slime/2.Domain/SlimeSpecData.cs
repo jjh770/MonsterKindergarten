@@ -6,8 +6,6 @@ public class SlimeSpecData
 {
     // 슬라임 이름
     public string Name;
-    // 슬라임 레벨
-    //public int Level;
     // 슬라임 등급 (레벨) 
     public ESlimeGrade Grade;
     // 슬라임의 클릭 포인트

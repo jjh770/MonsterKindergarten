@@ -4,12 +4,12 @@ using Firebase.Firestore;
 using System;
 using UnityEngine;
 
-public class FirebaseCurrencyRepository : ICurrencyRepository
+public class FirebaseCurrencyRepository : IRepository<CurrencySaveData>
 {
     private string CURRENCY_COLLECTION_NAME = "Currency";
     private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
     private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
-    public async UniTaskVoid Save(CurrencySaveData saveData)
+    public async UniTask Save(CurrencySaveData saveData)
     {
         try
         {
