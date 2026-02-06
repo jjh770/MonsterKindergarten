@@ -44,13 +44,12 @@ public class UnlockPopupUI : MonoBehaviour
 
         if (_gradeText != null)
         {
-            _gradeText.text = $"Lv.{grade} 해금!";
+            _gradeText.text = $"Lv.{(int)grade} 해금!";
         }
 
         if (_gradeImage != null)
         {
-            //TODO
-            //_gradeImage.sprite = _monsterLevelData.GetSprite(grade);
+            _gradeImage.sprite = UpgradeManager.Instance.GetSprite(grade);
         }
 
         _whiteGlowImage.transform.DOScale(Vector3.one, 1f);

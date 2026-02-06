@@ -15,5 +15,5 @@ public class SlimeSpecData
     // 슬라임의 자동 클릭 빈도수
     public float AutoClickInterval;
     // 슬라임의 기본 스프라이트
-    //public Sprite Sprite;
+    public UnityEngine.Sprite Sprite;
 }

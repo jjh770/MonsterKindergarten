@@ -5,7 +5,6 @@ public class UpgradePanel : MonoBehaviour
 {
     [SerializeField] private UpgradeItem _itemPrefab;
     [SerializeField] private Transform _content;
-    [SerializeField] private MonsterLevelData _monsterLevelData;
 
     private List<UpgradeItem> _items = new();
 
@@ -15,20 +14,19 @@ public class UpgradePanel : MonoBehaviour
         CurrencyManager.Instance.OnDataInitialized += Refresh;
         UpgradeManager.OnDataChanged += Refresh;
         UpgradeManager.OnDataInitialized += OnDataInitialized;
-        if (SlimeSpawner.Instance != null)
-            SlimeSpawner.OnHighestLevelChanged += OnHighestLevelChanged;
+        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
     }
+
     private void OnDestroy()
     {
         CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
         CurrencyManager.Instance.OnDataInitialized -= Refresh;
         UpgradeManager.OnDataChanged -= Refresh;
         UpgradeManager.OnDataInitialized -= OnDataInitialized;
-        if (SlimeSpawner.Instance != null)
-            SlimeSpawner.OnHighestLevelChanged -= OnHighestLevelChanged;
+        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
     }
 
-    private void OnHighestLevelChanged(ESlimeGrade grade)
+    private void OnHighestGradeChanged(ESlimeGrade grade)
     {
         Refresh();
     }
@@ -46,8 +44,7 @@ public class UpgradePanel : MonoBehaviour
         foreach (var upgrade in upgrades)
         {
             var item = Instantiate(_itemPrefab, _content);
-            int slimeLevel = (int)upgrade.SpecData.SlimeGrade;
-            item.SetSprite(_monsterLevelData.GetSprite(slimeLevel));
+            item.SetSprite(UpgradeManager.Instance.GetSprite(upgrade.SpecData.SlimeGrade));
             item.Refresh(upgrade);
             _items.Add(item);
         }
@@ -62,11 +59,11 @@ public class UpgradePanel : MonoBehaviour
     {
         var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
 
-        ESlimeGrade highestLevel = SlimeSpawner.Instance != null ? SlimeSpawner.Instance.HighestGrade : ESlimeGrade.Grade1;
+        ESlimeGrade highestGrade = SlimeManager.Instance.Status.HighestGrade;
 
         for (int i = 0; i < _items.Count; ++i)
         {
-            bool isUnlocked = upgrades[i].SpecData.SlimeGrade <= highestLevel || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
+            bool isUnlocked = upgrades[i].SpecData.SlimeGrade <= highestGrade || upgrades[i].SpecData.SlimeGrade == ESlimeGrade.None;
             _items[i].Refresh(upgrades[i], isUnlocked);
         }
     }

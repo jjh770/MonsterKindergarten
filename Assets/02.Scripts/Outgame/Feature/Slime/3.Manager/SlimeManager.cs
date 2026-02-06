@@ -18,6 +18,9 @@ public class SlimeManager : MonoBehaviour
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
 
+    private ESlimeGrade _highestGrade;
+    public ESlimeGrade HighestGrade => _highestGrade;
+
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
 
@@ -66,6 +69,7 @@ public class SlimeManager : MonoBehaviour
 
         _status.UpdateHighestGrade(newGrade);
         OnHighestGradeChanged?.Invoke(newGrade);
+        _highestGrade = newGrade;
         return true;
     }
 

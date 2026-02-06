@@ -15,10 +15,7 @@ public class PointUI : MonoBehaviour
             CurrencyManager.Instance.OnDataInitialized += OnDataInitialized;
         }
 
-        if (SlimeSpawner.Instance != null)
-        {
-            _highestGrade = SlimeSpawner.Instance.HighestGrade;
-        }
+        _highestGrade = SlimeManager.Instance.HighestGrade;
 
         UpdateUI();
     }

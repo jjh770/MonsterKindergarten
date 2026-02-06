@@ -1,6 +1,5 @@
 ﻿using DG.Tweening;
 using Lean.Pool;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 public class SlimeSpawner : MonoBehaviour
@@ -11,12 +10,8 @@ public class SlimeSpawner : MonoBehaviour
     [SerializeField] private float _dropDuration = 0.5f;
     [SerializeField] private Ease _dropEase = Ease.OutBounce;
 
-    public ESlimeGrade HighestGrade { get; private set; }
-
     private LeanGameObjectPool _pool;
     private List<SlimeController> _activeTargets = new List<SlimeController>();
-
-    public static Action<ESlimeGrade> OnHighestLevelChanged;
 
     private void Awake()
     {

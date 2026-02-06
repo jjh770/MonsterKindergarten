@@ -68,6 +68,10 @@ public class UpgradeManager : MonoBehaviour
     public List<Upgrade> GetSlimeUpgrades() =>
         _upgrades.Values.Where(u => u.SpecData.SlimeGrade != ESlimeGrade.None).ToList();
 
+    // 슬라임 등급에 해당하는 Sprite 반환
+    public Sprite GetSprite(ESlimeGrade grade) =>
+        SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
+
     // 레벨업 가능한지
     public bool CanLevelUp(UpgradeSpecData specData)
     {
