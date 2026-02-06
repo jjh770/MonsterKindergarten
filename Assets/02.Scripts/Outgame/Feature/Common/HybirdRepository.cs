@@ -7,7 +7,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
 {
     private readonly IRepository<T> _playerprefsRepository;
     private readonly IRepository<T> _firebaseRepository;
-
+    private const float FIREBASE_INTERVAL = 0.6f;
     public HybridRepository(IRepository<T> playerprefs, IRepository<T> firebase)
     {
         _playerprefsRepository = playerprefs;
@@ -39,7 +39,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         try
         {
             // 0.6초간 대기 실행
-            await UniTask.Delay(TimeSpan.FromSeconds(0.6f), cancellationToken: token);
+            await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL), cancellationToken: token);
             // 취소 요청이 떨어지지 않았다면 넘어가기
             if (token.IsCancellationRequested) return;
             // 모든 분기 통과 시 서버에 저장
