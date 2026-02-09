@@ -26,8 +26,6 @@ public class SlimeManager : MonoBehaviour
         {
             _slimes.Add(new Slime(specData));
         }
-        //_statusRepository = new FirebaseSlimeStatusRepository();
-        _statusRepository = new HybridRepository<SlimeStatusSaveData>(new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.Email), new FirebaseSlimeStatusRepository());
     }
 
     private void Start()
@@ -37,6 +35,14 @@ public class SlimeManager : MonoBehaviour
 
     private async UniTaskVoid InitAsync()
     {
+        await UniTask.Yield();
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        _statusRepository = new HybridRepository<SlimeStatusSaveData>(new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.Email), new FirebaseSlimeStatusRepository());
+#else
+        _statusRepository = new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.Email);
+#endif
+
         SlimeStatusSaveData saveData = await _statusRepository.Load();
         _status = new SlimeStatus(saveData.GetHighestGrade(), saveData.GetActiveSlimesDict());
 

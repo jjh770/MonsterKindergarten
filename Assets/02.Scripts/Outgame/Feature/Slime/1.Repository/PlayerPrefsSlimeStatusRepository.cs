@@ -38,7 +38,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             string key = GetKey();
             if (!PlayerPrefs.HasKey(key))
             {
-                return UniTask.FromResult<SlimeStatusSaveData>(null);
+                return UniTask.FromResult(SlimeStatusSaveData.Default);
             }
 
             string json = PlayerPrefs.GetString(key);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
 using UnityEngine;
 
 // 재화 관리자 -> 오로지 "재화" 만 관리하는 클래스
@@ -43,10 +44,13 @@ public class CurrencyManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        // _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
-        // _repository = new FirebaseCurrencyRepository();
+        await UniTask.Yield();
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.Email), new FirebaseCurrencyRepository());
+#else
+        _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
+#endif
 
         CurrencySaveData saveData = await _repository.Load();
         double[] currencyValues = saveData.Currencies;

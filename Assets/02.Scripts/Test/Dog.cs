@@ -1,4 +1,5 @@
-﻿using Firebase.Firestore;
+﻿#if !UNITY_WEBGL || UNITY_EDITOR
+using Firebase.Firestore;
 using System;
 
 [Serializable]
@@ -30,3 +31,4 @@ public class Dog
         Age = age;
     }
 }
+#endif

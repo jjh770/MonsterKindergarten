@@ -12,7 +12,8 @@ public class AccountManager : MonoBehaviour
 
     private Account _currentAccount = null;
     //public bool IsLogin => _currentAccount != null;
-    public string Email => _currentAccount?.Email;
+    public static string LoggedInEmail { get; private set; }
+    public string Email => LoggedInEmail;
 
     private IAccountRepository _repository;
 
@@ -27,8 +28,12 @@ public class AccountManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        //_repository = new LocalAccountRepository();
+
+#if !UNITY_WEBGL || UNITY_EDITOR
         _repository = new FirebaseAccountRepository();
+#else
+        _repository = new LocalAccountRepository();
+#endif
     }
 
 
@@ -53,6 +58,7 @@ public class AccountManager : MonoBehaviour
         if (result.Success)
         {
             _currentAccount = result.Account;
+            LoggedInEmail = email;
             return new AccountResult
             {
                 Success = true,

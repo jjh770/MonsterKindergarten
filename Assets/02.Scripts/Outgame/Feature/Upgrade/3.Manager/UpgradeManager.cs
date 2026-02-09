@@ -28,14 +28,19 @@ public class UpgradeManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        // _repository = new JsonUpgradeRepository(AccountManager.Instance.Email);
-        // _repository = new FirebaseUpgradeRepository();
-        _repository = new HybridRepository<UpgradeSaveData>(new JsonUpgradeRepository(AccountManager.Instance.Email), new FirebaseUpgradeRepository());
         _ = InitAsync();
     }
 
     private async UniTaskVoid InitAsync()
     {
+        await UniTask.Yield();
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        _repository = new HybridRepository<UpgradeSaveData>(new PlayerPrefsUpgradeRepository(AccountManager.Instance.Email), new FirebaseUpgradeRepository());
+#else
+        _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.Email);
+#endif
+
         var saveData = await _repository.Load();
         // Entries를 딕셔너리로 변환해서 빠르게 조회
         var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
