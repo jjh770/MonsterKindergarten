@@ -23,6 +23,13 @@
       "dependencies": {},
       "hash": "73a63b7f672b88f7e9992f6917eb458a8cbb6fa9"
     },
+    "com.joshclose.csvhelper": {
+      "version": "https://github.com/bilal-arikan/CsvHelper-For-Unity.git?path=/src/CsvHelper",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "bf312d493712889933ad7394671a009d58a7ca39"
+    },
     "com.unity.2d.common": {
       "version": "12.0.2",
       "depth": 1,
