@@ -14,8 +14,8 @@ public class Upgrade
     // 3. 런타임 데이터 (게임 중간에 바뀌는 데이터)
     public int Level { get; private set; }
 
-    // 업그레이드 비용 : 기본 비용 + 증가량^레벨
-    public Currency Cost => SpecData.BaseCost + Math.Pow(SpecData.CostMultiplier, Level); // 지수 공식 : 기본 비용 + 증가량 ^ 레벨
+    // 업그레이드 비용 : 기본 비용 * 증가량^레벨
+    public Currency Cost => SpecData.BaseCost * Math.Pow(SpecData.CostMultiplier, Level); // 지수 공식 : 기본 비용 * 증가량 ^ 레벨
 
     // 레벨 0이면 보너스 없음
     // Linear : 선형 공식 (BasePoint + Level * PointMultiplier)
