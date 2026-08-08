@@ -3205,13 +3205,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f18ee9af4396646a646b5a0f7ac536, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnManager
-  _spawnInterval: 3
+  _spawnInterval: 10
   _maxActiveCount: 10
   _spawnAreaMin: {x: -1, y: -2}
   _spawnAreaMax: {x: 1, y: 2}
-  _spawnIntervalDecreaseValue: 0.15
+  _spawnIntervalDecreaseValue: 0.1
   _spawnMaxIncreaseValue: 1
-  _minSpawnInterval: 1.5
+  _minSpawnInterval: 3
 --- !u!4 &1271333081
 Transform:
   m_ObjectHideFlags: 0

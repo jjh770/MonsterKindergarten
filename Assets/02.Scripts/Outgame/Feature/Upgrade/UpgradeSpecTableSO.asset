@@ -15,10 +15,10 @@ MonoBehaviour:
   Datas:
   - Type: 4
     SlimeGrade: 0
-    MaxLevel: 10
-    BaseCost: 500
+    MaxLevel: 70
+    BaseCost: 100
     BasePoint: 0
-    CostMultiplier: 2
+    CostMultiplier: 1.12
     PointMultiplier: 0
     PointFormula: 1
     Name: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
@@ -26,9 +26,9 @@ MonoBehaviour:
   - Type: 5
     SlimeGrade: 0
     MaxLevel: 10
-    BaseCost: 1000
+    BaseCost: 250
     BasePoint: 0
-    CostMultiplier: 2.2
+    CostMultiplier: 1.8
     PointMultiplier: 0
     PointFormula: 1
     Name: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218"
@@ -36,9 +36,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 1
     MaxLevel: 10
-    BaseCost: 100
+    BaseCost: 50
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 2
     PointFormula: 0
     Name: "\uC2AC\uB77C\uC784"
@@ -46,9 +46,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 1
     MaxLevel: 10
-    BaseCost: 50
+    BaseCost: 30
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 1
     PointFormula: 0
     Name: "\uC2AC\uB77C\uC784"
@@ -56,9 +56,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 2
     MaxLevel: 10
-    BaseCost: 200
+    BaseCost: 100
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 4
     PointFormula: 0
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
@@ -66,9 +66,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 2
     MaxLevel: 10
-    BaseCost: 100
+    BaseCost: 60
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 2
     PointFormula: 0
     Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
@@ -76,9 +76,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 3
     MaxLevel: 10
-    BaseCost: 400
+    BaseCost: 200
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 8
     PointFormula: 0
     Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
@@ -86,9 +86,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 3
     MaxLevel: 10
-    BaseCost: 200
+    BaseCost: 120
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 4
     PointFormula: 0
     Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
@@ -96,9 +96,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 4
     MaxLevel: 10
-    BaseCost: 1200
+    BaseCost: 600
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 24
     PointFormula: 0
     Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
@@ -106,9 +106,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 4
     MaxLevel: 10
-    BaseCost: 600
+    BaseCost: 360
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 12
     PointFormula: 0
     Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
@@ -116,9 +116,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 5
     MaxLevel: 10
-    BaseCost: 2400
+    BaseCost: 1200
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 48
     PointFormula: 0
     Name: "\uC544\uADC0 \uC2AC\uB77C\uC784"
@@ -126,9 +126,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 5
     MaxLevel: 10
-    BaseCost: 1200
+    BaseCost: 720
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 24
     PointFormula: 0
     Name: "\uC544\uADC0 \uC2AC\uB77C\uC784"
@@ -136,9 +136,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 6
     MaxLevel: 10
-    BaseCost: 7200
+    BaseCost: 3600
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 144
     PointFormula: 0
     Name: "\uD669\uAE08 \uC2AC\uB77C\uC784"
@@ -146,9 +146,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 6
     MaxLevel: 10
-    BaseCost: 3600
+    BaseCost: 2160
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 72
     PointFormula: 0
     Name: "\uD669\uAE08 \uC2AC\uB77C\uC784"
@@ -156,9 +156,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 7
     MaxLevel: 10
-    BaseCost: 14400
+    BaseCost: 7200
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 288
     PointFormula: 0
     Name: "\uAD6D\uC655 \uC2AC\uB77C\uC784"
@@ -166,9 +166,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 7
     MaxLevel: 10
-    BaseCost: 7200
+    BaseCost: 4320
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 144
     PointFormula: 0
     Name: "\uAD6D\uC655 \uC2AC\uB77C\uC784"
@@ -176,9 +176,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 8
     MaxLevel: 10
-    BaseCost: 53200
+    BaseCost: 26600
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 1064
     PointFormula: 0
     Name: "\uCC9C\uC0AC \uC2AC\uB77C\uC784"
@@ -186,9 +186,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 8
     MaxLevel: 10
-    BaseCost: 26600
+    BaseCost: 15960
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 532
     PointFormula: 0
     Name: "\uCC9C\uC0AC \uC2AC\uB77C\uC784"
@@ -196,9 +196,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 9
     MaxLevel: 10
-    BaseCost: 106400
+    BaseCost: 53200
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 2128
     PointFormula: 0
     Name: "\uC608\uD2F0 \uC2AC\uB77C\uC784"
@@ -206,9 +206,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 9
     MaxLevel: 10
-    BaseCost: 53200
+    BaseCost: 31920
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 1064
     PointFormula: 0
     Name: "\uC608\uD2F0 \uC2AC\uB77C\uC784"
@@ -216,9 +216,9 @@ MonoBehaviour:
   - Type: 0
     SlimeGrade: 10
     MaxLevel: 10
-    BaseCost: 319200
+    BaseCost: 159600
     BasePoint: 0
-    CostMultiplier: 1.6
+    CostMultiplier: 1.5
     PointMultiplier: 6384
     PointFormula: 0
     Name: "\uBE14\uB799 \uC2AC\uB77C\uC784"
@@ -226,9 +226,9 @@ MonoBehaviour:
   - Type: 1
     SlimeGrade: 10
     MaxLevel: 10
-    BaseCost: 159600
+    BaseCost: 95760
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.4
     PointMultiplier: 3192
     PointFormula: 0
     Name: "\uBE14\uB799 \uC2AC\uB77C\uC784"
