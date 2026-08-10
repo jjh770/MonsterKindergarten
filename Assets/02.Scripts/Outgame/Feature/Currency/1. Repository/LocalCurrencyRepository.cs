@@ -13,10 +13,12 @@
 // 저장 로직은 레포지토리에게.
 // 1. 코드가 깔끔해지고 유지보수가 쉬워진다.
 using Cysharp.Threading.Tasks;
+using System.Globalization;
 using UnityEngine;
 
 public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 {
+    private const string LAST_SAVE_TIME_KEY = "Currency_LastSaveTime";
     private readonly string _userId;
     public LocalCurrencyRepository(string userId)
     {
@@ -30,8 +32,11 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
             var type = (ECurrencyType)i;
 
             // 소수점 17자리까지 저장
-            PlayerPrefs.SetString($"{_userId}_{type.ToString()}", saveData.Currencies[i].ToString("G17"));
+            PlayerPrefs.SetString($"{_userId}_{type.ToString()}", saveData.Currencies[i].ToString("G17", CultureInfo.InvariantCulture));
         }
+
+        PlayerPrefs.SetString($"{_userId}_{LAST_SAVE_TIME_KEY}", saveData.LastSaveTime ?? string.Empty);
+        PlayerPrefs.Save();
     }
 
     public async UniTask<CurrencySaveData> Load()
@@ -44,9 +49,15 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
             if (PlayerPrefs.HasKey(key))
             {
-                data.Currencies[i] = double.Parse(PlayerPrefs.GetString(key, "0"));
+                string value = PlayerPrefs.GetString(key, "0");
+                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double currency))
+                {
+                    data.Currencies[i] = currency;
+                }
             }
         }
+
+        data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);
         return data;
     }
 }
