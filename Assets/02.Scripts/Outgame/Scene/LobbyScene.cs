@@ -2,6 +2,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class LobbyScene : MonoBehaviour
@@ -127,7 +128,9 @@ public class LobbyScene : MonoBehaviour
     {
         while (true)
         {
-            if (Input.GetKeyDown(KeyCode.Tab))
+            Keyboard keyboard = Keyboard.current;
+
+            if (keyboard != null && keyboard.tabKey.wasPressedThisFrame)
             {
                 if (_mode == LobbySceneMode.Login)
                 {
@@ -146,7 +149,7 @@ public class LobbyScene : MonoBehaviour
                         _signupEmailInputField.Select();
                 }
             }
-            if (Input.GetKeyDown(KeyCode.KeypadEnter))
+            if (keyboard != null && keyboard.numpadEnterKey.wasPressedThisFrame)
             {
                 if (_mode == LobbySceneMode.Login)
                 {

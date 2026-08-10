@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Clicker : MonoBehaviour
 {
@@ -22,27 +23,32 @@ public class Clicker : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        Pointer pointer = Pointer.current;
+        if (pointer == null) return;
+
+        Vector2 pointerPosition = pointer.position.ReadValue();
+
+        if (pointer.press.wasPressedThisFrame)
         {
-            TrySelect();
+            TrySelect(pointerPosition);
         }
-        else if (Input.GetMouseButton(0) && _selectedTarget != null)
+        else if (pointer.press.isPressed && _selectedTarget != null)
         {
-            CheckDragStart();
+            CheckDragStart(pointerPosition);
             if (_isDragging)
             {
-                UpdateDrag();
+                UpdateDrag(pointerPosition);
             }
         }
-        else if (Input.GetMouseButtonUp(0) && _selectedTarget != null)
+        else if (pointer.press.wasReleasedThisFrame && _selectedTarget != null)
         {
             OnMouseUp();
         }
     }
 
-    private void TrySelect()
+    private void TrySelect(Vector2 pointerPosition)
     {
-        Vector2 worldPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 worldPos = _mainCamera.ScreenToWorldPoint(pointerPosition);
         RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero, 0f);
 
         if (hit)
@@ -58,11 +64,11 @@ public class Clicker : MonoBehaviour
         }
     }
 
-    private void CheckDragStart()
+    private void CheckDragStart(Vector2 pointerPosition)
     {
         if (_isDragging) return;
 
-        Vector2 currentPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 currentPos = _mainCamera.ScreenToWorldPoint(pointerPosition);
         float distance = Vector2.Distance(_mouseDownPos, currentPos);
         float heldTime = Time.time - _mouseDownTime;
 
@@ -74,9 +80,9 @@ public class Clicker : MonoBehaviour
         }
     }
 
-    private void UpdateDrag()
+    private void UpdateDrag(Vector2 pointerPosition)
     {
-        Vector2 mousePos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 mousePos = _mainCamera.ScreenToWorldPoint(pointerPosition);
 
         mousePos.x = Mathf.Clamp(mousePos.x, _dragMinBounds.x, _dragMaxBounds.x);
         mousePos.y = Mathf.Clamp(mousePos.y, _dragMinBounds.y, _dragMaxBounds.y);

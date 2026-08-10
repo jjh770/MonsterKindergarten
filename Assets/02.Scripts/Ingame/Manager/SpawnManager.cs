@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -148,7 +149,7 @@ public class SpawnManager : MonoBehaviour
             OnSpawned?.Invoke();
         }
 
-        if (!Input.GetKeyDown(KeyCode.F1)) return;
+        if (Keyboard.current?.f1Key.wasPressedThisFrame != true) return;
         Spawn(ESlimeGrade.Grade1);
     }
 
