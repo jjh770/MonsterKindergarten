@@ -18,11 +18,12 @@ public class FirebaseAccountRepository : IAccountRepository
     {
         try
         {
-            AuthResult LoginStatus = await _auth.SignInWithEmailAndPasswordAsync(email, password).AsUniTask();
+            AuthResult loginStatus = await _auth.SignInWithEmailAndPasswordAsync(email, password).AsUniTask();
 
             return new AccountResult()
             {
                 Success = true,
+                UserId = loginStatus.User.UserId,
             };
         }
         catch (FirebaseException e)
@@ -56,7 +57,8 @@ public class FirebaseAccountRepository : IAccountRepository
 
             return new AccountResult()
             {
-                Success = true
+                Success = true,
+                UserId = result.User.UserId,
             };
         }
         catch (Exception e)

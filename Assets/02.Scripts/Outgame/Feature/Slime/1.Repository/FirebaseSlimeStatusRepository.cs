@@ -16,8 +16,8 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
     {
         try
         {
-            string email = _auth.CurrentUser.Email;
-            await _db.Collection(COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
+            string userId = _auth.CurrentUser.UserId;
+            await _db.Collection(COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
             Debug.Log("SlimeStatus 저장 성공");
         }
         catch (Exception e)
@@ -32,8 +32,8 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
 
         try
         {
-            string email = _auth.CurrentUser.Email;
-            DocumentSnapshot snapshot = await _db.Collection(COLLECTION_NAME).Document(email).GetSnapshotAsync().AsUniTask();
+            string userId = _auth.CurrentUser.UserId;
+            DocumentSnapshot snapshot = await _db.Collection(COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
             SlimeStatusSaveData data = snapshot.ConvertTo<SlimeStatusSaveData>();
             if (data != null)
             {

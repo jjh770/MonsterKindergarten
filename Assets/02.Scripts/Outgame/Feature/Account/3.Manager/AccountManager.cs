@@ -14,6 +14,7 @@ public class AccountManager : MonoBehaviour
     //public bool IsLogin => _currentAccount != null;
     public static string LoggedInEmail { get; private set; }
     public string Email => LoggedInEmail;
+    public string UserId { get; private set; }
 
     private IAccountRepository _repository;
 
@@ -40,9 +41,10 @@ public class AccountManager : MonoBehaviour
     public async UniTask<AccountResult> TryLogin(string email, string password)
     {
         // 1. 유효성 검사
+        Account account;
         try
         {
-            Account account = new Account(email, password);
+            account = new Account(email, password);
         }
         catch (Exception ex)
         {
@@ -57,12 +59,14 @@ public class AccountManager : MonoBehaviour
         AccountResult result = await _repository.Login(email, password);
         if (result.Success)
         {
-            _currentAccount = result.Account;
+            _currentAccount = account;
             LoggedInEmail = email;
+            UserId = result.UserId;
             return new AccountResult
             {
                 Success = true,
                 Account = _currentAccount,
+                UserId = UserId,
             };
         }
         else
@@ -113,5 +117,8 @@ public class AccountManager : MonoBehaviour
     public void Logout()
     {
         _repository.Logout();
+        _currentAccount = null;
+        LoggedInEmail = null;
+        UserId = null;
     }
 }

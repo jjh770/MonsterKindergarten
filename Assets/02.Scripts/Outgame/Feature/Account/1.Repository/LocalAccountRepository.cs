@@ -32,6 +32,7 @@ public class LocalAccountRepository : IAccountRepository
         return new UniTask<AccountResult>(new AccountResult
         {
             Success = true,
+            UserId = email,
             //Account = new Account(email, password),
         });
     }
@@ -58,6 +59,7 @@ public class LocalAccountRepository : IAccountRepository
         {
             Success = true,
             Account = new Account(email, password),
+            UserId = email,
         });
     }
 

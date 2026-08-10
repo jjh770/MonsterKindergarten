@@ -47,9 +47,9 @@ public class CurrencyManager : MonoBehaviour
         await UniTask.Yield();
 
 #if !UNITY_WEBGL || UNITY_EDITOR
-        _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.Email), new FirebaseCurrencyRepository());
+        _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.UserId), new FirebaseCurrencyRepository());
 #else
-        _repository = new LocalCurrencyRepository(AccountManager.Instance.Email);
+        _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
 #endif
 
         CurrencySaveData saveData = await _repository.Load();
