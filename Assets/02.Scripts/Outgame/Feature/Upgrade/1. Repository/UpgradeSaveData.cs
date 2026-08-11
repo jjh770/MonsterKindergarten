@@ -43,5 +43,6 @@ public class UpgradeSaveData : ISaveData
         Entries = new List<UpgradeEntry>(),
     };
 
+    [FirestoreProperty]
     public string LastSaveTime { get; set; }
 }

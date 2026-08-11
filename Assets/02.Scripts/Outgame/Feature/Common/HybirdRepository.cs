@@ -85,7 +85,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         DateTime playerprefsTime = ParseSaveTime(playerprefs.LastSaveTime);
         DateTime firebaseTime = ParseSaveTime(firebase.LastSaveTime);
 
-        if (playerprefsTime >= firebaseTime)
+        if (playerprefsTime > firebaseTime)
         {
             return playerprefs;
         }
