@@ -1,0 +1,113 @@
+# GitHub Actions 화면에 표시되는 워크플로 이름
+name: Unity Android Project Validation
+
+# PR 생성, 주요 브랜치 Push, 수동 실행 시 검증 수행
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop/mobile-android
+  workflow_dispatch:
+
+# 저장소 내용은 읽기만 허용
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    # GitHub가 제공하는 최신 Ubuntu 환경에서 실행
+    runs-on: ubuntu-latest
+
+    steps:
+      # 이후 검증 명령이 프로젝트 파일을 읽을 수 있도록 저장소 Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate Unity Android project
+        shell: bash
+        run: |
+          # 오류, 미정의 변수, 파이프 실패 발생 시 즉시 작업 중단
+          set -euo pipefail
+
+          # 프로젝트에서 반드시 유지해야 하는 기준값
+          expected_unity_version="6000.3.21f1"
+          package_name="com.skku_say.Monster_Kindergarten"
+          login_scene="Assets/01.Scenes/LoginScene.unity"
+          game_scene="Assets/01.Scenes/GameScene.unity"
+
+          # 실제 Android 개발 및 Release 빌드에 사용하는 프로필
+          profiles=(
+            "Assets/Settings/Build Profiles/Android™.asset"
+            "Assets/Settings/Build Profiles/Android_Release.asset"
+          )
+
+          # Unity 버전이 의도치 않게 변경되지 않았는지 확인
+          grep -Fxq "m_EditorVersion: ${expected_unity_version}" \
+            ProjectSettings/ProjectVersion.txt
+
+          # 로그인, 게임, Firebase, Play Games 필수 파일 존재 확인
+          for required_file in \
+            "${login_scene}" \
+            "${game_scene}" \
+            "Assets/google-services.json" \
+            "Assets/GooglePlayGames/Resources/PlayGamesSettings.asset"; do
+            if [[ ! -f "${required_file}" ]]; then
+              echo "Missing required file: ${required_file}"
+              exit 1
+            fi
+          done
+
+          # 각 Android 프로필에 로그인 씬과 게임 씬이 모두 포함됐는지 확인
+          for profile in "${profiles[@]}"; do
+            if [[ ! -f "${profile}" ]]; then
+              echo "Missing Android build profile: ${profile}"
+              exit 1
+            fi
+
+            if ! grep -Fq "m_path: ${login_scene}" "${profile}"; then
+              echo "LoginScene is missing from ${profile}"
+              exit 1
+            fi
+
+            if ! grep -Fq "m_path: ${game_scene}" "${profile}"; then
+              echo "GameScene is missing from ${profile}"
+              exit 1
+            fi
+
+            # 씬이 등록된 줄 번호를 이용해 시작 순서까지 검사
+            login_line="$(grep -nFm1 "m_path: ${login_scene}" "${profile}" | cut -d: -f1)"
+            game_line="$(grep -nFm1 "m_path: ${game_scene}" "${profile}" | cut -d: -f1)"
+
+            if (( login_line >= game_line )); then
+              echo "Scene order must be LoginScene -> GameScene in ${profile}"
+              exit 1
+            fi
+          done
+
+          # Firebase와 Play Games에 등록된 Android 패키지명이 같은지 확인
+          grep -Fq "\"package_name\": \"${package_name}\"" \
+            Assets/google-services.json
+          grep -Fq "and.BundleId=${package_name}" \
+            ProjectSettings/GooglePlayGameSettings.txt
+
+          # Google Play Games App ID와 Firebase 연동용 Web Client ID 확인
+          grep -Eq '^[[:space:]]+mAppId: [0-9]+$' \
+            Assets/GooglePlayGames/Resources/PlayGamesSettings.asset
+          grep -Eq '^[[:space:]]+mWebClientId: .+\.apps\.googleusercontent\.com$' \
+            Assets/GooglePlayGames/Resources/PlayGamesSettings.asset
+
+          # Unity Package Manager 설정 JSON 문법 확인
+          python3 -m json.tool Packages/manifest.json > /dev/null
+          python3 -m json.tool Packages/packages-lock.json > /dev/null
+
+          # 키스토어, 개인키, 설치 백업 및 패치 실패 파일의 Git 추적 방지
+          forbidden_files="$(git ls-files | grep -Ei '\.(keystore|jks|p12|pfx|pem|key|orig|rej)$' || true)"
+          if [[ -n "${forbidden_files}" ]]; then
+            echo "Forbidden tracked files found:"
+            echo "${forbidden_files}"
+            exit 1
+          fi
+
+          # 모든 검증을 통과한 경우 Actions 로그에 성공 메시지 출력
+          echo "Unity Android project validation passed."
