@@ -12,7 +12,20 @@
           "package_name": "com.skku_say.Monster_Kindergarten"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "488583529454-vhpe735gtrmcp2be10fgvi2kleq1u431.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.skku_say.Monster_Kindergarten",
+            "certificate_hash": "058152506bedb7c7938d8f1ec5e444da2d8a5278"
+          }
+        },
+        {
+          "client_id": "488583529454-b717rn9j6f65m1bsj6h9lsqjq129nm6t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBr7omn1gFPtUq2cQl821japi19KBjIu3Q"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "488583529454-b717rn9j6f65m1bsj6h9lsqjq129nm6t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

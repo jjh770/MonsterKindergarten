@@ -36,9 +36,9 @@ public class UpgradeManager : MonoBehaviour
         await UniTask.Yield();
 
 #if !UNITY_WEBGL || UNITY_EDITOR
-        _repository = new HybridRepository<UpgradeSaveData>(new PlayerPrefsUpgradeRepository(AccountManager.Instance.Email), new FirebaseUpgradeRepository());
+        _repository = new HybridRepository<UpgradeSaveData>(new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId), new FirebaseUpgradeRepository());
 #else
-        _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.Email);
+        _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId);
 #endif
 
         var saveData = await _repository.Load();

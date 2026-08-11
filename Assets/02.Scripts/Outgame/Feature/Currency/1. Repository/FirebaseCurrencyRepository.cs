@@ -15,9 +15,9 @@ public class FirebaseCurrencyRepository : IRepository<CurrencySaveData>
     {
         try
         {
-            string email = _auth.CurrentUser.Email;
+            string userId = _auth.CurrentUser.UserId;
 
-            await _db.Collection(CURRENCY_COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
+            await _db.Collection(CURRENCY_COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
         }
         catch (Exception e)
         {
@@ -29,8 +29,8 @@ public class FirebaseCurrencyRepository : IRepository<CurrencySaveData>
     {
         try
         {
-            string email = _auth.CurrentUser.Email;
-            DocumentSnapshot snapshot = await _db.Collection(CURRENCY_COLLECTION_NAME).Document(email).GetSnapshotAsync().AsUniTask();
+            string userId = _auth.CurrentUser.UserId;
+            DocumentSnapshot snapshot = await _db.Collection(CURRENCY_COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
 
             if (!snapshot.Exists)
             {

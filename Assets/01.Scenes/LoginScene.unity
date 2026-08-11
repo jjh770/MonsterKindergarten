@@ -2294,7 +2294,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &653540760
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2360,7 +2360,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &664082500
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2734,17 +2734,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e582a017bbb12445951738c880624aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LobbyScene
-  _loginPanel: {fileID: 2050279384}
-  _loginEmailInputField: {fileID: 300902183}
-  _loginPasswordInputField: {fileID: 1346692531}
-  _signupButton: {fileID: 664082501}
   _loginButton: {fileID: 1361512533}
-  _signupPanel: {fileID: 1852957761}
-  _signupEmailInputField: {fileID: 1134038288}
-  _signupPasswordInputField: {fileID: 938477828}
-  _verifyPasswordInputField: {fileID: 1747939460}
-  _registerSignupButton: {fileID: 1730793909}
-  _cancelButton: {fileID: 871772498}
 --- !u!1 &820585559
 GameObject:
   m_ObjectHideFlags: 0
@@ -4629,7 +4619,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1318831541
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6093,7 +6083,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1852957762
 RectTransform:
   m_ObjectHideFlags: 0
