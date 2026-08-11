@@ -9,6 +9,7 @@ using System;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class FirebaseTutorial : MonoBehaviour
 {
@@ -318,40 +319,43 @@ public class FirebaseTutorial : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha9))
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null) return;
+
+        if (keyboard.digit9Key.wasPressedThisFrame)
         {
             _ = AssingmentAsync();
         }
         if (_app == null) return;
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (keyboard.digit1Key.wasPressedThisFrame)
         {
             Register("1q@1q.1q", "1q1q1q1q");
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        else if (keyboard.digit2Key.wasPressedThisFrame)
         {
             Login("1q@1q.1q", "1q1q1q1q");
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        else if (keyboard.digit3Key.wasPressedThisFrame)
         {
             Login("1q@1q.1q", "1q1q1q1");
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        else if (keyboard.digit4Key.wasPressedThisFrame)
         {
             Logout();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha5))
+        else if (keyboard.digit5Key.wasPressedThisFrame)
         {
             CheckLoginStatus();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha6))
+        else if (keyboard.digit6Key.wasPressedThisFrame)
         {
             SaveDog();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha7))
+        else if (keyboard.digit7Key.wasPressedThisFrame)
         {
             LoadMyDog();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha8))
+        else if (keyboard.digit8Key.wasPressedThisFrame)
         {
             LoadDogs();
         }

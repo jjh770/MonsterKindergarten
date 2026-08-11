@@ -16,8 +16,8 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
     {
         try
         {
-            string email = _auth.CurrentUser.Email;
-            await _db.Collection(UPGRADE_COLLECTION_NAME).Document(email).SetAsync(saveData).AsUniTask();
+            string userId = _auth.CurrentUser.UserId;
+            await _db.Collection(UPGRADE_COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
         }
         catch (Exception e)
         {
@@ -29,8 +29,8 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
     {
         try
         {
-            string email = _auth.CurrentUser.Email;
-            DocumentSnapshot snapshot = await _db.Collection(UPGRADE_COLLECTION_NAME).Document(email).GetSnapshotAsync().AsUniTask();
+            string userId = _auth.CurrentUser.UserId;
+            DocumentSnapshot snapshot = await _db.Collection(UPGRADE_COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
             UpgradeSaveData data = snapshot.ConvertTo<UpgradeSaveData>();
             if (data != null)
             {

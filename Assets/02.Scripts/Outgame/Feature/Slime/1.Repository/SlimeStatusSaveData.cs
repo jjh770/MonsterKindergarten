@@ -51,5 +51,6 @@ public class SlimeStatusSaveData : ISaveData
         ActiveSlimes = new List<SlimeEntry>(),
     };
 
+    [FirestoreProperty]
     public string LastSaveTime { get; set; }
 }

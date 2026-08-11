@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id,@string/default_android_client_id,@string/default_web_client_id">
+  <string name="gcm_defaultSenderId" translatable="false">488583529454</string>
+  <string name="google_storage_bucket" translatable="false">monsterkindergarten-ff1b2.firebasestorage.app</string>
+  <string name="project_id" translatable="false">monsterkindergarten-ff1b2</string>
+  <string name="google_api_key" translatable="false">AIzaSyBr7omn1gFPtUq2cQl821japi19KBjIu3Q</string>
+  <string name="google_crash_reporting_api_key" translatable="false">AIzaSyBr7omn1gFPtUq2cQl821japi19KBjIu3Q</string>
+  <string name="google_app_id" translatable="false">1:488583529454:android:e5c375e9b6daceca1f04ff</string>
+  <string name="default_android_client_id" translatable="false">488583529454-vhpe735gtrmcp2be10fgvi2kleq1u431.apps.googleusercontent.com</string>
+  <string name="default_web_client_id" translatable="false">488583529454-b717rn9j6f65m1bsj6h9lsqjq129nm6t.apps.googleusercontent.com</string>
+</resources>

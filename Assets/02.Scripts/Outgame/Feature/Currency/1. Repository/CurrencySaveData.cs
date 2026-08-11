@@ -1,5 +1,4 @@
 ﻿using Firebase.Firestore;
-using System;
 [FirestoreData]
 public class CurrencySaveData : ISaveData
 {
@@ -12,6 +11,6 @@ public class CurrencySaveData : ISaveData
     public static CurrencySaveData Default => new CurrencySaveData()
     {
         Currencies = new double[(int)ECurrencyType.Count],
-        LastSaveTime = DateTime.UtcNow.ToString("O")
+        LastSaveTime = null
     };
 }
