@@ -7,6 +7,7 @@ public class SlimeAnimator : MonoBehaviour
 
     private SlimeController _slime;
     private Rigidbody2D _rb;
+    private SpriteRenderer _spriteRenderer;
 
     private static readonly int IsMoving = Animator.StringToHash("IsMoving");
     private static readonly int IsDragging = Animator.StringToHash("IsDragging");
@@ -15,6 +16,7 @@ public class SlimeAnimator : MonoBehaviour
     {
         _slime = GetComponent<SlimeController>();
         _rb = GetComponent<Rigidbody2D>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (_animator == null)
         {
@@ -49,12 +51,46 @@ public class SlimeAnimator : MonoBehaviour
 
     private void UpdateAnimator(ESlimeGrade grade)
     {
-        if (_levelAnimators == null || _levelAnimators.Length == 0 || _animator == null)
+        if (_levelAnimators == null || _levelAnimators.Length == 0 || _animator == null || _slime.Slime == null)
             return;
 
-        // TODO 변경 
         int index = Mathf.Clamp((int)grade - 1, 0, _levelAnimators.Length - 1);
-        _animator.runtimeAnimatorController = _levelAnimators[index];
+        AnimatorOverrideController controller = _levelAnimators[index];
+
+        // 아직 전용 애니메이션이 없는 등급은 기본 애니메이션 대신 등록된 스프라이트를 표시한다.
+        bool usesBaseAnimation = index == 0;
+        if (!usesBaseAnimation && !HasCustomAnimation(controller))
+        {
+            _animator.enabled = false;
+            if (_spriteRenderer != null)
+            {
+                _spriteRenderer.sprite = _slime.Slime.SpecData.Sprite;
+            }
+            return;
+        }
+
+        _animator.runtimeAnimatorController = controller;
+        _animator.enabled = true;
+    }
+
+    private static bool HasCustomAnimation(AnimatorOverrideController controller)
+    {
+        if (controller == null) return false;
+
+        var overrides =
+            new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>>(
+                controller.overridesCount);
+        controller.GetOverrides(overrides);
+
+        foreach (var pair in overrides)
+        {
+            if (pair.Value != null && pair.Value != pair.Key)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnInteracted()

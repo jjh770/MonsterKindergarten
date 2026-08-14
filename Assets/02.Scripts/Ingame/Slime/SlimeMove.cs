@@ -18,6 +18,7 @@ public class SlimeMove : MonoBehaviour
     private Vector3 _rightVector = Vector3.zero;
     private Vector3 _leftVector = new Vector3(0, 180, 0);
     private Coroutine _moveCoroutine;
+    private bool _isInteractionIdle;
 
     private void Start()
     {
@@ -39,6 +40,8 @@ public class SlimeMove : MonoBehaviour
     private void OnInteracted()
     {
         // 이동 중단하고 Idle 상태로 전환
+        _isInteractionIdle = true;
+        _lastVelocity = Vector2.zero;
         if (_moveCoroutine != null)
         {
             StopCoroutine(_moveCoroutine);
@@ -52,6 +55,7 @@ public class SlimeMove : MonoBehaviour
     {
         // 상호작용 후 2초 Idle
         yield return new WaitForSeconds(_interactionIdleDuration);
+        _isInteractionIdle = false;
         _moveCoroutine = StartCoroutine(MoveRoutine());
     }
 
@@ -114,6 +118,14 @@ public class SlimeMove : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D coll)
     {
+        // 상호작용 대기 또는 드래그 중에는 이전 속도로 다시 튕기지 않도록 한다.
+        if (_isInteractionIdle || (_slime != null && _slime.IsDragging))
+        {
+            _lastVelocity = Vector2.zero;
+            _rb.linearVelocity = Vector2.zero;
+            return;
+        }
+
         var speed = _lastVelocity.magnitude;
         var direction = Vector2.Reflect(_lastVelocity.normalized, coll.contacts[0].normal);
         _rb.linearVelocity = direction * Mathf.Max(speed, _moveSpeed);

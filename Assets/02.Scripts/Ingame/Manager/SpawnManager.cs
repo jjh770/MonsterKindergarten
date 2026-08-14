@@ -84,7 +84,12 @@ public class SpawnManager : MonoBehaviour
         _isInitialized = true;
         ApplySavedUpgrades();
         InitSlimeSpawns();
-        Spawn(ESlimeGrade.Grade1);
+
+        // 신규 데이터처럼 복원할 슬라임이 없을 때만 최초 슬라임을 생성한다.
+        if (SlimeSpawner.Instance.GetActiveCount() == 0)
+        {
+            Spawn(ESlimeGrade.Grade1);
+        }
     }
 
     private void ApplySavedUpgrades()
