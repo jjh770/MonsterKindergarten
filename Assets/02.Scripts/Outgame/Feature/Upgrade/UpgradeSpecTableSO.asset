@@ -162,7 +162,7 @@ MonoBehaviour:
     PointMultiplier: 288
     PointFormula: 0
     Name: "\uAD6D\uC655 \uC2AC\uB77C\uC784"
-    Description: "\uD074 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
   - Type: 1
     SlimeGrade: 7
     MaxLevel: 10
