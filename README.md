@@ -29,7 +29,7 @@
 3. `Assets/01.Scenes/LoginScene.unity`에서 Play Mode를 실행합니다.
 4. Android 로그인과 클라우드 저장은 프로젝트에 맞는 Firebase 및 Google Play Games 설정이 필요합니다.
 
-상세한 연동 과정은 [Google Play Games 및 Firebase 연동 기록](GOOGLE_PLAY_FIREBASE_INTEGRATION.md)을 참고하세요.
+상세한 연동 과정은 [Google Play Games 및 Firebase 연동 기록](Documentation/GOOGLE_PLAY_FIREBASE_INTEGRATION.md)을 참고하세요.
 
 ## 주요 폴더
 

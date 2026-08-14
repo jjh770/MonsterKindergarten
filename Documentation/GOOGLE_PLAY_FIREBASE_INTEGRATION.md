@@ -54,7 +54,7 @@ Google과 Firebase의 공식 문서를 기준으로 작업 순서를 다시 검�
 2. 직접 설치할 릴리스 빌드에 사용할 키스토어와 키 별칭을 만들었습니다.
 3. `keytool`로 해당 키의 SHA-1을 확인했습니다.
 
-![키스토어 SHA-1 확인 명령](Documentation/Images/google-play-firebase/01-keystore-sha-command.png)
+![키스토어 SHA-1 확인 명령](Images/google-play-firebase/01-keystore-sha-command.png)
 
 키스토어 파일과 비밀번호는 프로젝트 외부에 보관했습니다. Play Games 로그인은 개발 중 직접 설치하는 APK에도 서명이 필요했습니다.
 
@@ -64,11 +64,11 @@ Google과 Firebase의 공식 문서를 기준으로 작업 순서를 다시 검�
 2. 패키지명이 Unity 및 Play Console과 같은지 확인했습니다.
 3. 최신 `google-services.json`을 받아 이름을 변경하지 않고 Unity의 `Assets/` 폴더에 넣었습니다.
 
-![Firebase Android 최신 구성 파일 다운로드](Documentation/Images/google-play-firebase/02-firebase-download-config.png)
+![Firebase Android 최신 구성 파일 다운로드](Images/google-play-firebase/02-firebase-download-config.png)
 
 4. 키스토어의 SHA-1을 Firebase Android 앱의 SHA 인증서 지문에 추가했습니다.
 
-![Firebase Android 앱 최초 SHA 등록](Documentation/Images/google-play-firebase/03-firebase-android-initial-sha.png)
+![Firebase Android 앱 최초 SHA 등록](Images/google-play-firebase/03-firebase-android-initial-sha.png)
 
 `google-services.json`에는 앱 구성에 필요한 식별자가 들어 있지만 비밀키는 아닙니다. 그래도 문서나 이슈에 내용을 직접 복사하지 않고 프로젝트의 저장소 정책에 맞춰 관리했습니다.
 
@@ -76,25 +76,25 @@ Google과 Firebase의 공식 문서를 기준으로 작업 순서를 다시 검�
 
 1. Firebase Authentication의 로그인 방법에서 새 로그인 제공업체를 추가했습니다.
 
-![Firebase Authentication 로그인 제공업체 목록](Documentation/Images/google-play-firebase/04-firebase-auth-provider-list.png)
+![Firebase Authentication 로그인 제공업체 목록](Images/google-play-firebase/04-firebase-auth-provider-list.png)
 
 2. Google 제공업체를 선택했습니다.
 
-![Firebase Google 로그인 제공업체 선택](Documentation/Images/google-play-firebase/05-firebase-google-provider-selection.png)
+![Firebase Google 로그인 제공업체 선택](Images/google-play-firebase/05-firebase-google-provider-selection.png)
 
 3. Google 제공업체를 활성화하고 프로젝트 공개 이름과 지원 이메일을 설정했습니다.
 
-![Firebase Google 로그인 제공업체 설정](Documentation/Images/google-play-firebase/06-firebase-google-provider-config.png)
+![Firebase Google 로그인 제공업체 설정](Images/google-play-firebase/06-firebase-google-provider-config.png)
 
 4. Google 제공업체에 연결된 Web OAuth 클라이언트를 확인했습니다. 이 Web 클라이언트의 ID와 보안 비밀번호를 Play Games 제공업체에 사용했습니다.
 
-![Firebase Google 제공업체 클라이언트 설정](Documentation/Images/google-play-firebase/07-firebase-google-provider-client-settings.png)
+![Firebase Google 제공업체 클라이언트 설정](Images/google-play-firebase/07-firebase-google-provider-client-settings.png)
 
-![Firebase Google 제공업체 Web SDK 구성](Documentation/Images/google-play-firebase/08-firebase-google-web-sdk-config.png)
+![Firebase Google 제공업체 Web SDK 구성](Images/google-play-firebase/08-firebase-google-web-sdk-config.png)
 
 5. Play Games 제공업체를 활성화하고 같은 게임 서버용 Web OAuth 클라이언트 정보를 입력했습니다.
 
-![Firebase Play Games 로그인 제공업체 설정](Documentation/Images/google-play-firebase/09-firebase-play-games-provider-config.png)
+![Firebase Play Games 로그인 제공업체 설정](Images/google-play-firebase/09-firebase-play-games-provider-config.png)
 
 ## 4. Google Play Games 및 Unity 플러그인 구성
 
@@ -102,37 +102,37 @@ Google과 Firebase의 공식 문서를 기준으로 작업 순서를 다시 검�
 
 Play Games 서비스 설정에서 Firebase가 사용하는 Google Cloud 프로젝트를 선택했습니다. 인증에 사용하는 Firebase, Google Cloud, Play Games 서비스가 같은 프로젝트에 연결되어 있는지도 확인했습니다.
 
-![Play Games 서비스와 Google Cloud 프로젝트 연결](Documentation/Images/google-play-firebase/10-play-games-project-link.png)
+![Play Games 서비스와 Google Cloud 프로젝트 연결](Images/google-play-firebase/10-play-games-project-link.png)
 
 ### 4.2 Web 및 Android 사용자 인증 정보
 
 1. Google Cloud에서 게임 서버에 사용할 Web OAuth 클라이언트를 확인했습니다.
 
-![Google Cloud Web OAuth 클라이언트 설정](Documentation/Images/google-play-firebase/11-google-cloud-web-client.png)
+![Google Cloud Web OAuth 클라이언트 설정](Images/google-play-firebase/11-google-cloud-web-client.png)
 
 2. Play Games 서비스에 게임 서버 유형의 사용자 인증 정보를 추가하고 같은 Web OAuth 클라이언트를 연결했습니다.
 
-![Play Games 게임 서버 사용자 인증 정보](Documentation/Images/google-play-firebase/12-play-games-game-server-credential.png)
+![Play Games 게임 서버 사용자 인증 정보](Images/google-play-firebase/12-play-games-game-server-credential.png)
 
 3. Android 유형의 사용자 인증 정보를 추가하고 패키지명과 직접 설치용 키스토어 SHA-1에 해당하는 Android OAuth 클라이언트를 선택했습니다.
 
-![Play Games Android 사용자 인증 정보 추가](Documentation/Images/google-play-firebase/13-play-games-add-android-credential.png)
+![Play Games Android 사용자 인증 정보 추가](Images/google-play-firebase/13-play-games-add-android-credential.png)
 
 4. Android 사용자 인증 정보의 패키지명과 서명 지문이 Unity 빌드 설정과 일치하는지 확인했습니다.
 
-![Play Games Android 사용자 인증 정보 상세](Documentation/Images/google-play-firebase/14-play-games-android-credential.png)
+![Play Games Android 사용자 인증 정보 상세](Images/google-play-firebase/14-play-games-android-credential.png)
 
 ### 4.3 Unity Google Play Games 플러그인
 
 1. Play Games 서비스 설정에서 Android 리소스 정의를 복사했습니다.
 
-![Play Games Android 리소스 정의](Documentation/Images/google-play-firebase/15-play-games-resource-definition.png)
+![Play Games Android 리소스 정의](Images/google-play-firebase/15-play-games-resource-definition.png)
 
 2. Unity에서 `Window -> Google Play Games -> Setup -> Android Setup`을 열었습니다.
 3. Android 리소스 정의와 게임 서버용 Web Client ID를 입력했습니다.
 4. `Setup`을 실행해 설정 파일과 리소스를 생성했습니다.
 
-![Unity Google Play Games Android 설정](Documentation/Images/google-play-firebase/16-unity-play-games-configuration.png)
+![Unity Google Play Games Android 설정](Images/google-play-firebase/16-unity-play-games-configuration.png)
 
 ### 4.4 Unity 인증 구현
 
@@ -156,7 +156,7 @@ Play Games 서비스 설정에서 Firebase가 사용하는 Google Cloud 프로�
 
 Firebase Authentication에서 Play Games 사용자의 생성 시각과 최근 로그인 시각이 갱신되는 것을 확인했습니다.
 
-![Firebase Authentication 사용자 목록](Documentation/Images/google-play-firebase/17-firebase-auth-users.png)
+![Firebase Authentication 사용자 목록](Images/google-play-firebase/17-firebase-auth-users.png)
 
 ## 5. Firestore 저장 및 보안 규칙
 
@@ -172,7 +172,7 @@ Firestore 문서 ID로 Firebase UID를 사용했습니다.
 
 세 컬렉션과 `LastSaveTime`이 정상적으로 저장되는 것을 확인했습니다.
 
-![Firestore 저장 결과](Documentation/Images/google-play-firebase/18-firestore-save-result.png)
+![Firestore 저장 결과](Images/google-play-firebase/18-firestore-save-result.png)
 
 ### 5.2 Firestore 보안 규칙
 
@@ -205,7 +205,7 @@ service cloud.firestore {
 
 기존의 날짜 만료 기반 임시 허용 규칙은 제거했습니다. 규칙 게시 후 저장과 불러오기가 정상 작동하는 것도 확인했습니다.
 
-![Firestore 보안 규칙](Documentation/Images/google-play-firebase/19-firestore-security-rules.png)
+![Firestore 보안 규칙](Images/google-play-firebase/19-firestore-security-rules.png)
 
 ## 6. AAB 내부 테스트 및 Play 앱 서명
 
@@ -218,18 +218,18 @@ service cloud.firestore {
 - `Development Build` 비활성화
 - 릴리스 키스토어로 서명
 
-![Unity Android Release 프로필](Documentation/Images/google-play-firebase/20-unity-android-release-profile.png)
+![Unity Android Release 프로필](Images/google-play-firebase/20-unity-android-release-profile.png)
 
 ### 6.2 내부 테스트 준비 및 첫 AAB 배포
 
 1. 내부 테스트 이메일 목록에 테스트할 Google 계정을 추가했습니다.
 
-![Google Play 내부 테스트 테스터 목록](Documentation/Images/google-play-firebase/21-internal-test-testers.png)
+![Google Play 내부 테스트 테스터 목록](Images/google-play-firebase/21-internal-test-testers.png)
 
 2. 릴리스 AAB를 업로드하고 내부 테스트 트랙에 출시했습니다.
 3. 트랙이 `활성`이고 출시가 `내부 테스터에게 제공됨` 상태인지 확인했습니다.
 
-![Google Play 내부 테스트 활성화](Documentation/Images/google-play-firebase/22-internal-test-active.png)
+![Google Play 내부 테스트 활성화](Images/google-play-firebase/22-internal-test-active.png)
 
 첫 App Bundle 분석 결과:
 
@@ -246,11 +246,11 @@ service cloud.firestore {
 - R8 구성 및 가독화 파일: 없음
 - 네이티브 디버그 기호: 업로드하지 않음
 
-![Google Play App Bundle 세부 분석](Documentation/Images/google-play-firebase/23-app-bundle-analysis.png)
+![Google Play App Bundle 세부 분석](Images/google-play-firebase/23-app-bundle-analysis.png)
 
 R8 가독화 파일과 네이티브 디버그 기호가 없다는 항목은 첫 내부 테스트 출시를 막는 오류가 아니었습니다. 최초 출시에서는 테스터 미지정 경고만 바로 해결했습니다.
 
-![Google Play 내부 테스트 출시 경고](Documentation/Images/google-play-firebase/24-app-bundle-warnings.png)
+![Google Play 내부 테스트 출시 경고](Images/google-play-firebase/24-app-bundle-warnings.png)
 
 ### 6.3 Play 앱 서명 SHA 추가
 
@@ -265,11 +265,11 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 1. Play 앱 서명 SHA-1용 Android OAuth 사용자 인증 정보를 추가했습니다.
 2. 기존 키스토어용 Android 인증 정보와 게임 서버용 Web 인증 정보는 그대로 유지했습니다.
 
-![Play Games 최종 사용자 인증 정보 목록](Documentation/Images/google-play-firebase/25-play-games-final-credentials.png)
+![Play Games 최종 사용자 인증 정보 목록](Images/google-play-firebase/25-play-games-final-credentials.png)
 
 3. 같은 Play 앱 서명 SHA-1을 Firebase Android 앱에도 추가했습니다.
 
-![Firebase SHA 최종 등록 결과](Documentation/Images/google-play-firebase/26-firebase-final-sha-registration.png)
+![Firebase SHA 최종 등록 결과](Images/google-play-firebase/26-firebase-final-sha-registration.png)
 
 직접 설치본 위에 Play 스토어 설치본을 덮어쓸 때 서명 충돌이 발생할 수 있었습니다. 그래서 기존 직접 설치본을 삭제한 뒤 Play 스토어에서 다시 설치했습니다.
 
@@ -281,7 +281,7 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 `사용자 늘리기 -> Play Games 서비스 -> 설정 및 관리 -> 테스터 -> 출시 트랙`
 
-![Play Games 서비스 내부 테스트 출시 트랙 연결](Documentation/Images/google-play-firebase/27-play-games-internal-release-track.png)
+![Play Games 서비스 내부 테스트 출시 트랙 연결](Images/google-play-firebase/27-play-games-internal-release-track.png)
 
 출시 트랙을 연결한 뒤에는 내부 테스트 참여 계정을 Play Games 서비스의 개별 테스터 목록에 중복 등록하지 않아도 로그인할 수 있었습니다. 문제가 생길 경우에는 Play Games 서비스의 개별 테스터 등록을 임시 진단 수단으로 사용할 수 있습니다.
 
@@ -290,20 +290,20 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 1. 내부 테스트 이메일 목록에 Google 계정을 추가했습니다.
 2. 해당 계정으로 내부 테스트 참여 링크를 열고 테스트 참여를 완료했습니다.
 
-![Google Play 내부 테스트 참여 화면](Documentation/Images/google-play-firebase/28-internal-test-opt-in.jpg)
+![Google Play 내부 테스트 참여 화면](Images/google-play-firebase/28-internal-test-opt-in.jpg)
 
 3. Play 스토어에서 테스트 앱을 설치했습니다.
 
-![Google Play 테스트 앱 설치 결과](Documentation/Images/google-play-firebase/29-play-store-test-app.jpg)
+![Google Play 테스트 앱 설치 결과](Images/google-play-firebase/29-play-store-test-app.jpg)
 
 4. 휴대폰의 `설정 -> Google -> 모든 서비스 -> Google 앱 설정 -> Play Games -> 로그인 계정 -> 게임별 계정 변경`에서 Monster Kindergarten에 사용할 계정을 선택했습니다.
 5. 앱을 완전히 종료한 뒤 다시 실행해 Play Games 로그인을 확인했습니다.
 
-![Google Play Games 로그인 확인](Documentation/Images/google-play-firebase/30-play-games-login.jpg)
+![Google Play Games 로그인 확인](Images/google-play-firebase/30-play-games-login.jpg)
 
 6. 동일 Firebase UID의 기존 재화, 슬라임 현황, 업그레이드가 복구되는지 확인했습니다.
 
-![Play 스토어 설치본 클라우드 복구 결과](Documentation/Images/google-play-firebase/31-cloud-save-restored.jpg)
+![Play 스토어 설치본 클라우드 복구 결과](Images/google-play-firebase/31-cloud-save-restored.jpg)
 
 내부 테스트 앱은 일반 Play 스토어 검색에 노출되지 않았습니다. 등록된 Google 계정으로 참여 링크를 열어 테스트에 참여한 뒤 설치했습니다.
 
