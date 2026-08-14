@@ -25,7 +25,7 @@ public class AccountManager : MonoBehaviour
         }
 
 
-#if !UNITY_WEBGL || UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
         _repository = new FirebaseAccountRepository();
 #else
         _repository = new LocalAccountRepository();

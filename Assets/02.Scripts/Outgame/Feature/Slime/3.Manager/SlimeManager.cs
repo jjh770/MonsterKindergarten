@@ -37,7 +37,7 @@ public class SlimeManager : MonoBehaviour
     {
         await UniTask.Yield();
 
-#if !UNITY_WEBGL || UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
         _statusRepository = new HybridRepository<SlimeStatusSaveData>(new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.UserId), new FirebaseSlimeStatusRepository());
 #else
         _statusRepository = new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.UserId);
