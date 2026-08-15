@@ -27,6 +27,7 @@ public class CurrencyManager : MonoBehaviour
 
     // 재화 조회 +@ (편의를 위해 이정도는 눈감아주자)
     public Currency Point => Get(ECurrencyType.Point);
+    public DateTime LastSaveTime { get; private set; } = DateTime.MinValue;
 
     //public Currency Point { get; private set; }
     public event Action<ECurrencyType, Currency> OnDataChanged;
@@ -53,6 +54,7 @@ public class CurrencyManager : MonoBehaviour
 #endif
 
         CurrencySaveData saveData = await _repository.Load();
+        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         double[] currencyValues = saveData.Currencies;
         for (int i = 0; i < _currencies.Length; i++)
         {
@@ -92,11 +94,27 @@ public class CurrencyManager : MonoBehaviour
     // 재화 저장
     private void Save()
     {
+        LastSaveTime = DateTime.UtcNow;
         _repository.Save(new CurrencySaveData()
         {
             Currencies = ToSaveData(),
-            LastSaveTime = DateTime.UtcNow.ToString("O")
+            LastSaveTime = LastSaveTime.ToString("O")
         });
+    }
+
+    public void SaveCurrent()
+    {
+        Save();
+    }
+
+    private static DateTime ParseSaveTime(string saveTime)
+    {
+        if (DateTime.TryParse(saveTime, out DateTime result))
+        {
+            return result.ToUniversalTime();
+        }
+
+        return DateTime.MinValue;
     }
 
     // Currency[] -> double[] 변환
