@@ -8,6 +8,7 @@ public class AutoClicker : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (SpawnManager.Instance == null) return;
 
         var activeTargets = SpawnManager.Instance.GetActiveTargets();

@@ -138,6 +138,7 @@ public class SpawnManager : MonoBehaviour
     private void Update()
     {
         if (!_isInitialized) return;
+        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
 
         if (SlimeSpawner.Instance != null &&
             SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
