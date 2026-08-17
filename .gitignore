@@ -74,3 +74,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 /Docs
+
+# Paid Asset Store packages
+/Assets/Plugins/AllIn1VfxToolkit/
+/Assets/Plugins/AllIn1VfxToolkit.meta
