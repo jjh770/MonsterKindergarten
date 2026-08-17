@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 6008348853146703040}
   - component: {fileID: 8769579675102300841}
   - component: {fileID: 6828179282409805443}
+  - component: {fileID: 1449321985000000000}
   m_Layer: 7
   m_Name: Slime
   m_TagString: Untagged
@@ -310,6 +311,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dde44811eb3fe46439d28ee7b6550b3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeController
+--- !u!114 &1449321985000000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a84cc0e3294143cbb3f5905b0d78df74, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeAudioFeedback
   _levelUpSounds:
   - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
   - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
@@ -318,3 +331,4 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
   - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
   _landSound: {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
+  _landSoundCooldown: 0.1

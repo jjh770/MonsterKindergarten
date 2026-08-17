@@ -7,11 +7,6 @@ public class SlimeController : MonoBehaviour, IClickable
     private Slime _slime;
     public Slime Slime => _slime;
 
-    [SerializeField] private AudioClip[] _levelUpSounds;
-    [SerializeField] private AudioClip _landSound;
-    [SerializeField, Min(0f)] private float _landSoundCooldown = 0.1f;
-
-    private int _randomLevelUpSound = 0;
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
@@ -22,6 +17,8 @@ public class SlimeController : MonoBehaviour, IClickable
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
 
     public event Action<ESlimeGrade> OnGradeChanged;
+    public event Action OnPromoted;
+    public event Action OnLanded;
     public event Action OnInteracted;
 
     public void SetSlime(Slime slime)
@@ -31,17 +28,10 @@ public class SlimeController : MonoBehaviour, IClickable
         OnGradeChanged?.Invoke(_slime.SpecData.Grade);
     }
 
-    public void PlayLevelUpSound()
+    public void PromoteTo(Slime slime)
     {
-        if (AudioManager.Instance == null ||
-            _levelUpSounds == null ||
-            _levelUpSounds.Length == 0)
-        {
-            return;
-        }
-
-        _randomLevelUpSound = UnityEngine.Random.Range(0, _levelUpSounds.Length);
-        AudioManager.Instance.PlaySFX(_levelUpSounds[_randomLevelUpSound]);
+        SetSlime(slime);
+        OnPromoted?.Invoke();
     }
 
     public void OnSpawn()
@@ -62,12 +52,7 @@ public class SlimeController : MonoBehaviour, IClickable
         if (!_hasLanded)
         {
             _hasLanded = true;
-            if (AudioManager.Instance != null && _landSound != null)
-            {
-                AudioManager.Instance.PlaySFXWithCooldown(
-                    _landSound,
-                    _landSoundCooldown);
-            }
+            OnLanded?.Invoke();
         }
     }
 
