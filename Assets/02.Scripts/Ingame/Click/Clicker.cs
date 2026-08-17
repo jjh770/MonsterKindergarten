@@ -5,12 +5,14 @@ public class Clicker : MonoBehaviour
 {
     [SerializeField] private float _dragThresholdTime = 0.2f;
     [SerializeField] private float _dragThresholdDistance = 0.3f;
+    [SerializeField] private float _mergeDetectionRadius = 0.65f;
 
     [Header("Drag Bounds")]
     [SerializeField] private Vector2 _dragMinBounds = new Vector2(-5f, -3f);
     [SerializeField] private Vector2 _dragMaxBounds = new Vector2(5f, 3f);
 
     private SlimeController _selectedTarget;
+    private SlimeController _mergeCandidate;
     private Camera _mainCamera;
     private Vector2 _mouseDownPos;
     private float _mouseDownTime;
@@ -23,8 +25,14 @@ public class Clicker : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive)
+        {
+            CancelSelection();
+            return;
+        }
+
         Pointer pointer = Pointer.current;
-        if (pointer == null) return;
+        if (pointer == null || _mainCamera == null) return;
 
         Vector2 pointerPosition = pointer.position.ReadValue();
 
@@ -42,8 +50,13 @@ public class Clicker : MonoBehaviour
         }
         else if (pointer.press.wasReleasedThisFrame && _selectedTarget != null)
         {
-            OnMouseUp();
+            OnPointerUp(pointerPosition);
         }
+    }
+
+    private void OnDisable()
+    {
+        CancelSelection();
     }
 
     private void TrySelect(Vector2 pointerPosition)
@@ -88,14 +101,16 @@ public class Clicker : MonoBehaviour
         mousePos.y = Mathf.Clamp(mousePos.y, _dragMinBounds.y, _dragMaxBounds.y);
 
         _selectedTarget.transform.position = mousePos;
+        UpdateMergeCandidate();
     }
 
-    private void OnMouseUp()
+    private void OnPointerUp(Vector2 pointerPosition)
     {
         if (_isDragging)
         {
-            // 드래그 종료
-            _selectedTarget.EndDrag();
+            // 릴리스 프레임의 포인터 위치까지 반영한 뒤 표시된 대상을 우선 합성한다.
+            UpdateDrag(pointerPosition);
+            _selectedTarget.EndDrag(_mergeCandidate);
         }
         else
         {
@@ -108,6 +123,44 @@ public class Clicker : MonoBehaviour
                 Grade = _selectedTarget.Grade
             };
             _selectedTarget.OnClick(clickInfo);
+        }
+
+        _mergeCandidate = null;
+        _selectedTarget = null;
+        _isDragging = false;
+    }
+
+    private void UpdateMergeCandidate()
+    {
+        SlimeController nearestCandidate = null;
+        float nearestDistanceSqr = float.MaxValue;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(
+            _selectedTarget.transform.position,
+            Mathf.Max(0f, _mergeDetectionRadius));
+
+        foreach (Collider2D hit in hits)
+        {
+            SlimeController candidate = hit.GetComponent<SlimeController>();
+            if (!_selectedTarget.CanMergeWith(candidate)) continue;
+
+            float distanceSqr = (
+                candidate.transform.position - _selectedTarget.transform.position).sqrMagnitude;
+            if (distanceSqr >= nearestDistanceSqr) continue;
+
+            nearestCandidate = candidate;
+            nearestDistanceSqr = distanceSqr;
+        }
+
+        _mergeCandidate = nearestCandidate;
+    }
+
+    private void CancelSelection()
+    {
+        _mergeCandidate = null;
+
+        if (_selectedTarget != null && _isDragging)
+        {
+            _selectedTarget.CancelDrag();
         }
 
         _selectedTarget = null;

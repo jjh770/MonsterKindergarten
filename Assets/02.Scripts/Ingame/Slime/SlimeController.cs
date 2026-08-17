@@ -72,20 +72,46 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void EndDrag()
     {
-        _isDragging = false;
-        OnInteracted?.Invoke();
-        TryMerge();
+        EndDrag(null);
     }
 
-    private void TryMerge()
+    public void EndDrag(SlimeController preferredTarget)
     {
+        _isDragging = false;
+        OnInteracted?.Invoke();
+        TryMerge(preferredTarget);
+    }
+
+    public void CancelDrag()
+    {
+        _isDragging = false;
+    }
+
+    public bool CanMergeWith(SlimeController other)
+    {
+        return other != null &&
+               other != this &&
+               _slime != null &&
+               other.Slime != null &&
+               SlimeManager.Instance != null &&
+               SlimeManager.Instance.CanMerge(_slime, other.Slime);
+    }
+
+    private void TryMerge(SlimeController preferredTarget)
+    {
+        if (CanMergeWith(preferredTarget))
+        {
+            MergeManager.Instance.Merge(this, preferredTarget);
+            return;
+        }
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.5f);
 
         foreach (var hit in hits)
         {
             SlimeController other = hit.GetComponent<SlimeController>();
 
-            if (other != null && other != this && other.Grade == this.Grade)
+            if (CanMergeWith(other))
             {
                 MergeManager.Instance.Merge(this, other);
                 return;

@@ -407,6 +407,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Clicker
   _dragThresholdTime: 0.2
   _dragThresholdDistance: 0.3
+  _mergeDetectionRadius: 0.65
   _dragMinBounds: {x: -2, y: -3}
   _dragMaxBounds: {x: 2, y: 3}
 --- !u!4 &115063079
