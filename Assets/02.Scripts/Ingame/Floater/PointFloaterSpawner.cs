@@ -15,6 +15,7 @@ public class PointFloaterSpawner : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         _pool = GetComponent<LeanGameObjectPool>();

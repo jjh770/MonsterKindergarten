@@ -26,6 +26,7 @@ public class UpgradeManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         _ = InitAsync();

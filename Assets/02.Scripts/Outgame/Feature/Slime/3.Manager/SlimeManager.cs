@@ -20,6 +20,12 @@ public class SlimeManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
 
         foreach (var specData in _specTable.slimeSpecs)

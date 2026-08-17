@@ -13,6 +13,7 @@ public class MergeManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
     }
 

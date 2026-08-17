@@ -22,6 +22,7 @@ public class AccountManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
 

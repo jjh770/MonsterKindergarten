@@ -43,6 +43,7 @@ public class CurrencyManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         await UniTask.Yield();
