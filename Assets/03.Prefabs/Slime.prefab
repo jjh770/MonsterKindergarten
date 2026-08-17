@@ -209,6 +209,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 391c4d7cf10ebfb45a93ade13aa4f737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScaleTweeningFeedback
+  _clickPunchScale: 0.5
+  _clickDuration: 0.5
+  _promotePunchScale: 1
+  _promoteDuration: 1
+  _vibrato: 10
+  _elasticity: 1
 --- !u!114 &2205505537005354731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,6 +228,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorFlashFeedback
   _flashColor: {r: 1, g: 0.5613208, b: 0.5613208, a: 1}
+  _flashDuration: 0.3
 --- !u!114 &7731520626090865071
 MonoBehaviour:
   m_ObjectHideFlags: 0

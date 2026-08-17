@@ -1,11 +1,8 @@
-﻿using DG.Tweening;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class MergeManager : MonoBehaviour
 {
     public static MergeManager Instance { get; private set; }
-
-    [SerializeField] private int _maxLevel = 10;
 
     private void Awake()
     {
@@ -28,7 +25,6 @@ public class MergeManager : MonoBehaviour
 
         Slime nextSlime = SlimeManager.Instance.Get(toGrade);
         keeper.PromoteTo(nextSlime);
-        keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
 
         SlimeManager.Instance.TryUpdateHighestLevel(toGrade);
         SlimeManager.Instance.MergeSlime(fromGrade, toGrade);

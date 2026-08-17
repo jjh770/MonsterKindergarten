@@ -1,12 +1,13 @@
-﻿using System.Collections;
+﻿using DG.Tweening;
 using UnityEngine;
 
 public class ColorFlashFeedback : MonoBehaviour, IFeedback
 {
     private SpriteRenderer _spriteRenderer;
     [SerializeField] private Color _flashColor;
+    [SerializeField, Min(0f)] private float _flashDuration = 0.3f;
 
-    private Coroutine _coroutine;
+    private Tween _flashTween;
     private Color _defaultColor;
 
     private void Awake()
@@ -17,35 +18,45 @@ public class ColorFlashFeedback : MonoBehaviour, IFeedback
 
     private void OnDisable()
     {
-        if (_coroutine != null)
-        {
-            StopCoroutine(_coroutine);
-            _coroutine = null;
-        }
+        CleanupFlash();
+    }
 
-        if (_spriteRenderer != null)
-        {
-            _spriteRenderer.color = _defaultColor;
-        }
+    private void OnDestroy()
+    {
+        CleanupFlash();
     }
 
     public void Play(ClickInfo clickInfo)
     {
-        if (_coroutine != null)
-        {
-            StopCoroutine(_coroutine);
-            _coroutine = null;
-        }
-        _coroutine = StartCoroutine(Play_Coroutine());
+        CleanupFlash();
+        if (_spriteRenderer == null) return;
+
+        _spriteRenderer.color = _flashColor;
+        _flashTween = DOVirtual.DelayedCall(
+                _flashDuration,
+                CompleteFlash,
+                true)
+            .SetTarget(this);
     }
 
-    private IEnumerator Play_Coroutine()
+    private void CompleteFlash()
     {
-        _spriteRenderer.color = _flashColor;
+        RestoreColor();
+        _flashTween = null;
+    }
 
-        yield return new WaitForSeconds(0.3f);
+    private void CleanupFlash()
+    {
+        _flashTween?.Kill();
+        _flashTween = null;
+        RestoreColor();
+    }
 
-        _spriteRenderer.color = _defaultColor;
-        _coroutine = null;
+    private void RestoreColor()
+    {
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.color = _defaultColor;
+        }
     }
 }

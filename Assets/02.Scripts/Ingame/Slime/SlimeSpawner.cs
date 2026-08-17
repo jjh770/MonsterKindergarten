@@ -61,7 +61,6 @@ public class SlimeSpawner : MonoBehaviour
 
         target.OnDespawn();
         target.transform.DOKill();
-        target.transform.localScale = Vector3.one;
         _activeTargets.Remove(target);
         _pool.Despawn(target.gameObject);
     }
