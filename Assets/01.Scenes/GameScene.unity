@@ -386,6 +386,7 @@ GameObject:
   m_Component:
   - component: {fileID: 115063079}
   - component: {fileID: 115063078}
+  - component: {fileID: 115063080}
   m_Layer: 0
   m_Name: Clicker
   m_TagString: Untagged
@@ -410,6 +411,30 @@ MonoBehaviour:
   _mergeDetectionRadius: 0.65
   _dragMinBounds: {x: -2, y: -3}
   _dragMaxBounds: {x: 2, y: 3}
+--- !u!114 &115063080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 115063077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 643a4b8a600d42acb295f5d4147d4fc0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::MergeCandidateVfxController
+  _fallbackEffectPrefab: {fileID: 6454903672821894221, guid: 95532e238411466db949beaadc4a7bcf, type: 3}
+  _effectPrefabsByTier:
+  - {fileID: 6454903672821894221, guid: 95532e238411466db949beaadc4a7bcf, type: 3}
+  - {fileID: 6454903672821894221, guid: 95532e238411466db949beaadc4a7bcf, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _localOffset: {x: 0, y: 0, z: 0}
+  _localEulerAngles: {x: 90, y: 0, z: 0}
+  _localScale: 0.2
+  _sortingOrderOffset: 1
 --- !u!4 &115063079
 Transform:
   m_ObjectHideFlags: 0

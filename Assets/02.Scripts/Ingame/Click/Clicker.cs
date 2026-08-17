@@ -18,6 +18,8 @@ public class Clicker : MonoBehaviour
     private float _mouseDownTime;
     private bool _isDragging;
 
+    public event System.Action<SlimeController> MergeCandidateChanged;
+
     private void Awake()
     {
         _mainCamera = Camera.main;
@@ -125,7 +127,7 @@ public class Clicker : MonoBehaviour
             _selectedTarget.OnClick(clickInfo);
         }
 
-        _mergeCandidate = null;
+        SetMergeCandidate(null);
         _selectedTarget = null;
         _isDragging = false;
     }
@@ -151,12 +153,20 @@ public class Clicker : MonoBehaviour
             nearestDistanceSqr = distanceSqr;
         }
 
-        _mergeCandidate = nearestCandidate;
+        SetMergeCandidate(nearestCandidate);
+    }
+
+    private void SetMergeCandidate(SlimeController candidate)
+    {
+        if (_mergeCandidate == candidate) return;
+
+        _mergeCandidate = candidate;
+        MergeCandidateChanged?.Invoke(candidate);
     }
 
     private void CancelSelection()
     {
-        _mergeCandidate = null;
+        SetMergeCandidate(null);
 
         if (_selectedTarget != null && _isDragging)
         {
