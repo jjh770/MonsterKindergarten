@@ -4652,9 +4652,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 729c5b11229abed4fb5a07a34241ed36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpawner
-  _dropHeight: 8
-  _dropDuration: 0.5
-  _dropEase: 30
 --- !u!1 &1722046939
 GameObject:
   m_ObjectHideFlags: 0

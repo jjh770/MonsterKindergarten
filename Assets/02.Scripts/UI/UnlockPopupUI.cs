@@ -16,6 +16,9 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private AudioClip _unlockSound;
 
     private CanvasGroup _canvasGroup;
+    private Sequence _sequence;
+    private Tween _glowScaleTween;
+    private Tween _glowRotateTween;
 
     private void Awake()
     {
@@ -32,8 +35,20 @@ public class UnlockPopupUI : MonoBehaviour
         _popupPanel.SetActive(false);
     }
 
+    private void OnDisable()
+    {
+        CleanupTweens();
+    }
+
+    private void OnDestroy()
+    {
+        SlimeManager.OnHighestGradeChanged -= ShowPopup;
+        CleanupTweens();
+    }
+
     private void ShowPopup(ESlimeGrade grade)
     {
+        CleanupTweens();
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
@@ -52,18 +67,42 @@ public class UnlockPopupUI : MonoBehaviour
             _gradeImage.sprite = SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
         }
 
-        _whiteGlowImage.transform.DOScale(Vector3.one, 1f);
-        _whiteGlowImage.transform.DORotate(new Vector3(0, 0, 360), 3f, RotateMode.LocalAxisAdd);
+        if (_whiteGlowImage != null)
+        {
+            _whiteGlowImage.SetScaleToZero();
+            _glowScaleTween = _whiteGlowImage.transform.DOScale(Vector3.one, 1f);
+            _glowRotateTween = _whiteGlowImage.transform.DORotate(
+                new Vector3(0, 0, 360),
+                3f,
+                RotateMode.LocalAxisAdd);
+        }
 
         // 페이드 인 -> 대기 -> 페이드 아웃
-        Sequence sequence = DOTween.Sequence();
-        sequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));
-        sequence.AppendInterval(_displayDuration);
-        sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
-        sequence.OnComplete(() =>
+        _sequence = DOTween.Sequence();
+        _sequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));
+        _sequence.AppendInterval(_displayDuration);
+        _sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
+        _sequence.OnComplete(() =>
         {
+            _sequence = null;
+            CleanupGlowTweens();
             _popupPanel.SetActive(false);
-            _whiteGlowImage.SetScaleToZero();
+            _whiteGlowImage?.SetScaleToZero();
         });
+    }
+
+    private void CleanupTweens()
+    {
+        _sequence?.Kill();
+        _sequence = null;
+        CleanupGlowTweens();
+    }
+
+    private void CleanupGlowTweens()
+    {
+        _glowScaleTween?.Kill();
+        _glowRotateTween?.Kill();
+        _glowScaleTween = null;
+        _glowRotateTween = null;
     }
 }

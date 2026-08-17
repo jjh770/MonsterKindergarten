@@ -1,15 +1,10 @@
-﻿using DG.Tweening;
-using Lean.Pool;
+﻿using Lean.Pool;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class SlimeSpawner : MonoBehaviour
 {
     public static SlimeSpawner Instance { get; private set; }
-
-    [SerializeField] private float _dropHeight = 3f;
-    [SerializeField] private float _dropDuration = 0.5f;
-    [SerializeField] private Ease _dropEase = Ease.OutBounce;
 
     private LeanGameObjectPool _pool;
     private List<SlimeController> _activeTargets = new List<SlimeController>();
@@ -31,8 +26,7 @@ public class SlimeSpawner : MonoBehaviour
 
     public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position, bool shouldSave = true)
     {
-        Vector2 startPosition = new Vector2(position.x, position.y + _dropHeight);
-        GameObject slimeObject = _pool.Spawn(startPosition, Quaternion.identity);
+        GameObject slimeObject = _pool.Spawn(position, Quaternion.identity);
 
         SlimeController slimeController = slimeObject.GetComponent<SlimeController>();
         Slime startSlime = SlimeManager.Instance.Get(slimeGrade);
@@ -40,9 +34,6 @@ public class SlimeSpawner : MonoBehaviour
         slimeController.SetSlime(startSlime);
         SlimeManager.Instance.TryUpdateHighestLevel(startSlime.SpecData.Grade);
         slimeController.OnSpawn();
-
-        // 위에서 떨어지는 효과
-        slimeObject.transform.DOMoveY(position.y, _dropDuration).SetEase(_dropEase);
 
         _activeTargets.Add(slimeController);
 
@@ -60,7 +51,6 @@ public class SlimeSpawner : MonoBehaviour
         if (target == null) return;
 
         target.OnDespawn();
-        target.transform.DOKill();
         _activeTargets.Remove(target);
         _pool.Despawn(target.gameObject);
     }

@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 8769579675102300841}
   - component: {fileID: 6828179282409805443}
   - component: {fileID: 1449321985000000000}
+  - component: {fileID: 2657138910400000000}
   m_Layer: 7
   m_Name: Slime
   m_TagString: Untagged
@@ -339,3 +340,18 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
   _landSound: {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
   _landSoundCooldown: 0.1
+--- !u!114 &2657138910400000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b98d5f7e9f624f2f8cc933cb5df780d1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeSpawnFeedback
+  _dropHeight: 8
+  _dropDuration: 0.5
+  _dropEase: 30

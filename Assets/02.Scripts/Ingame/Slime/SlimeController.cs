@@ -7,6 +7,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private Slime _slime;
     public Slime Slime => _slime;
 
+    private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
@@ -17,9 +18,15 @@ public class SlimeController : MonoBehaviour, IClickable
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
 
     public event Action<ESlimeGrade> OnGradeChanged;
+    public event Action OnSpawned;
     public event Action OnPromoted;
     public event Action OnLanded;
     public event Action OnInteracted;
+
+    private void Awake()
+    {
+        _feedbacks = GetComponentsInChildren<IFeedback>();
+    }
 
     public void SetSlime(Slime slime)
     {
@@ -36,10 +43,9 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void OnSpawn()
     {
-        // _level = 1;
         _isDragging = false;
         _hasLanded = false;
-        //  OnLevelChanged?.Invoke(_level);
+        OnSpawned?.Invoke();
     }
 
     public void OnDespawn()
@@ -126,19 +132,11 @@ public class SlimeController : MonoBehaviour, IClickable
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
-        var feedbacks = GetComponentsInChildren<IFeedback>();
-        foreach (var feedback in feedbacks)
+        foreach (IFeedback feedback in _feedbacks)
         {
             feedback.Play(clickInfo);
         }
-        // 아래 사항을 컴포넌트 별로 나누기
-        // 1. 클릭 이펙트
-        // 2. 캐릭터 애니메이션
-        // 3. 스케일 트위닝
-        // 4. 사운드 재생
-        // 5. 데미지 플로팅
-        // 6. 화면 흔들림
-        // 7. 재화 떨구기
+
         return true;
     }
 }
