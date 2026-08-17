@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 public class AudioManager : MonoBehaviour
@@ -28,6 +29,8 @@ public class AudioManager : MonoBehaviour
 
     private AudioMixer _audioMixer;
     private bool _isPaused;
+    private readonly Dictionary<AudioClip, float> _lastSfxPlayedTimes =
+        new Dictionary<AudioClip, float>();
 
     private void Awake()
     {
@@ -175,6 +178,21 @@ public class AudioManager : MonoBehaviour
     {
         if (clip == null) return;
 
+        _sfxSource.PlayOneShot(clip, SFXVolume);
+    }
+
+    public void PlaySFXWithCooldown(AudioClip clip, float cooldown)
+    {
+        if (clip == null) return;
+
+        float currentTime = Time.unscaledTime;
+        if (_lastSfxPlayedTimes.TryGetValue(clip, out float lastPlayedTime) &&
+            currentTime - lastPlayedTime < cooldown)
+        {
+            return;
+        }
+
+        _lastSfxPlayedTimes[clip] = currentTime;
         _sfxSource.PlayOneShot(clip, SFXVolume);
     }
 

@@ -28,6 +28,7 @@ public class MergeManager : MonoBehaviour
 
         Slime nextSlime = SlimeManager.Instance.Get(toGrade);
         keeper.SetSlime(nextSlime);
+        keeper.PlayLevelUpSound();
         keeper.transform.DOPunchScale(Vector3.one, 1f, 10, 1);
 
         SlimeManager.Instance.TryUpdateHighestLevel(toGrade);

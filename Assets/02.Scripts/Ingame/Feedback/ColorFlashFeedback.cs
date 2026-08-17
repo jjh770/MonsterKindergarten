@@ -7,10 +7,26 @@ public class ColorFlashFeedback : MonoBehaviour, IFeedback
     [SerializeField] private Color _flashColor;
 
     private Coroutine _coroutine;
+    private Color _defaultColor;
 
     private void Awake()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        _defaultColor = _spriteRenderer.color;
+    }
+
+    private void OnDisable()
+    {
+        if (_coroutine != null)
+        {
+            StopCoroutine(_coroutine);
+            _coroutine = null;
+        }
+
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.color = _defaultColor;
+        }
     }
 
     public void Play(ClickInfo clickInfo)
@@ -29,6 +45,7 @@ public class ColorFlashFeedback : MonoBehaviour, IFeedback
 
         yield return new WaitForSeconds(0.3f);
 
-        _spriteRenderer.color = Color.white;
+        _spriteRenderer.color = _defaultColor;
+        _coroutine = null;
     }
 }

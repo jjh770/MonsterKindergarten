@@ -34,6 +34,11 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     {
         _scaleTween?.Kill();
         _scaleTween = null;
+
+        if (_owner != null)
+        {
+            _owner.transform.localScale = Vector3.one;
+        }
     }
 
 }

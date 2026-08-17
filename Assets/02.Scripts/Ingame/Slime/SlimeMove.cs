@@ -20,21 +20,41 @@ public class SlimeMove : MonoBehaviour
     private Coroutine _moveCoroutine;
     private bool _isInteractionIdle;
 
-    private void Start()
+    private void Awake()
     {
         _slime = GetComponent<SlimeController>();
         _rb = GetComponent<Rigidbody2D>();
+    }
 
+    private void OnEnable()
+    {
         _slime.OnInteracted += OnInteracted;
         _moveCoroutine = StartCoroutine(MoveRoutine());
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         if (_slime != null)
         {
             _slime.OnInteracted -= OnInteracted;
         }
+
+        if (_moveCoroutine != null)
+        {
+            StopCoroutine(_moveCoroutine);
+            _moveCoroutine = null;
+        }
+
+        _isInteractionIdle = false;
+        _lastVelocity = Vector2.zero;
+
+        if (_rb != null)
+        {
+            _rb.DOKill();
+            _rb.linearVelocity = Vector2.zero;
+        }
+
+        transform.DOKill();
     }
 
     private void OnInteracted()
@@ -87,7 +107,7 @@ public class SlimeMove : MonoBehaviour
                 x => _rb.linearVelocity = x,
                 targetVelocity,
                 0.3f
-            ).SetEase(_moveEase);
+            ).SetEase(_moveEase).SetTarget(_rb);
 
             // 랜덤 시간 동안 이동
             float moveDuration = Random.Range(_minMoveDuration, _maxMoveDuration);
@@ -102,7 +122,7 @@ public class SlimeMove : MonoBehaviour
                 x => _rb.linearVelocity = x,
                 Vector2.zero,
                 0.3f
-            ).SetEase(_moveEase);
+            ).SetEase(_moveEase).SetTarget(_rb);
 
             yield return new WaitForSeconds(0.3f);
         }
