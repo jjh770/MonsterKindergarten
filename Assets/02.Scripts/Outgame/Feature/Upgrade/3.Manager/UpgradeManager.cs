@@ -16,6 +16,7 @@ public class UpgradeManager : MonoBehaviour
     //private IUpgradeRepository _repository;
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
+    public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
 
     private void Awake()
     {
@@ -110,11 +111,21 @@ public class UpgradeManager : MonoBehaviour
 
     private void Save()
     {
+        SaveCurrentAsync().Forget();
+    }
+
+    public UniTask SaveCurrentAsync()
+    {
+        if (!GameplaySaveGate.IsSavingEnabled)
+        {
+            return UniTask.CompletedTask;
+        }
+
         var data = new UpgradeSaveData();
         foreach (var pair in _upgrades)
         {
             data.Entries.Add(new UpgradeEntry(pair.Key.Item1, pair.Key.Item2, pair.Value.Level));
         }
-        _repository.Save(data).Forget();
+        return _repository.Save(data);
     }
 }

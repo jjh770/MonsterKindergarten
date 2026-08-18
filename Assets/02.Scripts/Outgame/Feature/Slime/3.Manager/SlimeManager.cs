@@ -14,6 +14,9 @@ public class SlimeManager : MonoBehaviour
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
+    public bool HasExistingProgress =>
+        _status != null &&
+        (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
 
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
@@ -108,6 +111,16 @@ public class SlimeManager : MonoBehaviour
 
     private void Save()
     {
+        SaveCurrentAsync().Forget();
+    }
+
+    public UniTask SaveCurrentAsync()
+    {
+        if (!GameplaySaveGate.IsSavingEnabled)
+        {
+            return UniTask.CompletedTask;
+        }
+
         var saveData = new SlimeStatusSaveData
         {
             HighestGrade = (int)_status.HighestGrade,
@@ -119,6 +132,6 @@ public class SlimeManager : MonoBehaviour
             saveData.ActiveSlimes.Add(new SlimeEntry(pair.Key, pair.Value));
         }
 
-        _statusRepository.Save(saveData).Forget();
+        return _statusRepository.Save(saveData);
     }
 }
