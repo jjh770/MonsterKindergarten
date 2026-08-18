@@ -3,16 +3,32 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum TutorialDialoguePlacement
+{
+    Bottom,
+    Top,
+}
+
+[RequireComponent(typeof(Image))]
 public sealed class TutorialDialogueView : MonoBehaviour
 {
+    [SerializeField] private RectTransform _dialoguePanel;
     [SerializeField] private TextMeshProUGUI _dialogueText;
     [SerializeField] private Button _nextButton;
+    [SerializeField] private Vector2 _bottomPanelPosition = new Vector2(0f, 270f);
+    [SerializeField] private Vector2 _topPanelPosition = new Vector2(0f, -270f);
 
     public event Action NextRequested;
 
+    private Image _backgroundImage;
+    private Color _backgroundColor;
+
     private void Awake()
     {
-        if (_dialogueText == null || _nextButton == null)
+        _backgroundImage = GetComponent<Image>();
+        _backgroundColor = _backgroundImage.color;
+
+        if (_dialoguePanel == null || _dialogueText == null || _nextButton == null)
         {
             Debug.LogError("튜토리얼 대화창 프리팹의 참조가 비어 있습니다.", this);
             enabled = false;
@@ -31,12 +47,31 @@ public sealed class TutorialDialogueView : MonoBehaviour
         }
     }
 
-    public void Show(string speaker, string message)
+    public void Show(
+        string speaker,
+        string message,
+        bool dimBackground = true,
+        TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
     {
+        SetPlacement(placement);
+        Color backgroundColor = _backgroundColor;
+        backgroundColor.a = dimBackground ? _backgroundColor.a : 0f;
+        _backgroundImage.color = backgroundColor;
         _dialogueText.text = $"<color=#FFD12E><b>{speaker}</b></color>\n{message}";
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
         _nextButton.Select();
+    }
+
+    private void SetPlacement(TutorialDialoguePlacement placement)
+    {
+        bool placeAtTop = placement == TutorialDialoguePlacement.Top;
+        float anchorY = placeAtTop ? 1f : 0f;
+        _dialoguePanel.anchorMin = new Vector2(0f, anchorY);
+        _dialoguePanel.anchorMax = new Vector2(1f, anchorY);
+        _dialoguePanel.anchoredPosition = placeAtTop
+            ? _topPanelPosition
+            : _bottomPanelPosition;
     }
 
     public void Hide()

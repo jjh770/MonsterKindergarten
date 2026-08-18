@@ -26,6 +26,9 @@ Material:
     m_Floats:
     - _ColorMask: 15
     - _HoleSoftness: 0.08
+    - _HoleShape: 0
+    - _SecondHoleEnabled: 0
+    - _SecondHoleShape: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -36,3 +39,5 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HoleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _HoleSize: {r: 0.15, g: 0.15, b: 0, a: 0}
+    - _SecondHoleCenter: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _SecondHoleSize: {r: 0.15, g: 0.15, b: 0, a: 0}

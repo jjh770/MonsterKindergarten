@@ -95,8 +95,11 @@ MonoBehaviour:
   _messageRect: {fileID: 920002}
   _arrowRect: {fileID: 930002}
   _holeSize: {x: 320, y: 320}
+  _uiHolePadding: {x: 40, y: 30}
   _messageOffset: {x: 0, y: 240}
   _arrowOffset: {x: 0, y: 135}
+  _messageScreenMargin: 30
+  _compactMessageWidth: 240
 --- !u!1 &920001
 GameObject:
   m_ObjectHideFlags: 0

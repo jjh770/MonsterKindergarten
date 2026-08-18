@@ -89,8 +89,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a1e04c7b8f4963a2c6d9e7105b4f82, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TutorialDialogueView
+  _dialoguePanel: {fileID: 120002}
   _dialogueText: {fileID: 130004}
   _nextButton: {fileID: 140005}
+  _bottomPanelPosition: {x: 0, y: 270}
+  _topPanelPosition: {x: 0, y: -270}
 --- !u!1 &120001
 GameObject:
   m_ObjectHideFlags: 0

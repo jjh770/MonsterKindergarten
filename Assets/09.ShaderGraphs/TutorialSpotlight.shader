@@ -6,6 +6,11 @@ Shader "UI/Tutorial Spotlight"
         _Color ("Tint", Color) = (1,1,1,1)
         _HoleCenter ("Hole Center", Vector) = (0.5,0.5,0,0)
         _HoleSize ("Hole Half Size", Vector) = (0.15,0.15,0,0)
+        _SecondHoleCenter ("Second Hole Center", Vector) = (0.5,0.5,0,0)
+        _SecondHoleSize ("Second Hole Half Size", Vector) = (0.15,0.15,0,0)
+        _SecondHoleEnabled ("Second Hole Enabled", Float) = 0
+        _HoleShape ("Hole Shape", Float) = 0
+        _SecondHoleShape ("Second Hole Shape", Float) = 0
         _HoleSoftness ("Hole Softness", Range(0.001, 0.5)) = 0.08
 
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -79,6 +84,11 @@ Shader "UI/Tutorial Spotlight"
             float4 _ClipRect;
             float4 _HoleCenter;
             float4 _HoleSize;
+            float4 _SecondHoleCenter;
+            float4 _SecondHoleSize;
+            float _SecondHoleEnabled;
+            float _HoleShape;
+            float _SecondHoleShape;
             float _HoleSoftness;
 
             v2f vert(appdata_t input)
@@ -97,12 +107,42 @@ Shader "UI/Tutorial Spotlight"
             {
                 fixed4 color = (tex2D(_MainTex, input.texcoord) + _TextureSampleAdd) * input.color;
                 float2 holeSize = max(_HoleSize.xy, float2(0.0001, 0.0001));
-                float distanceFromCenter = length((input.texcoord - _HoleCenter.xy) / holeSize);
+                float2 normalizedHolePosition =
+                    (input.texcoord - _HoleCenter.xy) / holeSize;
+                float ellipseDistance = length(normalizedHolePosition);
+                float rectangleDistance = max(
+                    abs(normalizedHolePosition.x),
+                    abs(normalizedHolePosition.y));
+                float holeDistance = lerp(
+                    ellipseDistance,
+                    rectangleDistance,
+                    saturate(_HoleShape));
                 float outsideHole = smoothstep(
                     1.0 - max(_HoleSoftness, 0.0001),
                     1.0,
-                    distanceFromCenter);
-                color.a *= outsideHole;
+                    holeDistance);
+                float2 secondHoleSize = max(
+                    _SecondHoleSize.xy,
+                    float2(0.0001, 0.0001));
+                float2 normalizedSecondHolePosition =
+                    (input.texcoord - _SecondHoleCenter.xy) / secondHoleSize;
+                float secondEllipseDistance = length(normalizedSecondHolePosition);
+                float secondRectangleDistance = max(
+                    abs(normalizedSecondHolePosition.x),
+                    abs(normalizedSecondHolePosition.y));
+                float secondHoleDistance = lerp(
+                    secondEllipseDistance,
+                    secondRectangleDistance,
+                    saturate(_SecondHoleShape));
+                float outsideSecondHole = smoothstep(
+                    1.0 - max(_HoleSoftness, 0.0001),
+                    1.0,
+                    secondHoleDistance);
+                float combinedHole = lerp(
+                    outsideHole,
+                    min(outsideHole, outsideSecondHole),
+                    saturate(_SecondHoleEnabled));
+                color.a *= combinedHole;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(input.worldPosition.xy, _ClipRect);
