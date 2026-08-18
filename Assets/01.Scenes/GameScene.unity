@@ -387,6 +387,7 @@ GameObject:
   - component: {fileID: 115063079}
   - component: {fileID: 115063078}
   - component: {fileID: 115063080}
+  - component: {fileID: 2099000001}
   m_Layer: 0
   m_Name: Clicker
   m_TagString: Untagged
@@ -411,6 +412,28 @@ MonoBehaviour:
   _mergeDetectionRadius: 0.65
   _dragMinBounds: {x: -2, y: -3}
   _dragMaxBounds: {x: 2, y: 3}
+--- !u!114 &2099000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 115063077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a4f0b2e6c8d41c9a9f5e3b7d2c60184, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialManager
+  _canvas: {fileID: 457349916}
+  _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
+  _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
+  _clickMessage: "\uC2AC\uB77C\uC784\uC744 \uD130\uCE58\uD574 \uBCF4\uC138\uC694!"
+  _dragMessage: "\uC2AC\uB77C\uC784\uC744 \uB4DC\uB798\uADF8\uD574 \uBCF4\uC138\uC694!"
+  _introductionDialogue:
+  - _speaker: "\uC120\uC0DD\uB2D8"
+    _message: "\uC5B4\uC11C \uC640! \uC774\uACF3\uC740 \uBAAC\uC2A4\uD130 \uC720\uCE58\uC6D0\uC774\uC57C."
+  - _speaker: "\uC120\uC0DD\uB2D8"
+    _message: "\uBA3C\uC800 \uB208\uC55E\uC758 \uC2AC\uB77C\uC784\uACFC \uC778\uC0AC\uD574 \uBCFC\uAE4C?"
 --- !u!114 &115063080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3852,6 +3875,7 @@ MonoBehaviour:
   _maxActiveCount: 10
   _spawnAreaMin: {x: -1, y: -2}
   _spawnAreaMax: {x: 1, y: 2}
+  _tutorialSlimePosition: {x: 0, y: 0}
   _spawnIntervalDecreaseValue: 0.1
   _spawnMaxIncreaseValue: 1
   _minSpawnInterval: 3

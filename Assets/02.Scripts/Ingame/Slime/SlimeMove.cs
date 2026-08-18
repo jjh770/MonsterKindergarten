@@ -19,6 +19,7 @@ public class SlimeMove : MonoBehaviour
     private Vector3 _leftVector = new Vector3(0, 180, 0);
     private Coroutine _moveCoroutine;
     private bool _isInteractionIdle;
+    private bool _isMovementLocked;
 
     private void Awake()
     {
@@ -39,13 +40,10 @@ public class SlimeMove : MonoBehaviour
             _slime.OnInteracted -= OnInteracted;
         }
 
-        if (_moveCoroutine != null)
-        {
-            StopCoroutine(_moveCoroutine);
-            _moveCoroutine = null;
-        }
+        StopMoveCoroutine();
 
         _isInteractionIdle = false;
+        _isMovementLocked = false;
         _lastVelocity = Vector2.zero;
 
         if (_rb != null)
@@ -62,13 +60,34 @@ public class SlimeMove : MonoBehaviour
         // 이동 중단하고 Idle 상태로 전환
         _isInteractionIdle = true;
         _lastVelocity = Vector2.zero;
-        if (_moveCoroutine != null)
-        {
-            StopCoroutine(_moveCoroutine);
-        }
+        StopMoveCoroutine();
         _rb.DOKill();
         _rb.linearVelocity = Vector2.zero;
+
+        if (_isMovementLocked) return;
+
         _moveCoroutine = StartCoroutine(IdleThenMoveRoutine());
+    }
+
+    public void SetMovementLocked(bool isLocked)
+    {
+        if (_isMovementLocked == isLocked) return;
+
+        _isMovementLocked = isLocked;
+        _isInteractionIdle = false;
+        _lastVelocity = Vector2.zero;
+        StopMoveCoroutine();
+
+        if (_rb != null)
+        {
+            _rb.DOKill();
+            _rb.linearVelocity = Vector2.zero;
+        }
+
+        if (!isLocked && isActiveAndEnabled)
+        {
+            _moveCoroutine = StartCoroutine(MoveRoutine());
+        }
     }
 
     private IEnumerator IdleThenMoveRoutine()
@@ -130,6 +149,13 @@ public class SlimeMove : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (_isMovementLocked)
+        {
+            _lastVelocity = Vector2.zero;
+            _rb.linearVelocity = Vector2.zero;
+            return;
+        }
+
         if (_rb.linearVelocity.magnitude > 0.1f)
         {
             _lastVelocity = _rb.linearVelocity;
@@ -139,7 +165,7 @@ public class SlimeMove : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D coll)
     {
         // 상호작용 대기 또는 드래그 중에는 이전 속도로 다시 튕기지 않도록 한다.
-        if (_isInteractionIdle || (_slime != null && _slime.IsDragging))
+        if (_isMovementLocked || _isInteractionIdle || (_slime != null && _slime.IsDragging))
         {
             _lastVelocity = Vector2.zero;
             _rb.linearVelocity = Vector2.zero;
@@ -163,5 +189,13 @@ public class SlimeMove : MonoBehaviour
         {
             transform.DORotate(_leftVector, 0.3f);
         }
+    }
+
+    private void StopMoveCoroutine()
+    {
+        if (_moveCoroutine == null) return;
+
+        StopCoroutine(_moveCoroutine);
+        _moveCoroutine = null;
     }
 }
