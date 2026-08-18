@@ -4,6 +4,13 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+public enum SpotlightInteractionMode
+{
+    BlockAll,
+    PassThroughPrimary,
+    AdvanceOnPrimaryTap,
+}
+
 public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter, IPointerClickHandler
 {
     private static readonly int HoleCenterId = Shader.PropertyToID("_HoleCenter");
@@ -41,7 +48,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     private Vector2 _secondHoleCenter;
     private Vector2 _secondHoleSize;
     private bool _hasSecondHole;
-    private bool _advanceOnTargetTap;
+    private SpotlightInteractionMode _interactionMode;
     private bool _centerCalloutBetweenTargets;
     private bool _useRectangularHole;
     private bool _useRectangularSecondHole;
@@ -85,7 +92,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = null;
         _secondaryUiTarget = null;
         _hasSecondHole = false;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
@@ -101,7 +108,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = null;
         _secondaryUiTarget = null;
         _hasSecondHole = false;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
@@ -118,7 +125,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = null;
         _secondaryUiTarget = null;
         _hasSecondHole = true;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = true;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
@@ -129,7 +136,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     public void ShowUiTarget(
         string message,
         RectTransform target,
-        bool advanceOnTargetTap = false)
+        SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll)
     {
         SetCompactMessage(false);
         _worldTarget = null;
@@ -137,7 +144,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = target;
         _secondaryUiTarget = null;
         _hasSecondHole = false;
-        _advanceOnTargetTap = advanceOnTargetTap;
+        _interactionMode = interactionMode;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
@@ -155,7 +162,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = target;
         _secondaryUiTarget = null;
         _hasSecondHole = false;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = useRectangularHole;
         _useRectangularSecondHole = false;
@@ -175,7 +182,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = firstTarget;
         _secondaryUiTarget = secondTarget;
         _hasSecondHole = true;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = useRectangularHoles;
         _useRectangularSecondHole = useRectangularHoles;
@@ -188,6 +195,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         string message,
         RectTransform primaryTarget,
         RectTransform secondaryTarget,
+        SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll,
         bool useRectangularSecondaryHole = false,
         bool useCompactMessage = false)
     {
@@ -197,7 +205,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = primaryTarget;
         _secondaryUiTarget = secondaryTarget;
         _hasSecondHole = true;
-        _advanceOnTargetTap = false;
+        _interactionMode = interactionMode;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = useRectangularSecondaryHole;
@@ -237,7 +245,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _uiTarget = null;
         _secondaryUiTarget = null;
         _hasSecondHole = false;
-        _advanceOnTargetTap = false;
+        _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
@@ -251,15 +259,14 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
 
     public bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
     {
-        if (_advanceOnTargetTap) return true;
-
-        return !IsInsideHole(screenPoint, eventCamera);
+        return _interactionMode != SpotlightInteractionMode.PassThroughPrimary ||
+               !IsInsidePrimaryHole(screenPoint, eventCamera);
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!_advanceOnTargetTap ||
-            !IsInsideHole(eventData.position, eventData.pressEventCamera))
+        if (_interactionMode != SpotlightInteractionMode.AdvanceOnPrimaryTap ||
+            !IsInsidePrimaryHole(eventData.position, eventData.pressEventCamera))
         {
             return;
         }
@@ -267,7 +274,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         AdvanceRequested?.Invoke();
     }
 
-    private bool IsInsideHole(Vector2 screenPoint, Camera eventCamera)
+    private bool IsInsidePrimaryHole(Vector2 screenPoint, Camera eventCamera)
     {
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _rootRect,
@@ -278,22 +285,11 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
             return false;
         }
 
-        if (IsInsideHole(
-                localPoint,
-                _holeCenter,
-                _currentHoleSize,
-                _useRectangularHole))
-        {
-            return true;
-        }
-
-        if (!_hasSecondHole) return false;
-
         return IsInsideHole(
             localPoint,
-            _secondHoleCenter,
-            _secondHoleSize,
-            _useRectangularSecondHole);
+            _holeCenter,
+            _currentHoleSize,
+            _useRectangularHole);
     }
 
     private static bool IsInsideHole(

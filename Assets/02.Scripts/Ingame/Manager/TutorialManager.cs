@@ -189,7 +189,7 @@ public sealed class TutorialManager : MonoBehaviour
         Spotlight.ShowUiTarget(
             _content.PointMessage,
             _pointTarget,
-            advanceOnTargetTap: true);
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void OnGuideAdvanceRequested()
@@ -315,7 +315,10 @@ public sealed class TutorialManager : MonoBehaviour
         _step = TutorialStep.UpgradeButton;
         _upgradeUI.SetToggleInputEnabled(true);
         _clicker.SetInputMode(false, false);
-        Spotlight.ShowUiTarget(_content.UpgradeMessage, upgradeTarget);
+        Spotlight.ShowUiTarget(
+            _content.UpgradeMessage,
+            upgradeTarget,
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnUpgradeOpened()
@@ -336,6 +339,7 @@ public sealed class TutorialManager : MonoBehaviour
             _content.UpgradePanelMessage,
             closeTarget,
             panelTarget,
+            interactionMode: SpotlightInteractionMode.PassThroughPrimary,
             useRectangularSecondaryHole: true,
             useCompactMessage: true);
     }
