@@ -387,6 +387,7 @@ GameObject:
   - component: {fileID: 115063079}
   - component: {fileID: 115063078}
   - component: {fileID: 115063080}
+  - component: {fileID: 2099000001}
   m_Layer: 0
   m_Name: Clicker
   m_TagString: Untagged
@@ -411,6 +412,29 @@ MonoBehaviour:
   _mergeDetectionRadius: 0.65
   _dragMinBounds: {x: -2, y: -3}
   _dragMaxBounds: {x: 2, y: 3}
+--- !u!114 &2099000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 115063077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a4f0b2e6c8d41c9a9f5e3b7d2c60184, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialManager
+  _canvas: {fileID: 457349916}
+  _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
+  _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
+  _content: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
+  _pointTarget: {fileID: 734613838}
+  _spawnGaugeTarget: {fileID: 2116618831}
+  _spawnIntervalUpgradeTarget: {fileID: 561333958}
+  _spawnMaxUpgradeTarget: {fileID: 728174905}
+  _unlockPopupUI: {fileID: 1432576204}
+  _upgradeUI: {fileID: 1526959884}
+  _mergeSlimeDistance: 1.5
 --- !u!114 &115063080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3852,6 +3876,7 @@ MonoBehaviour:
   _maxActiveCount: 10
   _spawnAreaMin: {x: -1, y: -2}
   _spawnAreaMax: {x: 1, y: 2}
+  _tutorialSlimePosition: {x: 0, y: 0}
   _spawnIntervalDecreaseValue: 0.1
   _spawnMaxIncreaseValue: 1
   _minSpawnInterval: 3
@@ -4459,6 +4484,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeUI
   _rectTransform: {fileID: 1526959883}
+  _panelTarget: {fileID: 1864902236}
   _uiButton: {fileID: 1134167831}
   _doNotTouchPanel: {fileID: 1211276214}
   _moveX: 720

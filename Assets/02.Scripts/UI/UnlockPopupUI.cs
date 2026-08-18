@@ -20,6 +20,8 @@ public class UnlockPopupUI : MonoBehaviour
     private Tween _glowScaleTween;
     private Tween _glowRotateTween;
 
+    public event System.Action<ESlimeGrade> PresentationCompleted;
+
     private void Awake()
     {
         _canvasGroup = _popupPanel.GetComponent<CanvasGroup>();
@@ -88,6 +90,7 @@ public class UnlockPopupUI : MonoBehaviour
             CleanupGlowTweens();
             _popupPanel.SetActive(false);
             _whiteGlowImage?.SetScaleToZero();
+            PresentationCompleted?.Invoke(grade);
         });
     }
 

@@ -8,6 +8,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public Slime Slime => _slime;
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
+    private SlimeMove _slimeMove;
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
@@ -26,6 +27,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private void Awake()
     {
         _feedbacks = GetComponentsInChildren<IFeedback>();
+        _slimeMove = GetComponent<SlimeMove>();
     }
 
     public void SetSlime(Slime slime)
@@ -51,6 +53,11 @@ public class SlimeController : MonoBehaviour, IClickable
     public void OnDespawn()
     {
         _isDragging = false;
+    }
+
+    public void SetMovementLocked(bool isLocked)
+    {
+        _slimeMove?.SetMovementLocked(isLocked);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

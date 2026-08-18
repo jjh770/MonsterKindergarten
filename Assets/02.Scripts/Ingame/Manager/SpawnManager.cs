@@ -15,6 +15,9 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private Vector2 _spawnAreaMin = new Vector2(-3f, -2f);
     [SerializeField] private Vector2 _spawnAreaMax = new Vector2(3f, 2f);
 
+    [Header("Tutorial Slime")]
+    [SerializeField] private Vector2 _tutorialSlimePosition = Vector2.zero;
+
     [Header("Interval Area")]
     [SerializeField] private float _spawnIntervalDecreaseValue = 0.1f;
     [SerializeField] private int _spawnMaxIncreaseValue = 1;
@@ -22,10 +25,12 @@ public class SpawnManager : MonoBehaviour
     private float _timer;
 
     private bool _isInitialized;
+    private bool _isSpawningPaused;
 
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
     public float MinSpawnInterval => _minSpawnInterval;
+    public SlimeController TutorialSlime { get; private set; }
     public int MaxActiveCount
     {
         get => _maxActiveCount;
@@ -47,6 +52,7 @@ public class SpawnManager : MonoBehaviour
     public event Action<float, float> OnSpawnIntervalChanged;
     public event Action<int> OnSpawnMaxChanged;
     public event Action OnSpawned;
+    public event Action<SlimeController> OnTutorialSlimeReady;
 
     private void Awake()
     {
@@ -85,11 +91,52 @@ public class SpawnManager : MonoBehaviour
         ApplySavedUpgrades();
         InitSlimeSpawns();
 
-        // 신규 데이터처럼 복원할 슬라임이 없을 때만 최초 슬라임을 생성한다.
+        // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
         if (SlimeSpawner.Instance.GetActiveCount() == 0)
         {
-            Spawn(ESlimeGrade.Grade1);
+            if (TutorialProgress.ShouldRun)
+            {
+                SpawnTutorialSlime();
+            }
+            else
+            {
+                Spawn(ESlimeGrade.Grade1);
+            }
         }
+    }
+
+    private void SpawnTutorialSlime()
+    {
+        TutorialSlime = SpawnTutorialSlimeAt(_tutorialSlimePosition);
+
+        if (TutorialSlime == null) return;
+
+        OnTutorialSlimeReady?.Invoke(TutorialSlime);
+    }
+
+    public SlimeController SpawnTutorialSlimeNear(
+        SlimeController source,
+        float horizontalDistance)
+    {
+        if (source == null) return null;
+
+        Vector2 sourcePosition = source.transform.position;
+        float centerX = (_spawnAreaMin.x + _spawnAreaMax.x) * 0.5f;
+        float direction = sourcePosition.x <= centerX ? 1f : -1f;
+        Vector2 position = sourcePosition +
+                           Vector2.right * Mathf.Abs(horizontalDistance) * direction;
+        return SpawnTutorialSlimeAt(position);
+    }
+
+    private SlimeController SpawnTutorialSlimeAt(Vector2 position)
+    {
+        if (SlimeSpawner.Instance == null) return null;
+
+        SlimeController target = SlimeSpawner.Instance.Spawn(
+            ESlimeGrade.Grade1,
+            position);
+        target?.SetMovementLocked(true);
+        return target;
     }
 
     private void ApplySavedUpgrades()
@@ -139,6 +186,7 @@ public class SpawnManager : MonoBehaviour
     {
         if (!_isInitialized) return;
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
+        if (_isSpawningPaused) return;
 
         if (SlimeSpawner.Instance != null &&
             SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
@@ -175,6 +223,11 @@ public class SpawnManager : MonoBehaviour
     {
         if (SlimeSpawner.Instance == null) return;
 
+        if (target == TutorialSlime)
+        {
+            TutorialSlime = null;
+        }
+
         SlimeSpawner.Instance.Despawn(target);
     }
 
@@ -186,6 +239,11 @@ public class SpawnManager : MonoBehaviour
     public void IncreaseMaxCount()
     {
         MaxActiveCount += _spawnMaxIncreaseValue;
+    }
+
+    public void SetSpawningPaused(bool isPaused)
+    {
+        _isSpawningPaused = isPaused;
     }
 
     public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();

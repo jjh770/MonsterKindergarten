@@ -17,8 +17,14 @@ public class Clicker : MonoBehaviour
     private Vector2 _mouseDownPos;
     private float _mouseDownTime;
     private bool _isDragging;
+    private bool _isClickEnabled = true;
+    private bool _isDragEnabled = true;
+    private SlimeController _restrictedTarget;
+    private SlimeController _secondaryRestrictedTarget;
 
     public event System.Action<SlimeController> MergeCandidateChanged;
+    public event System.Action<SlimeController> TargetClicked;
+    public event System.Action<SlimeController> TargetDragCompleted;
 
     private void Awake()
     {
@@ -63,13 +69,18 @@ public class Clicker : MonoBehaviour
 
     private void TrySelect(Vector2 pointerPosition)
     {
+        if (!_isClickEnabled && !_isDragEnabled) return;
+
         Vector2 worldPos = _mainCamera.ScreenToWorldPoint(pointerPosition);
         RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero, 0f);
 
         if (hit)
         {
             SlimeController clickTarget = hit.collider.GetComponent<SlimeController>();
-            if (clickTarget != null)
+            if (clickTarget != null &&
+                (_restrictedTarget == null ||
+                 clickTarget == _restrictedTarget ||
+                 clickTarget == _secondaryRestrictedTarget))
             {
                 _selectedTarget = clickTarget;
                 _mouseDownPos = worldPos;
@@ -81,7 +92,7 @@ public class Clicker : MonoBehaviour
 
     private void CheckDragStart(Vector2 pointerPosition)
     {
-        if (_isDragging) return;
+        if (!_isDragEnabled || _isDragging) return;
 
         Vector2 currentPos = _mainCamera.ScreenToWorldPoint(pointerPosition);
         float distance = Vector2.Distance(_mouseDownPos, currentPos);
@@ -108,13 +119,21 @@ public class Clicker : MonoBehaviour
 
     private void OnPointerUp(Vector2 pointerPosition)
     {
+        SlimeController selectedTarget = _selectedTarget;
+
         if (_isDragging)
         {
             // 릴리스 프레임의 포인터 위치까지 반영한 뒤 표시된 대상을 우선 합성한다.
             UpdateDrag(pointerPosition);
             _selectedTarget.EndDrag(_mergeCandidate);
+
+            Vector2 releaseWorldPosition = _mainCamera.ScreenToWorldPoint(pointerPosition);
+            if (Vector2.Distance(_mouseDownPos, releaseWorldPosition) >= _dragThresholdDistance)
+            {
+                TargetDragCompleted?.Invoke(selectedTarget);
+            }
         }
-        else
+        else if (_isClickEnabled)
         {
             // 클릭 처리 - ClickTarget의 레벨별 포인트 사용
             ClickInfo clickInfo = new ClickInfo
@@ -125,11 +144,25 @@ public class Clicker : MonoBehaviour
                 Grade = _selectedTarget.Grade
             };
             _selectedTarget.OnClick(clickInfo);
+            TargetClicked?.Invoke(selectedTarget);
         }
 
         SetMergeCandidate(null);
         _selectedTarget = null;
         _isDragging = false;
+    }
+
+    public void SetInputMode(
+        bool clickEnabled,
+        bool dragEnabled,
+        SlimeController restrictedTarget = null,
+        SlimeController secondaryRestrictedTarget = null)
+    {
+        CancelSelection();
+        _isClickEnabled = clickEnabled;
+        _isDragEnabled = dragEnabled;
+        _restrictedTarget = restrictedTarget;
+        _secondaryRestrictedTarget = secondaryRestrictedTarget;
     }
 
     private void UpdateMergeCandidate()

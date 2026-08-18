@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -80,9 +81,41 @@ public class GameManager : MonoBehaviour
         if (_isUpgradeInitialized && _isSlimeInitialized && _isCurrencyInitialized)
         {
             _isAllInitialized = true;
+            InitializeTutorialProgress();
             GrantOfflineReward();
             OnAllDataInitialized?.Invoke();
         }
+    }
+
+    private void InitializeTutorialProgress()
+    {
+        bool hasExistingProgress =
+            CurrencyManager.Instance.HasExistingProgress ||
+            SlimeManager.Instance.HasExistingProgress ||
+            UpgradeManager.Instance.HasExistingProgress;
+
+        TutorialProgress.Initialize(
+            AccountManager.Instance.UserId,
+            hasExistingProgress);
+        GameplaySaveGate.SetSavingEnabled(TutorialProgress.IsCompleted);
+    }
+
+    public async UniTask CompleteTutorialAsync()
+    {
+        if (!TutorialProgress.IsInitialized || TutorialProgress.IsCompleted)
+        {
+            GameplaySaveGate.SetSavingEnabled(true);
+            return;
+        }
+
+        GameplaySaveGate.SetSavingEnabled(true);
+
+        await UniTask.WhenAll(
+            CurrencyManager.Instance.SaveCurrentAsync(),
+            SlimeManager.Instance.SaveCurrentAsync(),
+            UpgradeManager.Instance.SaveCurrentAsync());
+
+        TutorialProgress.MarkCompleted();
     }
 
     private void OnApplicationPause(bool pauseStatus)

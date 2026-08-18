@@ -5,9 +5,11 @@ public class AutoClicker : MonoBehaviour
 {
     private Dictionary<SlimeController, float> _timers = new Dictionary<SlimeController, float>();
     private HashSet<SlimeController> _activeTargetsCache = new HashSet<SlimeController>();
+    private bool _isPaused;
 
     private void Update()
     {
+        if (_isPaused) return;
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (SpawnManager.Instance == null) return;
 
@@ -85,5 +87,10 @@ public class AutoClicker : MonoBehaviour
         {
             _timers[target] = 0f;
         }
+    }
+
+    public void SetPaused(bool isPaused)
+    {
+        _isPaused = isPaused;
     }
 }

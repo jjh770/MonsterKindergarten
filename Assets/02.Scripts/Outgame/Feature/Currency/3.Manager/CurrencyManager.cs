@@ -28,6 +28,20 @@ public class CurrencyManager : MonoBehaviour
     // 재화 조회 +@ (편의를 위해 이정도는 눈감아주자)
     public Currency Point => Get(ECurrencyType.Point);
     public DateTime LastSaveTime { get; private set; } = DateTime.MinValue;
+    public bool HasExistingProgress
+    {
+        get
+        {
+            if (LastSaveTime != DateTime.MinValue) return true;
+
+            foreach (Currency currency in _currencies)
+            {
+                if ((double)currency != 0d) return true;
+            }
+
+            return false;
+        }
+    }
 
     //public Currency Point { get; private set; }
     public event Action<ECurrencyType, Currency> OnDataChanged;
@@ -95,17 +109,27 @@ public class CurrencyManager : MonoBehaviour
     // 재화 저장
     private void Save()
     {
-        LastSaveTime = DateTime.UtcNow;
-        _repository.Save(new CurrencySaveData()
-        {
-            Currencies = ToSaveData(),
-            LastSaveTime = LastSaveTime.ToString("O")
-        });
+        SaveCurrentAsync().Forget();
     }
 
     public void SaveCurrent()
     {
-        Save();
+        SaveCurrentAsync().Forget();
+    }
+
+    public UniTask SaveCurrentAsync()
+    {
+        if (!GameplaySaveGate.IsSavingEnabled)
+        {
+            return UniTask.CompletedTask;
+        }
+
+        LastSaveTime = DateTime.UtcNow;
+        return _repository.Save(new CurrencySaveData()
+        {
+            Currencies = ToSaveData(),
+            LastSaveTime = LastSaveTime.ToString("O")
+        });
     }
 
     private static DateTime ParseSaveTime(string saveTime)

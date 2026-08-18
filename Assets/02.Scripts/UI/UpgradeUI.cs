@@ -5,11 +5,18 @@ using UnityEngine.UI;
 public class UpgradeUI : MonoBehaviour
 {
     [SerializeField] private RectTransform _rectTransform;
+    [SerializeField] private RectTransform _panelTarget;
     [SerializeField] private Button _uiButton;
     [SerializeField] private GameObject _doNotTouchPanel;
     [SerializeField] private float _moveX = 720f;
     [SerializeField] private float _movingDuration = 0.5f;
     private bool _isOpened = false;
+    private bool _isToggleInputEnabled = true;
+
+    public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
+    public RectTransform PanelTarget => _panelTarget;
+    public event System.Action Opened;
+    public event System.Action Closed;
 
     private void Start()
     {
@@ -35,17 +42,26 @@ public class UpgradeUI : MonoBehaviour
 
     private void ViewUI()
     {
+        if (!_isToggleInputEnabled) return;
+
         _isOpened = !_isOpened;
 
         _doNotTouchPanel.SetActive(_isOpened);
         if (_isOpened)
         {
             _rectTransform.DOLocalMoveX(_moveX, _movingDuration);
+            Opened?.Invoke();
         }
         else
         {
             _rectTransform.DOLocalMoveX(0, _movingDuration);
+            Closed?.Invoke();
         }
+    }
+
+    public void SetToggleInputEnabled(bool isEnabled)
+    {
+        _isToggleInputEnabled = isEnabled;
     }
 
 }
