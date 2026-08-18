@@ -91,10 +91,10 @@ public class SpawnManager : MonoBehaviour
         ApplySavedUpgrades();
         InitSlimeSpawns();
 
-        // 신규 데이터처럼 복원할 슬라임이 없을 때만 최초 슬라임을 생성한다.
+        // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
         if (SlimeSpawner.Instance.GetActiveCount() == 0)
         {
-            if (SlimeManager.Instance.Status.HighestGrade == ESlimeGrade.Grade1)
+            if (TutorialProgress.ShouldRun)
             {
                 SpawnTutorialSlime();
             }
@@ -107,14 +107,36 @@ public class SpawnManager : MonoBehaviour
 
     private void SpawnTutorialSlime()
     {
-        TutorialSlime = SlimeSpawner.Instance.Spawn(
-            ESlimeGrade.Grade1,
-            _tutorialSlimePosition);
+        TutorialSlime = SpawnTutorialSlimeAt(_tutorialSlimePosition);
 
         if (TutorialSlime == null) return;
 
-        TutorialSlime.SetMovementLocked(true);
         OnTutorialSlimeReady?.Invoke(TutorialSlime);
+    }
+
+    public SlimeController SpawnTutorialSlimeNear(
+        SlimeController source,
+        float horizontalDistance)
+    {
+        if (source == null) return null;
+
+        Vector2 sourcePosition = source.transform.position;
+        float centerX = (_spawnAreaMin.x + _spawnAreaMax.x) * 0.5f;
+        float direction = sourcePosition.x <= centerX ? 1f : -1f;
+        Vector2 position = sourcePosition +
+                           Vector2.right * Mathf.Abs(horizontalDistance) * direction;
+        return SpawnTutorialSlimeAt(position);
+    }
+
+    private SlimeController SpawnTutorialSlimeAt(Vector2 position)
+    {
+        if (SlimeSpawner.Instance == null) return null;
+
+        SlimeController target = SlimeSpawner.Instance.Spawn(
+            ESlimeGrade.Grade1,
+            position);
+        target?.SetMovementLocked(true);
+        return target;
     }
 
     private void ApplySavedUpgrades()

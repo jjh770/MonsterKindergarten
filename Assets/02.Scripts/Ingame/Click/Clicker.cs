@@ -20,6 +20,7 @@ public class Clicker : MonoBehaviour
     private bool _isClickEnabled = true;
     private bool _isDragEnabled = true;
     private SlimeController _restrictedTarget;
+    private SlimeController _secondaryRestrictedTarget;
 
     public event System.Action<SlimeController> MergeCandidateChanged;
     public event System.Action<SlimeController> TargetClicked;
@@ -77,7 +78,9 @@ public class Clicker : MonoBehaviour
         {
             SlimeController clickTarget = hit.collider.GetComponent<SlimeController>();
             if (clickTarget != null &&
-                (_restrictedTarget == null || clickTarget == _restrictedTarget))
+                (_restrictedTarget == null ||
+                 clickTarget == _restrictedTarget ||
+                 clickTarget == _secondaryRestrictedTarget))
             {
                 _selectedTarget = clickTarget;
                 _mouseDownPos = worldPos;
@@ -152,12 +155,14 @@ public class Clicker : MonoBehaviour
     public void SetInputMode(
         bool clickEnabled,
         bool dragEnabled,
-        SlimeController restrictedTarget = null)
+        SlimeController restrictedTarget = null,
+        SlimeController secondaryRestrictedTarget = null)
     {
         CancelSelection();
         _isClickEnabled = clickEnabled;
         _isDragEnabled = dragEnabled;
         _restrictedTarget = restrictedTarget;
+        _secondaryRestrictedTarget = secondaryRestrictedTarget;
     }
 
     private void UpdateMergeCandidate()

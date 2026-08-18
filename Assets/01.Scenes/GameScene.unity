@@ -427,13 +427,14 @@ MonoBehaviour:
   _canvas: {fileID: 457349916}
   _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
   _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
-  _clickMessage: "\uC2AC\uB77C\uC784\uC744 \uD130\uCE58\uD574 \uBCF4\uC138\uC694!"
-  _dragMessage: "\uC2AC\uB77C\uC784\uC744 \uB4DC\uB798\uADF8\uD574 \uBCF4\uC138\uC694!"
-  _introductionDialogue:
-  - _speaker: "\uC120\uC0DD\uB2D8"
-    _message: "\uC5B4\uC11C \uC640! \uC774\uACF3\uC740 \uBAAC\uC2A4\uD130 \uC720\uCE58\uC6D0\uC774\uC57C."
-  - _speaker: "\uC120\uC0DD\uB2D8"
-    _message: "\uBA3C\uC800 \uB208\uC55E\uC758 \uC2AC\uB77C\uC784\uACFC \uC778\uC0AC\uD574 \uBCFC\uAE4C?"
+  _content: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
+  _pointTarget: {fileID: 734613838}
+  _spawnGaugeTarget: {fileID: 2116618831}
+  _spawnIntervalUpgradeTarget: {fileID: 561333958}
+  _spawnMaxUpgradeTarget: {fileID: 728174905}
+  _unlockPopupUI: {fileID: 1432576204}
+  _upgradeUI: {fileID: 1526959884}
+  _mergeSlimeDistance: 1.5
 --- !u!114 &115063080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4483,6 +4484,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeUI
   _rectTransform: {fileID: 1526959883}
+  _panelTarget: {fileID: 1864902236}
   _uiButton: {fileID: 1134167831}
   _doNotTouchPanel: {fileID: 1211276214}
   _moveX: 720
