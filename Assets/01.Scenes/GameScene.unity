@@ -1575,6 +1575,7 @@ GameObject:
   m_Component:
   - component: {fileID: 547806005}
   - component: {fileID: 547806006}
+  - component: {fileID: 2099400001}
   m_Layer: 5
   m_Name: OfflineRewardPopupUI
   m_TagString: Untagged
@@ -1644,6 +1645,19 @@ MonoBehaviour:
   _popupOpenSound: {fileID: 8300000, guid: ce9c84f0a0a06cf46b77d1b57fe877a6, type: 3}
   _collectSound: {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
   _arrivalSound: {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
+--- !u!114 &2099400001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547806004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6f3c9d1e42b4f7d9c0a5e8b1f236470, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::OfflineRewardPopupController
+  _view: {fileID: 547806006}
 --- !u!1 &561333957
 GameObject:
   m_ObjectHideFlags: 0
