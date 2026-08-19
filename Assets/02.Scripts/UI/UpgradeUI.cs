@@ -12,6 +12,7 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private float _movingDuration = 0.5f;
     private bool _isOpened = false;
     private bool _isToggleInputEnabled = true;
+    private Tween _moveTween;
 
     public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
     public RectTransform PanelTarget => _panelTarget;
@@ -23,6 +24,12 @@ public class UpgradeUI : MonoBehaviour
         _uiButton.onClick.AddListener(ViewUI);
         _doNotTouchPanel.SetActive(false);
         AddButtonOutline();
+    }
+
+    private void OnDisable()
+    {
+        _moveTween?.Kill(complete: true);
+        _moveTween = null;
     }
 
     private void AddButtonOutline()
@@ -64,14 +71,22 @@ public class UpgradeUI : MonoBehaviour
         _doNotTouchPanel.SetActive(_isOpened);
         if (_isOpened)
         {
-            _rectTransform.DOLocalMoveX(_moveX, _movingDuration);
+            MovePanel(_moveX);
             Opened?.Invoke();
         }
         else
         {
-            _rectTransform.DOLocalMoveX(0, _movingDuration);
+            MovePanel(0f);
             Closed?.Invoke();
         }
+    }
+
+    private void MovePanel(float targetX)
+    {
+        _moveTween?.Kill();
+        _moveTween = _rectTransform
+            .DOLocalMoveX(targetX, _movingDuration)
+            .OnComplete(() => _moveTween = null);
     }
 
     public void SetToggleInputEnabled(bool isEnabled)
