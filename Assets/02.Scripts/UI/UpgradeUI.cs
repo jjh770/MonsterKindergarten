@@ -121,6 +121,14 @@ public class UpgradeUI : MonoBehaviour
         SetOpened(!_isOpened);
     }
 
+    public bool TryClose()
+    {
+        if (!_isOpened) return false;
+
+        SetOpened(false);
+        return true;
+    }
+
     private void SetOpened(bool isOpened)
     {
         if (_isOpened == isOpened) return;
