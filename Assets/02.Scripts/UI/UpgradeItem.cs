@@ -40,8 +40,8 @@ public class UpgradeItem : MonoBehaviour
             _levelTextUI.text = $"Lv.{upgrade.Level.ToString("N0")}";
             _costTextUI.text = $"Cost:{upgrade.Cost.ToString()}";
             _statTextUI.text = upgrade.IsMaxLevel
-                ? $"{upgrade.Point} (MAX)"
-                : $"{upgrade.Point} -> {upgrade.NextPoint}";
+                ? $"{upgrade.Point}(MAX)"
+                : $"{upgrade.Point}→{upgrade.NextPoint}";
 
             if (_slimeImage != null && _unlockedSprite != null)
                 _slimeImage.sprite = _unlockedSprite;

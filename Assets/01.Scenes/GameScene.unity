@@ -3311,6 +3311,7 @@ GameObject:
   - component: {fileID: 1134167833}
   - component: {fileID: 1134167832}
   - component: {fileID: 1134167831}
+  - component: {fileID: 2099300001}
   m_Layer: 5
   m_Name: UpgradeButton
   m_TagString: Untagged
@@ -3419,6 +3420,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1134167829}
   m_CullTransparentMesh: 1
+--- !u!114 &2099300001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134167829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.9}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 1
 --- !u!1 &1185664563
 GameObject:
   m_ObjectHideFlags: 0

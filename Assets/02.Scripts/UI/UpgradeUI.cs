@@ -23,28 +23,12 @@ public class UpgradeUI : MonoBehaviour
     {
         _uiButton.onClick.AddListener(ViewUI);
         _doNotTouchPanel.SetActive(false);
-        AddButtonOutline();
     }
 
     private void OnDisable()
     {
         _moveTween?.Kill(complete: true);
         _moveTween = null;
-    }
-
-    private void AddButtonOutline()
-    {
-        if (_uiButton == null || _uiButton.targetGraphic == null) return;
-
-        Outline outline = _uiButton.targetGraphic.GetComponent<Outline>();
-        if (outline == null)
-        {
-            outline = _uiButton.targetGraphic.gameObject.AddComponent<Outline>();
-        }
-
-        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-        outline.effectDistance = new Vector2(3f, -3f);
-        outline.useGraphicAlpha = true;
     }
 
     private void ViewUI()
