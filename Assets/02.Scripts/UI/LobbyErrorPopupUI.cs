@@ -2,9 +2,9 @@
 using TMPro;
 using UnityEngine;
 
-public class LobbyPopupUI : MonoBehaviour
+public class LobbyErrorPopupUI : MonoBehaviour
 {
-    public static LobbyPopupUI Instance { get; private set; }
+    public static LobbyErrorPopupUI Instance { get; private set; }
 
     [SerializeField] private GameObject _popupPanel;
     [SerializeField] private TextMeshProUGUI _errorText;

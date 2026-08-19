@@ -1607,7 +1607,7 @@ GameObject:
   - component: {fileID: 463913324}
   - component: {fileID: 463913325}
   m_Layer: 5
-  m_Name: LobbyPopupUI
+  m_Name: LobbyErrorPopupUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
