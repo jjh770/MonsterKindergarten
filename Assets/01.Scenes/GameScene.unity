@@ -3646,10 +3646,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1526959883}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 3200, y: 3507}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1211276216
 MonoBehaviour:
@@ -4466,10 +4466,10 @@ RectTransform:
   - {fileID: 1864902236}
   m_Father: {fileID: 1045520513}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1080, y: 2338}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1526959884
 MonoBehaviour:
@@ -4487,7 +4487,6 @@ MonoBehaviour:
   _panelTarget: {fileID: 1864902236}
   _uiButton: {fileID: 1134167831}
   _doNotTouchPanel: {fileID: 1211276214}
-  _moveX: 720
   _movingDuration: 0.5
 --- !u!1 &1577494348
 GameObject:
@@ -5301,10 +5300,10 @@ RectTransform:
   - {fileID: 339001678}
   m_Father: {fileID: 1526959883}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1260, y: 0}
-  m_SizeDelta: {x: 720, y: 2338}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: -720, y: 0}
+  m_SizeDelta: {x: 720, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &1864902238
 MonoBehaviour:
