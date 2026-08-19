@@ -600,7 +600,7 @@ GameObject:
   - component: {fileID: 193017436}
   - component: {fileID: 193017437}
   m_Layer: 5
-  m_Name: CostNotEnoughPopupUI
+  m_Name: NotEnoughPointPopupUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2931,7 +2931,7 @@ GameObject:
   - component: {fileID: 889916601}
   - component: {fileID: 889916600}
   m_Layer: 5
-  m_Name: CostNotEnoughText
+  m_Name: NotEnoughPointText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4037,7 +4037,7 @@ GameObject:
   - component: {fileID: 1464846789}
   - component: {fileID: 1464846788}
   m_Layer: 5
-  m_Name: CostNotEnoughBackground
+  m_Name: NotEnoughPointBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

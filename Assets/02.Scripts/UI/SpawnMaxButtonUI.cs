@@ -67,7 +67,7 @@ public class SpawnMaxButtonUI : MonoBehaviour
             var upgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
             if (upgrade != null)
             {
-                NotEnoughPointPopupUI.Instance?.Show((double)upgrade.Cost);
+                NotEnoughPointPopupUI.Instance?.Show();
             }
         }
     }

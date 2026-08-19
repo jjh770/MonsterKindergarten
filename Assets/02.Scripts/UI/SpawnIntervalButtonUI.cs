@@ -66,7 +66,7 @@ public class SpawnIntervalButtonUI : MonoBehaviour
             var upgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
             if (upgrade != null)
             {
-                NotEnoughPointPopupUI.Instance?.Show((double)upgrade.Cost);
+                NotEnoughPointPopupUI.Instance?.Show();
             }
         }
     }
