@@ -18,8 +18,12 @@ public class UpgradeItem : MonoBehaviour
 
     private void Awake()
     {
-        _upgradeButton.onClick.RemoveAllListeners();
         _upgradeButton.onClick.AddListener(LevelUp);
+    }
+
+    private void OnDestroy()
+    {
+        _upgradeButton.onClick.RemoveListener(LevelUp);
     }
 
     public void SetSprite(Sprite sprite)
