@@ -44,7 +44,22 @@ public class UpgradeUI : MonoBehaviour
     {
         if (!_isToggleInputEnabled) return;
 
-        _isOpened = !_isOpened;
+        SetOpened(!_isOpened);
+    }
+
+    public bool TryClose()
+    {
+        if (!_isOpened) return false;
+
+        SetOpened(false);
+        return true;
+    }
+
+    private void SetOpened(bool isOpened)
+    {
+        if (_isOpened == isOpened) return;
+
+        _isOpened = isOpened;
 
         _doNotTouchPanel.SetActive(_isOpened);
         if (_isOpened)
