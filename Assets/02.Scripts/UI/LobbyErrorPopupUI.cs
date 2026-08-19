@@ -38,6 +38,17 @@ public class LobbyErrorPopupUI : MonoBehaviour
         _popupPanel.SetActive(false);
     }
 
+    private void OnDestroy()
+    {
+        _currentSequence?.Kill();
+        _currentSequence = null;
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
     public void Show(string errorText)
     {
         // 이전 애니메이션 취소
@@ -56,6 +67,10 @@ public class LobbyErrorPopupUI : MonoBehaviour
         _currentSequence.Join(_popupRectTransform.DOPunchPosition(Vector3.one * 15f, _punchDuration, 10, 1));
         _currentSequence.AppendInterval(_displayDuration);
         _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
-        _currentSequence.OnComplete(() => _popupPanel.SetActive(false));
+        _currentSequence.OnComplete(() =>
+        {
+            _currentSequence = null;
+            _popupPanel.SetActive(false);
+        });
     }
 }
