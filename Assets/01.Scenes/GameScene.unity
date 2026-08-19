@@ -1107,6 +1107,7 @@ GameObject:
   - component: {fileID: 457349916}
   - component: {fileID: 457349915}
   - component: {fileID: 457349914}
+  - component: {fileID: 2099500001}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1200,6 +1201,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &2099500001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457349913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 692ec84f89ec47bab128bf870266c80b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradePanel
+  _items:
+  - {fileID: 561333963}
+  - {fileID: 728174910}
 --- !u!1 &495159767
 GameObject:
   m_ObjectHideFlags: 0
@@ -1820,11 +1836,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 561333957}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a891324874b96314db6c6a27e49e7ea0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpawnIntervalButtonUI
+  m_Script: {fileID: 11500000, guid: d32a024bfe9f46cca051af386cc9fbbe, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradeItemUI
+  _upgradeType: 4
   _button: {fileID: 561333960}
-  _spawnIntervalText: {fileID: 182474399}
+  _valueText: {fileID: 182474399}
   _costText: {fileID: 2024321986}
 --- !u!95 &561333964
 Animator:
@@ -2372,11 +2389,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 728174904}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 072fa365543015349adad8818d0a1a75, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpawnMaxButtonUI
+  m_Script: {fileID: 11500000, guid: d32a024bfe9f46cca051af386cc9fbbe, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradeItemUI
+  _upgradeType: 5
   _button: {fileID: 728174907}
-  _spawnMaxText: {fileID: 1800013884}
+  _valueText: {fileID: 1800013884}
   _costText: {fileID: 1501643697}
 --- !u!95 &728174911
 Animator:
@@ -3886,8 +3904,6 @@ MonoBehaviour:
   _spawnAreaMin: {x: -1, y: -2}
   _spawnAreaMax: {x: 1, y: 2}
   _tutorialSlimePosition: {x: 0, y: 0}
-  _spawnIntervalDecreaseValue: 0.1
-  _spawnMaxIncreaseValue: 1
   _minSpawnInterval: 3
 --- !u!4 &1271333081
 Transform:

@@ -19,8 +19,9 @@ MonoBehaviour:
     BaseCost: 100
     BasePoint: 0
     CostMultiplier: 1.12
-    PointMultiplier: 0
-    PointFormula: 1
+    PointMultiplier: 0.1
+    PointFormula: 0
+    SystemIconIndex: 8
     Name: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
     Description: "\uC2A4\uD3F0 \uC2DC\uAC04\uC774 \uB2E8\uCD95\uB429\uB2C8\uB2E4."
   - Type: 5
@@ -29,8 +30,9 @@ MonoBehaviour:
     BaseCost: 1000
     BasePoint: 0
     CostMultiplier: 1.5
-    PointMultiplier: 0
-    PointFormula: 1
+    PointMultiplier: 1
+    PointFormula: 0
+    SystemIconIndex: 9
     Name: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218"
     Description: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218 \uC99D\uAC00"
   - Type: 0

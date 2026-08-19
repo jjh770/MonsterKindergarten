@@ -19,9 +19,9 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private Vector2 _tutorialSlimePosition = Vector2.zero;
 
     [Header("Interval Area")]
-    [SerializeField] private float _spawnIntervalDecreaseValue = 0.1f;
-    [SerializeField] private int _spawnMaxIncreaseValue = 1;
     [SerializeField] private float _minSpawnInterval = 0.5f;
+    private float _baseSpawnInterval;
+    private int _baseMaxActiveCount;
     private float _timer;
 
     private bool _isInitialized;
@@ -36,7 +36,7 @@ public class SpawnManager : MonoBehaviour
         get => _maxActiveCount;
         set
         {
-            _maxActiveCount = Mathf.Max(value, _maxActiveCount);
+            _maxActiveCount = Mathf.Max(1, value);
             OnSpawnMaxChanged?.Invoke(_maxActiveCount);
         }
     }
@@ -59,6 +59,8 @@ public class SpawnManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            _baseSpawnInterval = _spawnInterval;
+            _baseMaxActiveCount = _maxActiveCount;
         }
         else
         {
@@ -141,17 +143,8 @@ public class SpawnManager : MonoBehaviour
 
     private void ApplySavedUpgrades()
     {
-        var intervalUpgrade = UpgradeManager.Instance.Get(EUpgradeType.SpawnTimeSub, ESlimeGrade.None);
-        if (intervalUpgrade != null)
-        {
-            SpawnInterval -= _spawnIntervalDecreaseValue * intervalUpgrade.Level;
-        }
-
-        var maxCountUpgrade = UpgradeManager.Instance.Get(EUpgradeType.MaxCountAdd, ESlimeGrade.None);
-        if (maxCountUpgrade != null)
-        {
-            MaxActiveCount += _spawnMaxIncreaseValue * maxCountUpgrade.Level;
-        }
+        ApplySpawnIntervalUpgrade();
+        ApplySpawnMaxCountUpgrade();
     }
 
     private void InitSlimeSpawns()
@@ -174,10 +167,10 @@ public class SpawnManager : MonoBehaviour
         switch (type)
         {
             case EUpgradeType.SpawnTimeSub:
-                DecreaseInterval();
+                ApplySpawnIntervalUpgrade();
                 break;
             case EUpgradeType.MaxCountAdd:
-                IncreaseMaxCount();
+                ApplySpawnMaxCountUpgrade();
                 break;
         }
     }
@@ -231,14 +224,34 @@ public class SpawnManager : MonoBehaviour
         SlimeSpawner.Instance.Despawn(target);
     }
 
+    private void ApplySpawnIntervalUpgrade()
+    {
+        Upgrade upgrade = UpgradeManager.Instance?.Get(
+            EUpgradeType.SpawnTimeSub,
+            ESlimeGrade.None);
+        if (upgrade == null) return;
+
+        SpawnInterval = _baseSpawnInterval - (float)upgrade.Point;
+    }
+
+    private void ApplySpawnMaxCountUpgrade()
+    {
+        Upgrade upgrade = UpgradeManager.Instance?.Get(
+            EUpgradeType.MaxCountAdd,
+            ESlimeGrade.None);
+        if (upgrade == null) return;
+
+        MaxActiveCount = _baseMaxActiveCount + Mathf.RoundToInt((float)upgrade.Point);
+    }
+
     public void DecreaseInterval()
     {
-        SpawnInterval -= _spawnIntervalDecreaseValue;
+        ApplySpawnIntervalUpgrade();
     }
 
     public void IncreaseMaxCount()
     {
-        MaxActiveCount += _spawnMaxIncreaseValue;
+        ApplySpawnMaxCountUpgrade();
     }
 
     public void SetSpawningPaused(bool isPaused)

@@ -20,6 +20,7 @@ public class UpgradeSpecData
     public double CostMultiplier;
     public double PointMultiplier;
     public EPointFormula PointFormula;
+    public int SystemIconIndex = -1;
     public string Name;
     public string Description;
 }
