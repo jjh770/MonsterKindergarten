@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class OfflineRewardPopupUI : MonoBehaviour
 {
+    public event Action ConfirmRequested;
+    public event Action PresentationCompleted;
+
     [SerializeField] private GameObject _popupPanel;
     [SerializeField] private GameObject _doNotTouchPanel;
     [SerializeField] private RectTransform _popupRectTransform;
@@ -32,7 +35,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private Sequence _currentSequence;
     private readonly List<RectTransform> _flyingVisuals = new();
-    private OfflineRewardResult? _displayedReward;
 
     private void Awake()
     {
@@ -46,49 +48,28 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
-        _confirmButton?.onClick.AddListener(Hide);
-    }
-
-    private void Start()
-    {
-        if (GameManager.Instance == null) return;
-
-        GameManager.Instance.OnOfflineRewardReady += ShowPendingReward;
-        ShowPendingReward();
+        _confirmButton?.onClick.AddListener(OnConfirmClicked);
     }
 
     private void OnDestroy()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnOfflineRewardReady -= ShowPendingReward;
-        }
-
-        _confirmButton?.onClick.RemoveListener(Hide);
+        _confirmButton?.onClick.RemoveListener(OnConfirmClicked);
         _currentSequence?.Kill();
         ClearFlyingVisuals();
-
     }
 
-    private void ShowPendingReward()
+    public void Show(TimeSpan elapsedTime, Currency reward)
     {
-        if (_popupPanel == null ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.TryConsumeOfflineReward(out OfflineRewardResult result))
-        {
-            return;
-        }
-
-        _displayedReward = result;
+        if (_popupPanel == null || _canvasGroup == null) return;
 
         if (_elapsedTimeText != null)
         {
-            _elapsedTimeText.text = FormatElapsedTime(result.ElapsedTime);
+            _elapsedTimeText.text = FormatElapsedTime(elapsedTime);
         }
 
         if (_rewardText != null)
         {
-            _rewardText.text = $"{result.Reward} Point";
+            _rewardText.text = $"{reward} Point";
         }
 
         _currentSequence?.Kill();
@@ -123,10 +104,18 @@ public class OfflineRewardPopupUI : MonoBehaviour
         }
     }
 
-    private void Hide()
+    private void OnConfirmClicked()
     {
-        if (_popupPanel == null || !_popupPanel.activeSelf) return;
-        if (GameManager.Instance == null || !GameManager.Instance.TryClaimOfflineReward()) return;
+        ConfirmRequested?.Invoke();
+    }
+
+    public float PlayCollect(TimeSpan elapsedTime)
+    {
+        if (_popupPanel == null || !_popupPanel.activeSelf)
+        {
+            PresentationCompleted?.Invoke();
+            return 0f;
+        }
 
         PlaySound(_collectSound);
         _currentSequence?.Kill();
@@ -138,18 +127,17 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_rewardFlyVisual == null || _pointTarget == null)
         {
-            FadeOutAndClose();
-            return;
+            return FadeOutAndClose();
         }
 
-        PlayRewardFlyEffect();
+        return PlayRewardFlyEffect(elapsedTime);
     }
 
-    private void PlayRewardFlyEffect()
+    private float PlayRewardFlyEffect(TimeSpan elapsedTime)
     {
         ClearFlyingVisuals();
         _currentSequence = DOTween.Sequence();
-        int visualCount = GetFlyVisualCount();
+        int visualCount = GetFlyVisualCount(elapsedTime);
 
         for (int i = 0; i < visualCount; i++)
         {
@@ -194,9 +182,10 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         // 모든 보상 이미지가 도착한 뒤 팝업과 입력 차단 패널을 닫는다.
         _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
-        PlayPointCountUp(_currentSequence.Duration());
+        float duration = _currentSequence.Duration();
         _currentSequence.OnComplete(() =>
         {
+            _currentSequence = null;
             ClearFlyingVisuals();
             ClosePopup();
             _pointTarget.DOPunchScale(
@@ -205,13 +194,13 @@ public class OfflineRewardPopupUI : MonoBehaviour
                 6,
                 0.5f);
         });
+
+        return duration;
     }
 
-    private int GetFlyVisualCount()
+    private static int GetFlyVisualCount(TimeSpan elapsedTime)
     {
-        if (!_displayedReward.HasValue) return 10;
-
-        double offlineHours = _displayedReward.Value.ElapsedTime.TotalHours;
+        double offlineHours = elapsedTime.TotalHours;
 
         if (offlineHours <= 1d) return 10;
         if (offlineHours <= 4d) return 30;
@@ -248,24 +237,18 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _flyingVisuals.Clear();
     }
 
-    private void FadeOutAndClose()
+    private float FadeOutAndClose()
     {
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
-        PlayPointCountUp(_currentSequence.Duration());
-        _currentSequence.OnComplete(ClosePopup);
-    }
-
-    private void PlayPointCountUp(float duration)
-    {
-        if (_displayedReward.HasValue)
+        float duration = _currentSequence.Duration();
+        _currentSequence.OnComplete(() =>
         {
-            OfflineRewardResult result = _displayedReward.Value;
-            PointCountUpEvents.Request(new PointCountUpRequest(
-                result.PointBeforeReward,
-                result.PointAfterReward,
-                duration));
-        }
+            _currentSequence = null;
+            ClosePopup();
+        });
+
+        return duration;
     }
 
     private void ClosePopup()
@@ -274,17 +257,12 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
 
-        if (_displayedReward.HasValue && GameManager.Instance != null)
-        {
-            GameManager.Instance.CompleteOfflineRewardPresentation();
-        }
-
-        _displayedReward = null;
-
         if (_confirmButton != null)
         {
             _confirmButton.interactable = true;
         }
+
+        PresentationCompleted?.Invoke();
     }
 
     private static void PlaySound(AudioClip clip)

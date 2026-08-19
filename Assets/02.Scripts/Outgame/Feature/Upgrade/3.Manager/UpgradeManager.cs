@@ -75,6 +75,9 @@ public class UpgradeManager : MonoBehaviour
     public List<Upgrade> GetSlimeUpgrades() =>
         _upgrades.Values.Where(u => u.SpecData.SlimeGrade != ESlimeGrade.None).ToList();
 
+    public List<Upgrade> GetSystemUpgrades() =>
+        _upgrades.Values.Where(u => u.SpecData.SlimeGrade == ESlimeGrade.None).ToList();
+
     // 레벨업 가능한지
     public bool CanLevelUp(UpgradeSpecData specData)
     {

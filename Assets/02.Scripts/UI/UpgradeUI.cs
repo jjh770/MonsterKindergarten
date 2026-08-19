@@ -12,6 +12,7 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private float _movingDuration = 0.5f;
     private bool _isOpened = false;
     private bool _isToggleInputEnabled = true;
+    private Tween _moveTween;
 
     public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
     public RectTransform PanelTarget => _panelTarget;
@@ -22,41 +23,54 @@ public class UpgradeUI : MonoBehaviour
     {
         _uiButton.onClick.AddListener(ViewUI);
         _doNotTouchPanel.SetActive(false);
-        AddButtonOutline();
     }
 
-    private void AddButtonOutline()
+    private void OnDisable()
     {
-        if (_uiButton == null || _uiButton.targetGraphic == null) return;
-
-        Outline outline = _uiButton.targetGraphic.GetComponent<Outline>();
-        if (outline == null)
-        {
-            outline = _uiButton.targetGraphic.gameObject.AddComponent<Outline>();
-        }
-
-        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-        outline.effectDistance = new Vector2(3f, -3f);
-        outline.useGraphicAlpha = true;
+        _moveTween?.Kill(complete: true);
+        _moveTween = null;
     }
 
     private void ViewUI()
     {
         if (!_isToggleInputEnabled) return;
 
-        _isOpened = !_isOpened;
+        SetOpened(!_isOpened);
+    }
+
+    public bool TryClose()
+    {
+        if (!_isOpened) return false;
+
+        SetOpened(false);
+        return true;
+    }
+
+    private void SetOpened(bool isOpened)
+    {
+        if (_isOpened == isOpened) return;
+
+        _isOpened = isOpened;
 
         _doNotTouchPanel.SetActive(_isOpened);
         if (_isOpened)
         {
-            _rectTransform.DOLocalMoveX(_moveX, _movingDuration);
+            MovePanel(_moveX);
             Opened?.Invoke();
         }
         else
         {
-            _rectTransform.DOLocalMoveX(0, _movingDuration);
+            MovePanel(0f);
             Closed?.Invoke();
         }
+    }
+
+    private void MovePanel(float targetX)
+    {
+        _moveTween?.Kill();
+        _moveTween = _rectTransform
+            .DOLocalMoveX(targetX, _movingDuration)
+            .OnComplete(() => _moveTween = null);
     }
 
     public void SetToggleInputEnabled(bool isEnabled)
