@@ -37,7 +37,7 @@ public class PointUI : MonoBehaviour
     private void OnAllDataInitialized()
     {
         _isInitialized = true;
-        _highestGrade = SlimeManager.Instance.Status.HighestGrade;
+        _highestGrade = SlimeManager.Instance.HighestGrade;
 
         if (GameManager.Instance.TryGetCurrentOfflineReward(out OfflineRewardResult result))
         {

@@ -21,7 +21,7 @@ public class MergeManager : MonoBehaviour
     {
         if (!SlimeManager.Instance.CanMerge(keeper.Slime, removed.Slime)) return;
 
-        ESlimeGrade fromGrade = keeper.Slime.SpecData.Grade;
+        ESlimeGrade fromGrade = keeper.Grade;
         ESlimeGrade toGrade = fromGrade + 1;
 
         Slime nextSlime = SlimeManager.Instance.Get(toGrade);

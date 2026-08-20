@@ -268,7 +268,7 @@ public sealed class TutorialManager : MonoBehaviour
 
         bool willUnlockNewGrade = SlimeManager.Instance != null &&
                                   survivingSlime != null &&
-                                  survivingSlime.Grade > SlimeManager.Instance.Status.HighestGrade;
+                                  survivingSlime.Grade > SlimeManager.Instance.HighestGrade;
         if (!willUnlockNewGrade || _unlockPopupUI == null)
         {
             ShowMergeResultStep();

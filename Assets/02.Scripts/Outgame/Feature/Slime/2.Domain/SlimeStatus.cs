@@ -9,7 +9,7 @@ public class SlimeStatus
 
     // 활성 슬라임: Grade별 개수
     private readonly Dictionary<ESlimeGrade, int> _activeSlimes = new();
-    public Dictionary<ESlimeGrade, int> ActiveSlimes => _activeSlimes;
+    public IReadOnlyDictionary<ESlimeGrade, int> ActiveSlimes => _activeSlimes;
 
     public SlimeStatus(ESlimeGrade highestGrade, Dictionary<ESlimeGrade, int> activeSlimes)
     {

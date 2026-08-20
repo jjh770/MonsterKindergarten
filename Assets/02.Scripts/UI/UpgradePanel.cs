@@ -66,7 +66,7 @@ public class UpgradePanel : MonoBehaviour
         if (!_isInitialized) return;
 
         var upgrades = UpgradeManager.Instance.GetSlimeUpgrades();
-        ESlimeGrade highestGrade = SlimeManager.Instance.Status.HighestGrade;
+        ESlimeGrade highestGrade = SlimeManager.Instance.HighestGrade;
 
         for (int i = 0; i < _items.Count; ++i)
         {

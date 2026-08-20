@@ -14,6 +14,8 @@ public class SlimeManager : MonoBehaviour
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
+    // 호출부가 SlimeStatus 내부 구조를 거치지 않도록 최고 등급은 매니저가 직접 노출한다.
+    public ESlimeGrade HighestGrade => _status.HighestGrade;
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);

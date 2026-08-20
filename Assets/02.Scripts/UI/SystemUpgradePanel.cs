@@ -62,7 +62,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         if (UpgradeManager.Instance == null || SlimeManager.Instance == null) return;
 
         _isInitialized = true;
-        _highestGrade = SlimeManager.Instance.Status.HighestGrade;
+        _highestGrade = SlimeManager.Instance.HighestGrade;
         CacheSystemUpgrades();
         Refresh();
     }
