@@ -106,8 +106,6 @@ com.unity.mobile.android-logcat
 
 `Window -> Analysis -> Android Logcat`으로 엽니다. 기본 상태에서는 기기 전체의 시스템 로그가 출력되어 게임 로그를 찾을 수 없습니다.
 
-![필터 적용 전 Android Logcat](Images/playerprefs-profiling/01-android-logcat-unfiltered.png)
-
 필터 두 가지를 적용하면 계측 로그만 남습니다.
 
 1. 패키지 드롭다운에서 `com.skku_say.Monster_Kindergarten` 선택 (앱이 실행 중이어야 목록에 표시됨)
@@ -122,7 +120,7 @@ com.unity.mobile.android-logcat
 
 ## 5. 측정 결과
 
-<img src="E:\Unity\MonsterKindergarten\Documentation\Images\playerprefs-profiling\Android Logcat.png" alt="image-20260820164837820" style="zoom:150%;" />
+<img src="Images/playerprefs-profiling/Android%20Logcat.png" alt="PlayerPrefs 계측 결과" style="zoom:150%;" />
 
 2500회 호출, 약 9분 44초간 측정했습니다.
 
