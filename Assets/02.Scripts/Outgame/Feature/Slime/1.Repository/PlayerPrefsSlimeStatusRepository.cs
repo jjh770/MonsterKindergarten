@@ -48,7 +48,8 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
         catch (Exception e)
         {
             Debug.LogError($"[PlayerPrefsSlimeStatusRepository] 로드 실패: {e.Message}");
-            return UniTask.FromResult<SlimeStatusSaveData>(null);
+            // null을 반환하면 SlimeManager 초기화가 중단되어 게임이 진행 불가 상태가 된다.
+            return UniTask.FromResult(SlimeStatusSaveData.Default);
         }
     }
 }
