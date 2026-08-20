@@ -9,6 +9,8 @@
 - 접속하지 않은 시간에 따른 오프라인 자동 생산 보상
 - 등급별 수동·자동 생산량 업그레이드
 - 스폰 간격 및 최대 슬라임 수 업그레이드
+- 신규 플레이어용 튜토리얼
+- BGM 및 효과음
 - Google Play Games 로그인
 - Firebase Authentication 및 Firestore 기반 클라우드 저장
 - Unity Editor용 로컬 저장
@@ -30,14 +32,20 @@
 3. `Assets/01.Scenes/LoginScene.unity`에서 Play Mode를 실행합니다.
 4. Android 로그인과 클라우드 저장은 프로젝트에 맞는 Firebase 및 Google Play Games 설정이 필요합니다.
 
-상세한 연동 과정은 [Google Play Games 및 Firebase 연동 기록](Documentation/GOOGLE_PLAY_FIREBASE_INTEGRATION.md)을 참고하세요.
+## 문서
+
+- [Google Play Games 및 Firebase 연동 기록](Documentation/GOOGLE_PLAY_FIREBASE_INTEGRATION.md)
+- [C# 코딩 컨벤션](Documentation/CODING_CONVENTION.md)
+- [PlayerPrefs 저장 비용 측정 기록](Documentation/PLAYERPREFS_SAVE_PROFILING.md)
 
 ## 주요 폴더
 
 - `Assets/01.Scenes`: 로그인 및 게임 장면
 - `Assets/02.Scripts`: 게임 로직, 저장소, UI 코드
 - `Assets/03.Prefabs`: 슬라임과 UI 프리팹
-- `Assets/10.ScriptableObjects`: 슬라임 및 업그레이드 데이터
+- `Assets/10.ScriptableObjects`: 튜토리얼 데이터
+
+슬라임과 업그레이드 밸런스 데이터는 `Assets/02.Scripts/Outgame/Feature/` 아래 각 도메인 폴더에 있습니다.
 
 ## 현재 상태
 

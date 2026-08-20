@@ -6,7 +6,7 @@ This file provides project guidance to coding agents working in this repository.
 
 Monster Kindergarten is a Unity 6 Android idle clicker and merge game. Grade 1 slimes spawn over time, players earn points through manual and automatic clicks, and dragging two slimes of the same grade merges them into the next grade. Points are spent on per-grade click upgrades and shared spawn interval and capacity upgrades.
 
-The current content supports 10 slime grades. Runtime data covers currency, the highest unlocked grade, active slime counts, and upgrade levels.
+The current content supports 10 slime grades. Runtime data covers currency, the highest unlocked grade, active slime counts, and upgrade levels. A guided tutorial runs on a new save, and time away from the game grants an offline auto-production reward.
 
 ## Build and Development
 
@@ -37,7 +37,7 @@ Do not change save keys, Firestore document ownership, Firebase UID handling, or
 
 Assets use numbered prefixes for project-owned content:
 
-- `Assets/01.Scenes/` - login, gameplay, and tutorial scenes
+- `Assets/01.Scenes/` - login and gameplay scenes, plus unused Firebase and Web API learning samples
 - `Assets/02.Scripts/Core/` - application and Firebase initialization
 - `Assets/02.Scripts/Ingame/` - click, spawn, merge, slime, feedback, and gameplay managers
 - `Assets/02.Scripts/Outgame/Feature/` - repository, domain, and manager layers for account, currency, slime, and upgrades
@@ -62,6 +62,13 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `CurrencyManager`, `SlimeManager`, and `UpgradeManager` own their domains and repository selection.
 - `GameManager` waits for all three managers, then raises `OnAllDataInitialized` for gameplay systems.
 - Repository interfaces separate local PlayerPrefs storage from Firebase Firestore storage.
+- Each manager delays its initialization by one `await UniTask.Yield()` so `OnDataInitialized` fires after every subscriber has wired up in `Start`. Do not remove it.
+
+**Offline reward and tutorial**
+
+- `GameManager` also computes the offline reward from `CurrencyManager.LastSaveTime` and per-slime auto-production, gated by a minimum interval, a maximum accrual window, and an efficiency factor. Gameplay stays inactive until the reward popup is dismissed.
+- `TutorialProgress` stores completion per user ID in PlayerPrefs and treats pre-tutorial saves as already completed.
+- `TutorialManager` drives the guided steps and `GameplaySaveGate` blocks all domain saves until the tutorial finishes, at which point the three domains are committed together.
 
 **Spawn and merge loop**
 
@@ -75,6 +82,8 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 **Feedback**
 
 Feedback components implement `IFeedback` and are discovered from a slime's child objects. Existing effects include color, scale, sound, and point floaters. Keep new feedback behavior component-based where possible.
+
+`AudioManager` owns BGM and SFX sources through an Audio Mixer and mutes on application pause. `GameExitManager` handles the Android back key, closing the upgrade UI first and showing the exit confirmation popup otherwise.
 
 ### Key Patterns
 
@@ -106,7 +115,11 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 The active baseline is the Android version on `main`. Google Play Games login, Firebase UID-based saves, cloud restoration after app-data deletion, and Play Console internal installation have been device-tested. Editor gameplay intentionally bypasses Google Play login and uses local saves.
 
+The offline reward, tutorial, exit popup, and audio systems have since shipped on `main`.
+
 Current work is stabilization: gameplay bugs, save recovery, mobile UX, balance, and release preparation. Before considering a change complete, check the Unity Console and run the smallest relevant Play Mode scenario. Authentication, cloud recovery, touch behavior, AAB signing, and frame rate still require an Android device or internal-test build.
+
+The `Android™` profile is the development build and is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
 
 ## Working Guidelines
 
@@ -115,3 +128,5 @@ Current work is stabilization: gameplay bugs, save recovery, mobile UX, balance,
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
 - Treat Unity Play Mode and Android device results separately from static or `.csproj` checks.
 - Preserve unrelated working-tree changes and inspect the exact Git diff before staging.
+- Follow `Documentation/CODING_CONVENTION.md`. Its Law of Demeter section lists explicit exceptions for data structures and Unity framework APIs.
+- Do not report a performance problem without measuring it on an Android device. See `Documentation/PLAYERPREFS_SAVE_PROFILING.md` for the method and for a hypothesis that measurement rejected.
