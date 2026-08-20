@@ -21,7 +21,7 @@ public class FirebaseCurrencyRepository : IRepository<CurrencySaveData>
         }
         catch (Exception e)
         {
-            Debug.Log("저장 실패" + e.Message);
+            Debug.LogWarning("Currency 저장 실패: " + e.Message);
         }
     }
 

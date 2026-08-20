@@ -51,7 +51,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         }
         catch (Exception e)
         {
-            Debug.Log($"파이어베이스 저장 실패 : {e.Message}");
+            Debug.LogWarning($"파이어베이스 저장 실패 : {e.Message}");
         }
     }
 

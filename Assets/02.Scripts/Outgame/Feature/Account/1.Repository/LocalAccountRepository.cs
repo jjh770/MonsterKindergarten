@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 public class LocalAccountRepository : IAccountRepository
 {
@@ -16,6 +15,6 @@ public class LocalAccountRepository : IAccountRepository
 
     public void Logout()
     {
-        Debug.Log("로그아웃 됐습니다.");
+        // 로컬 모드는 유지할 세션이 없어 정리할 상태가 없다.
     }
 }

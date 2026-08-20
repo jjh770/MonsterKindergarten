@@ -185,7 +185,6 @@ public class GameManager : MonoBehaviour
                 pointAfterReward);
 
             OnOfflineRewardReady?.Invoke();
-            Debug.Log($"오프라인 보상 계산: {reward:N0} Point / {elapsedSeconds:N0}초");
         }
         else
         {
@@ -259,7 +258,6 @@ public class GameManager : MonoBehaviour
         OfflineRewardResult result = _pendingOfflineReward.Value;
         CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
         _isOfflineRewardClaimed = true;
-        Debug.Log($"오프라인 보상 수령: {result.Reward} Point");
         return true;
     }
 

@@ -33,11 +33,10 @@ public class FirebaseInitializer : MonoBehaviour
         var dependencyStatus = await Firebase.FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask();
         try
         {
-            if (dependencyStatus == DependencyStatus.Available)
+            if (dependencyStatus != DependencyStatus.Available)
             {
-                Debug.Log("초기화 성공");
+                Debug.LogError($"Firebase 초기화 실패: {dependencyStatus}");
             }
-
         }
         catch (FirebaseException e)
         {

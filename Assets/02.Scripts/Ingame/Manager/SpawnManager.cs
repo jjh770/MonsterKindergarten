@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -195,9 +194,6 @@ public class SpawnManager : MonoBehaviour
             Spawn(ESlimeGrade.Grade1);
             OnSpawned?.Invoke();
         }
-
-        if (Keyboard.current?.f1Key.wasPressedThisFrame != true) return;
-        Spawn(ESlimeGrade.Grade1);
     }
 
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
