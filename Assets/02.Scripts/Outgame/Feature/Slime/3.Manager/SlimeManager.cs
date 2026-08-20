@@ -10,7 +10,6 @@ public class SlimeManager : MonoBehaviour
     [SerializeField] private SlimeSpecTable _specTable;
     private List<Slime> _slimes = new();
 
-    //private ISlimeStatusRepository _statusRepository;
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     public SlimeStatus Status => _status;
@@ -95,14 +94,9 @@ public class SlimeManager : MonoBehaviour
         Save();
     }
 
-    // 슬라임 디스폰 시 호출
-    public void RemoveSlime(ESlimeGrade grade)
-    {
-        _status.RemoveSlime(grade);
-        Save();
-    }
-
     // 머지 시 호출 (두 슬라임 제거 + 새 슬라임 추가)
+    // 디스폰 시의 카운트 차감도 이 메서드가 함께 처리한다.
+    // 단독 디스폰 경로를 추가할 경우 SlimeSpawner.Despawn과의 회계 분담부터 재설계할 것.
     public void MergeSlime(ESlimeGrade fromGrade, ESlimeGrade toGrade)
     {
         _status.RemoveSlime(fromGrade); // keeper 기존 등급 제거

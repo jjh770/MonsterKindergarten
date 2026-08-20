@@ -21,8 +21,6 @@ public class CurrencyManager : MonoBehaviour
     // 저장소
     // 의존이란 한 객체가 동작하기 위해서 다른 객체를 참조하는 것.
     // DIP(의존관계 역전 원칙) : 구현체에 의존하지 말고 약속에 의존해라.
-    // private ICurrencyRepository _repository; // LocalCurrencyRepository -> ICurrencyRepository
-    // 보다도 상위 인터페이스가 생겼으니 그 인터페이스로 변경
     private IRepository<CurrencySaveData> _repository;
 
     // 재화 조회 +@ (편의를 위해 이정도는 눈감아주자)

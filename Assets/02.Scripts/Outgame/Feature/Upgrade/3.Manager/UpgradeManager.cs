@@ -13,7 +13,6 @@ public class UpgradeManager : MonoBehaviour
     // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
     public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
     [SerializeField] private UpgradeSpecTableSO _specTable;
-    //private IUpgradeRepository _repository;
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
     public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
