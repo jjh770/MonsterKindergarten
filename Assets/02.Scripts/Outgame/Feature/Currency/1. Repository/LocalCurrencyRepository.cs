@@ -25,7 +25,7 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
         _userId = userId;
     }
 
-    public async UniTask Save(CurrencySaveData saveData)
+    public UniTask Save(CurrencySaveData saveData)
     {
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
@@ -37,9 +37,11 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
         PlayerPrefs.SetString($"{_userId}_{LAST_SAVE_TIME_KEY}", saveData.LastSaveTime ?? string.Empty);
         PlayerPrefs.Save();
+
+        return UniTask.CompletedTask;
     }
 
-    public async UniTask<CurrencySaveData> Load()
+    public UniTask<CurrencySaveData> Load()
     {
         CurrencySaveData data = CurrencySaveData.Default;
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
@@ -58,7 +60,7 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
         }
 
         data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);
-        return data;
+        return UniTask.FromResult(data);
     }
 }
 
