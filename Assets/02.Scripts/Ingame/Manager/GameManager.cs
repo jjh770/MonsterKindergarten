@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
 
     public static event Action OnAllDataInitialized;
     public event Action OnOfflineRewardReady;
+    public event Action OnGameplayActivated;
 
     [Header("Offline Reward")]
     [SerializeField] private float _minimumOfflineSeconds = 60f;
@@ -27,7 +28,22 @@ public class GameManager : MonoBehaviour
     // 2. GameManager에서 모든 매니저의 데이터를 초기화하라고 시키는 방법도 있음. (이러면 GameManager에서 순차적으로 진행하기 때문에 살짝 느릴 수 있다.)
     // 3. 아예 로딩씬에서 데이터를 모두 초기화하고 게임 씬으로 넘어가는 방법도 있다.
     public bool IsAllDataInitialized => _isAllInitialized;
-    public bool IsGameplayActive { get; private set; }
+
+    private bool _isGameplayActive;
+    public bool IsGameplayActive
+    {
+        get => _isGameplayActive;
+        private set
+        {
+            if (_isGameplayActive == value) return;
+
+            _isGameplayActive = value;
+            if (value)
+            {
+                OnGameplayActivated?.Invoke();
+            }
+        }
+    }
 
     private void Awake()
     {

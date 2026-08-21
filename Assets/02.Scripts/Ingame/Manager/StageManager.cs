@@ -1,5 +1,6 @@
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -41,8 +42,7 @@ public sealed class StageManager : MonoBehaviour
     private SlimeController _pendingFirstSkyTarget;
     private Sequence _transitionSequence;
     private Sequence _chargeSequence;
-    private Coroutine _initializeCoroutine;
-    private Coroutine _unlockWaitCoroutine;
+    private bool _isInitializeStarted;
     private bool _isInitialized;
     private bool _isTransitioning;
     private bool _isFirstIntroStarted;
@@ -113,12 +113,6 @@ public sealed class StageManager : MonoBehaviour
         _transitionSequence?.Kill();
         _chargeSequence?.Kill();
         _tutorialPresentation?.Dispose();
-
-        if (_unlockWaitCoroutine != null)
-        {
-            StopCoroutine(_unlockWaitCoroutine);
-        }
-
     }
 
     private void OnRectTransformDimensionsChange()
@@ -158,17 +152,18 @@ public sealed class StageManager : MonoBehaviour
 
     private void OnAllDataInitialized()
     {
-        if (_initializeCoroutine != null) return;
+        if (_isInitializeStarted) return;
 
-        _initializeCoroutine = StartCoroutine(InitializeAfterDataRoutine());
+        _isInitializeStarted = true;
+        InitializeAfterDataAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
 
-    private IEnumerator InitializeAfterDataRoutine()
+    private async UniTaskVoid InitializeAfterDataAsync(CancellationToken token)
     {
         if (SlimeManager.Instance == null)
         {
-            _initializeCoroutine = null;
-            yield break;
+            _isInitializeStarted = false;
+            return;
         }
 
         _currentStage = SlimeManager.Instance.IsSkyUnlocked
@@ -180,11 +175,7 @@ public sealed class StageManager : MonoBehaviour
         SetStageButtonVisible(false, false);
         SetInteractionEnabled(false);
 
-        while (GameManager.Instance != null &&
-               !GameManager.Instance.IsGameplayActive)
-        {
-            yield return null;
-        }
+        await WaitForGameplayActiveAsync(token);
 
         SetInteractionEnabled(true);
 
@@ -212,8 +203,26 @@ public sealed class StageManager : MonoBehaviour
                 SetStageButtonVisible(true, false);
             }
         }
+    }
 
-        _initializeCoroutine = null;
+    // 오프라인 보상 팝업 등으로 게임플레이가 잠겨 있으면 활성화 이벤트를 기다린다.
+    private static async UniTask WaitForGameplayActiveAsync(CancellationToken token)
+    {
+        GameManager gameManager = GameManager.Instance;
+        if (gameManager == null || gameManager.IsGameplayActive) return;
+
+        var completionSource = new UniTaskCompletionSource();
+        void OnActivated() => completionSource.TrySetResult();
+
+        gameManager.OnGameplayActivated += OnActivated;
+        try
+        {
+            await completionSource.Task.AttachExternalCancellation(token);
+        }
+        finally
+        {
+            gameManager.OnGameplayActivated -= OnActivated;
+        }
     }
 
     private void OnSlimeSpawned(SlimeController target)
@@ -243,8 +252,14 @@ public sealed class StageManager : MonoBehaviour
         {
             _pendingFirstSkyTarget = target;
             SetInteractionEnabled(false);
-            _unlockWaitCoroutine = StartCoroutine(
-                BeginFirstSkyIntroFallbackRoutine());
+
+            // 해금 팝업이 재생 중일 때만 PresentationCompleted가 온다.
+            // 이미 해금된 등급이면 팝업이 뜨지 않으므로 바로 인트로를 시작한다.
+            if (!_unlockPopupUI.IsPresenting)
+            {
+                BeginFirstSkyIntro();
+            }
+
             return;
         }
 
@@ -273,12 +288,6 @@ public sealed class StageManager : MonoBehaviour
         }
 
         _isFirstIntroStarted = true;
-        if (_unlockWaitCoroutine != null)
-        {
-            StopCoroutine(_unlockWaitCoroutine);
-            _unlockWaitCoroutine = null;
-        }
-
         SetInteractionEnabled(false);
         _pendingFirstSkyTarget.PrepareStageTransfer();
         _tutorialPresentation?.Dispose();
@@ -290,13 +299,6 @@ public sealed class StageManager : MonoBehaviour
         _tutorialPresentation.ShowDialogue(
             _tutorialContent.SkyIntroDialogue,
             PlayFirstSkyJourney);
-    }
-
-    private IEnumerator BeginFirstSkyIntroFallbackRoutine()
-    {
-        yield return new WaitForSecondsRealtime(4f);
-        _unlockWaitCoroutine = null;
-        BeginFirstSkyIntro();
     }
 
     private void PlayFirstSkyJourney()

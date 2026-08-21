@@ -22,6 +22,10 @@ public class UnlockPopupUI : MonoBehaviour
 
     public event System.Action<ESlimeGrade> PresentationCompleted;
 
+    // 연출이 진행 중일 때만 PresentationCompleted가 발화한다.
+    // 대기 여부를 판단하는 쪽에서 이 값을 먼저 확인해야 한다.
+    public bool IsPresenting => _sequence != null;
+
     private void Awake()
     {
         _canvasGroup = _popupPanel.GetComponent<CanvasGroup>();
