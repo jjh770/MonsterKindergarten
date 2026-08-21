@@ -17,6 +17,7 @@ The current content supports 10 slime grades. Runtime data covers currency, the 
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
+- Current app version: `0.1.02` (Android Version Code `3`)
 
 The release profile builds an AAB and includes LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. Use Unity Play Mode for gameplay checks and a release-signed Android build or Play Console internal test for Google Play Games, Firebase, touch, device performance, and store-signing validation.
 
@@ -69,6 +70,8 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `GameManager` also computes the offline reward from `CurrencyManager.LastSaveTime` and per-slime auto-production, gated by a minimum interval, a maximum accrual window, and an efficiency factor. Gameplay stays inactive until the reward popup is dismissed.
 - `TutorialProgress` stores completion per user ID in PlayerPrefs and treats pre-tutorial saves as already completed.
 - `TutorialManager` drives the guided steps and `GameplaySaveGate` blocks all domain saves until the tutorial finishes, at which point the three domains are committed together.
+- Offline reward is not offline play. Android cold start still requires Google Play/Firebase login before GameScene loads; do not describe offline play as supported.
+- Offline elapsed time uses the device's `DateTime.UtcNow`, with a 60-second minimum, an 8-hour cap, and 50% efficiency. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
 
 **Spawn and merge loop**
 
@@ -84,6 +87,11 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 Feedback components implement `IFeedback` and are discovered from a slime's child objects. Existing effects include color, scale, sound, and point floaters. Keep new feedback behavior component-based where possible.
 
 `AudioManager` owns BGM and SFX sources through an Audio Mixer and mutes on application pause. `GameExitManager` handles the Android back key, closing the upgrade UI first and showing the exit confirmation popup otherwise.
+
+**Gameplay UI**
+
+- `UpgradeUI` derives its closed position from the actual panel width and applies `Screen.safeArea` insets. Layout refresh is event-driven through rect-size, focus, and pause callbacks; do not restore a fixed movement distance or per-frame layout polling.
+- `GameExitManager` depends on the public `UpgradeUI.TryClose()` API. Preserve that API and its close-first behavior when changing the upgrade panel.
 
 ### Key Patterns
 
@@ -119,14 +127,19 @@ The offline reward, tutorial, exit popup, and audio systems have since shipped o
 
 Current work is stabilization: gameplay bugs, save recovery, mobile UX, balance, and release preparation. Before considering a change complete, check the Unity Console and run the smallest relevant Play Mode scenario. Authentication, cloud recovery, touch behavior, AAB signing, and frame rate still require an Android device or internal-test build.
 
+The responsive UpgradeUI/Safe Area work and drag-merge target feedback have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
+
 The `Android™` profile is the development build and is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
 
 ## Working Guidelines
 
 - Prefer minimal, incremental edits and preserve existing public APIs and serialized references.
+- Check the current branch, working tree, app version, and release profile before starting a version-scoped change. Work directly on `main` only when the user explicitly chooses that flow.
 - Do not modify package, generated resolver, Firebase configuration, or Google Play Games files as incidental cleanup.
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
 - Treat Unity Play Mode and Android device results separately from static or `.csproj` checks.
 - Preserve unrelated working-tree changes and inspect the exact Git diff before staging.
+- Record release handoffs under `Builds/Release/<version>/build-info.txt`; the `Builds/` directory is intentionally ignored by Git.
+- Use `Feat :`, `Fix :`, `Chore :`, or `Docs :` commit subjects with concise Korean bullets when a body is useful.
 - Follow `Documentation/CODING_CONVENTION.md`. Its Law of Demeter section lists explicit exceptions for data structures and Unity framework APIs.
 - Do not report a performance problem without measuring it on an Android device. See `Documentation/PLAYERPREFS_SAVE_PROFILING.md` for the method and for a hypothesis that measurement rejected.
