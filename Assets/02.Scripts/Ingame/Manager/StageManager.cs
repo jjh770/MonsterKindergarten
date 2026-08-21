@@ -9,36 +9,26 @@ public sealed class StageManager : MonoBehaviour
     public static StageManager Instance { get; private set; }
 
     [Header("Scene References")]
-    [SerializeField] private Camera _camera;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
+    [SerializeField] private StageTransitionPlayer _transitionPlayer;
     [SerializeField] private TutorialDialogueView _dialoguePrefab;
     [SerializeField] private TutorialSpotlightView _guidePrefab;
     [SerializeField] private TutorialContent _tutorialContent;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
-    [SerializeField] private SpriteRenderer _skyBackgroundRenderer;
 
-    [Header("Stage Audio")]
-    [SerializeField] private AudioClip _groundBgm;
-    [SerializeField] private AudioClip _skyBgm;
-
-    [Header("Transition")]
-    [SerializeField, Min(0.1f)] private float _transitionDuration = 1.2f;
-    [SerializeField, Min(1f)] private float _cameraTravelDistance = 6f;
+    [Header("Intro")]
     [SerializeField, Min(0f)] private float _firstChargeDuration = 0.8f;
 
     private EGameStage _currentStage = EGameStage.Ground;
-    private Vector3 _cameraBasePosition;
     private TutorialPresentation _tutorialPresentation;
     private SlimeController _pendingFirstSkyTarget;
-    private Sequence _transitionSequence;
     private Sequence _chargeSequence;
     private bool _isInitializeStarted;
     private bool _isInitialized;
-    private bool _isTransitioning;
     private bool _isFirstIntroStarted;
     private bool _isWaitingForStageButtonTutorial;
 
@@ -63,7 +53,6 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        _cameraBasePosition = _camera.transform.position;
         _stageUI.ButtonClicked += OnStageButtonClicked;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
@@ -107,21 +96,19 @@ public sealed class StageManager : MonoBehaviour
             _stageUI.ButtonClicked -= OnStageButtonClicked;
         }
 
-        _transitionSequence?.Kill();
         _chargeSequence?.Kill();
         _tutorialPresentation?.Dispose();
     }
 
     public bool IsStageActive(ESlimeGrade grade)
     {
-        return !_isTransitioning &&
+        return !_transitionPlayer.IsTransitioning &&
                GameStageRules.GetStage(grade) == _currentStage;
     }
 
     private bool HasRequiredReferences()
     {
-        bool hasReferences = _camera != null &&
-                             _clicker != null &&
+        bool hasReferences = _clicker != null &&
                              _autoClicker != null &&
                              _upgradeUI != null &&
                              _canvas != null &&
@@ -130,7 +117,7 @@ public sealed class StageManager : MonoBehaviour
                              _guidePrefab != null &&
                              _tutorialContent != null &&
                              _unlockPopupUI != null &&
-                             _skyBackgroundRenderer != null;
+                             _transitionPlayer != null;
         if (!hasReferences)
         {
             Debug.LogError("스테이지 매니저의 필수 참조가 비어 있습니다.", this);
@@ -160,7 +147,7 @@ public sealed class StageManager : MonoBehaviour
             : EGameStage.Ground;
         _isInitialized = true;
         _stageUI.SetStage(_currentStage);
-        ApplyEnvironment(_currentStage, 0f);
+        _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
         ApplyAllSlimeVisibility();
         _stageUI.SetButtonVisible(false, false);
         SetInteractionEnabled(false);
@@ -253,14 +240,14 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        PlayRegularSkyTransfer(target);
+        _transitionPlayer.PlayRegularSkyTransfer(target, _currentStage);
     }
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
         if (grade != ESlimeGrade.Grade11 ||
             _pendingFirstSkyTarget == null ||
-            _isTransitioning)
+            _transitionPlayer.IsTransitioning)
         {
             return;
         }
@@ -271,7 +258,7 @@ public sealed class StageManager : MonoBehaviour
     private void BeginFirstSkyIntro()
     {
         if (_pendingFirstSkyTarget == null ||
-            _isTransitioning ||
+            _transitionPlayer.IsTransitioning ||
             _isFirstIntroStarted)
         {
             return;
@@ -355,7 +342,7 @@ public sealed class StageManager : MonoBehaviour
     private void OnStageButtonClicked()
     {
         if (!_isInitialized ||
-            _isTransitioning ||
+            _transitionPlayer.IsTransitioning ||
             GameManager.Instance == null ||
             !GameManager.Instance.IsGameplayActive ||
             SlimeManager.Instance == null ||
@@ -393,135 +380,36 @@ public sealed class StageManager : MonoBehaviour
         Action onComplete,
         bool saveStage)
     {
-        if (_isTransitioning || targetStage == _currentStage)
+        if (_transitionPlayer.IsTransitioning || targetStage == _currentStage)
         {
             onComplete?.Invoke();
             return;
         }
 
-        _isTransitioning = true;
         SetInteractionEnabled(false);
-        _stageUI.SetButtonInteractable(false);
-        _stageUI.BeginOverlay();
 
-        float direction = targetStage == EGameStage.Sky ? 1f : -1f;
-        float halfDuration = _transitionDuration * 0.5f;
-        Vector2 slimeDestination = SpawnManager.Instance != null
-            ? SpawnManager.Instance.GetRandomSpawnPosition()
-            : Vector2.zero;
-        Vector3 slimeStart = travellingSlime != null
-            ? travellingSlime.transform.position
-            : Vector3.zero;
-
-        if (travellingSlime != null)
-        {
-            travellingSlime.PrepareStageTransfer();
-        }
-
-        AudioClip targetBgm = targetStage == EGameStage.Ground
-            ? _groundBgm
-            : _skyBgm;
-        AudioManager.Instance?.CrossFadeBGM(targetBgm, _transitionDuration);
-
-        _transitionSequence?.Kill();
-        _transitionSequence = DOTween.Sequence();
-        _transitionSequence.Join(
-            _camera.transform.DOMoveY(
-                _cameraBasePosition.y + direction * _cameraTravelDistance,
-                halfDuration).SetEase(Ease.InQuad));
-        _transitionSequence.Join(
-            _stageUI.FadeOverlay(1f, halfDuration));
-
-        if (travellingSlime != null)
-        {
-            _transitionSequence.Join(
-                travellingSlime.transform.DOMoveY(
-                    slimeStart.y + direction * _cameraTravelDistance,
-                    halfDuration).SetEase(Ease.InQuad));
-        }
-
-        _transitionSequence.AppendCallback(() =>
-        {
-            _currentStage = targetStage;
-            ApplyEnvironment(targetStage, crossFadeDuration: -1f);
-            ApplyAllSlimeVisibility();
-
-            Vector3 cameraPosition = _cameraBasePosition;
-            cameraPosition.y -= direction * _cameraTravelDistance;
-            _camera.transform.position = cameraPosition;
-
-            if (travellingSlime != null)
+        _transitionPlayer.Play(
+            targetStage,
+            travellingSlime,
+            onStageSwitched: () =>
             {
-                travellingSlime.PrepareStageTransfer();
-                travellingSlime.transform.position = new Vector3(
-                    slimeDestination.x,
-                    slimeDestination.y - direction * _cameraTravelDistance,
-                    slimeStart.z);
-            }
-        });
-        _transitionSequence.Append(
-            _camera.transform.DOMoveY(
-                _cameraBasePosition.y,
-                halfDuration).SetEase(Ease.OutQuad));
-        _transitionSequence.Join(
-            _stageUI.FadeOverlay(0f, halfDuration));
-
-        if (travellingSlime != null)
-        {
-            _transitionSequence.Join(
-                travellingSlime.transform.DOMove(
-                    new Vector3(
-                        slimeDestination.x,
-                        slimeDestination.y,
-                        slimeStart.z),
-                    halfDuration).SetEase(Ease.OutQuad));
-        }
-
-        _transitionSequence.OnComplete(() =>
-        {
-            _transitionSequence = null;
-            _camera.transform.position = _cameraBasePosition;
-            _stageUI.EndOverlay();
-            _isTransitioning = false;
-            ApplyAllSlimeVisibility();
-
-            if (saveStage && SlimeManager.Instance != null)
+                _currentStage = targetStage;
+                ApplyAllSlimeVisibility();
+            },
+            onCompleted: () =>
             {
-                SlimeManager.Instance.UpdateStageProgress(
-                    _currentStage,
-                    SlimeManager.Instance.SkyIntroCompleted);
-            }
+                ApplyAllSlimeVisibility();
 
-            _stageUI.SetStage(_currentStage);
-            _stageUI.SetButtonInteractable(true);
-            SetInteractionEnabled(true);
-            onComplete?.Invoke();
-        });
-    }
+                if (saveStage && SlimeManager.Instance != null)
+                {
+                    SlimeManager.Instance.UpdateStageProgress(
+                        _currentStage,
+                        SlimeManager.Instance.SkyIntroCompleted);
+                }
 
-    private void PlayRegularSkyTransfer(SlimeController target)
-    {
-        if (target == null) return;
-
-        target.PrepareStageTransfer();
-        Vector3 startPosition = target.transform.position;
-        Vector2 destination = SpawnManager.Instance != null
-            ? SpawnManager.Instance.GetRandomSpawnPosition()
-            : Vector2.zero;
-        target.transform.DOMoveY(
-                startPosition.y + _cameraTravelDistance,
-                Mathf.Min(0.9f, _transitionDuration))
-            .SetEase(Ease.InQuad)
-            .OnComplete(() =>
-            {
-                if (target == null) return;
-
-                target.transform.position = new Vector3(
-                    destination.x,
-                    destination.y,
-                    startPosition.z);
-                bool isActive = _currentStage == EGameStage.Sky;
-                target.SetStagePresentationActive(isActive);
+                _stageUI.SetStage(_currentStage);
+                SetInteractionEnabled(true);
+                onComplete?.Invoke();
             });
     }
 
@@ -562,19 +450,6 @@ public sealed class StageManager : MonoBehaviour
         return null;
     }
 
-    private void ApplyEnvironment(
-        EGameStage stage,
-        float crossFadeDuration)
-    {
-        _skyBackgroundRenderer.enabled = true;
-        _camera.backgroundColor = Color.white;
-
-        if (crossFadeDuration < 0f || AudioManager.Instance == null) return;
-
-        bool isGround = stage == EGameStage.Ground;
-        AudioClip targetBgm = isGround ? _groundBgm : _skyBgm;
-        AudioManager.Instance.CrossFadeBGM(targetBgm, crossFadeDuration);
-    }
 
     private void SetInteractionEnabled(bool isEnabled)
     {

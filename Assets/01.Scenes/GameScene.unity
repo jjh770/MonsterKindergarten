@@ -1153,7 +1153,6 @@ GameObject:
   - component: {fileID: 457349916}
   - component: {fileID: 457349915}
   - component: {fileID: 457349914}
-  - component: {fileID: 2099500001}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1238,8 +1237,7 @@ RectTransform:
   m_Children:
   - {fileID: 734613838}
   - {fileID: 2116618831}
-  - {fileID: 561333958}
-  - {fileID: 728174905}
+  - {fileID: 920019898}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1730,11 +1728,11 @@ RectTransform:
   - {fileID: 214733486}
   - {fileID: 182474398}
   - {fileID: 2024321985}
-  m_Father: {fileID: 457349917}
+  m_Father: {fileID: 920019898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 270, y: 250}
+  m_AnchoredPosition: {x: 250, y: 200}
   m_SizeDelta: {x: 500, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &561333959
@@ -2283,11 +2281,11 @@ RectTransform:
   - {fileID: 1505002771}
   - {fileID: 1800013883}
   - {fileID: 1501643696}
-  m_Father: {fileID: 457349917}
+  m_Father: {fileID: 920019898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -270, y: 250}
+  m_AnchoredPosition: {x: -250, y: 200}
   m_SizeDelta: {x: 500, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &728174906
@@ -3106,6 +3104,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 889916598}
   m_CullTransparentMesh: 1
+--- !u!1 &920019897
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 920019898}
+  - component: {fileID: 920019899}
+  m_Layer: 5
+  m_Name: SystemUpgradePanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &920019898
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920019897}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 561333958}
+  - {fileID: 728174905}
+  m_Father: {fileID: 457349917}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &920019899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920019897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 692ec84f89ec47bab128bf870266c80b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradePanel
+  _items:
+  - {fileID: 561333963}
+  - {fileID: 728174910}
 --- !u!1 &954826972
 GameObject:
   m_ObjectHideFlags: 0
@@ -3116,6 +3167,7 @@ GameObject:
   m_Component:
   - component: {fileID: 954826974}
   - component: {fileID: 954826973}
+  - component: {fileID: 954826975}
   m_Layer: 0
   m_Name: StageManager
   m_TagString: Untagged
@@ -3135,21 +3187,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0affdb23347347579d87d180ffb5e70f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
-  _camera: {fileID: 519420031}
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
   _upgradeUI: {fileID: 1526959884}
   _canvas: {fileID: 457349916}
   _stageUI: {fileID: 1324579906}
+  _transitionPlayer: {fileID: 954826975}
   _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
   _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
   _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
   _unlockPopupUI: {fileID: 1432576204}
-  _skyBackgroundRenderer: {fileID: 2131310040}
-  _groundBgm: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
-  _skyBgm: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
-  _transitionDuration: 1.2
-  _cameraTravelDistance: 6
   _firstChargeDuration: 0.8
 --- !u!4 &954826974
 Transform:
@@ -3166,6 +3213,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &954826975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 954826972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b46d867aa8c1b184593fad49cc8c6ea3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageTransitionPlayer
+  _camera: {fileID: 519420031}
+  _stageUI: {fileID: 1324579906}
+  _skyBackgroundRenderer: {fileID: 2131310040}
+  _groundBgm: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
+  _skyBgm: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
+  _transitionDuration: 1.2
+  _cameraTravelDistance: 6
 --- !u!1 &1045520509
 GameObject:
   m_ObjectHideFlags: 0
@@ -6402,21 +6468,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OfflineRewardPopupController
   _view: {fileID: 547806006}
---- !u!114 &2099500001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 457349913}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 692ec84f89ec47bab128bf870266c80b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradePanel
-  _items:
-  - {fileID: 561333963}
-  - {fileID: 728174910}
 --- !u!1 &2116618830
 GameObject:
   m_ObjectHideFlags: 0
