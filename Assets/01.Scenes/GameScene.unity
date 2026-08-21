@@ -3400,8 +3400,8 @@ MonoBehaviour:
   _camera: {fileID: 519420031}
   _stageUI: {fileID: 1324579906}
   _skyBackgroundRenderer: {fileID: 2131310040}
-  _groundBgm: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
-  _skyBgm: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
+  _groundBgm: {fileID: 8300000, guid: e2dbe04ef101b504d80dcd777a6778fc, type: 3}
+  _skyBgm: {fileID: 8300000, guid: 4b75d5e95b5825f4583e868cb4226f00, type: 3}
   _transitionDuration: 1.2
   _cameraTravelDistance: 6
 --- !u!114 &954826976
@@ -4590,7 +4590,7 @@ MonoBehaviour:
   _bgmSource: {fileID: 0}
   _secondaryBgmSource: {fileID: 0}
   _sfxSource: {fileID: 0}
-  _startBGM: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
+  _startBGM: {fileID: 8300000, guid: e2dbe04ef101b504d80dcd777a6778fc, type: 3}
   <MasterVolume>k__BackingField: 1
   <BGMVolume>k__BackingField: 0.408
   <SFXVolume>k__BackingField: 1
