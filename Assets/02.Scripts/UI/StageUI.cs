@@ -7,12 +7,14 @@ using UnityEngine.UI;
 public sealed class StageUI : MonoBehaviour
 {
     [SerializeField] private Canvas _canvas;
-    [SerializeField] private Button _stageButtonTemplate;
-    [SerializeField] private Color _transitionColor = new(0.75f, 0.9f, 1f, 1f);
+    [SerializeField] private Button _stageButton;
+    [SerializeField] private TextMeshProUGUI _stageButtonArrow;
+    [SerializeField] private Image _transitionOverlay;
 
-    private Button _stageButton;
-    private TextMeshProUGUI _stageButtonArrow;
-    private Image _transitionOverlay;
+    // Safe Area 안쪽으로 추가 확보할 여백. anchoredPosition은 코드가 계산하므로
+    // 씬에서 버튼을 끌어 옮길 수 없고, 이 값으로 조정한다.
+    [SerializeField, Min(0f)] private float _buttonMargin = 50f;
+
     private EGameStage _displayedStage = EGameStage.Ground;
 
     // 스포트라이트가 버튼을 가리킬 때 필요하다.
@@ -24,15 +26,23 @@ public sealed class StageUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_canvas == null || _stageButtonTemplate == null)
+        if (_canvas == null ||
+            _stageButton == null ||
+            _stageButtonArrow == null ||
+            _transitionOverlay == null)
         {
             Debug.LogError("스테이지 UI의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
 
-        CreateTransitionOverlay();
-        CreateStageButton();
+        _stageButton.onClick.AddListener(OnStageButtonClicked);
+        _transitionOverlay.raycastTarget = false;
+        SetOverlayAlpha(0f);
+
+        RefreshStageButtonSafeArea();
+        UpdateStageButtonVisual();
+        _stageButton.gameObject.SetActive(false);
     }
 
     private void OnDestroy()
@@ -121,76 +131,11 @@ public sealed class StageUI : MonoBehaviour
         ButtonClicked?.Invoke();
     }
 
-    private void CreateTransitionOverlay()
-    {
-        GameObject overlayObject = new GameObject(
-            "StageTransitionOverlay",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image));
-        overlayObject.layer = _canvas.gameObject.layer;
-        RectTransform overlayRect = (RectTransform)overlayObject.transform;
-        overlayRect.SetParent(_canvas.transform, false);
-        overlayRect.anchorMin = Vector2.zero;
-        overlayRect.anchorMax = Vector2.one;
-        overlayRect.offsetMin = Vector2.zero;
-        overlayRect.offsetMax = Vector2.zero;
-
-        _transitionOverlay = overlayObject.GetComponent<Image>();
-        _transitionOverlay.color = _transitionColor;
-        _transitionOverlay.raycastTarget = false;
-        SetOverlayAlpha(0f);
-    }
-
     private void SetOverlayAlpha(float alpha)
     {
         Color color = _transitionOverlay.color;
         color.a = alpha;
         _transitionOverlay.color = color;
-    }
-
-    private void CreateStageButton()
-    {
-        _stageButton = Instantiate(_stageButtonTemplate, _canvas.transform);
-        _stageButton.name = "StageMoveButton";
-        _stageButton.onClick.AddListener(OnStageButtonClicked);
-
-        RectTransform buttonRect = (RectTransform)_stageButton.transform;
-        buttonRect.localRotation = Quaternion.identity;
-        buttonRect.localScale = Vector3.zero;
-        buttonRect.anchorMin = Vector2.one;
-        buttonRect.anchorMax = Vector2.one;
-        buttonRect.pivot = Vector2.one;
-        buttonRect.sizeDelta = new Vector2(112f, 112f);
-
-        Image buttonImage = _stageButton.targetGraphic as Image;
-        if (buttonImage != null)
-        {
-            buttonImage.color = new Color(0.18f, 0.42f, 0.65f, 0.95f);
-        }
-
-        GameObject arrowObject = new GameObject(
-            "Arrow",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI));
-        arrowObject.layer = _canvas.gameObject.layer;
-        RectTransform arrowRect = (RectTransform)arrowObject.transform;
-        arrowRect.SetParent(buttonRect, false);
-        arrowRect.anchorMin = Vector2.zero;
-        arrowRect.anchorMax = Vector2.one;
-        arrowRect.offsetMin = Vector2.zero;
-        arrowRect.offsetMax = Vector2.zero;
-
-        _stageButtonArrow = arrowObject.GetComponent<TextMeshProUGUI>();
-        _stageButtonArrow.alignment = TextAlignmentOptions.Center;
-        _stageButtonArrow.fontSize = 56f;
-        _stageButtonArrow.color = Color.white;
-        _stageButtonArrow.raycastTarget = false;
-
-        RefreshStageButtonSafeArea();
-        UpdateStageButtonVisual();
-        _stageButton.gameObject.SetActive(false);
     }
 
     private void UpdateStageButtonVisual()
@@ -219,8 +164,8 @@ public sealed class StageUI : MonoBehaviour
             Screen.height,
             canvasRect.rect.height);
         buttonRect.anchoredPosition = new Vector2(
-            -rightInset - 28f,
-            -topInset - 28f);
+            -rightInset - _buttonMargin,
+            -topInset - _buttonMargin);
     }
 
     private static float GetCanvasInset(
