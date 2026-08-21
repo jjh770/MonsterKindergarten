@@ -146,7 +146,7 @@ SharedPreferencesImpl: Time required to fsync /data/user/0/com.skku_say.Monster_
 
 2500회 저장 중 2회만 기록되었고, 해당 시점에도 계측된 `max` 값은 변하지 않았습니다. Android가 실제 디스크 fsync를 백그라운드 스레드로 처리하고 있음을 시사합니다.
 
-**"메인 스레드 동기 디스크 I/O"라는 가설의 전제 자체가 이 플랫폼에서는 정확하지 않았습니다.**
+**이번 Galaxy S23 Ultra 측정에서는 "메인 스레드 동기 디스크 I/O가 프레임 히칭을 유발한다"는 가설을 뒷받침하는 결과가 관측되지 않았습니다.**
 
 ## 6. 결론
 

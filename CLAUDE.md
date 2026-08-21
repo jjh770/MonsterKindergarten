@@ -37,7 +37,7 @@ Do not change save keys, Firestore document ownership, Firebase UID handling, or
 
 Assets use numbered prefixes for project-owned content:
 
-- `Assets/01.Scenes/` - login and gameplay scenes, plus unused Firebase and Web API learning samples
+- `Assets/01.Scenes/` - login and gameplay scenes
 - `Assets/02.Scripts/Core/` - application and Firebase initialization
 - `Assets/02.Scripts/Ingame/` - click, spawn, merge, slime, feedback, and gameplay managers
 - `Assets/02.Scripts/Outgame/Feature/` - repository, domain, and manager layers for account, currency, slime, and upgrades
