@@ -46,8 +46,6 @@ public class Upgrade
         // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
         if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)
             throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");
-        if (string.IsNullOrEmpty(specData.Name)) throw new System.ArgumentException($"이름은 비어있을 수 없습니다.");
-        if (string.IsNullOrEmpty(specData.Description)) throw new System.ArgumentException($"설명은 비어있을 수 없습니다.");
     }
 
     public bool CanLevelUp()

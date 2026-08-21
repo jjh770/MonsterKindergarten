@@ -13,102 +13,102 @@ MonoBehaviour:
   m_Name: SlimeSpecTable
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpecTable
   slimeSpecs:
-  - Name: 1
+  - Name: "\uC2AC\uB77C\uC784"
     Grade: 1
     Point: 10
     AutoClickInterval: 5
     Sprite: {fileID: 21300000, guid: 2b153a5f3cc3ee846a5725b61d2b865d, type: 3}
-  - Name: 2
+  - Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
     Grade: 2
     Point: 20
     AutoClickInterval: 4.8
     Sprite: {fileID: 21300000, guid: 5ce8d1bb62b42d04492bcdc3ced21459, type: 3}
-  - Name: 3
+  - Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
     Grade: 3
     Point: 40
     AutoClickInterval: 4.6
     Sprite: {fileID: 21300000, guid: b222af5c33ef5b9419651d2ed4eab1b6, type: 3}
-  - Name: 4
+  - Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
     Grade: 4
     Point: 120
     AutoClickInterval: 4.4
     Sprite: {fileID: 21300000, guid: f133a359f93e3cd42a59f4e153c5faa2, type: 3}
-  - Name: 5
+  - Name: "\uC544\uADC0 \uC2AC\uB77C\uC784"
     Grade: 5
     Point: 240
     AutoClickInterval: 4.2
     Sprite: {fileID: 21300000, guid: 5e12c4b1d9e1dbb4d9a648801498583f, type: 3}
-  - Name: 6
+  - Name: "\uD669\uAE08 \uC2AC\uB77C\uC784"
     Grade: 6
     Point: 720
     AutoClickInterval: 4
     Sprite: {fileID: 21300000, guid: 770663566eef1004f9cfb809696558d5, type: 3}
-  - Name: 7
+  - Name: "\uAD6D\uC655 \uC2AC\uB77C\uC784"
     Grade: 7
     Point: 1440
     AutoClickInterval: 3.8
     Sprite: {fileID: 21300000, guid: c691518a846b8a64cb1c8eb4e96fff80, type: 3}
-  - Name: 8
+  - Name: "\uCC9C\uC0AC \uC2AC\uB77C\uC784"
     Grade: 8
     Point: 5320
     AutoClickInterval: 3.6
     Sprite: {fileID: 21300000, guid: 93afa2d1c366aba49b137e8d5100d4a3, type: 3}
-  - Name: 9
+  - Name: "\uC608\uD2F0 \uC2AC\uB77C\uC784"
     Grade: 9
     Point: 10640
     AutoClickInterval: 3.4
     Sprite: {fileID: 21300000, guid: 8b4b9f505a142ca4db8851313279c47e, type: 3}
-  - Name: 10
+  - Name: "\uBE14\uB799 \uC2AC\uB77C\uC784"
     Grade: 10
     Point: 31920
     AutoClickInterval: 3.2
     Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
-  - Name: 11
+  - Name: "\uD654\uC5FC \uC2AC\uB77C\uC784"
     Grade: 11
     Point: 63840
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 2083237eca0c4064a802c07e1b989e20, type: 3}
-  - Name: 12
+  - Name: "\uBC84\uC12F \uC2AC\uB77C\uC784"
     Grade: 12
     Point: 191520
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: c19d5d411737cde418b136e96f82f8c2, type: 3}
-  - Name: 13
+  - Name: "\uBAA8\uB798 \uC2AC\uB77C\uC784"
     Grade: 13
     Point: 383040
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: f8a4125d376605b439b6a03339afa309, type: 3}
-  - Name: 14
+  - Name: "\uB098\uBB34 \uC2AC\uB77C\uC784"
     Grade: 14
     Point: 1149120
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 832878304b18a3140bd3fb7c4e697832, type: 3}
-  - Name: 15
+  - Name: "\uC6A9\uC0AC \uC2AC\uB77C\uC784"
     Grade: 15
     Point: 2298240
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 4fdfe9603630efd4f942d4e03bdc9196, type: 3}
-  - Name: 16
+  - Name: "\uB0A0\uAC1C \uC2AC\uB77C\uC784"
     Grade: 16
     Point: 6894720
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 22ec042e4c3d793449247643e4a6057c, type: 3}
-  - Name: 17
+  - Name: "\uD574\uACE8 \uC2AC\uB77C\uC784"
     Grade: 17
     Point: 13789440
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: d3b4bb9ba4dab0a4d89c094b83a3738c, type: 3}
-  - Name: 18
+  - Name: "\uC545\uB9C8 \uC2AC\uB77C\uC784"
     Grade: 18
     Point: 41368320
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 07dbed4917da98a4c967bef36ecea42c, type: 3}
-  - Name: 19
+  - Name: "\uACF5\uD5C8 \uC2AC\uB77C\uC784"
     Grade: 19
     Point: 82736640
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: fca85b8957632f8478f1170e1d08913a, type: 3}
-  - Name: 20
+  - Name: "\uAE30\uACC4 \uC2AC\uB77C\uC784"
     Grade: 20
     Point: 248209920
     AutoClickInterval: 3

@@ -73,6 +73,18 @@ public class SlimeManager : MonoBehaviour
         return _slimes.Find(s => s.SpecData.Grade == grade);
     }
 
+    public string GetName(ESlimeGrade grade)
+    {
+        Slime slime = Get(grade);
+
+        if (slime == null)
+        {
+            throw new InvalidOperationException($"{grade}에 해당하는 슬라임 스펙이 없습니다.");
+        }
+
+        return slime.SpecData.Name;
+    }
+
     public bool CanMerge(Slime slime1, Slime slime2)
     {
         ESlimeGrade maxGrade = _slimes[^1].SpecData.Grade;

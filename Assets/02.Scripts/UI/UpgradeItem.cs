@@ -40,8 +40,8 @@ public class UpgradeItem : MonoBehaviour
 
         if (isUnlocked)
         {
-            _nameTextUI.text = upgrade.SpecData.Name;
-            _descriptionTextUI.text = upgrade.SpecData.Description;
+            _nameTextUI.text = SlimeManager.Instance.GetName(upgrade.SpecData.SlimeGrade);
+            _descriptionTextUI.text = GetDescription(upgrade.SpecData.Type);
             _levelTextUI.text = $"Lv.{upgrade.Level.ToString("N0")}";
             _costTextUI.text = $"Cost:{upgrade.Cost.ToString()}";
             _statTextUI.text = upgrade.IsMaxLevel
@@ -69,6 +69,18 @@ public class UpgradeItem : MonoBehaviour
 
             _upgradeButton.interactable = false;
         }
+    }
+
+    private static string GetDescription(EUpgradeType type)
+    {
+        return type switch
+        {
+            EUpgradeType.ManualPointPlusAdd or
+            EUpgradeType.ManualPointPercentAdd => "클릭 획득량 증가",
+            EUpgradeType.AutoPointPlusAdd or
+            EUpgradeType.AutoPointPercentAdd => "자동 획득량 증가",
+            _ => string.Empty,
+        };
     }
 
     public void LevelUp()
