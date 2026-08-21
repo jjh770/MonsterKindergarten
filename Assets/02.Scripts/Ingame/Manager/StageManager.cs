@@ -9,7 +9,6 @@ public sealed class StageManager : MonoBehaviour
 
     [Header("Scene References")]
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private StageUI _stageUI;
     [SerializeField] private StageTransitionPlayer _transitionPlayer;
@@ -102,7 +101,6 @@ public sealed class StageManager : MonoBehaviour
     private bool HasRequiredReferences()
     {
         bool hasReferences = _clicker != null &&
-                             _autoClicker != null &&
                              _upgradeUI != null &&
                              _skyIntroDirector != null &&
                              _stageUI != null &&
@@ -357,11 +355,9 @@ public sealed class StageManager : MonoBehaviour
         return null;
     }
 
-
     private void SetInteractionEnabled(bool isEnabled)
     {
         _clicker.SetInputMode(isEnabled, isEnabled);
         _upgradeUI.SetToggleInputEnabled(isEnabled);
     }
-
 }
