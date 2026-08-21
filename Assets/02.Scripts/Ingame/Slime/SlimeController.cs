@@ -74,6 +74,9 @@ public class SlimeController : MonoBehaviour, IClickable
         if (!isActive)
         {
             CancelDrag();
+            // 비활성 스테이지에서 복원된 슬라임이 다시 활성화될 때
+            // 일괄 충돌로 착지음이 재생되지 않도록 첫 착지를 소비한다.
+            _hasLanded = true;
         }
 
         if (_spriteRenderer != null)

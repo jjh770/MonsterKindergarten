@@ -67,49 +67,49 @@ MonoBehaviour:
     Grade: 11
     Point: 63840
     AutoClickInterval: 3
-    Sprite: {fileID: -2966200626249415253, guid: 2083237eca0c4064a802c07e1b989e20, type: 3}
+    Sprite: {fileID: 21300000, guid: 2083237eca0c4064a802c07e1b989e20, type: 3}
   - Name: 12
     Grade: 12
     Point: 191520
     AutoClickInterval: 3
-    Sprite: {fileID: -1540426309290004842, guid: c19d5d411737cde418b136e96f82f8c2, type: 3}
+    Sprite: {fileID: 21300000, guid: c19d5d411737cde418b136e96f82f8c2, type: 3}
   - Name: 13
     Grade: 13
     Point: 383040
     AutoClickInterval: 3
-    Sprite: {fileID: 8389134475083476877, guid: f8a4125d376605b439b6a03339afa309, type: 3}
+    Sprite: {fileID: 21300000, guid: f8a4125d376605b439b6a03339afa309, type: 3}
   - Name: 14
     Grade: 14
     Point: 1149120
     AutoClickInterval: 3
-    Sprite: {fileID: -6270953770400647376, guid: 832878304b18a3140bd3fb7c4e697832, type: 3}
+    Sprite: {fileID: 21300000, guid: 832878304b18a3140bd3fb7c4e697832, type: 3}
   - Name: 15
     Grade: 15
     Point: 2298240
     AutoClickInterval: 3
-    Sprite: {fileID: 4349915267927364619, guid: 4fdfe9603630efd4f942d4e03bdc9196, type: 3}
+    Sprite: {fileID: 21300000, guid: 4fdfe9603630efd4f942d4e03bdc9196, type: 3}
   - Name: 16
     Grade: 16
     Point: 6894720
     AutoClickInterval: 3
-    Sprite: {fileID: 7680820834086852892, guid: 22ec042e4c3d793449247643e4a6057c, type: 3}
+    Sprite: {fileID: 21300000, guid: 22ec042e4c3d793449247643e4a6057c, type: 3}
   - Name: 17
     Grade: 17
     Point: 13789440
     AutoClickInterval: 3
-    Sprite: {fileID: 6660783624410144326, guid: d3b4bb9ba4dab0a4d89c094b83a3738c, type: 3}
+    Sprite: {fileID: 21300000, guid: d3b4bb9ba4dab0a4d89c094b83a3738c, type: 3}
   - Name: 18
     Grade: 18
     Point: 41368320
     AutoClickInterval: 3
-    Sprite: {fileID: 2960402581040015946, guid: 07dbed4917da98a4c967bef36ecea42c, type: 3}
+    Sprite: {fileID: 21300000, guid: 07dbed4917da98a4c967bef36ecea42c, type: 3}
   - Name: 19
     Grade: 19
     Point: 82736640
     AutoClickInterval: 3
-    Sprite: {fileID: 7157561037332017152, guid: fca85b8957632f8478f1170e1d08913a, type: 3}
+    Sprite: {fileID: 21300000, guid: fca85b8957632f8478f1170e1d08913a, type: 3}
   - Name: 20
     Grade: 20
     Point: 248209920
     AutoClickInterval: 3
-    Sprite: {fileID: 4164744761163438241, guid: 8494662cd47fdc84886cf8dce4315b67, type: 3}
+    Sprite: {fileID: 21300000, guid: 8494662cd47fdc84886cf8dce4315b67, type: 3}

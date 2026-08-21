@@ -75,7 +75,7 @@ public class PointUI : MonoBehaviour
 
         if (_pointText != null)
         {
-            _pointText.text = $"<sprite={(int)_highestGrade}>{(Currency)point}";
+            _pointText.text = $"<sprite name=\"{(int)_highestGrade:00}\">{(Currency)point}";
         }
     }
 

@@ -681,7 +681,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite=0>Point
+  m_text: <sprite name="01">Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
@@ -2693,7 +2693,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite=0>0
+  m_text: <sprite name="01">0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
@@ -4666,7 +4666,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite=0>Point
+  m_text: <sprite name="01">Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
@@ -5423,7 +5423,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite=0>Point
+  m_text: <sprite name="01">Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
@@ -5635,7 +5635,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<sprite=0>\uBCF4\uC0C1\uD68D\uB4DD"
+  m_text: "<sprite name=\"01\">\uBCF4\uC0C1\uD68D\uB4DD"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
@@ -6396,7 +6396,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite=0>Point
+  m_text: <sprite name="01">Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
   m_sharedMaterial: {fileID: 8523200666550188104, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}

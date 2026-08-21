@@ -22,7 +22,7 @@ public class PointFloater : MonoBehaviour
     public void Play(ClickInfo clickInfo)
     {
         _gradeIndex = (int)clickInfo.Grade;
-        _text.text = $"<sprite={_gradeIndex}>{clickInfo.Point}";
+        _text.text = $"<sprite name=\"{_gradeIndex:00}\">{clickInfo.Point}";
         _text.alpha = 1f;
 
         // 위로 떠오르면서 페이드아웃

@@ -138,7 +138,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         bool isLocked)
     {
         string icon = upgrade.SpecData.SystemIconIndex >= 0
-            ? $"<sprite={upgrade.SpecData.SystemIconIndex}>"
+            ? $"<sprite name=\"{upgrade.SpecData.SystemIconIndex:00}\">"
             : string.Empty;
 
         if (isLocked)
@@ -177,10 +177,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         if (isMax)
         {
-            return $"<sprite={(int)_highestGrade}>MAX";
+            return $"<sprite name=\"{(int)_highestGrade:00}\">MAX";
         }
 
         double cost = (double)upgrade.Cost;
-        return $"<sprite={(int)_highestGrade}>{cost.ToFormattedString()}";
+        return $"<sprite name=\"{(int)_highestGrade:00}\">{cost.ToFormattedString()}";
     }
 }
