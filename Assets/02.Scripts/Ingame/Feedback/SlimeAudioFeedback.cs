@@ -30,7 +30,8 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     private void PlayLevelUpSound()
     {
-        if (AudioManager.Instance == null ||
+        if (!_slimeController.IsCurrentStageActive ||
+            AudioManager.Instance == null ||
             _levelUpSounds == null ||
             _levelUpSounds.Length == 0)
         {
@@ -43,7 +44,12 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     private void PlayLandSound()
     {
-        if (AudioManager.Instance == null || _landSound == null) return;
+        if (!_slimeController.IsCurrentStageActive ||
+            AudioManager.Instance == null ||
+            _landSound == null)
+        {
+            return;
+        }
 
         AudioManager.Instance.PlaySFXWithCooldown(
             _landSound,

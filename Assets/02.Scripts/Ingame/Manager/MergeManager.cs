@@ -3,6 +3,7 @@
 public class MergeManager : MonoBehaviour
 {
     public static MergeManager Instance { get; private set; }
+    public static event System.Action<SlimeController, ESlimeGrade, ESlimeGrade> Merged;
 
     private void Awake()
     {
@@ -31,5 +32,6 @@ public class MergeManager : MonoBehaviour
         SlimeManager.Instance.MergeSlime(fromGrade, toGrade);
 
         SpawnManager.Instance.Despawn(removed);
+        Merged?.Invoke(keeper, fromGrade, toGrade);
     }
 }

@@ -389,6 +389,7 @@ GameObject:
   - component: {fileID: 115063080}
   - component: {fileID: 2099000001}
   - component: {fileID: 2099000002}
+  - component: {fileID: 2099000003}
   m_Layer: 0
   m_Name: Clicker
   m_TagString: Untagged
@@ -4164,7 +4165,7 @@ MonoBehaviour:
   _sfxMixerGroup: {fileID: 9088744986506719668, guid: 10da1964b240df84b83d5c798ce10595, type: 2}
   _bgmSource: {fileID: 0}
   _sfxSource: {fileID: 0}
-  _startBGM: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
+  _startBGM: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
   <MasterVolume>k__BackingField: 1
   <BGMVolume>k__BackingField: 0.408
   <SFXVolume>k__BackingField: 1
@@ -6072,6 +6073,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameExitManager
   _popup: {fileID: 2099200002}
   _upgradeUI: {fileID: 1526959884}
+--- !u!114 &2099000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 115063077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0affdb23347347579d87d180ffb5e70f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::StageManager
+  _camera: {fileID: 519420031}
+  _clicker: {fileID: 115063078}
+  _autoClicker: {fileID: 2033355240}
+  _upgradeUI: {fileID: 1526959884}
+  _canvas: {fileID: 457349916}
+  _stageButtonTemplate: {fileID: 1134167831}
+  _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
+  _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
+  _unlockPopupUI: {fileID: 1432576204}
+  _skyBackgroundRenderer: {fileID: 2131310040}
+  _groundBgm: {fileID: 8300000, guid: d18dfb1bb140b4341bc3f809155a1590, type: 3}
+  _skyBgm: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
+  _transitionDuration: 1.2
+  _cameraTravelDistance: 6
+  _firstChargeDuration: 0.8
+  _transitionColor: {r: 0.75, g: 0.9, b: 1, a: 1}
+  _groundSkyColor: {r: 0.58, g: 0.78, b: 0.7, a: 1}
+  _groundFloorColor: {r: 0.36, g: 0.55, b: 0.25, a: 1}
 --- !u!1 &2099100001
 GameObject:
   m_ObjectHideFlags: 0

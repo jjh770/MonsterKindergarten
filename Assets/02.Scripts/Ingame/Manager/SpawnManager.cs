@@ -25,6 +25,9 @@ public class SpawnManager : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
+#if UNITY_EDITOR
+    private bool _hasSpawnedGrade10PairForTest;
+#endif
 
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
@@ -196,16 +199,65 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
+    private void OnGUI()
+    {
+        if (!_isInitialized ||
+            _hasSpawnedGrade10PairForTest ||
+            GameManager.Instance == null ||
+            !GameManager.Instance.IsGameplayActive ||
+            TutorialProgress.ShouldRun ||
+            SlimeSpawner.Instance == null)
+        {
+            return;
+        }
+
+        if (StageManager.Instance != null &&
+            !StageManager.Instance.IsStageActive(ESlimeGrade.Grade10))
+        {
+            return;
+        }
+
+        if (GUI.Button(new Rect(16f, 16f, 240f, 48f),
+                "TEST: 10등급 슬라임 2마리 생성"))
+        {
+            SpawnGrade10PairForTest();
+        }
+    }
+
+    private void SpawnGrade10PairForTest()
+    {
+        Vector2 center = (_spawnAreaMin + _spawnAreaMax) * 0.5f;
+        float horizontalOffset = Mathf.Min(
+            1.25f,
+            (_spawnAreaMax.x - _spawnAreaMin.x) * 0.2f);
+
+        SlimeSpawner.Instance.Spawn(
+            ESlimeGrade.Grade10,
+            center + Vector2.left * horizontalOffset);
+        SlimeSpawner.Instance.Spawn(
+            ESlimeGrade.Grade10,
+            center + Vector2.right * horizontalOffset);
+
+        _hasSpawnedGrade10PairForTest = true;
+        Debug.Log("[TEST] 10등급 슬라임 두 마리를 생성했습니다.", this);
+    }
+#endif
+
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
     {
         if (SlimeSpawner.Instance == null) return null;
 
-        Vector2 randomPos = new Vector2(
-            UnityEngine.Random.Range(_spawnAreaMin.x, _spawnAreaMax.x),
-            UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y)
-        );
+        Vector2 randomPos = GetRandomSpawnPosition();
 
         return SlimeSpawner.Instance.Spawn(grade, randomPos, shouldSave);
+    }
+
+    public Vector2 GetRandomSpawnPosition()
+    {
+        return new Vector2(
+            UnityEngine.Random.Range(_spawnAreaMin.x, _spawnAreaMax.x),
+            UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y));
     }
 
     public void Despawn(SlimeController target)

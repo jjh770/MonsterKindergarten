@@ -10,6 +10,12 @@ public struct TutorialDialogueLine
 
     public string Speaker => _speaker;
     public string Message => _message;
+
+    public TutorialDialogueLine(string speaker, string message)
+    {
+        _speaker = speaker;
+        _message = message;
+    }
 }
 
 [CreateAssetMenu(

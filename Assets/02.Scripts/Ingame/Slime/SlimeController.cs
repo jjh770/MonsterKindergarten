@@ -9,6 +9,9 @@ public class SlimeController : MonoBehaviour, IClickable
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private SlimeMove _slimeMove;
+    private SpriteRenderer _spriteRenderer;
+    private Collider2D[] _colliders = Array.Empty<Collider2D>();
+    private Rigidbody2D _rigidbody;
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
@@ -17,6 +20,9 @@ public class SlimeController : MonoBehaviour, IClickable
     public bool IsDragging => _isDragging;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
+    public bool IsCurrentStageActive =>
+        StageManager.Instance == null ||
+        StageManager.Instance.IsStageActive(Grade);
 
     public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnSpawned;
@@ -28,6 +34,9 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         _feedbacks = GetComponentsInChildren<IFeedback>();
         _slimeMove = GetComponent<SlimeMove>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+        _colliders = GetComponents<Collider2D>();
+        _rigidbody = GetComponent<Rigidbody2D>();
     }
 
     public void SetSlime(Slime slime)
@@ -58,6 +67,71 @@ public class SlimeController : MonoBehaviour, IClickable
     public void SetMovementLocked(bool isLocked)
     {
         _slimeMove?.SetMovementLocked(isLocked);
+    }
+
+    public void SetStagePresentationActive(bool isActive)
+    {
+        if (!isActive)
+        {
+            CancelDrag();
+        }
+
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.enabled = isActive;
+        }
+
+        foreach (Collider2D targetCollider in _colliders)
+        {
+            if (targetCollider != null)
+            {
+                targetCollider.enabled = isActive;
+            }
+        }
+
+        if (!isActive)
+        {
+            _slimeMove?.SetMovementLocked(true);
+        }
+
+        if (_rigidbody != null)
+        {
+            if (!isActive)
+            {
+                _rigidbody.linearVelocity = Vector2.zero;
+            }
+
+            _rigidbody.simulated = isActive;
+        }
+
+        if (isActive)
+        {
+            _slimeMove?.SetMovementLocked(false);
+        }
+    }
+
+    public void PrepareStageTransfer()
+    {
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.enabled = true;
+        }
+
+        foreach (Collider2D targetCollider in _colliders)
+        {
+            if (targetCollider != null)
+            {
+                targetCollider.enabled = false;
+            }
+        }
+
+        _slimeMove?.SetMovementLocked(true);
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.linearVelocity = Vector2.zero;
+            _rigidbody.simulated = false;
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -139,6 +213,8 @@ public class SlimeController : MonoBehaviour, IClickable
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
+        if (!IsCurrentStageActive) return true;
+
         foreach (IFeedback feedback in _feedbacks)
         {
             feedback.Play(clickInfo);

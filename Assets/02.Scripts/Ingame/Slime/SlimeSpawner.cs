@@ -8,6 +8,7 @@ public class SlimeSpawner : MonoBehaviour
 
     private LeanGameObjectPool _pool;
     private List<SlimeController> _activeTargets = new List<SlimeController>();
+    public event System.Action<SlimeController> Spawned;
 
     private void Awake()
     {
@@ -36,6 +37,7 @@ public class SlimeSpawner : MonoBehaviour
         slimeController.OnSpawn();
 
         _activeTargets.Add(slimeController);
+        Spawned?.Invoke(slimeController);
 
         // 새로 스폰된 슬라임만 저장 (초기 로드 시에는 저장하지 않음)
         if (shouldSave)
