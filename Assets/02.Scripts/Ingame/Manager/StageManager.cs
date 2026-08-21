@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using DG.Tweening;
 using UnityEngine;
 
 public sealed class StageManager : MonoBehaviour
@@ -12,25 +11,14 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private UpgradeUI _upgradeUI;
-    [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
     [SerializeField] private StageTransitionPlayer _transitionPlayer;
-    [SerializeField] private TutorialDialogueView _dialoguePrefab;
-    [SerializeField] private TutorialSpotlightView _guidePrefab;
-    [SerializeField] private TutorialContent _tutorialContent;
+    [SerializeField] private SkyIntroDirector _skyIntroDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
 
-    [Header("Intro")]
-    [SerializeField, Min(0f)] private float _firstChargeDuration = 0.8f;
-
     private EGameStage _currentStage = EGameStage.Ground;
-    private TutorialPresentation _tutorialPresentation;
-    private SlimeController _pendingFirstSkyTarget;
-    private Sequence _chargeSequence;
     private bool _isInitializeStarted;
     private bool _isInitialized;
-    private bool _isFirstIntroStarted;
-    private bool _isWaitingForStageButtonTutorial;
 
     public EGameStage CurrentStage => _currentStage;
 
@@ -54,6 +42,8 @@ public sealed class StageManager : MonoBehaviour
         }
 
         _stageUI.ButtonClicked += OnStageButtonClicked;
+        _skyIntroDirector.SkyTransitionRequested += OnSkyTransitionRequested;
+        _skyIntroDirector.InteractionEnableRequested += SetInteractionEnabled;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         MergeManager.Merged += OnMerged;
@@ -96,8 +86,11 @@ public sealed class StageManager : MonoBehaviour
             _stageUI.ButtonClicked -= OnStageButtonClicked;
         }
 
-        _chargeSequence?.Kill();
-        _tutorialPresentation?.Dispose();
+        if (_skyIntroDirector != null)
+        {
+            _skyIntroDirector.SkyTransitionRequested -= OnSkyTransitionRequested;
+            _skyIntroDirector.InteractionEnableRequested -= SetInteractionEnabled;
+        }
     }
 
     public bool IsStageActive(ESlimeGrade grade)
@@ -111,11 +104,8 @@ public sealed class StageManager : MonoBehaviour
         bool hasReferences = _clicker != null &&
                              _autoClicker != null &&
                              _upgradeUI != null &&
-                             _canvas != null &&
+                             _skyIntroDirector != null &&
                              _stageUI != null &&
-                             _dialoguePrefab != null &&
-                             _guidePrefab != null &&
-                             _tutorialContent != null &&
                              _unlockPopupUI != null &&
                              _transitionPlayer != null;
         if (!hasReferences)
@@ -169,8 +159,8 @@ public sealed class StageManager : MonoBehaviour
             SlimeController skyTarget = FindFirstSkySlime();
             if (skyTarget != null)
             {
-                _pendingFirstSkyTarget = skyTarget;
-                BeginFirstSkyIntro();
+                _skyIntroDirector.Prepare(skyTarget);
+                _skyIntroDirector.Begin();
             }
             else
             {
@@ -227,14 +217,14 @@ public sealed class StageManager : MonoBehaviour
         if (SlimeManager.Instance != null &&
             !SlimeManager.Instance.SkyIntroCompleted)
         {
-            _pendingFirstSkyTarget = target;
+            _skyIntroDirector.Prepare(target);
             SetInteractionEnabled(false);
 
             // 해금 팝업이 재생 중일 때만 PresentationCompleted가 온다.
             // 이미 해금된 등급이면 팝업이 뜨지 않으므로 바로 인트로를 시작한다.
             if (!_unlockPopupUI.IsPresenting)
             {
-                BeginFirstSkyIntro();
+                _skyIntroDirector.Begin();
             }
 
             return;
@@ -246,97 +236,22 @@ public sealed class StageManager : MonoBehaviour
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
         if (grade != ESlimeGrade.Grade11 ||
-            _pendingFirstSkyTarget == null ||
+            !_skyIntroDirector.HasPendingTarget ||
             _transitionPlayer.IsTransitioning)
         {
             return;
         }
 
-        BeginFirstSkyIntro();
+        _skyIntroDirector.Begin();
     }
 
-    private void BeginFirstSkyIntro()
+    private void OnSkyTransitionRequested(SlimeController target, Action onArrived)
     {
-        if (_pendingFirstSkyTarget == null ||
-            _transitionPlayer.IsTransitioning ||
-            _isFirstIntroStarted)
-        {
-            return;
-        }
-
-        _isFirstIntroStarted = true;
-        SetInteractionEnabled(false);
-        _pendingFirstSkyTarget.PrepareStageTransfer();
-        _tutorialPresentation?.Dispose();
-        _tutorialPresentation = new TutorialPresentation(
-            _canvas,
-            _canvas,
-            _dialoguePrefab,
-            _guidePrefab);
-        _tutorialPresentation.ShowDialogue(
-            _tutorialContent.SkyIntroDialogue,
-            PlayFirstSkyJourney);
-    }
-
-    private void PlayFirstSkyJourney()
-    {
-        SlimeController target = _pendingFirstSkyTarget;
-        if (target == null)
-        {
-            CompleteFirstSkyIntroWithoutTarget();
-            return;
-        }
-
-        target.PrepareStageTransfer();
-        _chargeSequence?.Kill();
-        _chargeSequence = DOTween.Sequence();
-        _chargeSequence.Append(
-            target.transform.DOPunchScale(
-                new Vector3(0.25f, -0.18f, 0f),
-                Mathf.Max(0.1f, _firstChargeDuration),
-                5,
-                0.7f));
-        _chargeSequence.OnComplete(() =>
-        {
-            _chargeSequence = null;
-            StartStageTransition(
-                EGameStage.Sky,
-                target,
-                OnFirstSkyArrival,
-                saveStage: false);
-        });
-    }
-
-    private void OnFirstSkyArrival()
-    {
-        SlimeManager.Instance?.UpdateStageProgress(
+        StartStageTransition(
             EGameStage.Sky,
-            skyIntroCompleted: true);
-        _pendingFirstSkyTarget = null;
-        _isFirstIntroStarted = false;
-        _stageUI.SetButtonVisible(true, true);
-
-        RectTransform buttonTarget = _stageUI.ButtonTarget;
-        if (_tutorialPresentation == null || buttonTarget == null)
-        {
-            CompleteStageButtonTutorial();
-            return;
-        }
-
-        _isWaitingForStageButtonTutorial = true;
-        _tutorialPresentation.Spotlight.ShowUiTarget(
-            _tutorialContent.StageButtonMessage,
-            buttonTarget,
-            SpotlightInteractionMode.PassThroughPrimary);
-    }
-
-    private void CompleteFirstSkyIntroWithoutTarget()
-    {
-        SlimeManager.Instance?.UpdateStageProgress(
-            EGameStage.Ground,
-            skyIntroCompleted: true);
-        _stageUI.SetButtonVisible(true, true);
-        CompleteStageButtonTutorial();
+            target,
+            onArrived,
+            saveStage: false);
     }
 
     private void OnStageButtonClicked()
@@ -356,13 +271,13 @@ public sealed class StageManager : MonoBehaviour
             ? EGameStage.Sky
             : EGameStage.Ground;
 
-        if (_isWaitingForStageButtonTutorial)
+        if (_skyIntroDirector.IsWaitingForStageButton)
         {
-            _tutorialPresentation?.Spotlight.Hide();
+            _skyIntroDirector.HideSpotlight();
             StartStageTransition(
                 targetStage,
                 null,
-                CompleteStageButtonTutorial,
+                _skyIntroDirector.Complete,
                 saveStage: true);
             return;
         }
@@ -411,14 +326,6 @@ public sealed class StageManager : MonoBehaviour
                 SetInteractionEnabled(true);
                 onComplete?.Invoke();
             });
-    }
-
-    private void CompleteStageButtonTutorial()
-    {
-        _isWaitingForStageButtonTutorial = false;
-        _tutorialPresentation?.Dispose();
-        _tutorialPresentation = null;
-        SetInteractionEnabled(true);
     }
 
     private void ApplyAllSlimeVisibility()

@@ -3168,6 +3168,7 @@ GameObject:
   - component: {fileID: 954826974}
   - component: {fileID: 954826973}
   - component: {fileID: 954826975}
+  - component: {fileID: 954826976}
   m_Layer: 0
   m_Name: StageManager
   m_TagString: Untagged
@@ -3190,14 +3191,10 @@ MonoBehaviour:
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
   _upgradeUI: {fileID: 1526959884}
-  _canvas: {fileID: 457349916}
   _stageUI: {fileID: 1324579906}
   _transitionPlayer: {fileID: 954826975}
-  _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
-  _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
-  _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
+  _skyIntroDirector: {fileID: 954826976}
   _unlockPopupUI: {fileID: 1432576204}
-  _firstChargeDuration: 0.8
 --- !u!4 &954826974
 Transform:
   m_ObjectHideFlags: 0
@@ -3232,6 +3229,24 @@ MonoBehaviour:
   _skyBgm: {fileID: 8300000, guid: 6dadcabc394939c478e619a5ceacae49, type: 3}
   _transitionDuration: 1.2
   _cameraTravelDistance: 6
+--- !u!114 &954826976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 954826972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d27893e306905d40a49ff350f7acf06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkyIntroDirector
+  _canvas: {fileID: 457349916}
+  _stageUI: {fileID: 1324579906}
+  _dialoguePrefab: {fileID: 110005, guid: e1b7c2d95a4f4386b0d8e3c7192a5f64, type: 3}
+  _guidePrefab: {fileID: 910005, guid: 6c9f2e4a81b743d5a0c6e7f129384b5d, type: 3}
+  _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
+  _chargeDuration: 0.8
 --- !u!1 &1045520509
 GameObject:
   m_ObjectHideFlags: 0
