@@ -2,9 +2,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public sealed class StageManager : MonoBehaviour
 {
@@ -16,7 +14,7 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private Canvas _canvas;
-    [SerializeField] private Button _stageButtonTemplate;
+    [SerializeField] private StageUI _stageUI;
     [SerializeField] private TutorialDialogueView _dialoguePrefab;
     [SerializeField] private TutorialSpotlightView _guidePrefab;
     [SerializeField] private TutorialContent _tutorialContent;
@@ -31,13 +29,9 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _transitionDuration = 1.2f;
     [SerializeField, Min(1f)] private float _cameraTravelDistance = 6f;
     [SerializeField, Min(0f)] private float _firstChargeDuration = 0.8f;
-    [SerializeField] private Color _transitionColor = new(0.75f, 0.9f, 1f, 1f);
 
     private EGameStage _currentStage = EGameStage.Ground;
     private Vector3 _cameraBasePosition;
-    private Button _stageButton;
-    private TextMeshProUGUI _stageButtonArrow;
-    private Image _transitionOverlay;
     private TutorialPresentation _tutorialPresentation;
     private SlimeController _pendingFirstSkyTarget;
     private Sequence _transitionSequence;
@@ -70,8 +64,7 @@ public sealed class StageManager : MonoBehaviour
         }
 
         _cameraBasePosition = _camera.transform.position;
-        CreateTransitionOverlay();
-        CreateStageButton();
+        _stageUI.ButtonClicked += OnStageButtonClicked;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         MergeManager.Merged += OnMerged;
@@ -109,18 +102,14 @@ public sealed class StageManager : MonoBehaviour
             SlimeSpawner.Instance.Spawned -= OnSlimeSpawned;
         }
 
-        _stageButton?.onClick.RemoveListener(OnStageButtonClicked);
+        if (_stageUI != null)
+        {
+            _stageUI.ButtonClicked -= OnStageButtonClicked;
+        }
+
         _transitionSequence?.Kill();
         _chargeSequence?.Kill();
         _tutorialPresentation?.Dispose();
-    }
-
-    private void OnRectTransformDimensionsChange()
-    {
-        if (_stageButton != null)
-        {
-            RefreshStageButtonSafeArea();
-        }
     }
 
     public bool IsStageActive(ESlimeGrade grade)
@@ -136,7 +125,7 @@ public sealed class StageManager : MonoBehaviour
                              _autoClicker != null &&
                              _upgradeUI != null &&
                              _canvas != null &&
-                             _stageButtonTemplate != null &&
+                             _stageUI != null &&
                              _dialoguePrefab != null &&
                              _guidePrefab != null &&
                              _tutorialContent != null &&
@@ -170,9 +159,10 @@ public sealed class StageManager : MonoBehaviour
             ? SlimeManager.Instance.CurrentStage
             : EGameStage.Ground;
         _isInitialized = true;
+        _stageUI.SetStage(_currentStage);
         ApplyEnvironment(_currentStage, 0f);
         ApplyAllSlimeVisibility();
-        SetStageButtonVisible(false, false);
+        _stageUI.SetButtonVisible(false, false);
         SetInteractionEnabled(false);
 
         await WaitForGameplayActiveAsync(token);
@@ -181,11 +171,11 @@ public sealed class StageManager : MonoBehaviour
 
         if (!SlimeManager.Instance.IsSkyUnlocked)
         {
-            SetStageButtonVisible(false, false);
+            _stageUI.SetButtonVisible(false, false);
         }
         else if (SlimeManager.Instance.SkyIntroCompleted)
         {
-            SetStageButtonVisible(true, false);
+            _stageUI.SetButtonVisible(true, false);
         }
         else
         {
@@ -200,7 +190,7 @@ public sealed class StageManager : MonoBehaviour
                 SlimeManager.Instance.UpdateStageProgress(
                     EGameStage.Ground,
                     skyIntroCompleted: true);
-                SetStageButtonVisible(true, false);
+                _stageUI.SetButtonVisible(true, false);
             }
         }
     }
@@ -337,9 +327,10 @@ public sealed class StageManager : MonoBehaviour
             skyIntroCompleted: true);
         _pendingFirstSkyTarget = null;
         _isFirstIntroStarted = false;
-        SetStageButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true, true);
 
-        if (_tutorialPresentation == null || _stageButton == null)
+        RectTransform buttonTarget = _stageUI.ButtonTarget;
+        if (_tutorialPresentation == null || buttonTarget == null)
         {
             CompleteStageButtonTutorial();
             return;
@@ -348,7 +339,7 @@ public sealed class StageManager : MonoBehaviour
         _isWaitingForStageButtonTutorial = true;
         _tutorialPresentation.Spotlight.ShowUiTarget(
             _tutorialContent.StageButtonMessage,
-            _stageButton.transform as RectTransform,
+            buttonTarget,
             SpotlightInteractionMode.PassThroughPrimary);
     }
 
@@ -357,7 +348,7 @@ public sealed class StageManager : MonoBehaviour
         SlimeManager.Instance?.UpdateStageProgress(
             EGameStage.Ground,
             skyIntroCompleted: true);
-        SetStageButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true, true);
         CompleteStageButtonTutorial();
     }
 
@@ -410,10 +401,8 @@ public sealed class StageManager : MonoBehaviour
 
         _isTransitioning = true;
         SetInteractionEnabled(false);
-        _stageButton.interactable = false;
-        _transitionOverlay.transform.SetAsLastSibling();
-        _transitionOverlay.raycastTarget = true;
-        SetOverlayAlpha(0f);
+        _stageUI.SetButtonInteractable(false);
+        _stageUI.BeginOverlay();
 
         float direction = targetStage == EGameStage.Sky ? 1f : -1f;
         float halfDuration = _transitionDuration * 0.5f;
@@ -441,7 +430,7 @@ public sealed class StageManager : MonoBehaviour
                 _cameraBasePosition.y + direction * _cameraTravelDistance,
                 halfDuration).SetEase(Ease.InQuad));
         _transitionSequence.Join(
-            _transitionOverlay.DOFade(1f, halfDuration));
+            _stageUI.FadeOverlay(1f, halfDuration));
 
         if (travellingSlime != null)
         {
@@ -475,7 +464,7 @@ public sealed class StageManager : MonoBehaviour
                 _cameraBasePosition.y,
                 halfDuration).SetEase(Ease.OutQuad));
         _transitionSequence.Join(
-            _transitionOverlay.DOFade(0f, halfDuration));
+            _stageUI.FadeOverlay(0f, halfDuration));
 
         if (travellingSlime != null)
         {
@@ -492,7 +481,7 @@ public sealed class StageManager : MonoBehaviour
         {
             _transitionSequence = null;
             _camera.transform.position = _cameraBasePosition;
-            _transitionOverlay.raycastTarget = false;
+            _stageUI.EndOverlay();
             _isTransitioning = false;
             ApplyAllSlimeVisibility();
 
@@ -503,8 +492,8 @@ public sealed class StageManager : MonoBehaviour
                     SlimeManager.Instance.SkyIntroCompleted);
             }
 
-            UpdateStageButtonVisual();
-            _stageButton.interactable = true;
+            _stageUI.SetStage(_currentStage);
+            _stageUI.SetButtonInteractable(true);
             SetInteractionEnabled(true);
             onComplete?.Invoke();
         });
@@ -593,142 +582,4 @@ public sealed class StageManager : MonoBehaviour
         _upgradeUI.SetToggleInputEnabled(isEnabled);
     }
 
-    private void CreateTransitionOverlay()
-    {
-        GameObject overlayObject = new GameObject(
-            "StageTransitionOverlay",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(Image));
-        overlayObject.layer = _canvas.gameObject.layer;
-        RectTransform overlayRect = (RectTransform)overlayObject.transform;
-        overlayRect.SetParent(_canvas.transform, false);
-        overlayRect.anchorMin = Vector2.zero;
-        overlayRect.anchorMax = Vector2.one;
-        overlayRect.offsetMin = Vector2.zero;
-        overlayRect.offsetMax = Vector2.zero;
-
-        _transitionOverlay = overlayObject.GetComponent<Image>();
-        _transitionOverlay.color = _transitionColor;
-        _transitionOverlay.raycastTarget = false;
-        SetOverlayAlpha(0f);
-    }
-
-    private void SetOverlayAlpha(float alpha)
-    {
-        Color color = _transitionOverlay.color;
-        color.a = alpha;
-        _transitionOverlay.color = color;
-    }
-
-    private void CreateStageButton()
-    {
-        _stageButton = Instantiate(_stageButtonTemplate, _canvas.transform);
-        _stageButton.name = "StageMoveButton";
-        _stageButton.onClick.AddListener(OnStageButtonClicked);
-
-        RectTransform buttonRect = (RectTransform)_stageButton.transform;
-        buttonRect.localRotation = Quaternion.identity;
-        buttonRect.localScale = Vector3.zero;
-        buttonRect.anchorMin = Vector2.one;
-        buttonRect.anchorMax = Vector2.one;
-        buttonRect.pivot = Vector2.one;
-        buttonRect.sizeDelta = new Vector2(112f, 112f);
-
-        Image buttonImage = _stageButton.targetGraphic as Image;
-        if (buttonImage != null)
-        {
-            buttonImage.color = new Color(0.18f, 0.42f, 0.65f, 0.95f);
-        }
-
-        GameObject arrowObject = new GameObject(
-            "Arrow",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI));
-        arrowObject.layer = _canvas.gameObject.layer;
-        RectTransform arrowRect = (RectTransform)arrowObject.transform;
-        arrowRect.SetParent(buttonRect, false);
-        arrowRect.anchorMin = Vector2.zero;
-        arrowRect.anchorMax = Vector2.one;
-        arrowRect.offsetMin = Vector2.zero;
-        arrowRect.offsetMax = Vector2.zero;
-
-        _stageButtonArrow = arrowObject.GetComponent<TextMeshProUGUI>();
-        _stageButtonArrow.alignment = TextAlignmentOptions.Center;
-        _stageButtonArrow.fontSize = 56f;
-        _stageButtonArrow.color = Color.white;
-        _stageButtonArrow.raycastTarget = false;
-
-        RefreshStageButtonSafeArea();
-        UpdateStageButtonVisual();
-        _stageButton.gameObject.SetActive(false);
-    }
-
-    private void SetStageButtonVisible(bool isVisible, bool animated)
-    {
-        if (_stageButton == null) return;
-
-        _stageButton.gameObject.SetActive(isVisible);
-        _stageButton.transform.DOKill();
-
-        if (!isVisible)
-        {
-            _stageButton.transform.localScale = Vector3.zero;
-            return;
-        }
-
-        RefreshStageButtonSafeArea();
-        UpdateStageButtonVisual();
-
-        if (!animated)
-        {
-            _stageButton.transform.localScale = Vector3.one;
-            return;
-        }
-
-        _stageButton.transform.localScale = Vector3.zero;
-        _stageButton.transform.DOScale(Vector3.one, 0.35f)
-            .SetEase(Ease.OutBack);
-    }
-
-    private void UpdateStageButtonVisual()
-    {
-        if (_stageButtonArrow == null) return;
-
-        _stageButtonArrow.text = _currentStage == EGameStage.Ground
-            ? "↑"
-            : "↓";
-    }
-
-    private void RefreshStageButtonSafeArea()
-    {
-        if (_stageButton == null || _canvas == null) return;
-
-        RectTransform canvasRect = _canvas.transform as RectTransform;
-        RectTransform buttonRect = _stageButton.transform as RectTransform;
-        if (canvasRect == null || buttonRect == null) return;
-
-        float rightInset = GetCanvasInset(
-            Screen.width - Screen.safeArea.xMax,
-            Screen.width,
-            canvasRect.rect.width);
-        float topInset = GetCanvasInset(
-            Screen.height - Screen.safeArea.yMax,
-            Screen.height,
-            canvasRect.rect.height);
-        buttonRect.anchoredPosition = new Vector2(
-            -rightInset - 28f,
-            -topInset - 28f);
-    }
-
-    private static float GetCanvasInset(
-        float pixelInset,
-        int screenSize,
-        float canvasSize)
-    {
-        if (screenSize <= 0 || canvasSize <= 0f) return 0f;
-
-        return Mathf.Max(0f, pixelInset / screenSize * canvasSize);
-    }
 }
