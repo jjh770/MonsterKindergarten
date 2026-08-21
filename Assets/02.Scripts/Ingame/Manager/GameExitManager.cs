@@ -1,20 +1,14 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Clicker))]
 public sealed class GameExitManager : MonoBehaviour
 {
     [SerializeField] private GameExitPopupUI _popup;
     [SerializeField] private UpgradeUI _upgradeUI;
+    [SerializeField] private Clicker _clicker;
 
-    private Clicker _clicker;
     private bool _wasClickerEnabled;
     private bool _isWorldInputBlocked;
-
-    private void Awake()
-    {
-        _clicker = GetComponent<Clicker>();
-    }
 
     private void Start()
     {

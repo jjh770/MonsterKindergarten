@@ -18,6 +18,7 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField] private Button _stageButtonTemplate;
     [SerializeField] private TutorialDialogueView _dialoguePrefab;
     [SerializeField] private TutorialSpotlightView _guidePrefab;
+    [SerializeField] private TutorialContent _tutorialContent;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private SpriteRenderer _skyBackgroundRenderer;
 
@@ -144,6 +145,7 @@ public sealed class StageManager : MonoBehaviour
                              _stageButtonTemplate != null &&
                              _dialoguePrefab != null &&
                              _guidePrefab != null &&
+                             _tutorialContent != null &&
                              _unlockPopupUI != null &&
                              _skyBackgroundRenderer != null;
         if (!hasReferences)
@@ -286,12 +288,7 @@ public sealed class StageManager : MonoBehaviour
             _dialoguePrefab,
             _guidePrefab);
         _tutorialPresentation.ShowDialogue(
-            new[]
-            {
-                new TutorialDialogueLine(
-                    "선생님",
-                    "11단계 슬라임이 하늘로 올라가기 위해 기를 모으고 있어!")
-            },
+            _tutorialContent.SkyIntroDialogue,
             PlayFirstSkyJourney);
     }
 
@@ -348,7 +345,7 @@ public sealed class StageManager : MonoBehaviour
 
         _isWaitingForStageButtonTutorial = true;
         _tutorialPresentation.Spotlight.ShowUiTarget(
-            "이 버튼으로 땅과 하늘을 오갈 수 있어!",
+            _tutorialContent.StageButtonMessage,
             _stageButton.transform as RectTransform,
             SpotlightInteractionMode.PassThroughPrimary);
     }

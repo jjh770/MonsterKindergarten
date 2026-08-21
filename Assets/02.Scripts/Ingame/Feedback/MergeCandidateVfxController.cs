@@ -11,17 +11,12 @@ public sealed class MergeCandidateVfxController : MonoBehaviour
     [SerializeField] private Vector3 _localEulerAngles = new Vector3(90f, 0f, 0f);
     [SerializeField, Min(0f)] private float _localScale = 0.2f;
     [SerializeField] private int _sortingOrderOffset = 1;
+    [SerializeField] private Clicker _clicker;
 
     private SlimeController _target;
     private SpriteRenderer _targetRenderer;
-    private Clicker _clicker;
     private GameObject _effectInstance;
     private GameObject _activeEffectPrefab;
-
-    private void Awake()
-    {
-        _clicker = GetComponent<Clicker>();
-    }
 
     private void OnEnable()
     {
