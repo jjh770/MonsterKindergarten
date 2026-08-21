@@ -26,7 +26,7 @@ MonoBehaviour:
     Description: "\uC2A4\uD3F0 \uC2DC\uAC04\uC774 \uB2E8\uCD95\uB429\uB2C8\uB2E4."
   - Type: 5
     SlimeGrade: 0
-    MaxLevel: 20
+    MaxLevel: 30
     BaseCost: 1000
     BasePoint: 0
     CostMultiplier: 1.5
@@ -234,4 +234,204 @@ MonoBehaviour:
     PointMultiplier: 3192
     PointFormula: 0
     Name: "\uBE14\uB799 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 11
+    MaxLevel: 10
+    BaseCost: 319200
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 12768
+    PointFormula: 0
+    Name: "11\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 11
+    MaxLevel: 10
+    BaseCost: 191520
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 6384
+    PointFormula: 0
+    Name: "11\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 12
+    MaxLevel: 10
+    BaseCost: 957600
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 38304
+    PointFormula: 0
+    Name: "12\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 12
+    MaxLevel: 10
+    BaseCost: 574560
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 19152
+    PointFormula: 0
+    Name: "12\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 13
+    MaxLevel: 10
+    BaseCost: 1915200
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 76608
+    PointFormula: 0
+    Name: "13\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 13
+    MaxLevel: 10
+    BaseCost: 1149120
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 38304
+    PointFormula: 0
+    Name: "13\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 14
+    MaxLevel: 10
+    BaseCost: 5745600
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 229824
+    PointFormula: 0
+    Name: "14\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 14
+    MaxLevel: 10
+    BaseCost: 3447360
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 114912
+    PointFormula: 0
+    Name: "14\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 15
+    MaxLevel: 10
+    BaseCost: 11491200
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 459648
+    PointFormula: 0
+    Name: "15\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 15
+    MaxLevel: 10
+    BaseCost: 6894720
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 229824
+    PointFormula: 0
+    Name: "15\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 16
+    MaxLevel: 10
+    BaseCost: 34473600
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 1378944
+    PointFormula: 0
+    Name: "16\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 16
+    MaxLevel: 10
+    BaseCost: 20684160
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 689472
+    PointFormula: 0
+    Name: "16\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 17
+    MaxLevel: 10
+    BaseCost: 68947200
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 2757888
+    PointFormula: 0
+    Name: "17\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 17
+    MaxLevel: 10
+    BaseCost: 41368320
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 1378944
+    PointFormula: 0
+    Name: "17\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 18
+    MaxLevel: 10
+    BaseCost: 206841600
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 8273664
+    PointFormula: 0
+    Name: "18\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 18
+    MaxLevel: 10
+    BaseCost: 124104960
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 4136832
+    PointFormula: 0
+    Name: "18\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 19
+    MaxLevel: 10
+    BaseCost: 413683200
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 16547328
+    PointFormula: 0
+    Name: "19\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 19
+    MaxLevel: 10
+    BaseCost: 248209920
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 8273664
+    PointFormula: 0
+    Name: "19\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 0
+    SlimeGrade: 20
+    MaxLevel: 10
+    BaseCost: 1241049600
+    BasePoint: 0
+    CostMultiplier: 1.5
+    PointMultiplier: 49641984
+    PointFormula: 0
+    Name: "20\uB2E8\uACC4 \uC2AC\uB77C\uC784"
+    Description: "\uD074\uB9AD \uD68D\uB4DD\uB7C9 \uC99D\uAC00"
+  - Type: 1
+    SlimeGrade: 20
+    MaxLevel: 10
+    BaseCost: 744629760
+    BasePoint: 0
+    CostMultiplier: 1.4
+    PointMultiplier: 24820992
+    PointFormula: 0
+    Name: "20\uB2E8\uACC4 \uC2AC\uB77C\uC784"
     Description: "\uC790\uB3D9 \uD68D\uB4DD\uB7C9 \uC99D\uAC00"

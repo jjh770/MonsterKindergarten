@@ -63,3 +63,53 @@ MonoBehaviour:
     Point: 31920
     AutoClickInterval: 3.2
     Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 11
+    Grade: 11
+    Point: 63840
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 12
+    Grade: 12
+    Point: 191520
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 13
+    Grade: 13
+    Point: 383040
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 14
+    Grade: 14
+    Point: 1149120
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 15
+    Grade: 15
+    Point: 2298240
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 16
+    Grade: 16
+    Point: 6894720
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 17
+    Grade: 17
+    Point: 13789440
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 18
+    Grade: 18
+    Point: 41368320
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 19
+    Grade: 19
+    Point: 82736640
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - Name: 20
+    Grade: 20
+    Point: 248209920
+    AutoClickInterval: 3
+    Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
