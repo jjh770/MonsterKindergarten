@@ -20,6 +20,7 @@ public sealed class StageManager : MonoBehaviour
     private bool _isInitialized;
 
     public EGameStage CurrentStage => _currentStage;
+    public event Action<EGameStage> StageChanged;
 
     private void Awake()
     {
@@ -136,6 +137,7 @@ public sealed class StageManager : MonoBehaviour
         _isInitialized = true;
         _stageUI.SetStage(_currentStage);
         _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
+        StageChanged?.Invoke(_currentStage);
         ApplyAllSlimeVisibility();
         _stageUI.SetButtonVisible(false, false);
         SetInteractionEnabled(false);
@@ -204,8 +206,7 @@ public sealed class StageManager : MonoBehaviour
         ESlimeGrade toGrade)
     {
         if (target == null ||
-            fromGrade != ESlimeGrade.Grade10 ||
-            toGrade != ESlimeGrade.Grade11)
+            !GameStageRules.IsSkyEntryMerge(fromGrade, toGrade))
         {
             return;
         }
@@ -233,7 +234,7 @@ public sealed class StageManager : MonoBehaviour
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
-        if (grade != ESlimeGrade.Grade11 ||
+        if (!GameStageRules.IsSkyEntryGrade(grade) ||
             !_skyIntroDirector.HasPendingTarget ||
             _transitionPlayer.IsTransitioning)
         {
@@ -307,6 +308,7 @@ public sealed class StageManager : MonoBehaviour
             onStageSwitched: () =>
             {
                 _currentStage = targetStage;
+                StageChanged?.Invoke(_currentStage);
                 ApplyAllSlimeVisibility();
             },
             onCompleted: () =>
