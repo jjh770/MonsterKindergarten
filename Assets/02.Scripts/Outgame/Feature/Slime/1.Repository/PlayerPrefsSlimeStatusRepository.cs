@@ -60,6 +60,8 @@ public class SlimeStatusSaveDataWrapper
 {
     public int HighestGrade;
     public List<SlimeEntryWrapper> ActiveSlimes = new();
+    public int CurrentStage;
+    public bool SkyIntroCompleted;
     public string LastSaveTime;
 
     public SlimeStatusSaveDataWrapper() { }
@@ -67,6 +69,8 @@ public class SlimeStatusSaveDataWrapper
     public SlimeStatusSaveDataWrapper(SlimeStatusSaveData data)
     {
         HighestGrade = data.HighestGrade;
+        CurrentStage = data.CurrentStage;
+        SkyIntroCompleted = data.SkyIntroCompleted;
         LastSaveTime = data.LastSaveTime;
         ActiveSlimes = new List<SlimeEntryWrapper>();
 
@@ -84,6 +88,8 @@ public class SlimeStatusSaveDataWrapper
         var data = new SlimeStatusSaveData
         {
             HighestGrade = HighestGrade,
+            CurrentStage = CurrentStage,
+            SkyIntroCompleted = SkyIntroCompleted,
             LastSaveTime = LastSaveTime,
             ActiveSlimes = new List<SlimeEntry>()
         };

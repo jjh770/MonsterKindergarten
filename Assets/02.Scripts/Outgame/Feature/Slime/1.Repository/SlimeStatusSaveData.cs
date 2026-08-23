@@ -33,6 +33,12 @@ public class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public List<SlimeEntry> ActiveSlimes { get; set; } = new();
 
+    [FirestoreProperty]
+    public int CurrentStage { get; set; }
+
+    [FirestoreProperty]
+    public bool SkyIntroCompleted { get; set; }
+
     public ESlimeGrade GetHighestGrade() => (ESlimeGrade)HighestGrade;
 
     public Dictionary<ESlimeGrade, int> GetActiveSlimesDict()
@@ -49,6 +55,8 @@ public class SlimeStatusSaveData : ISaveData
     {
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeEntry>(),
+        CurrentStage = (int)EGameStage.Ground,
+        SkyIntroCompleted = false,
     };
 
     [FirestoreProperty]

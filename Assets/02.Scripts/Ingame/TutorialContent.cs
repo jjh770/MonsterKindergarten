@@ -10,6 +10,12 @@ public struct TutorialDialogueLine
 
     public string Speaker => _speaker;
     public string Message => _message;
+
+    public TutorialDialogueLine(string speaker, string message)
+    {
+        _speaker = speaker;
+        _message = message;
+    }
 }
 
 [CreateAssetMenu(
@@ -34,6 +40,10 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private TutorialDialogueLine[] _spawnGaugeDialogue;
     [SerializeField] private TutorialDialogueLine[] _finalDialogue;
 
+    [Header("Stage")]
+    [SerializeField] private string _stageButtonMessage;
+    [SerializeField] private TutorialDialogueLine[] _skyIntroDialogue;
+
     public string ClickMessage => _clickMessage;
     public string PointMessage => _pointMessage;
     public string DragMessage => _dragMessage;
@@ -47,4 +57,6 @@ public sealed class TutorialContent : ScriptableObject
     public TutorialDialogueLine[] SpawnUpgradeDialogue => _spawnUpgradeDialogue;
     public TutorialDialogueLine[] SpawnGaugeDialogue => _spawnGaugeDialogue;
     public TutorialDialogueLine[] FinalDialogue => _finalDialogue;
+    public string StageButtonMessage => _stageButtonMessage;
+    public TutorialDialogueLine[] SkyIntroDialogue => _skyIntroDialogue;
 }

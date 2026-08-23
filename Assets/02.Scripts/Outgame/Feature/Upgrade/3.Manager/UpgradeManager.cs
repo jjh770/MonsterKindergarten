@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEngine;
 public class UpgradeManager : MonoBehaviour
 {
+    private const int GroundMaxCountUpgradeLevel = 20;
+
     public static UpgradeManager Instance { get; private set; }
 
     // 이벤트는 도메인이 아닌 매니저가 가져야함.
@@ -82,7 +84,7 @@ public class UpgradeManager : MonoBehaviour
     {
         if (!_upgrades.TryGetValue((specData.Type, specData.SlimeGrade), out Upgrade upgrade)) return false;
 
-        if (!upgrade.CanLevelUp()) return false;
+        if (!upgrade.CanLevelUp() || IsLockedByProgress(upgrade)) return false;
         // 문제 : 왜 도메인에서 Currency 관련 유효성 검사를 하지 않는가.?
         // 도메인 단에서 Currency를 가져오는건 도메인끼리 침범하는 문제가 발생함.
         // 도메인끼리 협력해서 유효성 검사를 하는 곳은 매니저 단에서 실행.
@@ -93,6 +95,7 @@ public class UpgradeManager : MonoBehaviour
     public bool TryLevelUp(EUpgradeType type, ESlimeGrade grade)
     {
         if (!_upgrades.TryGetValue((type, grade), out Upgrade upgrade)) return false;
+        if (!upgrade.CanLevelUp() || IsLockedByProgress(upgrade)) return false;
 
         Currency cost = upgrade.Cost;
 
@@ -109,6 +112,19 @@ public class UpgradeManager : MonoBehaviour
         OnUpgraded?.Invoke(type, grade);
 
         return true;
+    }
+
+    public bool IsLockedByProgress(Upgrade upgrade)
+    {
+        if (upgrade == null ||
+            upgrade.SpecData.Type != EUpgradeType.MaxCountAdd ||
+            upgrade.Level < GroundMaxCountUpgradeLevel)
+        {
+            return false;
+        }
+
+        return SlimeManager.Instance == null ||
+               !SlimeManager.Instance.IsSkyUnlocked;
     }
 
     private void Save()

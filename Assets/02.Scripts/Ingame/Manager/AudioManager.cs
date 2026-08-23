@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -17,6 +18,7 @@ public class AudioManager : MonoBehaviour
 
     [Header("Audio Sources")]
     [SerializeField] private AudioSource _bgmSource;
+    [SerializeField] private AudioSource _secondaryBgmSource;
     [SerializeField] private AudioSource _sfxSource;
 
     [Header("BGM")]
@@ -29,6 +31,11 @@ public class AudioManager : MonoBehaviour
 
     private AudioMixer _audioMixer;
     private bool _isPaused;
+    private AudioSource _activeBgmSource;
+    private AudioSource _inactiveBgmSource;
+    private Coroutine _bgmFadeCoroutine;
+    private float _primaryBgmWeight = 1f;
+    private float _secondaryBgmWeight;
     private readonly Dictionary<AudioClip, float> _lastSfxPlayedTimes =
         new Dictionary<AudioClip, float>();
 
@@ -63,10 +70,8 @@ public class AudioManager : MonoBehaviour
 
     private void ApplyVolumes()
     {
-        if (_bgmSource != null)
-        {
-            _bgmSource.volume = BGMVolume * MasterVolume;
-        }
+        ApplyBgmVolumes();
+
         if (_sfxSource != null)
         {
             _sfxSource.volume = SFXVolume * MasterVolume;
@@ -99,6 +104,7 @@ public class AudioManager : MonoBehaviour
             else
             {
                 if (_bgmSource != null) _bgmSource.volume = 0f;
+                if (_secondaryBgmSource != null) _secondaryBgmSource.volume = 0f;
                 if (_sfxSource != null) _sfxSource.volume = 0f;
             }
         }
@@ -123,6 +129,15 @@ public class AudioManager : MonoBehaviour
             _bgmSource.playOnAwake = false;
         }
 
+        if (_secondaryBgmSource == null)
+        {
+            var secondaryBgmObj = new GameObject("Secondary BGM Source");
+            secondaryBgmObj.transform.SetParent(transform);
+            _secondaryBgmSource = secondaryBgmObj.AddComponent<AudioSource>();
+            _secondaryBgmSource.loop = true;
+            _secondaryBgmSource.playOnAwake = false;
+        }
+
         if (_sfxSource == null)
         {
             var sfxObj = new GameObject("SFX Source");
@@ -135,6 +150,7 @@ public class AudioManager : MonoBehaviour
         if (_bgmMixerGroup != null)
         {
             _bgmSource.outputAudioMixerGroup = _bgmMixerGroup;
+            _secondaryBgmSource.outputAudioMixerGroup = _bgmMixerGroup;
             _audioMixer = _bgmMixerGroup.audioMixer;
         }
 
@@ -143,6 +159,9 @@ public class AudioManager : MonoBehaviour
             _sfxSource.outputAudioMixerGroup = _sfxMixerGroup;
             _audioMixer ??= _sfxMixerGroup.audioMixer;
         }
+
+        _activeBgmSource = _bgmSource;
+        _inactiveBgmSource = _secondaryBgmSource;
     }
 
     #region BGM
@@ -151,23 +170,117 @@ public class AudioManager : MonoBehaviour
     {
         if (clip == null) return;
 
-        _bgmSource.clip = clip;
-        _bgmSource.Play();
+        StopBgmFade();
+        _activeBgmSource.clip = clip;
+        _activeBgmSource.Play();
+        _inactiveBgmSource.Stop();
+        SetBgmWeight(_activeBgmSource, 1f);
+        SetBgmWeight(_inactiveBgmSource, 0f);
+        ApplyBgmVolumes();
+    }
+
+    public void CrossFadeBGM(AudioClip clip, float duration)
+    {
+        if (clip == null) return;
+        if (_activeBgmSource.clip == clip && _activeBgmSource.isPlaying) return;
+
+        StopBgmFade();
+        _bgmFadeCoroutine = StartCoroutine(CrossFadeBgmRoutine(
+            clip,
+            Mathf.Max(0f, duration)));
     }
 
     public void StopBGM()
     {
+        StopBgmFade();
         _bgmSource.Stop();
+        _secondaryBgmSource.Stop();
     }
 
     public void PauseBGM()
     {
         _bgmSource.Pause();
+        _secondaryBgmSource.Pause();
     }
 
     public void ResumeBGM()
     {
         _bgmSource.UnPause();
+        _secondaryBgmSource.UnPause();
+    }
+
+    private IEnumerator CrossFadeBgmRoutine(AudioClip clip, float duration)
+    {
+        AudioSource previousSource = _activeBgmSource;
+        AudioSource nextSource = _inactiveBgmSource;
+        nextSource.clip = clip;
+        nextSource.Play();
+        SetBgmWeight(nextSource, 0f);
+
+        if (duration <= 0f)
+        {
+            SetBgmWeight(previousSource, 0f);
+            SetBgmWeight(nextSource, 1f);
+        }
+        else
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (!_isPaused)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                }
+
+                float progress = Mathf.Clamp01(elapsed / duration);
+                SetBgmWeight(previousSource, 1f - progress);
+                SetBgmWeight(nextSource, progress);
+                ApplyBgmVolumes();
+                yield return null;
+            }
+        }
+
+        previousSource.Stop();
+        _activeBgmSource = nextSource;
+        _inactiveBgmSource = previousSource;
+        SetBgmWeight(_activeBgmSource, 1f);
+        SetBgmWeight(_inactiveBgmSource, 0f);
+        ApplyBgmVolumes();
+        _bgmFadeCoroutine = null;
+    }
+
+    private void StopBgmFade()
+    {
+        if (_bgmFadeCoroutine == null) return;
+
+        StopCoroutine(_bgmFadeCoroutine);
+        _bgmFadeCoroutine = null;
+    }
+
+    private void SetBgmWeight(AudioSource source, float weight)
+    {
+        if (source == _bgmSource)
+        {
+            _primaryBgmWeight = weight;
+        }
+        else if (source == _secondaryBgmSource)
+        {
+            _secondaryBgmWeight = weight;
+        }
+    }
+
+    private void ApplyBgmVolumes()
+    {
+        if (_bgmSource != null)
+        {
+            _bgmSource.volume = BGMVolume * MasterVolume * _primaryBgmWeight;
+        }
+
+        if (_secondaryBgmSource != null)
+        {
+            _secondaryBgmSource.volume =
+                BGMVolume * MasterVolume * _secondaryBgmWeight;
+        }
     }
 
     #endregion

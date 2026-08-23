@@ -25,7 +25,6 @@ public class SpawnManager : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
-
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
     public float MinSpawnInterval => _minSpawnInterval;
@@ -200,12 +199,16 @@ public class SpawnManager : MonoBehaviour
     {
         if (SlimeSpawner.Instance == null) return null;
 
-        Vector2 randomPos = new Vector2(
-            UnityEngine.Random.Range(_spawnAreaMin.x, _spawnAreaMax.x),
-            UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y)
-        );
+        Vector2 randomPos = GetRandomSpawnPosition();
 
         return SlimeSpawner.Instance.Spawn(grade, randomPos, shouldSave);
+    }
+
+    public Vector2 GetRandomSpawnPosition()
+    {
+        return new Vector2(
+            UnityEngine.Random.Range(_spawnAreaMin.x, _spawnAreaMax.x),
+            UnityEngine.Random.Range(_spawnAreaMin.y, _spawnAreaMax.y));
     }
 
     public void Despawn(SlimeController target)

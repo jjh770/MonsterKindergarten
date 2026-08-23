@@ -10,8 +10,14 @@ public class SlimeStatus
     // 활성 슬라임: Grade별 개수
     private readonly Dictionary<ESlimeGrade, int> _activeSlimes = new();
     public IReadOnlyDictionary<ESlimeGrade, int> ActiveSlimes => _activeSlimes;
+    public EGameStage CurrentStage { get; private set; }
+    public bool SkyIntroCompleted { get; private set; }
 
-    public SlimeStatus(ESlimeGrade highestGrade, Dictionary<ESlimeGrade, int> activeSlimes)
+    public SlimeStatus(
+        ESlimeGrade highestGrade,
+        Dictionary<ESlimeGrade, int> activeSlimes,
+        EGameStage currentStage,
+        bool skyIntroCompleted)
     {
         // 최고 등급 규칙
         if (highestGrade == ESlimeGrade.None || highestGrade == ESlimeGrade.Count)
@@ -19,6 +25,11 @@ public class SlimeStatus
             throw new ArgumentException($"올바른 등급설정이 아닙니다. : {highestGrade}");
         }
         HighestGrade = highestGrade;
+        bool isSkyUnlocked = GameStageRules.IsSkyUnlocked(highestGrade);
+        CurrentStage = isSkyUnlocked && GameStageRules.IsValid(currentStage)
+            ? currentStage
+            : EGameStage.Ground;
+        SkyIntroCompleted = isSkyUnlocked && skyIntroCompleted;
 
         // 활성 슬라임 규칙
         foreach (var pair in activeSlimes)
@@ -36,6 +47,26 @@ public class SlimeStatus
                 _activeSlimes[pair.Key] = pair.Value;
             }
         }
+    }
+
+    public void UpdateStageProgress(
+        EGameStage currentStage,
+        bool skyIntroCompleted)
+    {
+        if (!GameStageRules.IsValid(currentStage))
+        {
+            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {currentStage}");
+        }
+
+        if (currentStage == EGameStage.Sky &&
+            !GameStageRules.IsSkyUnlocked(HighestGrade))
+        {
+            throw new InvalidOperationException("하늘 스테이지가 아직 해금되지 않았습니다.");
+        }
+
+        CurrentStage = currentStage;
+        SkyIntroCompleted = skyIntroCompleted &&
+                            GameStageRules.IsSkyUnlocked(HighestGrade);
     }
 
     // 최고 등급 갱신 (올라가기만 가능)

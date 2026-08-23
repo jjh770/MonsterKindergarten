@@ -2,7 +2,6 @@ using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-[RequireComponent(typeof(Clicker))]
 public sealed class TutorialManager : MonoBehaviour
 {
     private enum TutorialStep
@@ -32,8 +31,10 @@ public sealed class TutorialManager : MonoBehaviour
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField, Min(0f)] private float _mergeSlimeDistance = 1.5f;
 
-    private Clicker _clicker;
-    private AutoClicker _autoClicker;
+    [Header("Input")]
+    [SerializeField] private Clicker _clicker;
+    [SerializeField] private AutoClicker _autoClicker;
+
     private TutorialPresentation _presentation;
     private SlimeController _tutorialSlime;
     private SlimeController _mergeTutorialSlime;
@@ -41,12 +42,6 @@ public sealed class TutorialManager : MonoBehaviour
     private TutorialStep _step;
 
     private TutorialSpotlightView Spotlight => _presentation?.Spotlight;
-
-    private void Awake()
-    {
-        _clicker = GetComponent<Clicker>();
-        _autoClicker = FindFirstObjectByType<AutoClicker>();
-    }
 
     private void Start()
     {

@@ -15,6 +15,11 @@ public class SlimeManager : MonoBehaviour
     public SlimeStatus Status => _status;
     // 호출부가 SlimeStatus 내부 구조를 거치지 않도록 최고 등급은 매니저가 직접 노출한다.
     public ESlimeGrade HighestGrade => _status.HighestGrade;
+    public EGameStage CurrentStage => _status.CurrentStage;
+    public bool SkyIntroCompleted => _status.SkyIntroCompleted;
+    public bool IsSkyUnlocked =>
+        _status != null &&
+        GameStageRules.IsSkyUnlocked(_status.HighestGrade);
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
@@ -54,7 +59,11 @@ public class SlimeManager : MonoBehaviour
 #endif
 
         SlimeStatusSaveData saveData = await _statusRepository.Load();
-        _status = new SlimeStatus(saveData.GetHighestGrade(), saveData.GetActiveSlimesDict());
+        _status = new SlimeStatus(
+            saveData.GetHighestGrade(),
+            saveData.GetActiveSlimesDict(),
+            (EGameStage)saveData.CurrentStage,
+            saveData.SkyIntroCompleted);
 
         OnDataInitialized?.Invoke();
     }
@@ -62,6 +71,18 @@ public class SlimeManager : MonoBehaviour
     public Slime Get(ESlimeGrade grade)
     {
         return _slimes.Find(s => s.SpecData.Grade == grade);
+    }
+
+    public string GetName(ESlimeGrade grade)
+    {
+        Slime slime = Get(grade);
+
+        if (slime == null)
+        {
+            throw new InvalidOperationException($"{grade}에 해당하는 슬라임 스펙이 없습니다.");
+        }
+
+        return slime.SpecData.Name;
     }
 
     public bool CanMerge(Slime slime1, Slime slime2)
@@ -85,6 +106,20 @@ public class SlimeManager : MonoBehaviour
     {
         ESlimeGrade maxGrade = _slimes[^1].SpecData.Grade;
         return _status.HighestGrade >= maxGrade;
+    }
+
+    public void UpdateStageProgress(
+        EGameStage currentStage,
+        bool skyIntroCompleted)
+    {
+        if (_status.CurrentStage == currentStage &&
+            _status.SkyIntroCompleted == skyIntroCompleted)
+        {
+            return;
+        }
+
+        _status.UpdateStageProgress(currentStage, skyIntroCompleted);
+        Save();
     }
 
     // 슬라임 스폰 시 호출
@@ -120,7 +155,9 @@ public class SlimeManager : MonoBehaviour
         var saveData = new SlimeStatusSaveData
         {
             HighestGrade = (int)_status.HighestGrade,
-            ActiveSlimes = new List<SlimeEntry>()
+            ActiveSlimes = new List<SlimeEntry>(),
+            CurrentStage = (int)_status.CurrentStage,
+            SkyIntroCompleted = _status.SkyIntroCompleted,
         };
 
         foreach (var pair in _status.ActiveSlimes)

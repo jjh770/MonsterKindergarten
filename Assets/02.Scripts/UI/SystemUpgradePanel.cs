@@ -80,6 +80,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void OnUpgradeRequested(EUpgradeType type)
     {
         if (!_upgrades.TryGetValue(type, out Upgrade upgrade)) return;
+        if (UpgradeManager.Instance.IsLockedByProgress(upgrade)) return;
 
         if (!UpgradeManager.Instance.TryLevelUp(type, ESlimeGrade.None) &&
             !upgrade.IsMaxLevel)
@@ -115,10 +116,11 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 continue;
             }
 
+            bool isLocked = UpgradeManager.Instance.IsLockedByProgress(upgrade);
             bool isMax = IsMax(upgrade);
-            string valueText = BuildValueText(upgrade, isMax);
-            string costText = BuildCostText(upgrade, isMax);
-            item.Refresh(valueText, costText, isMax);
+            string valueText = BuildValueText(upgrade, isMax, isLocked);
+            string costText = BuildCostText(upgrade, isMax, isLocked);
+            item.Refresh(valueText, costText, isMax || isLocked);
         }
     }
 
@@ -130,11 +132,19 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval;
     }
 
-    private static string BuildValueText(Upgrade upgrade, bool isMax)
+    private static string BuildValueText(
+        Upgrade upgrade,
+        bool isMax,
+        bool isLocked)
     {
         string icon = upgrade.SpecData.SystemIconIndex >= 0
-            ? $"<sprite={upgrade.SpecData.SystemIconIndex}>"
+            ? $"<sprite name=\"{upgrade.SpecData.SystemIconIndex:00}\">"
             : string.Empty;
+
+        if (isLocked)
+        {
+            return string.Empty;
+        }
 
         if (isMax)
         {
@@ -155,14 +165,22 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         };
     }
 
-    private string BuildCostText(Upgrade upgrade, bool isMax)
+    private string BuildCostText(
+        Upgrade upgrade,
+        bool isMax,
+        bool isLocked)
     {
+        if (isLocked)
+        {
+            return "레벨 11 해금 필요";
+        }
+
         if (isMax)
         {
-            return $"<sprite={(int)_highestGrade}>MAX";
+            return $"<sprite name=\"{(int)_highestGrade:00}\">MAX";
         }
 
         double cost = (double)upgrade.Cost;
-        return $"<sprite={(int)_highestGrade}>{cost.ToFormattedString()}";
+        return $"<sprite name=\"{(int)_highestGrade:00}\">{cost.ToFormattedString()}";
     }
 }
