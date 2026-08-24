@@ -21,9 +21,9 @@ MonoBehaviour:
     SpawnCap: 3
   - FromHighestGrade: 11
     SpawnCap: 4
-  - FromHighestGrade: 14
+  - FromHighestGrade: 13
     SpawnCap: 5
-  - FromHighestGrade: 17
+  - FromHighestGrade: 16
     SpawnCap: 6
   _upgradeTiers:
   - FromUpgradeLevel: 0

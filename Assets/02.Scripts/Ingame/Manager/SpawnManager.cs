@@ -5,18 +5,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
-public readonly struct SpawnProbability
-{
-    public ESlimeGrade Grade { get; }
-    public float Probability { get; }
-
-    public SpawnProbability(ESlimeGrade grade, float probability)
-    {
-        Grade = grade;
-        Probability = probability;
-    }
-}
-
 public class SpawnManager : MonoBehaviour
 {
     public static SpawnManager Instance { get; private set; }
@@ -262,46 +250,16 @@ public class SpawnManager : MonoBehaviour
 
     public List<SpawnProbability> GetCurrentSpawnProbabilities()
     {
-        var probabilities = new List<SpawnProbability>();
         if (_spawnWeightTable == null || SlimeManager.Instance == null)
         {
-            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1f));
+            var probabilities = new List<SpawnProbability>();
+            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1));
             return probabilities;
         }
 
-        int upgradeLevel = GetSpawnWeightUpgradeLevel();
-        ESlimeGrade cap = _spawnWeightTable.GetSpawnCap(
+        return _spawnWeightTable.GetSpawnProbabilities(
             SlimeManager.Instance.HighestGrade,
-            upgradeLevel);
-        double totalWeight = 0;
-
-        for (int grade = (int)ESlimeGrade.Grade1; grade <= (int)cap; grade++)
-        {
-            totalWeight += _spawnWeightTable.GetEffectiveWeight(
-                (ESlimeGrade)grade,
-                upgradeLevel);
-        }
-
-        if (totalWeight <= 0)
-        {
-            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1f));
-            return probabilities;
-        }
-
-        for (int grade = (int)ESlimeGrade.Grade1; grade <= (int)cap; grade++)
-        {
-            ESlimeGrade slimeGrade = (ESlimeGrade)grade;
-            double weight = _spawnWeightTable.GetEffectiveWeight(
-                slimeGrade,
-                upgradeLevel);
-            if (weight <= 0) continue;
-
-            probabilities.Add(new SpawnProbability(
-                slimeGrade,
-                (float)(weight / totalWeight)));
-        }
-
-        return probabilities;
+            GetSpawnWeightUpgradeLevel());
     }
 
     private static int GetSpawnWeightUpgradeLevel()
@@ -358,16 +316,6 @@ public class SpawnManager : MonoBehaviour
         if (upgrade == null) return;
 
         MaxActiveCount = _baseMaxActiveCount + Mathf.RoundToInt((float)upgrade.Point);
-    }
-
-    public void DecreaseInterval()
-    {
-        ApplySpawnIntervalUpgrade();
-    }
-
-    public void IncreaseMaxCount()
-    {
-        ApplySpawnMaxCountUpgrade();
     }
 
     public void SetSpawningPaused(bool isPaused)

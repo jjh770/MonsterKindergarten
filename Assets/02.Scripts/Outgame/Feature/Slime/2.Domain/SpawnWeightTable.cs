@@ -1,5 +1,18 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+public readonly struct SpawnProbability
+{
+    public ESlimeGrade Grade { get; }
+    public double Probability { get; }
+
+    public SpawnProbability(ESlimeGrade grade, double probability)
+    {
+        Grade = grade;
+        Probability = probability;
+    }
+}
 
 // 자연 스폰의 등급 상한과 등급별 가중치를 담는 밸런스 테이블.
 // 최고 해금 등급이 오를수록 더 높은 등급이 자연 스폰되며,
@@ -136,21 +149,6 @@ public class SpawnWeightTable : ScriptableObject
                GetUpgradeSpawnCap(upgradeLevel - 1);
     }
 
-    public int GetBaseWeight(ESlimeGrade grade)
-    {
-        if (_baseWeights == null) return 0;
-
-        foreach (SpawnWeightEntry entry in _baseWeights)
-        {
-            if (entry != null && entry.Grade == grade)
-            {
-                return Mathf.Max(0, entry.BaseWeight);
-            }
-        }
-
-        return 0;
-    }
-
     public double GetEffectiveWeight(ESlimeGrade grade, int upgradeLevel)
     {
         if (_baseWeights == null) return 0;
@@ -170,31 +168,59 @@ public class SpawnWeightTable : ScriptableObject
         return 0;
     }
 
+    public List<SpawnProbability> GetSpawnProbabilities(
+        ESlimeGrade highestGrade,
+        int upgradeLevel = 0)
+    {
+        var probabilities = new List<SpawnProbability>();
+        int cap = (int)GetSpawnCap(highestGrade, upgradeLevel);
+        double totalWeight = 0;
+
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
+        {
+            ESlimeGrade slimeGrade = (ESlimeGrade)grade;
+            double weight = GetEffectiveWeight(slimeGrade, upgradeLevel);
+            if (weight <= 0) continue;
+
+            probabilities.Add(new SpawnProbability(slimeGrade, weight));
+            totalWeight += weight;
+        }
+
+        if (totalWeight <= 0)
+        {
+            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1));
+            return probabilities;
+        }
+
+        for (int i = 0; i < probabilities.Count; ++i)
+        {
+            SpawnProbability entry = probabilities[i];
+            probabilities[i] = new SpawnProbability(
+                entry.Grade,
+                entry.Probability / totalWeight);
+        }
+
+        return probabilities;
+    }
+
     // 상한 이하 등급을 가중치로 추첨한다.
     // 테이블이 비었거나 가중치 합이 0이면 Grade1을 반환해 스폰이 멈추지 않게 한다.
     public ESlimeGrade PickSpawnGrade(
         ESlimeGrade highestGrade,
         int upgradeLevel = 0)
     {
-        int cap = (int)GetSpawnCap(highestGrade, upgradeLevel);
-        double total = 0;
+        List<SpawnProbability> probabilities = GetSpawnProbabilities(
+            highestGrade,
+            upgradeLevel);
+        double roll = UnityEngine.Random.value;
 
-        for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
+        foreach (SpawnProbability probability in probabilities)
         {
-            total += GetEffectiveWeight((ESlimeGrade)grade, upgradeLevel);
+            roll -= probability.Probability;
+            if (roll < 0) return probability.Grade;
         }
 
-        if (total <= 0) return ESlimeGrade.Grade1;
-
-        double roll = UnityEngine.Random.value * total;
-
-        for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
-        {
-            roll -= GetEffectiveWeight((ESlimeGrade)grade, upgradeLevel);
-            if (roll < 0) return (ESlimeGrade)grade;
-        }
-
-        return ESlimeGrade.Grade1;
+        return probabilities[probabilities.Count - 1].Grade;
     }
 
     // 구간별 레벨 수 x 레벨당 진행도를 합산한다.
