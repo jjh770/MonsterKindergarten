@@ -149,7 +149,7 @@ public class SpawnWeightTable : ScriptableObject
                GetUpgradeSpawnCap(upgradeLevel - 1);
     }
 
-    public double GetEffectiveWeight(ESlimeGrade grade, int upgradeLevel)
+    private double GetEffectiveWeight(ESlimeGrade grade, double progress)
     {
         if (_baseWeights == null) return 0;
 
@@ -161,7 +161,6 @@ public class SpawnWeightTable : ScriptableObject
             int maxWeight = entry.MaxUpgradeWeight > 0
                 ? entry.MaxUpgradeWeight
                 : baseWeight;
-            double progress = GetUpgradeProgress(upgradeLevel);
             return baseWeight + (maxWeight - baseWeight) * progress;
         }
 
@@ -174,12 +173,13 @@ public class SpawnWeightTable : ScriptableObject
     {
         var probabilities = new List<SpawnProbability>();
         int cap = (int)GetSpawnCap(highestGrade, upgradeLevel);
+        double progress = GetUpgradeProgress(upgradeLevel);
         double totalWeight = 0;
 
         for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
         {
             ESlimeGrade slimeGrade = (ESlimeGrade)grade;
-            double weight = GetEffectiveWeight(slimeGrade, upgradeLevel);
+            double weight = GetEffectiveWeight(slimeGrade, progress);
             if (weight <= 0) continue;
 
             probabilities.Add(new SpawnProbability(slimeGrade, weight));
