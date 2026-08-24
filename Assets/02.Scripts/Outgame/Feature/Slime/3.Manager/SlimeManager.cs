@@ -87,9 +87,14 @@ public class SlimeManager : MonoBehaviour
         SlimeStatusSaveData saveData = await _statusRepository.Load();
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
-            saveData.GetActiveSlimesDict(),
+            saveData.ActiveSlimes,
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
+
+        if (saveData.WasMigrated)
+        {
+            await SaveCurrentAsync();
+        }
 
         OnDataInitialized?.Invoke();
     }
@@ -149,20 +154,19 @@ public class SlimeManager : MonoBehaviour
     }
 
     // 슬라임 스폰 시 호출
-    public void AddSlime(ESlimeGrade grade)
+    public void AddSlime(SlimeInstance instance)
     {
-        _status.AddSlime(grade);
+        _status.AddSlime(instance);
         Save();
     }
 
-    // 머지 시 호출 (두 슬라임 제거 + 새 슬라임 추가)
-    // 디스폰 시의 카운트 차감도 이 메서드가 함께 처리한다.
-    // 단독 디스폰 경로를 추가할 경우 SlimeSpawner.Despawn과의 회계 분담부터 재설계할 것.
-    public void MergeSlime(ESlimeGrade fromGrade, ESlimeGrade toGrade)
+    // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.
+    public void MergeSlime(
+        SlimeInstance keeper,
+        SlimeInstance removed,
+        ESlimeGrade toGrade)
     {
-        _status.RemoveSlime(fromGrade); // keeper 기존 등급 제거
-        _status.RemoveSlime(fromGrade); // removed 슬라임 제거
-        _status.AddSlime(toGrade);      // 새 등급 추가
+        _status.MergeSlimes(keeper, removed, toGrade);
         Save();
     }
 
@@ -182,14 +186,14 @@ public class SlimeManager : MonoBehaviour
         {
             SchemaVersion = SaveSchema.SlimeCurrentVersion,
             HighestGrade = (int)_status.HighestGrade,
-            ActiveSlimes = new List<SlimeEntry>(),
+            ActiveSlimes = new List<SlimeInstance>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
         };
 
-        foreach (var pair in _status.ActiveSlimes)
+        foreach (SlimeInstance instance in _status.ActiveSlimes)
         {
-            saveData.ActiveSlimes.Add(new SlimeEntry(pair.Key, pair.Value));
+            saveData.ActiveSlimes.Add(new SlimeInstance(instance));
         }
 
         return _statusRepository.Save(saveData);

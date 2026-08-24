@@ -155,14 +155,16 @@ public class SpawnManager : MonoBehaviour
     {
         SlimeStatus status = SlimeManager.Instance.Status;
 
-        foreach (var item in status.ActiveSlimes)
+        foreach (SlimeInstance instance in status.ActiveSlimes)
         {
-            int count = item.Value;
-
-            for (int i = 0; i < count; ++i)
+            if (instance.GetLocation() != ESlimeLocation.MainStage)
             {
-                Spawn(item.Key, shouldSave: false);
+                continue;
             }
+
+            SlimeSpawner.Instance.Spawn(
+                instance,
+                GetRandomSpawnPosition());
         }
     }
 

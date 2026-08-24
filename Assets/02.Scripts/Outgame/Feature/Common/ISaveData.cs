@@ -10,6 +10,7 @@ public static class SaveSchema
     // SchemaVersion 필드가 없는 기존 저장 데이터는 LegacyVersion으로 로드된다.
     public const int LegacyVersion = 0;
     public const int CurrencyCurrentVersion = 1;
-    public const int SlimeCurrentVersion = 1;
+    // v2: ActiveSlimes를 등급별 개수에서 SlimeInstance 목록으로 전환했다.
+    public const int SlimeCurrentVersion = 2;
     public const int UpgradeCurrentVersion = 1;
 }

@@ -220,17 +220,23 @@ public class GameManager : MonoBehaviour
     {
         double total = 0d;
 
-        foreach (var pair in SlimeManager.Instance.Status.ActiveSlimes)
+        foreach (SlimeInstance instance in SlimeManager.Instance.Status.ActiveSlimes)
         {
-            Slime slime = SlimeManager.Instance.Get(pair.Key);
-            if (slime == null || pair.Value <= 0 || slime.SpecData.AutoClickInterval <= 0f) continue;
+            if (instance.GetLocation() != ESlimeLocation.MainStage)
+            {
+                continue;
+            }
+
+            ESlimeGrade grade = instance.GetGrade();
+            Slime slime = SlimeManager.Instance.Get(grade);
+            if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
 
             double point = PointCalculator.Calculate(
                 slime.SpecData.Point,
-                pair.Key,
+                grade,
                 EClickType.Auto);
 
-            total += point / slime.SpecData.AutoClickInterval * pair.Value;
+            total += point / slime.SpecData.AutoClickInterval;
         }
 
         return total;

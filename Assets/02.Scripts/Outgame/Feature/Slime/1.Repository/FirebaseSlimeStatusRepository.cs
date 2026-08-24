@@ -31,9 +31,31 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
         {
             string userId = _auth.CurrentUser.UserId;
             DocumentSnapshot snapshot = await _db.Collection(COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
+
+            if (!snapshot.Exists)
+            {
+                return SlimeStatusSaveData.Default;
+            }
+
+            int schemaVersion = SaveSchema.LegacyVersion;
+            if (snapshot.TryGetValue<long>(
+                    nameof(ISaveData.SchemaVersion),
+                    out long storedSchemaVersion))
+            {
+                schemaVersion = (int)storedSchemaVersion;
+            }
+
+            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            {
+                LegacySlimeStatusSaveData legacyData =
+                    snapshot.ConvertTo<LegacySlimeStatusSaveData>();
+                return SlimeStatusSaveMigration.Upgrade(legacyData);
+            }
+
             SlimeStatusSaveData data = snapshot.ConvertTo<SlimeStatusSaveData>();
             if (data != null)
             {
+                data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstance>();
                 return data;
             }
             return SlimeStatusSaveData.Default;

@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
@@ -43,13 +43,28 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             string json = PlayerPrefs.GetString(key);
-            SlimeStatusSaveData saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(json);
+            JObject root = JObject.Parse(json);
+            int schemaVersion = root.Value<int?>(nameof(ISaveData.SchemaVersion)) ??
+                                SaveSchema.LegacyVersion;
+
+            SlimeStatusSaveData saveData;
+            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            {
+                LegacySlimeStatusSaveData legacyData =
+                    JsonConvert.DeserializeObject<LegacySlimeStatusSaveData>(json);
+                saveData = SlimeStatusSaveMigration.Upgrade(legacyData);
+            }
+            else
+            {
+                saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(json);
+            }
+
             if (saveData == null)
             {
                 return UniTask.FromResult(SlimeStatusSaveData.Default);
             }
 
-            saveData.ActiveSlimes ??= new List<SlimeEntry>();
+            saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstance>();
             return UniTask.FromResult(saveData);
         }
         catch (Exception e)
