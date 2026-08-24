@@ -25,6 +25,22 @@ MonoBehaviour:
     SpawnCap: 5
   - FromHighestGrade: 17
     SpawnCap: 6
+  _upgradeTiers:
+  - FromUpgradeLevel: 0
+    SpawnCap: 2
+    ProgressPerLevel: 0.01
+  - FromUpgradeLevel: 11
+    SpawnCap: 3
+    ProgressPerLevel: 0.015
+  - FromUpgradeLevel: 21
+    SpawnCap: 4
+    ProgressPerLevel: 0.02
+  - FromUpgradeLevel: 31
+    SpawnCap: 5
+    ProgressPerLevel: 0.025
+  - FromUpgradeLevel: 41
+    SpawnCap: 6
+    ProgressPerLevel: 0.03
   _baseWeights:
   - Grade: 1
     BaseWeight: 1000

@@ -35,6 +35,13 @@ public class SlimeManager : MonoBehaviour
                    currentUpgradeLevel);
     }
 
+    // 다음 레벨에서 자연 스폰 상한이 올라가는지 판정한다.
+    public bool IsSpawnCapRaisedAtNextLevel(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable != null &&
+               _spawnWeightTable.IsSpawnCapRaisedAt(currentUpgradeLevel + 1);
+    }
+
     // 다음 스폰 상한 구간을 열기 위해 필요한 최고 해금 등급.
     public ESlimeGrade GetRequiredHighestGradeForSpawnTier(int currentUpgradeLevel)
     {

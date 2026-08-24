@@ -29,7 +29,23 @@ public class SpawnWeightTable : ScriptableObject
         public int MaxUpgradeWeight;
     }
 
+    [Serializable]
+    public class UpgradeTierEntry
+    {
+        [Tooltip("업그레이드 레벨이 이 값 이상일 때 적용된다.")]
+        [Min(0)]
+        public int FromUpgradeLevel;
+
+        [Tooltip("그때의 자연 스폰 상한 등급.")]
+        public ESlimeGrade SpawnCap;
+
+        [Tooltip("이 구간에서 레벨 하나당 오르는 가중치 진행도. 전 구간 합이 1이 되게 채운다.")]
+        [Min(0f)]
+        public float ProgressPerLevel;
+    }
+
     [SerializeField] private SpawnCapEntry[] _spawnCaps;
+    [SerializeField] private UpgradeTierEntry[] _upgradeTiers;
     [SerializeField] private SpawnWeightEntry[] _baseWeights;
 
     // 최고 해금 등급에 해당하는 자연 스폰 상한을 구한다.
@@ -94,13 +110,30 @@ public class SpawnWeightTable : ScriptableObject
         return requiredHighestGrade;
     }
 
-    public static ESlimeGrade GetUpgradeSpawnCap(int upgradeLevel)
+    // 업그레이드 레벨이 도달한 구간의 자연 스폰 상한을 구한다.
+    // _spawnCaps와 같이 배열 순서에 의존하지 않는다.
+    private ESlimeGrade GetUpgradeSpawnCap(int upgradeLevel)
     {
-        if (upgradeLevel >= 41) return ESlimeGrade.Grade6;
-        if (upgradeLevel >= 31) return ESlimeGrade.Grade5;
-        if (upgradeLevel >= 21) return ESlimeGrade.Grade4;
-        if (upgradeLevel >= 11) return ESlimeGrade.Grade3;
-        return ESlimeGrade.Grade2;
+        ESlimeGrade cap = ESlimeGrade.Grade1;
+
+        if (_upgradeTiers == null) return cap;
+
+        foreach (UpgradeTierEntry tier in _upgradeTiers)
+        {
+            if (tier == null) continue;
+            if (tier.FromUpgradeLevel > upgradeLevel) continue;
+            if (tier.SpawnCap > cap) cap = tier.SpawnCap;
+        }
+
+        return cap;
+    }
+
+    // 해당 레벨에서 자연 스폰 상한이 한 단계 올라가는지 판정한다.
+    public bool IsSpawnCapRaisedAt(int upgradeLevel)
+    {
+        return upgradeLevel > 0 &&
+               GetUpgradeSpawnCap(upgradeLevel) >
+               GetUpgradeSpawnCap(upgradeLevel - 1);
     }
 
     public int GetBaseWeight(ESlimeGrade grade)
@@ -164,17 +197,40 @@ public class SpawnWeightTable : ScriptableObject
         return ESlimeGrade.Grade1;
     }
 
-    private static double GetUpgradeProgress(int upgradeLevel)
+    // 구간별 레벨 수 x 레벨당 진행도를 합산한다.
+    // 레벨 단위로 순회하지 않으므로 저장 데이터의 레벨이 최대치를 넘어도 안전하다.
+    private double GetUpgradeProgress(int upgradeLevel)
     {
-        int clampedLevel = Mathf.Clamp(upgradeLevel, 0, 50);
-        double accumulatedRate = 0;
+        if (_upgradeTiers == null || upgradeLevel <= 0) return 0;
 
-        for (int level = 1; level <= clampedLevel; level++)
+        double progress = 0;
+
+        foreach (UpgradeTierEntry tier in _upgradeTiers)
         {
-            int tier = (level - 1) / 10;
-            accumulatedRate += 0.02 + tier * 0.01;
+            if (tier == null) continue;
+
+            int tierStart = Mathf.Max(1, tier.FromUpgradeLevel);
+            int tierEnd = upgradeLevel;
+
+            // 뒤에서 시작하는 구간이 있으면 그 직전 레벨까지만 이 구간으로 센다.
+            foreach (UpgradeTierEntry next in _upgradeTiers)
+            {
+                if (next == null ||
+                    next.FromUpgradeLevel <= tier.FromUpgradeLevel)
+                {
+                    continue;
+                }
+
+                tierEnd = Mathf.Min(tierEnd, next.FromUpgradeLevel - 1);
+            }
+
+            int levelCount = tierEnd - tierStart + 1;
+            if (levelCount > 0)
+            {
+                progress += levelCount * (double)tier.ProgressPerLevel;
+            }
         }
 
-        return Math.Min(1, accumulatedRate / 2.0);
+        return Math.Min(1, Math.Max(0, progress));
     }
 }

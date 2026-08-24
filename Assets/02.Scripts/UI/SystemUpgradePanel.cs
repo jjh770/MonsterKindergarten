@@ -620,11 +620,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
 
     private static bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)
     {
-        int nextLevel = currentUpgradeLevel + 1;
-        return nextLevel == 11 ||
-               nextLevel == 21 ||
-               nextLevel == 31 ||
-               nextLevel == 41;
+        return SlimeManager.Instance != null &&
+               SlimeManager.Instance.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
     private string BuildCostText(
@@ -643,7 +640,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
                 return $"최고 Lv.{(int)requiredGrade} 해금 필요";
             }
 
-            return "레벨 11 해금 필요";
+            return $"레벨 {(int)GameStageRules.SkyEntryGrade} 해금 필요";
         }
 
         if (isMax)
