@@ -7,6 +7,7 @@
 public static class SaveSchema
 {
     // 저장 구조를 변경할 때 해당 도메인의 버전을 올리고, 이전 버전의 승격 로직을 함께 추가한다.
+    // 각 저장소는 CurrentVersion보다 높은 데이터를 로드하거나 덮어쓰지 않도록 차단한다.
     // SchemaVersion 필드가 없는 기존 저장 데이터는 LegacyVersion으로 로드된다.
     public const int LegacyVersion = 0;
     public const int CurrencyCurrentVersion = 1;
