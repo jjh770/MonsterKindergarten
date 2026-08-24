@@ -9,7 +9,6 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Camera _camera;
     [SerializeField] private StageUI _stageUI;
-    [SerializeField] private SpriteRenderer _skyBackgroundRenderer;
 
     [Header("Stage Audio")]
     [SerializeField] private AudioClip _groundBgm;
@@ -26,7 +25,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     private void Awake()
     {
-        if (_camera == null || _stageUI == null || _skyBackgroundRenderer == null)
+        if (_camera == null || _stageUI == null)
         {
             Debug.LogError("스테이지 전환 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -43,7 +42,6 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     public void ApplyEnvironment(EGameStage stage, float crossFadeDuration)
     {
-        _skyBackgroundRenderer.enabled = true;
         _camera.backgroundColor = Color.white;
 
         if (crossFadeDuration < 0f || AudioManager.Instance == null) return;
@@ -133,6 +131,53 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                     halfDuration).SetEase(Ease.OutQuad));
         }
 
+        _transitionSequence.OnComplete(() =>
+        {
+            _transitionSequence = null;
+            _camera.transform.position = _cameraBasePosition;
+            _stageUI.EndOverlay();
+            IsTransitioning = false;
+            _stageUI.SetButtonInteractable(true);
+            onCompleted?.Invoke();
+        });
+    }
+
+    public void PlaySpace(
+        EGameplaySpace targetSpace,
+        Action onSpaceSwitched,
+        Action onCompleted)
+    {
+        if (IsTransitioning) return;
+
+        IsTransitioning = true;
+        _stageUI.SetButtonInteractable(false);
+        _stageUI.BeginOverlay();
+
+        float direction = targetSpace == EGameplaySpace.DisplayRoom ? 1f : -1f;
+        float halfDuration = _transitionDuration * 0.5f;
+
+        _transitionSequence?.Kill();
+        _transitionSequence = DOTween.Sequence();
+        _transitionSequence.Join(
+            _camera.transform.DOMoveX(
+                _cameraBasePosition.x + direction * _cameraTravelDistance,
+                halfDuration).SetEase(Ease.InQuad));
+        _transitionSequence.Join(
+            _stageUI.FadeOverlay(1f, halfDuration));
+        _transitionSequence.AppendCallback(() =>
+        {
+            onSpaceSwitched?.Invoke();
+
+            Vector3 cameraPosition = _cameraBasePosition;
+            cameraPosition.x -= direction * _cameraTravelDistance;
+            _camera.transform.position = cameraPosition;
+        });
+        _transitionSequence.Append(
+            _camera.transform.DOMoveX(
+                _cameraBasePosition.x,
+                halfDuration).SetEase(Ease.OutQuad));
+        _transitionSequence.Join(
+            _stageUI.FadeOverlay(0f, halfDuration));
         _transitionSequence.OnComplete(() =>
         {
             _transitionSequence = null;

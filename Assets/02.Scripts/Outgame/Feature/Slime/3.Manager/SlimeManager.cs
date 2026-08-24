@@ -206,6 +206,13 @@ public class SlimeManager : MonoBehaviour
         Save();
     }
 
+    // 이동 검증과 저장을 한 경계에서 처리해 UI가 개체를 직접 변경하지 않게 한다.
+    public void MoveSlime(string instanceId, ESlimeLocation location)
+    {
+        _status.MoveSlime(instanceId, location);
+        Save();
+    }
+
     // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.
     public void MergeSlime(
         string keeperId,

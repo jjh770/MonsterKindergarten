@@ -3,6 +3,12 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
+public enum EGameplaySpace
+{
+    MainStage,
+    DisplayRoom,
+}
+
 public sealed class StageManager : MonoBehaviour
 {
     public static StageManager Instance { get; private set; }
@@ -16,11 +22,17 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
 
     private EGameStage _currentStage = EGameStage.Ground;
+    private EGameplaySpace _currentSpace = EGameplaySpace.MainStage;
     private bool _isInitializeStarted;
     private bool _isInitialized;
 
     public EGameStage CurrentStage => _currentStage;
+    public EGameplaySpace CurrentSpace => _currentSpace;
+    public bool IsMainStageActive => _currentSpace == EGameplaySpace.MainStage;
+    public bool IsTransitioning => _transitionPlayer != null &&
+                                   _transitionPlayer.IsTransitioning;
     public event Action<EGameStage> StageChanged;
+    public event Action<EGameplaySpace> SpaceChanged;
 
     private void Awake()
     {
@@ -95,8 +107,51 @@ public sealed class StageManager : MonoBehaviour
 
     public bool IsStageActive(ESlimeGrade grade)
     {
-        return !_transitionPlayer.IsTransitioning &&
+        return IsMainStageActive &&
+               !_transitionPlayer.IsTransitioning &&
                GameStageRules.GetStage(grade) == _currentStage;
+    }
+
+    public bool TryEnterDisplayRoom()
+    {
+        if (!_isInitialized ||
+            !IsMainStageActive ||
+            _transitionPlayer.IsTransitioning ||
+            GameManager.Instance == null ||
+            !GameManager.Instance.IsGameplayActive ||
+            SlimeManager.Instance == null ||
+            SlimeManager.Instance.HighestGrade < ESlimeGrade.Grade3 ||
+            (SlimeManager.Instance.IsSkyUnlocked &&
+             !SlimeManager.Instance.SkyIntroCompleted))
+        {
+            return false;
+        }
+
+        _upgradeUI.TryClose();
+        SetInteractionEnabled(false);
+        _transitionPlayer.PlaySpace(
+            EGameplaySpace.DisplayRoom,
+            () => SetCurrentSpace(EGameplaySpace.DisplayRoom),
+            onCompleted: null);
+        return true;
+    }
+
+    public bool TryExitDisplayRoom()
+    {
+        if (!_isInitialized ||
+            IsMainStageActive ||
+            _transitionPlayer.IsTransitioning)
+        {
+            return false;
+        }
+
+        _transitionPlayer.PlaySpace(
+            EGameplaySpace.MainStage,
+            () => SetCurrentSpace(EGameplaySpace.MainStage),
+            () => SetInteractionEnabled(
+                GameManager.Instance != null &&
+                GameManager.Instance.IsGameplayActive));
+        return true;
     }
 
     private bool HasRequiredReferences()
@@ -196,8 +251,7 @@ public sealed class StageManager : MonoBehaviour
     {
         if (!_isInitialized || target == null) return;
 
-        bool isActive = GameStageRules.GetStage(target.Grade) == _currentStage;
-        target.SetStagePresentationActive(isActive);
+        target.SetStagePresentationActive(IsMainStageSlimeVisible(target));
     }
 
     private void OnMerged(
@@ -256,6 +310,7 @@ public sealed class StageManager : MonoBehaviour
     private void OnStageButtonClicked()
     {
         if (!_isInitialized ||
+            !IsMainStageActive ||
             _transitionPlayer.IsTransitioning ||
             GameManager.Instance == null ||
             !GameManager.Instance.IsGameplayActive ||
@@ -336,9 +391,30 @@ public sealed class StageManager : MonoBehaviour
         {
             if (target == null) continue;
 
-            bool isActive = GameStageRules.GetStage(target.Grade) == _currentStage;
-            target.SetStagePresentationActive(isActive);
+            target.SetStagePresentationActive(IsMainStageSlimeVisible(target));
         }
+    }
+
+    private bool IsMainStageSlimeVisible(SlimeController target)
+    {
+        return target != null &&
+               IsMainStageActive &&
+               target.Location == ESlimeLocation.MainStage &&
+               GameStageRules.GetStage(target.Grade) == _currentStage;
+    }
+
+    private void SetCurrentSpace(EGameplaySpace space)
+    {
+        if (_currentSpace == space) return;
+
+        _currentSpace = space;
+        ApplyAllSlimeVisibility();
+        _stageUI.SetButtonVisible(
+            IsMainStageActive &&
+            SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsSkyUnlocked,
+            animated: false);
+        SpaceChanged?.Invoke(_currentSpace);
     }
 
     private SlimeController FindFirstSkySlime()

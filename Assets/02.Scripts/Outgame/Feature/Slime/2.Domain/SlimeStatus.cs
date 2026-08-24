@@ -90,6 +90,37 @@ public class SlimeStatus
         _activeSlimes.Add(instance);
     }
 
+    public void MoveSlime(string instanceId, ESlimeLocation location)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId))
+        {
+            throw new ArgumentException("이동할 슬라임 개체 ID가 비어 있습니다.", nameof(instanceId));
+        }
+
+        if (!SlimeLocationRules.IsValid(location))
+        {
+            throw new ArgumentException(
+                $"유효하지 않은 슬라임 위치입니다. : {location}",
+                nameof(location));
+        }
+
+        SlimeInstance instance = _activeSlimes.Find(
+            active => active.InstanceId == instanceId);
+        if (instance == null)
+        {
+            throw new InvalidOperationException(
+                $"저장 상태에 없는 슬라임은 이동할 수 없습니다. : {instanceId}");
+        }
+
+        if (instance.Location == location)
+        {
+            throw new InvalidOperationException(
+                $"이미 해당 위치에 있는 슬라임입니다. : {instanceId}, {location}");
+        }
+
+        instance.MoveTo(location);
+    }
+
     public void MergeSlimes(
         string keeperId,
         string removedId,

@@ -48,7 +48,7 @@ public sealed class SlimeInstance
         Grade = grade;
     }
 
-    public void MoveTo(ESlimeLocation location)
+    internal void MoveTo(ESlimeLocation location)
     {
         ValidateLocation(location);
         Location = location;
