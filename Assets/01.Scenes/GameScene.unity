@@ -4280,6 +4280,7 @@ MonoBehaviour:
   _spawnAreaMin: {x: -1, y: -2}
   _spawnAreaMax: {x: 1, y: 2}
   _tutorialSlimePosition: {x: 0, y: 0}
+  _spawnWeightTable: {fileID: 11400000, guid: 7b2e4f6a1c8d3e5b9a0f2c4d6e8b1a3f, type: 2}
   _minSpawnInterval: 3
 --- !u!4 &1271333081
 Transform:

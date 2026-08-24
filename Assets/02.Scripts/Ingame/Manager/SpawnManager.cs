@@ -17,6 +17,9 @@ public class SpawnManager : MonoBehaviour
     [Header("Tutorial Slime")]
     [SerializeField] private Vector2 _tutorialSlimePosition = Vector2.zero;
 
+    [Header("Spawn Weight")]
+    [SerializeField] private SpawnWeightTable _spawnWeightTable;
+
     [Header("Interval Area")]
     [SerializeField] private float _minSpawnInterval = 0.5f;
     private float _baseSpawnInterval;
@@ -190,9 +193,21 @@ public class SpawnManager : MonoBehaviour
         if (_timer >= _spawnInterval)
         {
             _timer = 0f;
-            Spawn(ESlimeGrade.Grade1);
+            Spawn(PickSpawnGrade());
             OnSpawned?.Invoke();
         }
+    }
+
+    // 최고 해금 등급에 따라 자연 스폰할 등급을 고른다.
+    // 테이블이 비어 있으면 기존 동작대로 Grade1만 스폰한다.
+    private ESlimeGrade PickSpawnGrade()
+    {
+        if (_spawnWeightTable == null || SlimeManager.Instance == null)
+        {
+            return ESlimeGrade.Grade1;
+        }
+
+        return _spawnWeightTable.PickSpawnGrade(SlimeManager.Instance.HighestGrade);
     }
 
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
