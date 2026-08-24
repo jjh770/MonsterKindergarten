@@ -2032,6 +2032,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradeItemUI
   _upgradeType: 4
   _button: {fileID: 561333960}
+  _nameText: {fileID: 214733487}
   _valueText: {fileID: 182474399}
   _costText: {fileID: 2024321986}
 --- !u!95 &561333964
@@ -2585,6 +2586,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SystemUpgradeItemUI
   _upgradeType: 5
   _button: {fileID: 728174907}
+  _nameText: {fileID: 1505002772}
   _valueText: {fileID: 1800013884}
   _costText: {fileID: 1501643697}
 --- !u!95 &728174911
@@ -3289,6 +3291,8 @@ GameObject:
   m_Component:
   - component: {fileID: 920019898}
   - component: {fileID: 920019899}
+  - component: {fileID: 920019900}
+  - component: {fileID: 920019901}
   m_Layer: 5
   m_Name: SystemUpgradePanel
   m_TagString: Untagged
@@ -3313,9 +3317,9 @@ RectTransform:
   m_Father: {fileID: 457349917}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: 200}
+  m_SizeDelta: {x: 0, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &920019899
 MonoBehaviour:
@@ -3332,6 +3336,49 @@ MonoBehaviour:
   _items:
   - {fileID: 561333963}
   - {fileID: 728174910}
+  _sideOffsetRatio: 0.42
+  _sideScale: 0.72
+  _sideAlpha: 0.35
+  _rotationDuration: 0.25
+  _dragThresholdRatio: 0.2
+--- !u!222 &920019900
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920019897}
+  m_CullTransparentMesh: 1
+--- !u!114 &920019901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920019897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.06, g: 0.06, b: 0.08, a: 0.82}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &954826972
 GameObject:
   m_ObjectHideFlags: 0
@@ -4070,8 +4117,8 @@ MonoBehaviour:
   _content: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
   _pointTarget: {fileID: 734613838}
   _spawnGaugeTarget: {fileID: 2116618831}
-  _spawnIntervalUpgradeTarget: {fileID: 561333958}
-  _spawnMaxUpgradeTarget: {fileID: 728174905}
+  _spawnSliderUI: {fileID: 2116618833}
+  _systemUpgradePanel: {fileID: 920019899}
   _unlockPopupUI: {fileID: 1432576204}
   _upgradeUI: {fileID: 1526959884}
   _mergeSlimeDistance: 1.5
@@ -5515,6 +5562,7 @@ GameObject:
   - component: {fileID: 1854397174}
   - component: {fileID: 1854397176}
   - component: {fileID: 1854397175}
+  - component: {fileID: 1854397177}
   m_Layer: 5
   m_Name: NextSlimeImage
   m_TagString: Untagged
@@ -5579,6 +5627,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1854397173}
   m_CullTransparentMesh: 1
+--- !u!114 &1854397177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854397173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 0
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+    m_PressedColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+    m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    m_DisabledColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.5}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1854397175}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1860435324
 GameObject:
   m_ObjectHideFlags: 0
@@ -6965,6 +7057,7 @@ MonoBehaviour:
   _slider: {fileID: 2116618832}
   _spawnIntervalText: {fileID: 1105910540}
   _spawnMaxText: {fileID: 2030822670}
+  _spawnPoolButton: {fileID: 1854397177}
 --- !u!1 &2123721245
 GameObject:
   m_ObjectHideFlags: 0

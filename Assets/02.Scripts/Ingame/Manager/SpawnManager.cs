@@ -1,6 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEngine.InputSystem;
+#endif
+
+public readonly struct SpawnProbability
+{
+    public ESlimeGrade Grade { get; }
+    public float Probability { get; }
+
+    public SpawnProbability(ESlimeGrade grade, float probability)
+    {
+        Grade = grade;
+        Probability = probability;
+    }
+}
 
 public class SpawnManager : MonoBehaviour
 {
@@ -97,7 +112,7 @@ public class SpawnManager : MonoBehaviour
         // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
         if (SlimeSpawner.Instance.GetActiveCount() == 0)
         {
-            if (TutorialProgress.ShouldRun)
+            if (TutorialProgress.ShouldRun(TutorialIds.Main))
             {
                 SpawnTutorialSlime();
             }
@@ -182,6 +197,10 @@ public class SpawnManager : MonoBehaviour
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (_isSpawningPaused) return;
 
+#if UNITY_EDITOR
+        HandleEditorSpawnShortcuts();
+#endif
+
         if (SlimeSpawner.Instance != null &&
             SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
         {
@@ -198,6 +217,35 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
+    private void HandleEditorSpawnShortcuts()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null) return;
+
+        if (keyboard.f1Key.wasPressedThisFrame)
+        {
+            Spawn(ESlimeGrade.Grade1);
+        }
+        else if (keyboard.f2Key.wasPressedThisFrame)
+        {
+            Spawn(ESlimeGrade.Grade2);
+        }
+        else if (keyboard.f3Key.wasPressedThisFrame)
+        {
+            Spawn(ESlimeGrade.Grade3);
+        }
+        else if (keyboard.f4Key.wasPressedThisFrame)
+        {
+            Spawn(ESlimeGrade.Grade4);
+        }
+        else if (keyboard.f5Key.wasPressedThisFrame)
+        {
+            Spawn(ESlimeGrade.Grade5);
+        }
+    }
+#endif
+
     // 최고 해금 등급에 따라 자연 스폰할 등급을 고른다.
     // 테이블이 비어 있으면 기존 동작대로 Grade1만 스폰한다.
     private ESlimeGrade PickSpawnGrade()
@@ -207,7 +255,82 @@ public class SpawnManager : MonoBehaviour
             return ESlimeGrade.Grade1;
         }
 
-        return _spawnWeightTable.PickSpawnGrade(SlimeManager.Instance.HighestGrade);
+        return _spawnWeightTable.PickSpawnGrade(
+            SlimeManager.Instance.HighestGrade,
+            GetSpawnWeightUpgradeLevel());
+    }
+
+    public List<SpawnProbability> GetCurrentSpawnProbabilities()
+    {
+        var probabilities = new List<SpawnProbability>();
+        if (_spawnWeightTable == null || SlimeManager.Instance == null)
+        {
+            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1f));
+            return probabilities;
+        }
+
+        int upgradeLevel = GetSpawnWeightUpgradeLevel();
+        ESlimeGrade cap = _spawnWeightTable.GetSpawnCap(
+            SlimeManager.Instance.HighestGrade,
+            upgradeLevel);
+        double totalWeight = 0;
+
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= (int)cap; grade++)
+        {
+            totalWeight += _spawnWeightTable.GetEffectiveWeight(
+                (ESlimeGrade)grade,
+                upgradeLevel);
+        }
+
+        if (totalWeight <= 0)
+        {
+            probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1f));
+            return probabilities;
+        }
+
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= (int)cap; grade++)
+        {
+            ESlimeGrade slimeGrade = (ESlimeGrade)grade;
+            double weight = _spawnWeightTable.GetEffectiveWeight(
+                slimeGrade,
+                upgradeLevel);
+            if (weight <= 0) continue;
+
+            probabilities.Add(new SpawnProbability(
+                slimeGrade,
+                (float)(weight / totalWeight)));
+        }
+
+        return probabilities;
+    }
+
+    private static int GetSpawnWeightUpgradeLevel()
+    {
+        Upgrade upgrade = UpgradeManager.Instance?.Get(
+            EUpgradeType.HigherGradeSpawnWeightAdd,
+            ESlimeGrade.None);
+        return upgrade?.Level ?? 0;
+    }
+
+    public bool IsSpawnWeightUpgradeTierLocked(int currentUpgradeLevel)
+    {
+        if (_spawnWeightTable == null || SlimeManager.Instance == null) return true;
+
+        ESlimeGrade nextLevelCap = SpawnWeightTable.GetUpgradeSpawnCap(
+            currentUpgradeLevel + 1);
+        ESlimeGrade progressionCap = _spawnWeightTable.GetSpawnCap(
+            SlimeManager.Instance.HighestGrade);
+        return progressionCap < nextLevelCap;
+    }
+
+    public ESlimeGrade GetRequiredHighestGradeForSpawnWeightTier(
+        int currentUpgradeLevel)
+    {
+        if (_spawnWeightTable == null) return ESlimeGrade.Grade1;
+
+        ESlimeGrade nextLevelCap = SpawnWeightTable.GetUpgradeSpawnCap(
+            currentUpgradeLevel + 1);
+        return _spawnWeightTable.GetRequiredHighestGrade(nextLevelCap);
     }
 
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)

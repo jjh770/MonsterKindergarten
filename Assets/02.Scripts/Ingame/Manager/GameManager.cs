@@ -110,15 +110,22 @@ public class GameManager : MonoBehaviour
             SlimeManager.Instance.HasExistingProgress ||
             UpgradeManager.Instance.HasExistingProgress;
 
-        TutorialProgress.Initialize(
-            AccountManager.Instance.UserId,
+        TutorialProgress.Initialize(AccountManager.Instance.UserId);
+        TutorialProgress.Register(
+            TutorialIds.Main,
             hasExistingProgress);
-        GameplaySaveGate.SetSavingEnabled(TutorialProgress.IsCompleted);
+        TutorialProgress.Register(
+            TutorialIds.HigherGradeSpawn,
+            SlimeManager.Instance.HighestGrade >= ESlimeGrade.Grade5,
+            completeStoredIncomplete: false);
+        GameplaySaveGate.SetSavingEnabled(
+            TutorialProgress.IsCompleted(TutorialIds.Main));
     }
 
     public async UniTask CompleteTutorialAsync()
     {
-        if (!TutorialProgress.IsInitialized || TutorialProgress.IsCompleted)
+        if (!TutorialProgress.IsRegistered(TutorialIds.Main) ||
+            TutorialProgress.IsCompleted(TutorialIds.Main))
         {
             GameplaySaveGate.SetSavingEnabled(true);
             return;
@@ -131,7 +138,7 @@ public class GameManager : MonoBehaviour
             SlimeManager.Instance.SaveCurrentAsync(),
             UpgradeManager.Instance.SaveCurrentAsync());
 
-        TutorialProgress.MarkCompleted();
+        TutorialProgress.MarkCompleted(TutorialIds.Main);
     }
 
     private void OnApplicationPause(bool pauseStatus)

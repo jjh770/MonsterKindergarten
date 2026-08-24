@@ -24,6 +24,9 @@ public class SpawnWeightTable : ScriptableObject
 
         [Min(0)]
         public int BaseWeight;
+
+        [Min(0)]
+        public int MaxUpgradeWeight;
     }
 
     [SerializeField] private SpawnCapEntry[] _spawnCaps;
@@ -47,6 +50,43 @@ public class SpawnWeightTable : ScriptableObject
         return cap;
     }
 
+    public ESlimeGrade GetSpawnCap(
+        ESlimeGrade highestGrade,
+        int upgradeLevel)
+    {
+        ESlimeGrade progressionCap = GetSpawnCap(highestGrade);
+        ESlimeGrade upgradeCap = GetUpgradeSpawnCap(upgradeLevel);
+        return progressionCap < upgradeCap ? progressionCap : upgradeCap;
+    }
+
+    public ESlimeGrade GetRequiredHighestGrade(ESlimeGrade requiredSpawnCap)
+    {
+        ESlimeGrade requiredHighestGrade = ESlimeGrade.Grade1;
+        bool found = false;
+
+        if (_spawnCaps == null) return requiredHighestGrade;
+
+        foreach (SpawnCapEntry entry in _spawnCaps)
+        {
+            if (entry == null || entry.SpawnCap < requiredSpawnCap) continue;
+            if (found && entry.FromHighestGrade >= requiredHighestGrade) continue;
+
+            requiredHighestGrade = entry.FromHighestGrade;
+            found = true;
+        }
+
+        return requiredHighestGrade;
+    }
+
+    public static ESlimeGrade GetUpgradeSpawnCap(int upgradeLevel)
+    {
+        if (upgradeLevel >= 41) return ESlimeGrade.Grade6;
+        if (upgradeLevel >= 31) return ESlimeGrade.Grade5;
+        if (upgradeLevel >= 21) return ESlimeGrade.Grade4;
+        if (upgradeLevel >= 11) return ESlimeGrade.Grade3;
+        return ESlimeGrade.Grade2;
+    }
+
     public int GetBaseWeight(ESlimeGrade grade)
     {
         if (_baseWeights == null) return 0;
@@ -62,28 +102,63 @@ public class SpawnWeightTable : ScriptableObject
         return 0;
     }
 
+    public double GetEffectiveWeight(ESlimeGrade grade, int upgradeLevel)
+    {
+        if (_baseWeights == null) return 0;
+
+        foreach (SpawnWeightEntry entry in _baseWeights)
+        {
+            if (entry == null || entry.Grade != grade) continue;
+
+            int baseWeight = Mathf.Max(0, entry.BaseWeight);
+            int maxWeight = entry.MaxUpgradeWeight > 0
+                ? entry.MaxUpgradeWeight
+                : baseWeight;
+            double progress = GetUpgradeProgress(upgradeLevel);
+            return baseWeight + (maxWeight - baseWeight) * progress;
+        }
+
+        return 0;
+    }
+
     // 상한 이하 등급을 가중치로 추첨한다.
     // 테이블이 비었거나 가중치 합이 0이면 Grade1을 반환해 스폰이 멈추지 않게 한다.
-    public ESlimeGrade PickSpawnGrade(ESlimeGrade highestGrade)
+    public ESlimeGrade PickSpawnGrade(
+        ESlimeGrade highestGrade,
+        int upgradeLevel = 0)
     {
-        int cap = (int)GetSpawnCap(highestGrade);
-        int total = 0;
+        int cap = (int)GetSpawnCap(highestGrade, upgradeLevel);
+        double total = 0;
 
         for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
         {
-            total += GetBaseWeight((ESlimeGrade)grade);
+            total += GetEffectiveWeight((ESlimeGrade)grade, upgradeLevel);
         }
 
         if (total <= 0) return ESlimeGrade.Grade1;
 
-        int roll = UnityEngine.Random.Range(0, total);
+        double roll = UnityEngine.Random.value * total;
 
         for (int grade = (int)ESlimeGrade.Grade1; grade <= cap; ++grade)
         {
-            roll -= GetBaseWeight((ESlimeGrade)grade);
+            roll -= GetEffectiveWeight((ESlimeGrade)grade, upgradeLevel);
             if (roll < 0) return (ESlimeGrade)grade;
         }
 
         return ESlimeGrade.Grade1;
+    }
+
+    private static double GetUpgradeProgress(int upgradeLevel)
+    {
+        int clampedLevel = Mathf.Clamp(upgradeLevel, 0, 50);
+        double accumulatedRate = 0;
+
+        for (int level = 1; level <= clampedLevel; level++)
+        {
+            int tier = (level - 1) / 10;
+            accumulatedRate += 0.02 + tier * 0.01;
+        }
+
+        return Math.Min(1, accumulatedRate / 2.0);
     }
 }

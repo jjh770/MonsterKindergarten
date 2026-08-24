@@ -116,6 +116,13 @@ public class UpgradeManager : MonoBehaviour
 
     public bool IsLockedByProgress(Upgrade upgrade)
     {
+        if (upgrade != null &&
+            upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd)
+        {
+            return SpawnManager.Instance == null ||
+                   SpawnManager.Instance.IsSpawnWeightUpgradeTierLocked(upgrade.Level);
+        }
+
         if (upgrade == null ||
             upgrade.SpecData.Type != EUpgradeType.MaxCountAdd ||
             upgrade.Level < GroundMaxCountUpgradeLevel)

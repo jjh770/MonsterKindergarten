@@ -28,13 +28,19 @@ MonoBehaviour:
   _baseWeights:
   - Grade: 1
     BaseWeight: 1000
+    MaxUpgradeWeight: 1000
   - Grade: 2
     BaseWeight: 300
+    MaxUpgradeWeight: 2000
   - Grade: 3
     BaseWeight: 100
+    MaxUpgradeWeight: 3000
   - Grade: 4
     BaseWeight: 30
+    MaxUpgradeWeight: 5000
   - Grade: 5
     BaseWeight: 10
+    MaxUpgradeWeight: 5000
   - Grade: 6
     BaseWeight: 3
+    MaxUpgradeWeight: 4000
