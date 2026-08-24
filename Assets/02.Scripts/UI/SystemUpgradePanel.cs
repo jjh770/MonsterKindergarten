@@ -12,7 +12,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
 {
     private const int CenterSlotIndex = 2;
     private const int RequiredSlotCount = 5;
-    private const ESlimeGrade SpawnWeightUpgradeUnlockGrade = ESlimeGrade.Grade5;
 
     [SerializeField] private SystemUpgradeItemUI[] _items;
 
@@ -206,7 +205,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
         {
             EUpgradeType type = upgrade.SpecData.Type;
             if (type == EUpgradeType.HigherGradeSpawnWeightAdd &&
-                _highestGrade < SpawnWeightUpgradeUnlockGrade)
+                (SlimeManager.Instance == null ||
+                 !SlimeManager.Instance.IsHigherGradeSpawnUnlocked))
             {
                 continue;
             }

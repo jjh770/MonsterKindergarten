@@ -301,7 +301,8 @@ public sealed class TutorialManager : MonoBehaviour
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
-        if (grade == ESlimeGrade.Grade5 &&
+        if (SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsHigherGradeSpawnUnlocked &&
             TutorialProgress.ShouldRun(TutorialIds.HigherGradeSpawn) &&
             (_step == TutorialStep.None || _step == TutorialStep.Complete))
         {

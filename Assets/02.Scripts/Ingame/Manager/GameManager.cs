@@ -116,7 +116,7 @@ public class GameManager : MonoBehaviour
             hasExistingProgress);
         TutorialProgress.Register(
             TutorialIds.HigherGradeSpawn,
-            SlimeManager.Instance.HighestGrade >= ESlimeGrade.Grade5,
+            SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
