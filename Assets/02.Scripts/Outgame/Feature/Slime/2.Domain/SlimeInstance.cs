@@ -1,6 +1,5 @@
 using System;
 
-[Serializable]
 public sealed class SlimeInstance
 {
     public string InstanceId { get; }

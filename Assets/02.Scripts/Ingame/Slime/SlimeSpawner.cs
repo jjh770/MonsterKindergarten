@@ -33,7 +33,7 @@ public class SlimeSpawner : MonoBehaviour
             shouldSave);
     }
 
-    public SlimeController Spawn(SlimeInstance instance, Vector2 position)
+    public SlimeController Restore(SlimeInstance instance, Vector2 position)
     {
         return Spawn(instance, position, shouldSave: false);
     }

@@ -119,6 +119,7 @@ public class SlimeStatus
 
         ValidateGrade(toGrade);
         keeper.PromoteTo(toGrade);
+        // 활성 개체 제거는 현재 합성으로 소모되는 경우에만 허용한다.
         _activeSlimes.Remove(removed);
     }
 

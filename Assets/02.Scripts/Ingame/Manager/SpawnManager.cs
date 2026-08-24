@@ -162,7 +162,7 @@ public class SpawnManager : MonoBehaviour
                 continue;
             }
 
-            SlimeSpawner.Instance.Spawn(
+            SlimeSpawner.Instance.Restore(
                 instance,
                 GetRandomSpawnPosition());
         }

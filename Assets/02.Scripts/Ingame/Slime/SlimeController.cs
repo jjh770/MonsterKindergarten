@@ -27,6 +27,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
     public bool IsCurrentStageActive =>
+        Instance != null &&
         Location == ESlimeLocation.MainStage &&
         (StageManager.Instance == null ||
          StageManager.Instance.IsStageActive(Grade));
