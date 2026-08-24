@@ -119,8 +119,8 @@ public class UpgradeManager : MonoBehaviour
         if (upgrade != null &&
             upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd)
         {
-            return SpawnManager.Instance == null ||
-                   SpawnManager.Instance.IsSpawnWeightUpgradeTierLocked(upgrade.Level);
+            return SlimeManager.Instance == null ||
+                   SlimeManager.Instance.IsHigherGradeSpawnTierLocked(upgrade.Level);
         }
 
         if (upgrade == null ||

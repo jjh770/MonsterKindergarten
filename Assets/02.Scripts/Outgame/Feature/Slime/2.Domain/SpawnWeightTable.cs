@@ -59,6 +59,22 @@ public class SpawnWeightTable : ScriptableObject
         return progressionCap < upgradeCap ? progressionCap : upgradeCap;
     }
 
+    // 다음 레벨이 요구하는 상한에 진행도가 못 미치면 그 구간은 아직 잠긴 것으로 본다.
+    public bool IsUpgradeTierLocked(
+        ESlimeGrade highestGrade,
+        int currentUpgradeLevel)
+    {
+        return GetSpawnCap(highestGrade) <
+               GetUpgradeSpawnCap(currentUpgradeLevel + 1);
+    }
+
+    // 다음 레벨 구간을 열기 위해 필요한 최고 해금 등급.
+    public ESlimeGrade GetRequiredHighestGradeForTier(int currentUpgradeLevel)
+    {
+        return GetRequiredHighestGrade(
+            GetUpgradeSpawnCap(currentUpgradeLevel + 1));
+    }
+
     public ESlimeGrade GetRequiredHighestGrade(ESlimeGrade requiredSpawnCap)
     {
         ESlimeGrade requiredHighestGrade = ESlimeGrade.Grade1;

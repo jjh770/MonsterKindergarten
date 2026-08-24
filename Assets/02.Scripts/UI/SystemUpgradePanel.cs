@@ -635,10 +635,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
         if (isLocked)
         {
             if (upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd &&
-                SpawnManager.Instance != null)
+                SlimeManager.Instance != null)
             {
                 ESlimeGrade requiredGrade =
-                    SpawnManager.Instance.GetRequiredHighestGradeForSpawnWeightTier(
+                    SlimeManager.Instance.GetRequiredHighestGradeForSpawnTier(
                         upgrade.Level);
                 return $"최고 Lv.{(int)requiredGrade} 해금 필요";
             }

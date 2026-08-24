@@ -312,27 +312,6 @@ public class SpawnManager : MonoBehaviour
         return upgrade?.Level ?? 0;
     }
 
-    public bool IsSpawnWeightUpgradeTierLocked(int currentUpgradeLevel)
-    {
-        if (_spawnWeightTable == null || SlimeManager.Instance == null) return true;
-
-        ESlimeGrade nextLevelCap = SpawnWeightTable.GetUpgradeSpawnCap(
-            currentUpgradeLevel + 1);
-        ESlimeGrade progressionCap = _spawnWeightTable.GetSpawnCap(
-            SlimeManager.Instance.HighestGrade);
-        return progressionCap < nextLevelCap;
-    }
-
-    public ESlimeGrade GetRequiredHighestGradeForSpawnWeightTier(
-        int currentUpgradeLevel)
-    {
-        if (_spawnWeightTable == null) return ESlimeGrade.Grade1;
-
-        ESlimeGrade nextLevelCap = SpawnWeightTable.GetUpgradeSpawnCap(
-            currentUpgradeLevel + 1);
-        return _spawnWeightTable.GetRequiredHighestGrade(nextLevelCap);
-    }
-
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
     {
         if (SlimeSpawner.Instance == null) return null;

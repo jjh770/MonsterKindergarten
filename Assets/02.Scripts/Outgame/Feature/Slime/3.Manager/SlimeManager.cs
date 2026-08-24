@@ -8,6 +8,7 @@ public class SlimeManager : MonoBehaviour
     public static SlimeManager Instance { get; private set; }
 
     [SerializeField] private SlimeSpecTable _specTable;
+    [SerializeField] private SpawnWeightTable _spawnWeightTable;
     private List<Slime> _slimes = new();
 
     private IRepository<SlimeStatusSaveData> _statusRepository;
@@ -23,6 +24,24 @@ public class SlimeManager : MonoBehaviour
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
+
+    // 자연 스폰 상한은 최고 해금 등급으로 결정되므로 슬라임 도메인이 판정한다.
+    public bool IsHigherGradeSpawnTierLocked(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable == null ||
+               _status == null ||
+               _spawnWeightTable.IsUpgradeTierLocked(
+                   _status.HighestGrade,
+                   currentUpgradeLevel);
+    }
+
+    // 다음 스폰 상한 구간을 열기 위해 필요한 최고 해금 등급.
+    public ESlimeGrade GetRequiredHighestGradeForSpawnTier(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable != null
+            ? _spawnWeightTable.GetRequiredHighestGradeForTier(currentUpgradeLevel)
+            : ESlimeGrade.Grade1;
+    }
 
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
