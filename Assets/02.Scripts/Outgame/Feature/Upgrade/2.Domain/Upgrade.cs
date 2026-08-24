@@ -14,8 +14,22 @@ public class Upgrade
     // 3. 런타임 데이터 (게임 중간에 바뀌는 데이터)
     public int Level { get; private set; }
 
-    // 업그레이드 비용 : 기본 비용 * 증가량^레벨
-    public Currency Cost => SpecData.BaseCost * Math.Pow(SpecData.CostMultiplier, Level); // 지수 공식 : 기본 비용 * 증가량 ^ 레벨
+    // 업그레이드 비용 : 기본 비용 * 증가량^레벨 * 구간 배율^구간
+    public Currency Cost
+    {
+        get
+        {
+            double tierMultiplier = SpecData.CostTierSize > 0 &&
+                                    SpecData.CostTierMultiplier > 0
+                ? Math.Pow(
+                    SpecData.CostTierMultiplier,
+                    Level / SpecData.CostTierSize)
+                : 1;
+            return SpecData.BaseCost *
+                   Math.Pow(SpecData.CostMultiplier, Level) *
+                   tierMultiplier;
+        }
+    }
 
     // 레벨 0이면 보너스 없음
     // Linear : 선형 공식 (BasePoint + Level * PointMultiplier)
@@ -43,6 +57,8 @@ public class Upgrade
         if (specData.BaseCost <= 0) throw new System.ArgumentException($"기본 비용은 0보다 크거나 같아야 합니다. : {specData.BaseCost}");
         if (specData.BasePoint < 0) throw new System.ArgumentException($"기본 포인트는 0보다 작을 순 없습니다. : {specData.BasePoint}");
         if (specData.CostMultiplier <= 0) throw new System.ArgumentException($"비용 증가량은 0보다 크거나 같아야 합니다. : {specData.CostMultiplier}");
+        if (specData.CostTierSize > 0 && specData.CostTierMultiplier <= 0)
+            throw new System.ArgumentException($"비용 구간 배율은 0보다 커야 합니다. : {specData.CostTierMultiplier}");
         // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
         if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)
             throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");

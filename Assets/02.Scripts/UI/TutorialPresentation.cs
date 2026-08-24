@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,7 @@ public sealed class TutorialPresentation : IDisposable
 {
     private readonly Canvas _tutorialCanvas;
     private readonly TutorialDialogueView _dialogueView;
-    private TutorialDialogueLine[] _activeDialogue;
+    private IReadOnlyList<DialogueLine> _activeDialogue;
     private int _dialogueIndex;
     private Action _onDialogueComplete;
     private bool _keepSpotlightVisible;
@@ -32,7 +33,7 @@ public sealed class TutorialPresentation : IDisposable
     }
 
     public void ShowDialogue(
-        TutorialDialogueLine[] lines,
+        IReadOnlyList<DialogueLine> lines,
         Action onComplete,
         bool keepSpotlightVisible = false,
         TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
@@ -48,7 +49,7 @@ public sealed class TutorialPresentation : IDisposable
         _dialogueIndex = 0;
         _onDialogueComplete = onComplete;
 
-        if (_activeDialogue == null || _activeDialogue.Length == 0)
+        if (_activeDialogue == null || _activeDialogue.Count == 0)
         {
             FinishDialogue();
             return;
@@ -73,7 +74,7 @@ public sealed class TutorialPresentation : IDisposable
         if (_activeDialogue == null) return;
 
         _dialogueIndex++;
-        if (_dialogueIndex < _activeDialogue.Length)
+        if (_dialogueIndex < _activeDialogue.Count)
         {
             ShowCurrentLine();
             return;
@@ -84,7 +85,7 @@ public sealed class TutorialPresentation : IDisposable
 
     private void ShowCurrentLine()
     {
-        TutorialDialogueLine line = _activeDialogue[_dialogueIndex];
+        DialogueLine line = _activeDialogue[_dialogueIndex];
         _dialogueView.Show(
             line.Speaker,
             line.Message,

@@ -6,6 +6,7 @@
     AutoPointPercentAdd,
     SpawnTimeSub,
     MaxCountAdd,
+    HigherGradeSpawnWeightAdd,
 
     Count,
 }

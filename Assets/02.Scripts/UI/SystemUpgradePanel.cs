@@ -1,23 +1,79 @@
+using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Utility;
 
-public sealed class SystemUpgradePanel : MonoBehaviour
+public sealed class SystemUpgradePanel : MonoBehaviour,
+    IBeginDragHandler,
+    IDragHandler,
+    IEndDragHandler
 {
+    private const int CenterSlotIndex = 2;
+    private const int RequiredSlotCount = 5;
+
     [SerializeField] private SystemUpgradeItemUI[] _items;
 
+    [Header("Carousel")]
+    [SerializeField, Range(0.2f, 0.5f)] private float _sideOffsetRatio = 0.42f;
+    [SerializeField, Range(0.5f, 1f)] private float _sideScale = 0.72f;
+    [SerializeField, Range(0f, 1f)] private float _sideAlpha = 0.35f;
+    [SerializeField, Min(0f)] private float _rotationDuration = 0.25f;
+    [SerializeField, Range(0.1f, 0.5f)] private float _dragThresholdRatio = 0.2f;
+
+    private sealed class CarouselSlot
+    {
+        public SystemUpgradeItemUI Item;
+        public RectTransform Root;
+        public CanvasGroup CanvasGroup;
+    }
+
     private readonly Dictionary<EUpgradeType, Upgrade> _upgrades = new();
+    private readonly List<EUpgradeType> _orderedTypes = new();
+    private readonly List<CarouselSlot> _slots = new();
     private ESlimeGrade _highestGrade;
+    private int _selectedIndex;
     private bool _isInitialized;
+    private bool _isDragging;
+    private Vector2 _dragStartPosition;
+    private float _dragOffset;
+    private Tween _rotationTween;
+
+    public RectTransform TutorialTarget => transform as RectTransform;
+    public event Action RotationCompleted;
+
+    public bool IsSelected(EUpgradeType type)
+    {
+        return _orderedTypes.Count > 0 &&
+               _orderedTypes[_selectedIndex] == type;
+    }
+
+    public bool TryFocus(EUpgradeType type)
+    {
+        if (_orderedTypes.Count == 0 || _rotationTween != null || _isDragging)
+        {
+            return false;
+        }
+
+        int targetIndex = _orderedTypes.IndexOf(type);
+        if (targetIndex < 0) return false;
+        if (targetIndex == _selectedIndex) return true;
+
+        int forwardDistance = WrapIndex(targetIndex - _selectedIndex);
+        int direction = forwardDistance <= _orderedTypes.Count / 2 ? 1 : -1;
+        Rotate(direction);
+        return true;
+    }
 
     private void Start()
     {
-        foreach (SystemUpgradeItemUI item in _items)
+        InitializeCarouselSlots();
+        if (_slots.Count != RequiredSlotCount) return;
+
+        foreach (CarouselSlot slot in _slots)
         {
-            if (item != null)
-            {
-                item.UpgradeRequested += OnUpgradeRequested;
-            }
+            slot.Item.Pressed += OnItemPressed;
         }
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
@@ -36,13 +92,32 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        _rotationTween?.Kill();
+        _rotationTween = null;
+        _isDragging = false;
+        _dragOffset = 0f;
+        SetSlotRaycasts(true);
+    }
+
+    private void OnEnable()
+    {
+        if (_slots.Count == RequiredSlotCount)
+        {
+            RefreshCarouselSlots();
+        }
+    }
+
     private void OnDestroy()
     {
-        foreach (SystemUpgradeItemUI item in _items)
+        _rotationTween?.Kill();
+
+        foreach (CarouselSlot slot in _slots)
         {
-            if (item != null)
+            if (slot.Item != null)
             {
-                item.UpgradeRequested -= OnUpgradeRequested;
+                slot.Item.Pressed -= OnItemPressed;
             }
         }
 
@@ -55,6 +130,60 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             SpawnManager.Instance.OnSpawnIntervalChanged -= OnSpawnIntervalChanged;
             SpawnManager.Instance.OnSpawnMaxChanged -= OnSpawnMaxChanged;
         }
+    }
+
+    private void OnRectTransformDimensionsChange()
+    {
+        if (_slots.Count == RequiredSlotCount &&
+            _rotationTween == null &&
+            !_isDragging)
+        {
+            ApplySlotLayouts();
+        }
+    }
+
+    private void InitializeCarouselSlots()
+    {
+        _slots.Clear();
+
+        if (_items == null || _items.Length != RequiredSlotCount)
+        {
+            Debug.LogError($"시스템 업그레이드 캐러셀에 {RequiredSlotCount}개 슬롯이 필요합니다.", this);
+            enabled = false;
+            return;
+        }
+
+        foreach (SystemUpgradeItemUI item in _items)
+        {
+            RectTransform root = item != null
+                ? item.transform.parent as RectTransform
+                : null;
+            if (root == null)
+            {
+                Debug.LogError("시스템 업그레이드 캐러셀 슬롯 구성이 올바르지 않습니다.", this);
+                enabled = false;
+                _slots.Clear();
+                return;
+            }
+
+            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                Debug.LogError($"{root.name}에 CanvasGroup이 없습니다.", root);
+                enabled = false;
+                _slots.Clear();
+                return;
+            }
+
+            _slots.Add(new CarouselSlot
+            {
+                Item = item,
+                Root = root,
+                CanvasGroup = canvasGroup,
+            });
+        }
+
+        ApplySlotLayouts();
     }
 
     private void OnAllDataInitialized()
@@ -70,11 +199,205 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void CacheSystemUpgrades()
     {
         _upgrades.Clear();
+        _orderedTypes.Clear();
 
         foreach (Upgrade upgrade in UpgradeManager.Instance.GetSystemUpgrades())
         {
-            _upgrades[upgrade.SpecData.Type] = upgrade;
+            EUpgradeType type = upgrade.SpecData.Type;
+            if (type == EUpgradeType.HigherGradeSpawnWeightAdd &&
+                (SlimeManager.Instance == null ||
+                 !SlimeManager.Instance.IsHigherGradeSpawnUnlocked))
+            {
+                continue;
+            }
+
+            _upgrades[type] = upgrade;
+            _orderedTypes.Add(type);
         }
+
+        _orderedTypes.Sort((left, right) => ((int)left).CompareTo((int)right));
+        _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _orderedTypes.Count - 1));
+    }
+
+    private void OnItemPressed(SystemUpgradeItemUI item)
+    {
+        int slotIndex = _slots.FindIndex(slot => slot.Item == item);
+
+        if (slotIndex == CenterSlotIndex)
+        {
+            OnUpgradeRequested(item.UpgradeType);
+        }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (_orderedTypes.Count <= 1 || _rotationTween != null) return;
+        if (!TryGetLocalPointerPosition(eventData, out _dragStartPosition)) return;
+
+        _isDragging = true;
+        _dragOffset = 0f;
+        SetSlotRaycasts(false);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!_isDragging ||
+            !TryGetLocalPointerPosition(eventData, out Vector2 pointerPosition))
+        {
+            return;
+        }
+
+        float sideOffset = GetSideOffset();
+        _dragOffset = Mathf.Clamp(
+            pointerPosition.x - _dragStartPosition.x,
+            -sideOffset,
+            sideOffset);
+        ApplyDragLayouts(sideOffset);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (!_isDragging) return;
+
+        _isDragging = false;
+        float sideOffset = GetSideOffset();
+        float threshold = sideOffset * _dragThresholdRatio;
+
+        if (Mathf.Abs(_dragOffset) >= threshold)
+        {
+            Rotate(_dragOffset < 0f ? 1 : -1);
+        }
+        else
+        {
+            ReturnToRest();
+        }
+
+        _dragOffset = 0f;
+    }
+
+    private bool TryGetLocalPointerPosition(
+        PointerEventData eventData,
+        out Vector2 localPosition)
+    {
+        localPosition = Vector2.zero;
+        RectTransform panelRect = transform as RectTransform;
+        return panelRect != null &&
+               RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                   panelRect,
+                   eventData.position,
+                   eventData.pressEventCamera,
+                   out localPosition);
+    }
+
+    private void ApplyDragLayouts(float sideOffset)
+    {
+        for (int slotIndex = 0; slotIndex < RequiredSlotCount; slotIndex++)
+        {
+            CarouselSlot slot = _slots[slotIndex];
+            float basePosition = (slotIndex - CenterSlotIndex) * sideOffset;
+            float positionX = basePosition + _dragOffset;
+            float normalizedDistance = Mathf.Abs(positionX) / sideOffset;
+            float scale = Mathf.Lerp(
+                1f,
+                _sideScale,
+                Mathf.Clamp01(normalizedDistance));
+            float alpha = normalizedDistance <= 1f
+                ? Mathf.Lerp(1f, _sideAlpha, normalizedDistance)
+                : Mathf.Lerp(_sideAlpha, 0f, Mathf.Clamp01(normalizedDistance - 1f));
+
+            ApplySlotLayout(slot, positionX, scale, alpha);
+        }
+
+        int incomingSlotIndex = CenterSlotIndex + (_dragOffset < 0f ? 1 : -1);
+        CarouselSlot incomingSlot = _slots[incomingSlotIndex];
+        bool isIncomingCentered = Mathf.Abs(_dragOffset) > sideOffset * 0.5f;
+
+        foreach (CarouselSlot slot in _slots)
+        {
+            slot.Item.SetCentered(
+                isIncomingCentered
+                    ? slot == incomingSlot
+                    : slot == _slots[CenterSlotIndex]);
+        }
+
+        if (isIncomingCentered)
+        {
+            incomingSlot.Root.SetAsLastSibling();
+        }
+        else
+        {
+            _slots[CenterSlotIndex].Root.SetAsLastSibling();
+        }
+    }
+
+    private void ReturnToRest()
+    {
+        float sideOffset = GetSideOffset();
+        SetSlotRaycasts(false);
+
+        Sequence sequence = DOTween.Sequence();
+        for (int slotIndex = 0; slotIndex < RequiredSlotCount; slotIndex++)
+        {
+            CarouselSlot slot = _slots[slotIndex];
+            float positionX = (slotIndex - CenterSlotIndex) * sideOffset;
+            float normalizedDistance = Mathf.Abs(slotIndex - CenterSlotIndex);
+            float scale = GetScale(normalizedDistance);
+            float alpha = GetAlpha(normalizedDistance);
+
+            sequence.Join(slot.Root.DOAnchorPosX(positionX, _rotationDuration));
+            sequence.Join(slot.Root.DOScale(Vector3.one * scale, _rotationDuration));
+            sequence.Join(slot.CanvasGroup.DOFade(alpha, _rotationDuration));
+        }
+
+        _rotationTween = sequence.OnComplete(() =>
+        {
+            _rotationTween = null;
+            RefreshCarouselSlots();
+            SetSlotRaycasts(true);
+        });
+    }
+
+    private void Rotate(int direction)
+    {
+        if (_orderedTypes.Count <= 1 || _rotationTween != null) return;
+
+        CarouselSlot incomingSlot = _slots[CenterSlotIndex + direction];
+        CarouselSlot outgoingSlot = _slots[CenterSlotIndex];
+        float sideOffset = GetSideOffset();
+
+        incomingSlot.Item.SetCentered(true);
+        outgoingSlot.Item.SetCentered(false);
+        incomingSlot.Root.SetAsLastSibling();
+        SetSlotRaycasts(false);
+
+        Sequence sequence = DOTween.Sequence();
+        for (int slotIndex = 0; slotIndex < RequiredSlotCount; slotIndex++)
+        {
+            CarouselSlot slot = _slots[slotIndex];
+            float targetDistance = slotIndex - CenterSlotIndex - direction;
+            float normalizedDistance = Mathf.Abs(targetDistance);
+
+            sequence.Join(slot.Root.DOAnchorPosX(
+                targetDistance * sideOffset,
+                _rotationDuration));
+            sequence.Join(slot.Root.DOScale(
+                Vector3.one * GetScale(normalizedDistance),
+                _rotationDuration));
+            sequence.Join(slot.CanvasGroup.DOFade(
+                GetAlpha(normalizedDistance),
+                _rotationDuration));
+        }
+
+        _rotationTween = sequence.OnComplete(() => CompleteRotation(direction));
+    }
+
+    private void CompleteRotation(int direction)
+    {
+        _selectedIndex = WrapIndex(_selectedIndex + direction);
+        _rotationTween = null;
+        RefreshCarouselSlots();
+        SetSlotRaycasts(true);
+        RotationCompleted?.Invoke();
     }
 
     private void OnUpgradeRequested(EUpgradeType type)
@@ -92,6 +415,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void OnHighestGradeChanged(ESlimeGrade grade)
     {
         _highestGrade = grade;
+        CacheSystemUpgrades();
         Refresh();
     }
 
@@ -109,9 +433,26 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     {
         if (!_isInitialized || SpawnManager.Instance == null) return;
 
-        foreach (SystemUpgradeItemUI item in _items)
+        RefreshCarouselSlots();
+    }
+
+    private void RefreshCarouselSlots()
+    {
+        if (_orderedTypes.Count == 0 || _slots.Count != RequiredSlotCount) return;
+
+        for (int slotIndex = 0; slotIndex < RequiredSlotCount; slotIndex++)
         {
-            if (item == null || !_upgrades.TryGetValue(item.UpgradeType, out Upgrade upgrade))
+            CarouselSlot slot = _slots[slotIndex];
+            int offset = slotIndex - CenterSlotIndex;
+            int dataIndex = WrapIndex(_selectedIndex + offset);
+            EUpgradeType type = _orderedTypes[dataIndex];
+
+            slot.Root.gameObject.SetActive(
+                slotIndex == CenterSlotIndex || _orderedTypes.Count > 1);
+            slot.Item.Bind(type);
+            slot.Item.SetCentered(slotIndex == CenterSlotIndex);
+
+            if (!_upgrades.TryGetValue(type, out Upgrade upgrade))
             {
                 continue;
             }
@@ -120,7 +461,81 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             bool isMax = IsMax(upgrade);
             string valueText = BuildValueText(upgrade, isMax, isLocked);
             string costText = BuildCostText(upgrade, isMax, isLocked);
-            item.Refresh(valueText, costText, isMax || isLocked);
+            slot.Item.Refresh(valueText, costText, isMax || isLocked);
+        }
+
+        ApplySlotLayouts();
+        _slots[CenterSlotIndex].Root.SetAsLastSibling();
+    }
+
+    private void ApplySlotLayouts()
+    {
+        if (_slots.Count != RequiredSlotCount) return;
+
+        float sideOffset = GetSideOffset();
+
+        for (int slotIndex = 0; slotIndex < RequiredSlotCount; slotIndex++)
+        {
+            float distance = slotIndex - CenterSlotIndex;
+            float normalizedDistance = Mathf.Abs(distance);
+            ApplySlotLayout(
+                _slots[slotIndex],
+                distance * sideOffset,
+                GetScale(normalizedDistance),
+                GetAlpha(normalizedDistance));
+        }
+    }
+
+    private float GetScale(float normalizedDistance)
+    {
+        return Mathf.Lerp(1f, _sideScale, Mathf.Clamp01(normalizedDistance));
+    }
+
+    private float GetAlpha(float normalizedDistance)
+    {
+        if (normalizedDistance <= 1f)
+        {
+            return Mathf.Lerp(1f, _sideAlpha, normalizedDistance);
+        }
+
+        return Mathf.Lerp(
+            _sideAlpha,
+            0f,
+            Mathf.Clamp01(normalizedDistance - 1f));
+    }
+
+    private static void ApplySlotLayout(
+        CarouselSlot slot,
+        float positionX,
+        float scale,
+        float alpha)
+    {
+        slot.Root.anchoredPosition = new Vector2(positionX, 0f);
+        slot.Root.localScale = Vector3.one * scale;
+        slot.CanvasGroup.alpha = alpha;
+    }
+
+    private float GetSideOffset()
+    {
+        RectTransform panelRect = transform as RectTransform;
+        float width = panelRect != null ? panelRect.rect.width : 0f;
+        return Mathf.Max(250f, width * _sideOffsetRatio);
+    }
+
+    private int WrapIndex(int index)
+    {
+        int count = _orderedTypes.Count;
+        return count == 0 ? 0 : (index % count + count) % count;
+    }
+
+    private void SetSlotRaycasts(bool isEnabled)
+    {
+        foreach (CarouselSlot slot in _slots)
+        {
+            if (slot.CanvasGroup != null)
+            {
+                slot.CanvasGroup.blocksRaycasts = isEnabled;
+            }
         }
     }
 
@@ -143,6 +558,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         if (isLocked)
         {
+            if (upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd &&
+                IsNextSpawnGradeUnlock(upgrade.Level))
+            {
+                return $"{icon}상위 슬라임 추가!";
+            }
+
             return string.Empty;
         }
 
@@ -161,8 +582,18 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             EUpgradeType.MaxCountAdd =>
                 $"{icon}{SpawnManager.Instance.MaxActiveCount} -> " +
                 $"{SpawnManager.Instance.MaxActiveCount + Mathf.RoundToInt((float)modifierIncrease)}",
-            _ => $"{icon}{upgrade.Point:N0} -> {upgrade.NextPoint:N0}"
+            EUpgradeType.HigherGradeSpawnWeightAdd =>
+                IsNextSpawnGradeUnlock(upgrade.Level)
+                    ? $"{icon}상위 슬라임 추가!"
+                    : $"{icon}Lv.{upgrade.Level} -> Lv.{upgrade.Level + 1}",
+            _ => $"{icon}{upgrade.Point:N0} -> {upgrade.NextPoint:N0}",
         };
+    }
+
+    private static bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)
+    {
+        return SlimeManager.Instance != null &&
+               SlimeManager.Instance.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
     private string BuildCostText(
@@ -172,7 +603,16 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     {
         if (isLocked)
         {
-            return "레벨 11 해금 필요";
+            if (upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd &&
+                SlimeManager.Instance != null)
+            {
+                ESlimeGrade requiredGrade =
+                    SlimeManager.Instance.GetRequiredHighestGradeForSpawnTier(
+                        upgrade.Level);
+                return $"최고 Lv.{(int)requiredGrade} 해금 필요";
+            }
+
+            return $"레벨 {(int)GameStageRules.SkyEntryGrade} 해금 필요";
         }
 
         if (isMax)

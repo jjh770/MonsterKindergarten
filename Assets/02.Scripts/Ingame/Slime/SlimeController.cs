@@ -6,6 +6,7 @@ public class SlimeController : MonoBehaviour, IClickable
 {
     private Slime _slime;
     public Slime Slime => _slime;
+    private SlimeInstance Instance { get; set; }
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private SlimeMove _slimeMove;
@@ -17,12 +18,19 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _isDragging = false;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
+    public string InstanceId => Instance?.InstanceId;
+    public bool IsSpecial => Instance != null && Instance.IsSpecial;
+    public ESlimeLocation Location => Instance != null
+        ? Instance.Location
+        : ESlimeLocation.MainStage;
     public bool IsDragging => _isDragging;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
     public bool IsCurrentStageActive =>
-        StageManager.Instance == null ||
-        StageManager.Instance.IsStageActive(Grade);
+        Instance != null &&
+        Location == ESlimeLocation.MainStage &&
+        (StageManager.Instance == null ||
+         StageManager.Instance.IsStageActive(Grade));
 
     public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnSpawned;
@@ -46,6 +54,12 @@ public class SlimeController : MonoBehaviour, IClickable
         OnGradeChanged?.Invoke(_slime.SpecData.Grade);
     }
 
+    public void Bind(Slime slime, SlimeInstance instance)
+    {
+        Instance = instance ?? throw new ArgumentNullException(nameof(instance));
+        SetSlime(slime);
+    }
+
     public void PromoteTo(Slime slime)
     {
         SetSlime(slime);
@@ -62,6 +76,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public void OnDespawn()
     {
         _isDragging = false;
+        Instance = null;
     }
 
     public void SetMovementLocked(bool isLocked)

@@ -1,49 +1,117 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+public static class TutorialIds
+{
+    public const string Main = "Tutorial";
+    public const string HigherGradeSpawn = "HigherGradeSpawnTutorial";
+}
 
 public static class TutorialProgress
 {
-    private const string KeySuffix = "_TutorialCompleted";
+    private struct TutorialState
+    {
+        public string CompletionKey;
+        public bool IsCompleted;
+    }
 
-    private static string _completionKey;
+    private static readonly Dictionary<string, TutorialState> s_stateById =
+        new Dictionary<string, TutorialState>();
+
+    private static string s_userId;
 
     public static bool IsInitialized { get; private set; }
-    public static bool IsCompleted { get; private set; }
-    public static bool ShouldRun => IsInitialized && !IsCompleted;
 
-    public static void Initialize(string userId, bool hasExistingProgress)
+    public static void Initialize(string userId)
     {
-        _completionKey = $"{userId}{KeySuffix}";
-        IsInitialized = true;
+        s_userId = userId;
+        s_stateById.Clear();
+        IsInitialized = !string.IsNullOrWhiteSpace(userId);
+    }
 
-        if (PlayerPrefs.HasKey(_completionKey))
+    public static void Register(
+        string tutorialId,
+        bool completeByDefault,
+        bool completeStoredIncomplete = true,
+        int version = 1)
+    {
+        if (!IsInitialized)
         {
-            bool wasCompleted = PlayerPrefs.GetInt(_completionKey, 0) == 1;
-            IsCompleted = wasCompleted || hasExistingProgress;
+            Debug.LogError("사용자 ID 없이 튜토리얼 진행 상태를 초기화할 수 없습니다.");
+            return;
+        }
 
-            if (!wasCompleted && IsCompleted)
+        string completionKey = BuildCompletionKey(tutorialId, version);
+        if (PlayerPrefs.HasKey(completionKey))
+        {
+            bool wasCompleted = PlayerPrefs.GetInt(completionKey, 0) == 1;
+            bool isCompleted = wasCompleted ||
+                               (completeStoredIncomplete && completeByDefault);
+            s_stateById[tutorialId] = new TutorialState
             {
-                SaveCompletionFlag();
+                CompletionKey = completionKey,
+                IsCompleted = isCompleted,
+            };
+
+            if (!wasCompleted && isCompleted)
+            {
+                SaveCompletionFlag(completionKey, isCompleted);
             }
 
             return;
         }
 
-        // 튜토리얼 도입 이전의 저장 데이터는 완료한 사용자로 간주한다.
-        IsCompleted = hasExistingProgress;
-        SaveCompletionFlag();
+        s_stateById[tutorialId] = new TutorialState
+        {
+            CompletionKey = completionKey,
+            IsCompleted = completeByDefault,
+        };
+        SaveCompletionFlag(completionKey, completeByDefault);
     }
 
-    public static void MarkCompleted()
+    public static bool IsRegistered(string tutorialId)
     {
-        if (!IsInitialized || IsCompleted) return;
-
-        IsCompleted = true;
-        SaveCompletionFlag();
+        return IsInitialized && s_stateById.ContainsKey(tutorialId);
     }
 
-    private static void SaveCompletionFlag()
+    public static bool IsCompleted(string tutorialId)
     {
-        PlayerPrefs.SetInt(_completionKey, IsCompleted ? 1 : 0);
+        return IsRegistered(tutorialId) && s_stateById[tutorialId].IsCompleted;
+    }
+
+    public static bool ShouldRun(string tutorialId)
+    {
+        return IsRegistered(tutorialId) && !s_stateById[tutorialId].IsCompleted;
+    }
+
+    public static void MarkCompleted(string tutorialId)
+    {
+        if (!s_stateById.TryGetValue(
+                tutorialId,
+                out TutorialState tutorialState) ||
+            tutorialState.IsCompleted)
+        {
+            return;
+        }
+
+        tutorialState.IsCompleted = true;
+        s_stateById[tutorialId] = tutorialState;
+        SaveCompletionFlag(
+            tutorialState.CompletionKey,
+            isCompleted: true);
+    }
+
+    private static string BuildCompletionKey(string tutorialId, int version)
+    {
+        string versionSuffix = version > 1 ? $"_v{version}" : string.Empty;
+        return $"{s_userId}_{tutorialId}Completed{versionSuffix}";
+    }
+
+    private static void SaveCompletionFlag(
+        string completionKey,
+        bool isCompleted)
+    {
+        PlayerPrefs.SetInt(completionKey, isCompleted ? 1 : 0);
         PlayerPrefs.Save();
     }
 }

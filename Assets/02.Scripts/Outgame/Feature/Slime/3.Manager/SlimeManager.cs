@@ -8,6 +8,7 @@ public class SlimeManager : MonoBehaviour
     public static SlimeManager Instance { get; private set; }
 
     [SerializeField] private SlimeSpecTable _specTable;
+    [SerializeField] private SpawnWeightTable _spawnWeightTable;
     private List<Slime> _slimes = new();
 
     private IRepository<SlimeStatusSaveData> _statusRepository;
@@ -23,6 +24,36 @@ public class SlimeManager : MonoBehaviour
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
+    public bool IsHigherGradeSpawnUnlocked =>
+        _spawnWeightTable != null &&
+        _status != null &&
+        _status.HighestGrade >=
+        _spawnWeightTable.GetRequiredHighestGradeForTier(0);
+
+    // 자연 스폰 상한은 최고 해금 등급으로 결정되므로 슬라임 도메인이 판정한다.
+    public bool IsHigherGradeSpawnTierLocked(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable == null ||
+               _status == null ||
+               _spawnWeightTable.IsUpgradeTierLocked(
+                   _status.HighestGrade,
+                   currentUpgradeLevel);
+    }
+
+    // 다음 레벨에서 자연 스폰 상한이 올라가는지 판정한다.
+    public bool IsSpawnCapRaisedAtNextLevel(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable != null &&
+               _spawnWeightTable.IsSpawnCapRaisedAt(currentUpgradeLevel + 1);
+    }
+
+    // 다음 스폰 상한 구간을 열기 위해 필요한 최고 해금 등급.
+    public ESlimeGrade GetRequiredHighestGradeForSpawnTier(int currentUpgradeLevel)
+    {
+        return _spawnWeightTable != null
+            ? _spawnWeightTable.GetRequiredHighestGradeForTier(currentUpgradeLevel)
+            : ESlimeGrade.Grade1;
+    }
 
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
@@ -58,12 +89,58 @@ public class SlimeManager : MonoBehaviour
         _statusRepository = new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.UserId);
 #endif
 
-        SlimeStatusSaveData saveData = await _statusRepository.Load();
+        SlimeStatusSaveData saveData;
+        try
+        {
+            saveData = await _statusRepository.Load();
+        }
+        catch (UnsupportedSaveVersionException e)
+        {
+            Debug.LogError(
+                $"[SlimeManager] 현재 앱에서 저장 데이터를 불러올 수 없습니다. " +
+                $"앱을 업데이트해 주세요. {e.Message}");
+            return;
+        }
+
+        var activeSlimes = new List<SlimeInstance>();
+        var restoredIds = new HashSet<string>();
+        foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)
+        {
+            if (instanceData == null)
+            {
+                Debug.LogWarning("비어 있는 슬라임 저장 항목을 건너뜁니다.");
+                continue;
+            }
+
+            try
+            {
+                SlimeInstance instance = instanceData.ToDomain();
+                if (!restoredIds.Add(instance.InstanceId))
+                {
+                    Debug.LogWarning(
+                        $"중복된 슬라임 개체를 건너뜁니다: {instance.InstanceId}");
+                    continue;
+                }
+
+                activeSlimes.Add(instance);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning(
+                    $"복원할 수 없는 슬라임 개체를 건너뜁니다: {e.Message}");
+            }
+        }
+
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
-            saveData.GetActiveSlimesDict(),
+            activeSlimes,
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
+
+        if (saveData.WasMigrated)
+        {
+            await SaveMigratedAsync();
+        }
 
         OnDataInitialized?.Invoke();
     }
@@ -123,20 +200,19 @@ public class SlimeManager : MonoBehaviour
     }
 
     // 슬라임 스폰 시 호출
-    public void AddSlime(ESlimeGrade grade)
+    public void AddSlime(SlimeInstance instance)
     {
-        _status.AddSlime(grade);
+        _status.AddSlime(instance);
         Save();
     }
 
-    // 머지 시 호출 (두 슬라임 제거 + 새 슬라임 추가)
-    // 디스폰 시의 카운트 차감도 이 메서드가 함께 처리한다.
-    // 단독 디스폰 경로를 추가할 경우 SlimeSpawner.Despawn과의 회계 분담부터 재설계할 것.
-    public void MergeSlime(ESlimeGrade fromGrade, ESlimeGrade toGrade)
+    // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.
+    public void MergeSlime(
+        string keeperId,
+        string removedId,
+        ESlimeGrade toGrade)
     {
-        _status.RemoveSlime(fromGrade); // keeper 기존 등급 제거
-        _status.RemoveSlime(fromGrade); // removed 슬라임 제거
-        _status.AddSlime(toGrade);      // 새 등급 추가
+        _status.MergeSlimes(keeperId, removedId, toGrade);
         Save();
     }
 
@@ -152,19 +228,32 @@ public class SlimeManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
+        return _statusRepository.Save(BuildSaveData());
+    }
+
+    // 데이터 형식 승격은 튜토리얼 진행 저장 게이트와 무관하게 반영한다.
+    private UniTask SaveMigratedAsync()
+    {
+        return _statusRepository.Save(BuildSaveData());
+    }
+
+    private SlimeStatusSaveData BuildSaveData()
+    {
         var saveData = new SlimeStatusSaveData
         {
+            SchemaVersion = SaveSchema.SlimeCurrentVersion,
             HighestGrade = (int)_status.HighestGrade,
-            ActiveSlimes = new List<SlimeEntry>(),
+            ActiveSlimes = new List<SlimeInstanceSaveData>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
         };
 
-        foreach (var pair in _status.ActiveSlimes)
+        foreach (SlimeInstance instance in _status.ActiveSlimes)
         {
-            saveData.ActiveSlimes.Add(new SlimeEntry(pair.Key, pair.Value));
+            saveData.ActiveSlimes.Add(
+                SlimeInstanceSaveData.FromDomain(instance));
         }
 
-        return _statusRepository.Save(saveData);
+        return saveData;
     }
 }

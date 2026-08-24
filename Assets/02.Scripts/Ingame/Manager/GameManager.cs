@@ -110,15 +110,22 @@ public class GameManager : MonoBehaviour
             SlimeManager.Instance.HasExistingProgress ||
             UpgradeManager.Instance.HasExistingProgress;
 
-        TutorialProgress.Initialize(
-            AccountManager.Instance.UserId,
+        TutorialProgress.Initialize(AccountManager.Instance.UserId);
+        TutorialProgress.Register(
+            TutorialIds.Main,
             hasExistingProgress);
-        GameplaySaveGate.SetSavingEnabled(TutorialProgress.IsCompleted);
+        TutorialProgress.Register(
+            TutorialIds.HigherGradeSpawn,
+            SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
+            completeStoredIncomplete: false);
+        GameplaySaveGate.SetSavingEnabled(
+            TutorialProgress.IsCompleted(TutorialIds.Main));
     }
 
     public async UniTask CompleteTutorialAsync()
     {
-        if (!TutorialProgress.IsInitialized || TutorialProgress.IsCompleted)
+        if (!TutorialProgress.IsRegistered(TutorialIds.Main) ||
+            TutorialProgress.IsCompleted(TutorialIds.Main))
         {
             GameplaySaveGate.SetSavingEnabled(true);
             return;
@@ -131,7 +138,7 @@ public class GameManager : MonoBehaviour
             SlimeManager.Instance.SaveCurrentAsync(),
             UpgradeManager.Instance.SaveCurrentAsync());
 
-        TutorialProgress.MarkCompleted();
+        TutorialProgress.MarkCompleted(TutorialIds.Main);
     }
 
     private void OnApplicationPause(bool pauseStatus)
@@ -213,17 +220,23 @@ public class GameManager : MonoBehaviour
     {
         double total = 0d;
 
-        foreach (var pair in SlimeManager.Instance.Status.ActiveSlimes)
+        foreach (SlimeInstance instance in SlimeManager.Instance.Status.ActiveSlimes)
         {
-            Slime slime = SlimeManager.Instance.Get(pair.Key);
-            if (slime == null || pair.Value <= 0 || slime.SpecData.AutoClickInterval <= 0f) continue;
+            if (instance.Location != ESlimeLocation.MainStage)
+            {
+                continue;
+            }
+
+            ESlimeGrade grade = instance.Grade;
+            Slime slime = SlimeManager.Instance.Get(grade);
+            if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
 
             double point = PointCalculator.Calculate(
                 slime.SpecData.Point,
-                pair.Key,
+                grade,
                 EClickType.Auto);
 
-            total += point / slime.SpecData.AutoClickInterval * pair.Value;
+            total += point / slime.SpecData.AutoClickInterval;
         }
 
         return total;

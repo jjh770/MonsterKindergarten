@@ -67,7 +67,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
             _dialoguePrefab,
             _guidePrefab);
         _presentation.ShowDialogue(
-            _tutorialContent.SkyIntroDialogue,
+            _tutorialContent.GetDialogue(DialogueId.SkyIntro),
             PlayJourney);
     }
 

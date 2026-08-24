@@ -136,7 +136,8 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     public void ShowUiTarget(
         string message,
         RectTransform target,
-        SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll)
+        SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll,
+        bool useRectangularHole = false)
     {
         SetCompactMessage(false);
         _worldTarget = null;
@@ -146,7 +147,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _hasSecondHole = false;
         _interactionMode = interactionMode;
         _centerCalloutBetweenTargets = false;
-        _useRectangularHole = false;
+        _useRectangularHole = useRectangularHole;
         _useRectangularSecondHole = false;
         _arrowRect.gameObject.SetActive(true);
         Show(message);

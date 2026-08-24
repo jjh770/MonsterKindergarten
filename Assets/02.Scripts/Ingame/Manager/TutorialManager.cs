@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -15,6 +16,11 @@ public sealed class TutorialManager : MonoBehaviour
         WaitingForUnlock,
         UpgradeButton,
         UpgradePanel,
+        SystemUpgradeCarousel,
+        HigherGradeSpawn,
+        HigherGradeSpawnPoolButton,
+        HigherGradeSpawnPoolPopup,
+        HigherGradeSpawnCarousel,
         Complete,
     }
 
@@ -25,8 +31,8 @@ public sealed class TutorialManager : MonoBehaviour
     [SerializeField] private TutorialContent _content;
     [SerializeField] private RectTransform _pointTarget;
     [SerializeField] private RectTransform _spawnGaugeTarget;
-    [SerializeField] private RectTransform _spawnIntervalUpgradeTarget;
-    [SerializeField] private RectTransform _spawnMaxUpgradeTarget;
+    [SerializeField] private SpawnSliderUI _spawnSliderUI;
+    [SerializeField] private SystemUpgradePanel _systemUpgradePanel;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField, Min(0f)] private float _mergeSlimeDistance = 1.5f;
@@ -51,6 +57,17 @@ public sealed class TutorialManager : MonoBehaviour
         if (SpawnManager.Instance == null) return;
 
         SpawnManager.Instance.OnTutorialSlimeReady += Begin;
+
+        if (_unlockPopupUI != null)
+        {
+            _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
+        }
+
+        if (_spawnSliderUI != null)
+        {
+            _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
+            _spawnSliderUI.SpawnPoolPopupClosed += OnSpawnPoolPopupClosed;
+        }
 
         if (SpawnManager.Instance.TutorialSlime != null)
         {
@@ -86,6 +103,18 @@ public sealed class TutorialManager : MonoBehaviour
             _upgradeUI.Closed -= OnUpgradeClosed;
         }
 
+        if (_systemUpgradePanel != null)
+        {
+            _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
+            _systemUpgradePanel.RotationCompleted -= OnHigherGradeSpawnUpgradeFocused;
+        }
+
+        if (_spawnSliderUI != null)
+        {
+            _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
+            _spawnSliderUI.SpawnPoolPopupClosed -= OnSpawnPoolPopupClosed;
+        }
+
         UnsubscribeMergeEvents();
 
         if (_presentation != null)
@@ -99,7 +128,7 @@ public sealed class TutorialManager : MonoBehaviour
     private void Begin(SlimeController tutorialSlime)
     {
         if (tutorialSlime == null || _step != TutorialStep.None) return;
-        if (!TutorialProgress.ShouldRun)
+        if (!TutorialProgress.ShouldRun(TutorialIds.Main))
         {
             tutorialSlime.SetMovementLocked(false);
             return;
@@ -117,16 +146,10 @@ public sealed class TutorialManager : MonoBehaviour
         Canvas sortingReference = _upgradeUI != null
             ? _upgradeUI.GetComponentInParent<Canvas>()
             : _canvas;
-        _presentation = new TutorialPresentation(
-            _canvas,
-            sortingReference,
-            _dialoguePrefab,
-            _guidePrefab);
-        _presentation.Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
-
-        if (_unlockPopupUI != null)
+        if (!EnsurePresentation(sortingReference))
         {
-            _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
+            Complete(tutorialSlime);
+            return;
         }
 
         if (_upgradeUI != null)
@@ -138,11 +161,13 @@ public sealed class TutorialManager : MonoBehaviour
         SpawnManager.Instance.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
         _upgradeUI?.SetToggleInputEnabled(false);
-        ShowDialogue(_content.IntroductionDialogue, ShowClickStep);
+        ShowDialogue(
+            _content.GetDialogue(DialogueId.Introduction),
+            ShowClickStep);
     }
 
     private void ShowDialogue(
-        TutorialDialogueLine[] lines,
+        IReadOnlyList<DialogueLine> lines,
         Action onComplete,
         bool keepGuideVisible = false,
         TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
@@ -167,7 +192,9 @@ public sealed class TutorialManager : MonoBehaviour
     {
         if (_step != TutorialStep.Click || target != _tutorialSlime) return;
 
-        ShowDialogue(_content.PointDialogue, ShowPointHighlightStep);
+        ShowDialogue(
+            _content.GetDialogue(DialogueId.Point),
+            ShowPointHighlightStep);
     }
 
     private void ShowPointHighlightStep()
@@ -191,7 +218,9 @@ public sealed class TutorialManager : MonoBehaviour
     {
         if (_step != TutorialStep.PointHighlight) return;
 
-        ShowDialogue(_content.MovementDialogue, ShowDragStep);
+        ShowDialogue(
+            _content.GetDialogue(DialogueId.Movement),
+            ShowDragStep);
     }
 
     private void ShowDragStep()
@@ -272,6 +301,15 @@ public sealed class TutorialManager : MonoBehaviour
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
+        if (SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsHigherGradeSpawnUnlocked &&
+            TutorialProgress.ShouldRun(TutorialIds.HigherGradeSpawn) &&
+            (_step == TutorialStep.None || _step == TutorialStep.Complete))
+        {
+            ShowHigherGradeSpawnTutorial();
+            return;
+        }
+
         if (_step != TutorialStep.WaitingForUnlock ||
             _promotedTutorialSlime == null ||
             grade != _promotedTutorialSlime.Grade)
@@ -280,6 +318,148 @@ public sealed class TutorialManager : MonoBehaviour
         }
 
         ShowMergeResultStep();
+    }
+
+    private void ShowHigherGradeSpawnTutorial()
+    {
+        TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
+
+        Canvas sortingReference = _upgradeUI != null
+            ? _upgradeUI.GetComponentInParent<Canvas>()
+            : _canvas;
+        if (!EnsurePresentation(sortingReference)) return;
+
+        _step = TutorialStep.HigherGradeSpawn;
+        SpawnManager.Instance?.SetSpawningPaused(true);
+        _autoClicker?.SetPaused(true);
+        _clicker?.SetInputMode(false, false);
+
+        if (_spawnGaugeTarget != null)
+        {
+            Spotlight.ShowUiFocus(
+                _spawnGaugeTarget,
+                useRectangularHole: true);
+        }
+
+        ShowDialogue(
+            _content.GetDialogue(DialogueId.HigherGradeSpawn),
+            ShowSpawnPoolButtonStep,
+            keepGuideVisible: _spawnGaugeTarget != null);
+    }
+
+    private void ShowSpawnPoolButtonStep()
+    {
+        RectTransform buttonTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
+        if (buttonTarget == null)
+        {
+            ShowHigherGradeSpawnUpgradeStep();
+            return;
+        }
+
+        _step = TutorialStep.HigherGradeSpawnPoolButton;
+        Spotlight.ShowUiTarget(
+            _content.SpawnPoolButtonMessage,
+            buttonTarget,
+            SpotlightInteractionMode.PassThroughPrimary,
+            useRectangularHole: true);
+    }
+
+    private void OnSpawnPoolPopupOpened()
+    {
+        if (_step != TutorialStep.HigherGradeSpawnPoolButton) return;
+
+        _step = TutorialStep.HigherGradeSpawnPoolPopup;
+        Spotlight.Hide();
+    }
+
+    private void OnSpawnPoolPopupClosed()
+    {
+        if (_step != TutorialStep.HigherGradeSpawnPoolPopup) return;
+
+        ShowHigherGradeSpawnUpgradeStep();
+    }
+
+    private void ShowHigherGradeSpawnUpgradeStep()
+    {
+        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        if (carouselTarget == null)
+        {
+            CompleteHigherGradeSpawnTutorial();
+            return;
+        }
+
+        _step = TutorialStep.HigherGradeSpawnCarousel;
+        Spotlight.ShowUiFocus(
+            carouselTarget,
+            useRectangularHole: true);
+
+        _systemUpgradePanel.RotationCompleted -= OnHigherGradeSpawnUpgradeFocused;
+        _systemUpgradePanel.RotationCompleted += OnHigherGradeSpawnUpgradeFocused;
+
+        if (!_systemUpgradePanel.TryFocus(
+                EUpgradeType.HigherGradeSpawnWeightAdd))
+        {
+            _systemUpgradePanel.RotationCompleted -= OnHigherGradeSpawnUpgradeFocused;
+            CompleteHigherGradeSpawnTutorial();
+            return;
+        }
+
+        if (_systemUpgradePanel.IsSelected(
+                EUpgradeType.HigherGradeSpawnWeightAdd))
+        {
+            OnHigherGradeSpawnUpgradeFocused();
+        }
+    }
+
+    private void OnHigherGradeSpawnUpgradeFocused()
+    {
+        if (_step != TutorialStep.HigherGradeSpawnCarousel ||
+            !_systemUpgradePanel.IsSelected(
+                EUpgradeType.HigherGradeSpawnWeightAdd))
+        {
+            return;
+        }
+
+        _systemUpgradePanel.RotationCompleted -= OnHigherGradeSpawnUpgradeFocused;
+        ShowDialogue(
+            _content.GetDialogue(DialogueId.HigherGradeSpawnUpgrade),
+            CompleteHigherGradeSpawnTutorial,
+            keepGuideVisible: true,
+            placement: TutorialDialoguePlacement.Top);
+    }
+
+    private void CompleteHigherGradeSpawnTutorial()
+    {
+        if (_systemUpgradePanel != null)
+        {
+            _systemUpgradePanel.RotationCompleted -= OnHigherGradeSpawnUpgradeFocused;
+        }
+
+        Spotlight?.Hide();
+        _step = TutorialStep.Complete;
+        _clicker?.SetInputMode(true, true);
+        SpawnManager.Instance?.SetSpawningPaused(false);
+        _autoClicker?.SetPaused(false);
+    }
+
+    private bool EnsurePresentation(Canvas sortingReference)
+    {
+        if (_presentation != null) return true;
+
+        if (_canvas == null || _dialoguePrefab == null ||
+            _guidePrefab == null || _content == null)
+        {
+            Debug.LogError("튜토리얼 Canvas, 프리팹 또는 콘텐츠 에셋이 없습니다.");
+            return false;
+        }
+
+        _presentation = new TutorialPresentation(
+            _canvas,
+            sortingReference,
+            _dialoguePrefab,
+            _guidePrefab);
+        _presentation.Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
+        return true;
     }
 
     private void ShowMergeResultStep()
@@ -292,7 +472,7 @@ public sealed class TutorialManager : MonoBehaviour
 
         Spotlight.ShowFocus(_promotedTutorialSlime.transform);
         ShowDialogue(
-            _content.MergeResultDialogue,
+            _content.GetDialogue(DialogueId.MergeResult),
             ShowUpgradeStep,
             keepGuideVisible: true);
     }
@@ -349,22 +529,49 @@ public sealed class TutorialManager : MonoBehaviour
 
     private void ShowSpawnUpgradeStep()
     {
-        if (_spawnIntervalUpgradeTarget == null || _spawnMaxUpgradeTarget == null)
+        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        if (carouselTarget == null)
         {
-            Debug.LogWarning("강조할 스폰 업그레이드 버튼이 없어 게이지 설명으로 이동합니다.");
+            Debug.LogWarning("강조할 시스템 업그레이드 캐러셀이 없어 게이지 설명으로 이동합니다.");
             ShowSpawnGaugeStep();
             return;
         }
 
-        Spotlight.ShowUiFocusTargets(
-            _spawnIntervalUpgradeTarget,
-            _spawnMaxUpgradeTarget,
-            useRectangularHoles: true);
+        Spotlight.ShowUiFocus(
+            carouselTarget,
+            useRectangularHole: true);
         ShowDialogue(
-            _content.SpawnUpgradeDialogue,
-            ShowSpawnGaugeStep,
+            _content.GetDialogue(DialogueId.SpawnUpgrade),
+            ShowSystemUpgradeCarouselStep,
             keepGuideVisible: true,
             placement: TutorialDialoguePlacement.Top);
+    }
+
+    private void ShowSystemUpgradeCarouselStep()
+    {
+        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        if (carouselTarget == null)
+        {
+            ShowSpawnGaugeStep();
+            return;
+        }
+
+        _step = TutorialStep.SystemUpgradeCarousel;
+        _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
+        _systemUpgradePanel.RotationCompleted += OnSystemUpgradeRotationCompleted;
+        Spotlight.ShowUiTarget(
+            _content.SystemUpgradeCarouselMessage,
+            carouselTarget,
+            SpotlightInteractionMode.PassThroughPrimary,
+            useRectangularHole: true);
+    }
+
+    private void OnSystemUpgradeRotationCompleted()
+    {
+        if (_step != TutorialStep.SystemUpgradeCarousel) return;
+
+        _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
+        ShowSpawnGaugeStep();
     }
 
     private void ShowSpawnGaugeStep()
@@ -380,7 +587,7 @@ public sealed class TutorialManager : MonoBehaviour
             _spawnGaugeTarget,
             useRectangularHole: true);
         ShowDialogue(
-            _content.SpawnGaugeDialogue,
+            _content.GetDialogue(DialogueId.SpawnGauge),
             ShowFinalDialogue,
             keepGuideVisible: true);
     }
@@ -388,7 +595,7 @@ public sealed class TutorialManager : MonoBehaviour
     private void ShowFinalDialogue()
     {
         ShowDialogue(
-            _content.FinalDialogue,
+            _content.GetDialogue(DialogueId.Final),
             () => Complete(_promotedTutorialSlime));
     }
 

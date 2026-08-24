@@ -7,7 +7,7 @@ public enum EGameStage
 public static class GameStageRules
 {
     // 하늘 스테이지가 시작되는 등급. 경계는 이 상수로만 정한다.
-    private const ESlimeGrade SkyEntryGrade = ESlimeGrade.Grade11;
+    public const ESlimeGrade SkyEntryGrade = ESlimeGrade.Grade11;
 
     public static EGameStage GetStage(ESlimeGrade grade)
     {

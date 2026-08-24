@@ -18,7 +18,9 @@ MonoBehaviour:
     MaxLevel: 70
     BaseCost: 100
     BasePoint: 0
-    CostMultiplier: 1.12
+    CostMultiplier: 1.18
+    CostTierSize: 10
+    CostTierMultiplier: 1.5
     PointMultiplier: 0.1
     PointFormula: 0
     SystemIconIndex: 8
@@ -26,15 +28,30 @@ MonoBehaviour:
     Description: "\uC2A4\uD3F0 \uC2DC\uAC04\uC774 \uB2E8\uCD95\uB429\uB2C8\uB2E4."
   - Type: 5
     SlimeGrade: 0
-    MaxLevel: 30
+    MaxLevel: 40
     BaseCost: 1000
     BasePoint: 0
     CostMultiplier: 1.5
+    CostTierSize: 5
+    CostTierMultiplier: 1.05
     PointMultiplier: 1
     PointFormula: 0
     SystemIconIndex: 9
     Name: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218"
     Description: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218 \uC99D\uAC00"
+  - Type: 6
+    SlimeGrade: 0
+    MaxLevel: 50
+    BaseCost: 5000
+    BasePoint: 0
+    CostMultiplier: 1.25
+    CostTierSize: 10
+    CostTierMultiplier: 2
+    PointMultiplier: 1
+    PointFormula: 0
+    SystemIconIndex: -1
+    Name: "\uC0C1\uC704 \uC2AC\uB77C\uC784 \uB4F1\uC7A5"
+    Description: "\uC790\uC5F0 \uC2A4\uD3F0\uC758 \uC0C1\uC704 \uB4F1\uAE09 \uB4F1\uC7A5 \uD655\uB960 \uC99D\uAC00"
   - Type: 0
     SlimeGrade: 1
     MaxLevel: 10

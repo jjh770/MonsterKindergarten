@@ -3,49 +3,45 @@ using System.Collections.Generic;
 
 public class SlimeStatus
 {
-    // 슬라임의 현황을 나타내는 슬라임 스테이터스
     // 최고 해금 등급 (한번 올라가면 내려가지 않음)
     public ESlimeGrade HighestGrade { get; private set; }
 
-    // 활성 슬라임: Grade별 개수
-    private readonly Dictionary<ESlimeGrade, int> _activeSlimes = new();
-    public IReadOnlyDictionary<ESlimeGrade, int> ActiveSlimes => _activeSlimes;
+    private readonly List<SlimeInstance> _activeSlimes = new();
+    public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
     public EGameStage CurrentStage { get; private set; }
     public bool SkyIntroCompleted { get; private set; }
 
     public SlimeStatus(
         ESlimeGrade highestGrade,
-        Dictionary<ESlimeGrade, int> activeSlimes,
+        IEnumerable<SlimeInstance> activeSlimes,
         EGameStage currentStage,
         bool skyIntroCompleted)
     {
-        // 최고 등급 규칙
-        if (highestGrade == ESlimeGrade.None || highestGrade == ESlimeGrade.Count)
-        {
-            throw new ArgumentException($"올바른 등급설정이 아닙니다. : {highestGrade}");
-        }
+        ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
+
         bool isSkyUnlocked = GameStageRules.IsSkyUnlocked(highestGrade);
         CurrentStage = isSkyUnlocked && GameStageRules.IsValid(currentStage)
             ? currentStage
             : EGameStage.Ground;
         SkyIntroCompleted = isSkyUnlocked && skyIntroCompleted;
 
-        // 활성 슬라임 규칙
-        foreach (var pair in activeSlimes)
+        if (activeSlimes == null)
         {
-            if (pair.Key == ESlimeGrade.None || pair.Key == ESlimeGrade.Count)
+            throw new ArgumentNullException(nameof(activeSlimes));
+        }
+
+        var instanceIds = new HashSet<string>();
+        foreach (SlimeInstance instance in activeSlimes)
+        {
+            ValidateInstance(instance);
+            if (!instanceIds.Add(instance.InstanceId))
             {
-                throw new ArgumentException($"유효하지 않은 슬라임 등급입니다. : {pair.Key}");
+                throw new ArgumentException(
+                    $"중복된 슬라임 개체 ID입니다. : {instance.InstanceId}");
             }
-            if (pair.Value < 0)
-            {
-                throw new ArgumentException($"슬라임 개수는 0 이상이어야 합니다. : {pair.Key} = {pair.Value}");
-            }
-            if (pair.Value > 0)
-            {
-                _activeSlimes[pair.Key] = pair.Value;
-            }
+
+            _activeSlimes.Add(instance);
         }
     }
 
@@ -69,40 +65,89 @@ public class SlimeStatus
                             GameStageRules.IsSkyUnlocked(HighestGrade);
     }
 
-    // 최고 등급 갱신 (올라가기만 가능)
     public void UpdateHighestGrade(ESlimeGrade newGrade)
     {
-        if (newGrade == ESlimeGrade.None || newGrade == ESlimeGrade.Count)
-            throw new ArgumentException($"올바른 등급설정이 아닙니다. : {newGrade}");
+        ValidateGrade(newGrade);
         if (newGrade <= HighestGrade)
-            throw new ArgumentException($"새 등급은 현재 최고 등급보다 높아야 합니다. : {newGrade} <= {HighestGrade}");
+        {
+            throw new ArgumentException(
+                $"새 등급은 현재 최고 등급보다 높아야 합니다. : {newGrade} <= {HighestGrade}");
+        }
 
         HighestGrade = newGrade;
     }
 
-    // 슬라임 추가
-    public void AddSlime(ESlimeGrade grade)
+    public void AddSlime(SlimeInstance instance)
     {
-        if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
-            throw new ArgumentException($"유효하지 않은 슬라임 등급입니다. : {grade}");
+        ValidateInstance(instance);
+        if (_activeSlimes.Exists(
+                active => active.InstanceId == instance.InstanceId))
+        {
+            throw new InvalidOperationException(
+                $"이미 등록된 슬라임 개체입니다. : {instance.InstanceId}");
+        }
 
-        if (_activeSlimes.ContainsKey(grade))
-            _activeSlimes[grade]++;
-        else
-            _activeSlimes[grade] = 1;
+        _activeSlimes.Add(instance);
     }
 
-    // 슬라임 제거
-    public void RemoveSlime(ESlimeGrade grade)
+    public void MergeSlimes(
+        string keeperId,
+        string removedId,
+        ESlimeGrade toGrade)
     {
-        if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
-            throw new ArgumentException($"유효하지 않은 슬라임 등급입니다. : {grade}");
+        if (string.IsNullOrWhiteSpace(keeperId) ||
+            string.IsNullOrWhiteSpace(removedId) ||
+            keeperId == removedId)
+        {
+            throw new ArgumentException("합성할 슬라임 개체가 올바르지 않습니다.");
+        }
 
-        if (!_activeSlimes.ContainsKey(grade) || _activeSlimes[grade] <= 0)
-            throw new InvalidOperationException($"제거할 슬라임이 없습니다. : {grade}");
+        SlimeInstance keeper = _activeSlimes.Find(
+            instance => instance.InstanceId == keeperId);
+        SlimeInstance removed = _activeSlimes.Find(
+            instance => instance.InstanceId == removedId);
+        if (keeper == null || removed == null)
+        {
+            throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
+        }
 
-        _activeSlimes[grade]--;
-        if (_activeSlimes[grade] <= 0)
-            _activeSlimes.Remove(grade);
+        ESlimeGrade fromGrade = keeper.Grade;
+        if (fromGrade != removed.Grade || toGrade != fromGrade + 1)
+        {
+            throw new InvalidOperationException("동일 등급의 다음 단계로만 합성할 수 있습니다.");
+        }
+
+        ValidateGrade(toGrade);
+        keeper.PromoteTo(toGrade);
+        // 활성 개체 제거는 현재 합성으로 소모되는 경우에만 허용한다.
+        _activeSlimes.Remove(removed);
+    }
+
+    private static void ValidateInstance(SlimeInstance instance)
+    {
+        if (instance == null)
+        {
+            throw new ArgumentNullException(nameof(instance));
+        }
+
+        if (string.IsNullOrWhiteSpace(instance.InstanceId))
+        {
+            throw new ArgumentException("슬라임 개체 ID가 비어 있습니다.");
+        }
+
+        ValidateGrade(instance.Grade);
+        if (!SlimeLocationRules.IsValid(instance.Location))
+        {
+            throw new ArgumentException(
+                $"유효하지 않은 슬라임 위치입니다. : {instance.Location}");
+        }
+    }
+
+    private static void ValidateGrade(ESlimeGrade grade)
+    {
+        if (grade < ESlimeGrade.Grade1 || grade >= ESlimeGrade.Count)
+        {
+            throw new ArgumentException($"올바른 등급 설정이 아닙니다. : {grade}");
+        }
     }
 }

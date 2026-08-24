@@ -26,10 +26,12 @@ public class MergeManager : MonoBehaviour
         ESlimeGrade toGrade = fromGrade + 1;
 
         Slime nextSlime = SlimeManager.Instance.Get(toGrade);
-        keeper.PromoteTo(nextSlime);
-
         SlimeManager.Instance.TryUpdateHighestLevel(toGrade);
-        SlimeManager.Instance.MergeSlime(fromGrade, toGrade);
+        SlimeManager.Instance.MergeSlime(
+            keeper.InstanceId,
+            removed.InstanceId,
+            toGrade);
+        keeper.PromoteTo(nextSlime);
 
         SpawnManager.Instance.Despawn(removed);
         Merged?.Invoke(keeper, fromGrade, toGrade);

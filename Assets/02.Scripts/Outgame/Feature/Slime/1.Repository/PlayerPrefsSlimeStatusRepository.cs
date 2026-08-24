@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
@@ -19,7 +20,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
     {
         try
         {
-            string json = JsonUtility.ToJson(new SlimeStatusSaveDataWrapper(saveData));
+            string json = JsonConvert.SerializeObject(saveData);
             PlayerPrefs.SetString(GetKey(), json);
             PlayerPrefs.Save();
         }
@@ -42,8 +43,41 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             string json = PlayerPrefs.GetString(key);
-            var wrapper = JsonUtility.FromJson<SlimeStatusSaveDataWrapper>(json);
-            return UniTask.FromResult(wrapper.ToSaveData());
+            JObject root = JObject.Parse(json);
+            int schemaVersion = root.Value<int?>(nameof(ISaveData.SchemaVersion)) ??
+                                SaveSchema.LegacyVersion;
+
+            if (schemaVersion > SaveSchema.SlimeCurrentVersion)
+            {
+                throw new UnsupportedSaveVersionException(
+                    "SlimeStatus",
+                    schemaVersion,
+                    SaveSchema.SlimeCurrentVersion);
+            }
+
+            SlimeStatusSaveData saveData;
+            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            {
+                LegacySlimeStatusSaveData legacyData =
+                    JsonConvert.DeserializeObject<LegacySlimeStatusSaveData>(json);
+                saveData = SlimeStatusSaveMigration.Upgrade(legacyData);
+            }
+            else
+            {
+                saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(json);
+            }
+
+            if (saveData == null)
+            {
+                return UniTask.FromResult(SlimeStatusSaveData.Default);
+            }
+
+            saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            return UniTask.FromResult(saveData);
+        }
+        catch (UnsupportedSaveVersionException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -52,60 +86,4 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             return UniTask.FromResult(SlimeStatusSaveData.Default);
         }
     }
-}
-
-// JsonUtility는 Dictionary를 직렬화할 수 없으므로 Wrapper 클래스 사용
-[Serializable]
-public class SlimeStatusSaveDataWrapper
-{
-    public int HighestGrade;
-    public List<SlimeEntryWrapper> ActiveSlimes = new();
-    public int CurrentStage;
-    public bool SkyIntroCompleted;
-    public string LastSaveTime;
-
-    public SlimeStatusSaveDataWrapper() { }
-
-    public SlimeStatusSaveDataWrapper(SlimeStatusSaveData data)
-    {
-        HighestGrade = data.HighestGrade;
-        CurrentStage = data.CurrentStage;
-        SkyIntroCompleted = data.SkyIntroCompleted;
-        LastSaveTime = data.LastSaveTime;
-        ActiveSlimes = new List<SlimeEntryWrapper>();
-
-        if (data.ActiveSlimes != null)
-        {
-            foreach (var entry in data.ActiveSlimes)
-            {
-                ActiveSlimes.Add(new SlimeEntryWrapper { Grade = entry.Grade, Count = entry.Count });
-            }
-        }
-    }
-
-    public SlimeStatusSaveData ToSaveData()
-    {
-        var data = new SlimeStatusSaveData
-        {
-            HighestGrade = HighestGrade,
-            CurrentStage = CurrentStage,
-            SkyIntroCompleted = SkyIntroCompleted,
-            LastSaveTime = LastSaveTime,
-            ActiveSlimes = new List<SlimeEntry>()
-        };
-
-        foreach (var entry in ActiveSlimes)
-        {
-            data.ActiveSlimes.Add(new SlimeEntry { Grade = entry.Grade, Count = entry.Count });
-        }
-
-        return data;
-    }
-}
-
-[Serializable]
-public class SlimeEntryWrapper
-{
-    public int Grade;
-    public int Count;
 }
