@@ -146,7 +146,10 @@ public class UpgradeManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
-        var data = new UpgradeSaveData();
+        var data = new UpgradeSaveData
+        {
+            SchemaVersion = SaveSchema.UpgradeCurrentVersion,
+        };
         foreach (var pair in _upgrades)
         {
             data.Entries.Add(new UpgradeEntry(pair.Key.Item1, pair.Key.Item2, pair.Value.Level));

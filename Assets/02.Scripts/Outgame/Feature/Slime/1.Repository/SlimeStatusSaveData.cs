@@ -28,6 +28,9 @@ public class SlimeEntry
 public class SlimeStatusSaveData : ISaveData
 {
     [FirestoreProperty]
+    public int SchemaVersion { get; set; }
+
+    [FirestoreProperty]
     public int HighestGrade { get; set; }
 
     [FirestoreProperty]
@@ -53,6 +56,7 @@ public class SlimeStatusSaveData : ISaveData
 
     public static SlimeStatusSaveData Default => new SlimeStatusSaveData
     {
+        SchemaVersion = SaveSchema.SlimeCurrentVersion,
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeEntry>(),
         CurrentStage = (int)EGameStage.Ground,

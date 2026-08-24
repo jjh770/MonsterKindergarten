@@ -33,6 +33,9 @@ public class UpgradeEntry
 [FirestoreData]
 public class UpgradeSaveData : ISaveData
 {
+    [FirestoreProperty]
+    public int SchemaVersion { get; set; }
+
     // 레벨 배열 (EUpgradeType 순서대로 저장)
     [FirestoreProperty]
     public List<UpgradeEntry> Entries { get; set; } = new();
@@ -40,6 +43,7 @@ public class UpgradeSaveData : ISaveData
     /// <summary>기본값 (새 게임)</summary>
     public static UpgradeSaveData Default => new UpgradeSaveData
     {
+        SchemaVersion = SaveSchema.UpgradeCurrentVersion,
         Entries = new List<UpgradeEntry>(),
     };
 

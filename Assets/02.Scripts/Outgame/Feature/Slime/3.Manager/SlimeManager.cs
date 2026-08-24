@@ -180,6 +180,7 @@ public class SlimeManager : MonoBehaviour
 
         var saveData = new SlimeStatusSaveData
         {
+            SchemaVersion = SaveSchema.SlimeCurrentVersion,
             HighestGrade = (int)_status.HighestGrade,
             ActiveSlimes = new List<SlimeEntry>(),
             CurrentStage = (int)_status.CurrentStage,

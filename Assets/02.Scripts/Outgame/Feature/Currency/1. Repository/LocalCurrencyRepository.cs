@@ -19,6 +19,7 @@ using UnityEngine;
 public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 {
     private const string LAST_SAVE_TIME_KEY = "Currency_LastSaveTime";
+    private const string SCHEMA_VERSION_KEY = "Currency_SchemaVersion";
     private readonly string _userId;
     public LocalCurrencyRepository(string userId)
     {
@@ -27,6 +28,8 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
     public UniTask Save(CurrencySaveData saveData)
     {
+        PlayerPrefs.SetInt($"{_userId}_{SCHEMA_VERSION_KEY}", saveData.SchemaVersion);
+
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
             var type = (ECurrencyType)i;
@@ -44,6 +47,8 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
     public UniTask<CurrencySaveData> Load()
     {
         CurrencySaveData data = CurrencySaveData.Default;
+        bool hasExistingData = PlayerPrefs.HasKey($"{_userId}_{LAST_SAVE_TIME_KEY}");
+
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
             var type = (ECurrencyType)i;
@@ -51,12 +56,23 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
             if (PlayerPrefs.HasKey(key))
             {
+                hasExistingData = true;
                 string value = PlayerPrefs.GetString(key, "0");
                 if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double currency))
                 {
                     data.Currencies[i] = currency;
                 }
             }
+        }
+
+        string schemaVersionKey = $"{_userId}_{SCHEMA_VERSION_KEY}";
+        if (PlayerPrefs.HasKey(schemaVersionKey))
+        {
+            data.SchemaVersion = PlayerPrefs.GetInt(schemaVersionKey);
+        }
+        else if (hasExistingData)
+        {
+            data.SchemaVersion = SaveSchema.LegacyVersion;
         }
 
         data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);
