@@ -69,7 +69,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
 
     private void Start()
     {
-        CreateCarouselSlots();
+        InitializeCarouselSlots();
         if (_slots.Count != RequiredSlotCount) return;
 
         foreach (CarouselSlot slot in _slots)
@@ -143,76 +143,48 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
         }
     }
 
-    private void CreateCarouselSlots()
+    private void InitializeCarouselSlots()
     {
-        var displayItems = new List<SystemUpgradeItemUI>();
+        _slots.Clear();
 
-        if (_items != null)
+        if (_items == null || _items.Length != RequiredSlotCount)
         {
-            foreach (SystemUpgradeItemUI item in _items)
-            {
-                if (item != null && displayItems.Count < RequiredSlotCount)
-                {
-                    displayItems.Add(item);
-                }
-            }
-        }
-
-        if (displayItems.Count == 0)
-        {
-            Debug.LogError("시스템 업그레이드 캐러셀 슬롯이 없습니다.", this);
+            Debug.LogError($"시스템 업그레이드 캐러셀에 {RequiredSlotCount}개 슬롯이 필요합니다.", this);
             enabled = false;
             return;
         }
 
-        while (displayItems.Count < RequiredSlotCount)
+        foreach (SystemUpgradeItemUI item in _items)
         {
-            SystemUpgradeItemUI clone = Instantiate(displayItems[0], transform);
-            clone.name = $"SystemUpgradeCarouselSlot{displayItems.Count + 1}";
-            displayItems.Add(clone);
-        }
+            RectTransform root = item != null
+                ? item.transform.parent as RectTransform
+                : null;
+            if (root == null)
+            {
+                Debug.LogError("시스템 업그레이드 캐러셀 슬롯 구성이 올바르지 않습니다.", this);
+                enabled = false;
+                _slots.Clear();
+                return;
+            }
 
-        for (int i = 0; i < RequiredSlotCount; i++)
-        {
-            _slots.Add(CreateSlotRoot(displayItems[i], i));
+            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                Debug.LogError($"{root.name}에 CanvasGroup이 없습니다.", root);
+                enabled = false;
+                _slots.Clear();
+                return;
+            }
+
+            _slots.Add(new CarouselSlot
+            {
+                Item = item,
+                Root = root,
+                CanvasGroup = canvasGroup,
+            });
         }
 
         ApplySlotLayouts();
-    }
-
-    private CarouselSlot CreateSlotRoot(SystemUpgradeItemUI item, int index)
-    {
-        RectTransform itemRect = item.transform as RectTransform;
-        GameObject rootObject = new GameObject(
-            $"CarouselSlot{index + 1}",
-            typeof(RectTransform),
-            typeof(CanvasGroup));
-        rootObject.layer = gameObject.layer;
-
-        RectTransform root = (RectTransform)rootObject.transform;
-        root.SetParent(transform, false);
-        root.anchorMin = new Vector2(0.5f, 0.5f);
-        root.anchorMax = new Vector2(0.5f, 0.5f);
-        root.pivot = new Vector2(0.5f, 0.5f);
-        root.sizeDelta = itemRect != null
-            ? itemRect.sizeDelta
-            : new Vector2(500f, 400f);
-
-        if (itemRect != null)
-        {
-            itemRect.SetParent(root, false);
-            itemRect.anchorMin = new Vector2(0.5f, 0.5f);
-            itemRect.anchorMax = new Vector2(0.5f, 0.5f);
-            itemRect.anchoredPosition = Vector2.zero;
-            itemRect.pivot = new Vector2(0.5f, 0.5f);
-        }
-
-        return new CarouselSlot
-        {
-            Item = item,
-            Root = root,
-            CanvasGroup = rootObject.GetComponent<CanvasGroup>(),
-        };
     }
 
     private void OnAllDataInitialized()
