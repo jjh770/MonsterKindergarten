@@ -120,31 +120,13 @@ public class AudioManager : MonoBehaviour
 
     private void InitializeAudioSources()
     {
-        if (_bgmSource == null)
+        if (_bgmSource == null ||
+            _secondaryBgmSource == null ||
+            _sfxSource == null)
         {
-            var bgmObj = new GameObject("BGM Source");
-            bgmObj.transform.SetParent(transform);
-            _bgmSource = bgmObj.AddComponent<AudioSource>();
-            _bgmSource.loop = true;
-            _bgmSource.playOnAwake = false;
-        }
-
-        if (_secondaryBgmSource == null)
-        {
-            var secondaryBgmObj = new GameObject("Secondary BGM Source");
-            secondaryBgmObj.transform.SetParent(transform);
-            _secondaryBgmSource = secondaryBgmObj.AddComponent<AudioSource>();
-            _secondaryBgmSource.loop = true;
-            _secondaryBgmSource.playOnAwake = false;
-        }
-
-        if (_sfxSource == null)
-        {
-            var sfxObj = new GameObject("SFX Source");
-            sfxObj.transform.SetParent(transform);
-            _sfxSource = sfxObj.AddComponent<AudioSource>();
-            _sfxSource.loop = false;
-            _sfxSource.playOnAwake = false;
+            Debug.LogError("AudioManager의 AudioSource 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
         }
 
         if (_bgmMixerGroup != null)

@@ -1,34 +1,40 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
-public sealed class TutorialPresentation : IDisposable
+public sealed class DialoguePresentation : IDisposable
 {
-    private readonly Canvas _tutorialCanvas;
+    private readonly GameObject _presentationObject;
     private readonly TutorialDialogueView _dialogueView;
     private IReadOnlyList<DialogueLine> _activeDialogue;
     private int _dialogueIndex;
     private Action _onDialogueComplete;
     private bool _keepSpotlightVisible;
-    private TutorialDialoguePlacement _dialoguePlacement;
+    private DialoguePlacement _dialoguePlacement;
     private bool _isDisposed;
 
     public TutorialSpotlightView Spotlight { get; }
 
-    public TutorialPresentation(
+    public DialoguePresentation(
         Canvas parentCanvas,
         Canvas sortingReference,
-        TutorialDialogueView dialoguePrefab,
-        TutorialSpotlightView spotlightPrefab)
+        GameObject presentationPrefab)
     {
-        _tutorialCanvas = CreateTutorialCanvas(parentCanvas, sortingReference);
-        _dialogueView = UnityEngine.Object.Instantiate(
-            dialoguePrefab,
-            _tutorialCanvas.transform);
-        Spotlight = UnityEngine.Object.Instantiate(
-            spotlightPrefab,
-            _tutorialCanvas.transform);
+        _presentationObject = UnityEngine.Object.Instantiate(
+            presentationPrefab,
+            parentCanvas.transform);
+
+        Canvas dialogueCanvas = _presentationObject.GetComponent<Canvas>();
+        _dialogueView = _presentationObject.GetComponentInChildren<TutorialDialogueView>(true);
+        Spotlight = _presentationObject.GetComponentInChildren<TutorialSpotlightView>(true);
+        if (dialogueCanvas == null || _dialogueView == null || Spotlight == null)
+        {
+            UnityEngine.Object.Destroy(_presentationObject);
+            throw new InvalidOperationException(
+                "DialoguePresentation 프리팹의 필수 컴포넌트가 없습니다.");
+        }
+
+        ConfigureSorting(dialogueCanvas, sortingReference ?? parentCanvas);
         _dialogueView.NextRequested += OnNextRequested;
     }
 
@@ -36,7 +42,7 @@ public sealed class TutorialPresentation : IDisposable
         IReadOnlyList<DialogueLine> lines,
         Action onComplete,
         bool keepSpotlightVisible = false,
-        TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
+        DialoguePlacement placement = DialoguePlacement.Bottom)
     {
         _keepSpotlightVisible = keepSpotlightVisible;
         _dialoguePlacement = placement;
@@ -66,7 +72,7 @@ public sealed class TutorialPresentation : IDisposable
         _dialogueView.NextRequested -= OnNextRequested;
         _activeDialogue = null;
         _onDialogueComplete = null;
-        UnityEngine.Object.Destroy(_tutorialCanvas.gameObject);
+        UnityEngine.Object.Destroy(_presentationObject);
     }
 
     private void OnNextRequested()
@@ -106,31 +112,10 @@ public sealed class TutorialPresentation : IDisposable
         onComplete?.Invoke();
     }
 
-    private static Canvas CreateTutorialCanvas(
-        Canvas parentCanvas,
-        Canvas sortingReference)
+    private static void ConfigureSorting(Canvas dialogueCanvas, Canvas reference)
     {
-        GameObject canvasObject = new GameObject(
-            "TutorialCanvas",
-            typeof(RectTransform),
-            typeof(Canvas),
-            typeof(GraphicRaycaster));
-        canvasObject.layer = parentCanvas.gameObject.layer;
-
-        RectTransform rectTransform = (RectTransform)canvasObject.transform;
-        rectTransform.SetParent(parentCanvas.transform, false);
-        rectTransform.anchorMin = Vector2.zero;
-        rectTransform.anchorMax = Vector2.one;
-        rectTransform.offsetMin = Vector2.zero;
-        rectTransform.offsetMax = Vector2.zero;
-
-        Canvas reference = sortingReference != null
-            ? sortingReference
-            : parentCanvas;
-        Canvas tutorialCanvas = canvasObject.GetComponent<Canvas>();
-        tutorialCanvas.overrideSorting = true;
-        tutorialCanvas.sortingLayerID = reference.sortingLayerID;
-        tutorialCanvas.sortingOrder = reference.sortingOrder + 100;
-        return tutorialCanvas;
+        dialogueCanvas.overrideSorting = true;
+        dialogueCanvas.sortingLayerID = reference.sortingLayerID;
+        dialogueCanvas.sortingOrder = reference.sortingOrder + 100;
     }
 }

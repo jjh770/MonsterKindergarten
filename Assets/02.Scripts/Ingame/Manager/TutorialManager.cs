@@ -26,8 +26,7 @@ public sealed class TutorialManager : MonoBehaviour
 
     [Header("Guide UI")]
     [SerializeField] private Canvas _canvas;
-    [SerializeField] private TutorialDialogueView _dialoguePrefab;
-    [SerializeField] private TutorialSpotlightView _guidePrefab;
+    [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _content;
     [SerializeField] private RectTransform _pointTarget;
     [SerializeField] private RectTransform _spawnGaugeTarget;
@@ -41,7 +40,7 @@ public sealed class TutorialManager : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
 
-    private TutorialPresentation _presentation;
+    private DialoguePresentation _presentation;
     private SlimeController _tutorialSlime;
     private SlimeController _mergeTutorialSlime;
     private SlimeController _promotedTutorialSlime;
@@ -134,8 +133,8 @@ public sealed class TutorialManager : MonoBehaviour
             return;
         }
 
-        if (_canvas == null || _dialoguePrefab == null ||
-            _guidePrefab == null || _content == null)
+        if (_canvas == null || _dialoguePresentationPrefab == null ||
+            _content == null)
         {
             Debug.LogError("튜토리얼 Canvas, 프리팹 또는 콘텐츠 에셋이 없습니다.");
             Complete(tutorialSlime);
@@ -170,7 +169,7 @@ public sealed class TutorialManager : MonoBehaviour
         IReadOnlyList<DialogueLine> lines,
         Action onComplete,
         bool keepGuideVisible = false,
-        TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
+        DialoguePlacement placement = DialoguePlacement.Bottom)
     {
         _step = TutorialStep.Dialogue;
         _clicker.SetInputMode(false, false);
@@ -290,10 +289,7 @@ public sealed class TutorialManager : MonoBehaviour
         Spotlight.Hide();
         _clicker.SetInputMode(false, false);
 
-        bool willUnlockNewGrade = SlimeManager.Instance != null &&
-                                  survivingSlime != null &&
-                                  survivingSlime.Grade > SlimeManager.Instance.HighestGrade;
-        if (!willUnlockNewGrade || _unlockPopupUI == null)
+        if (_unlockPopupUI == null || !_unlockPopupUI.IsPresenting)
         {
             ShowMergeResultStep();
         }
@@ -425,7 +421,7 @@ public sealed class TutorialManager : MonoBehaviour
             _content.GetDialogue(DialogueId.HigherGradeSpawnUpgrade),
             CompleteHigherGradeSpawnTutorial,
             keepGuideVisible: true,
-            placement: TutorialDialoguePlacement.Top);
+            placement: DialoguePlacement.Top);
     }
 
     private void CompleteHigherGradeSpawnTutorial()
@@ -446,18 +442,17 @@ public sealed class TutorialManager : MonoBehaviour
     {
         if (_presentation != null) return true;
 
-        if (_canvas == null || _dialoguePrefab == null ||
-            _guidePrefab == null || _content == null)
+        if (_canvas == null || _dialoguePresentationPrefab == null ||
+            _content == null)
         {
             Debug.LogError("튜토리얼 Canvas, 프리팹 또는 콘텐츠 에셋이 없습니다.");
             return false;
         }
 
-        _presentation = new TutorialPresentation(
+        _presentation = new DialoguePresentation(
             _canvas,
             sortingReference,
-            _dialoguePrefab,
-            _guidePrefab);
+            _dialoguePresentationPrefab);
         _presentation.Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         return true;
     }
@@ -544,7 +539,7 @@ public sealed class TutorialManager : MonoBehaviour
             _content.GetDialogue(DialogueId.SpawnUpgrade),
             ShowSystemUpgradeCarouselStep,
             keepGuideVisible: true,
-            placement: TutorialDialoguePlacement.Top);
+            placement: DialoguePlacement.Top);
     }
 
     private void ShowSystemUpgradeCarouselStep()

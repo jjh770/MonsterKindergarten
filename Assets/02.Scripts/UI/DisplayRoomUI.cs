@@ -16,6 +16,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
             _spaceButton == null ||
             _spaceButtonText == null ||
             _gameExitManager == null ||
+            GameManager.Instance == null ||
             StageManager.Instance == null)
         {
             Debug.LogError("장식장 UI의 필수 참조가 비어 있습니다.", this);
@@ -26,6 +27,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _spaceButton.onClick.AddListener(OnSpaceButtonClicked);
         StageManager.Instance.SpaceChanged += OnSpaceChanged;
         GameManager.OnAllDataInitialized += Refresh;
+        GameManager.Instance.OnGameplayActivated += Refresh;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
 
         RefreshLayout();
@@ -42,6 +44,11 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= Refresh;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameplayActivated -= Refresh;
+        }
+
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
         _gameExitManager?.UnregisterBackHandler(this);
     }
@@ -103,6 +110,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              !stageManager.IsMainStageActive;
         bool isUnlocked = GameManager.Instance != null &&
                           GameManager.Instance.IsAllDataInitialized &&
+                          GameManager.Instance.IsGameplayActive &&
                           SlimeManager.Instance != null &&
                           SlimeManager.Instance.HighestGrade >= ESlimeGrade.Grade3;
 

@@ -1606,6 +1606,7 @@ GameObject:
   m_Component:
   - component: {fileID: 463913324}
   - component: {fileID: 463913325}
+  - component: {fileID: 2099700001}
   m_Layer: 5
   m_Name: LobbyErrorPopupUI
   m_TagString: Untagged
@@ -1654,6 +1655,7 @@ MonoBehaviour:
   _fadeOutDuration: 0.2
   _notEnoughSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
   _popupRectTransform: {fileID: 463913324}
+  _canvasGroup: {fileID: 2099700001}
 --- !u!1 &466817952
 GameObject:
   m_ObjectHideFlags: 0
@@ -6276,6 +6278,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050279384}
   m_CullTransparentMesh: 1
+--- !u!225 &2099700001
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463913323}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

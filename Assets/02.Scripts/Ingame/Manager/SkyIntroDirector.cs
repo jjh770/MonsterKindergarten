@@ -9,14 +9,13 @@ public sealed class SkyIntroDirector : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
-    [SerializeField] private TutorialDialogueView _dialoguePrefab;
-    [SerializeField] private TutorialSpotlightView _guidePrefab;
+    [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
 
     [Header("Intro")]
     [SerializeField, Min(0f)] private float _chargeDuration = 0.8f;
 
-    private TutorialPresentation _presentation;
+    private DialoguePresentation _presentation;
     private SlimeController _pendingTarget;
     private Sequence _chargeSequence;
     private bool _isStarted;
@@ -32,8 +31,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (_canvas == null ||
             _stageUI == null ||
-            _dialoguePrefab == null ||
-            _guidePrefab == null ||
+            _dialoguePresentationPrefab == null ||
             _tutorialContent == null)
         {
             Debug.LogError("하늘 인트로 연출의 필수 참조가 비어 있습니다.", this);
@@ -61,11 +59,10 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _pendingTarget.PrepareStageTransfer();
 
         _presentation?.Dispose();
-        _presentation = new TutorialPresentation(
+        _presentation = new DialoguePresentation(
             _canvas,
             _canvas,
-            _dialoguePrefab,
-            _guidePrefab);
+            _dialoguePresentationPrefab);
         _presentation.ShowDialogue(
             _tutorialContent.GetDialogue(DialogueId.SkyIntro),
             PlayJourney);

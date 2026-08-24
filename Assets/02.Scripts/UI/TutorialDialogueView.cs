@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum TutorialDialoguePlacement
+public enum DialoguePlacement
 {
     Bottom,
     Top,
@@ -30,7 +30,7 @@ public sealed class TutorialDialogueView : MonoBehaviour
 
         if (_dialoguePanel == null || _dialogueText == null || _nextButton == null)
         {
-            Debug.LogError("튜토리얼 대화창 프리팹의 참조가 비어 있습니다.", this);
+            Debug.LogError("대화창 프리팹의 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -51,7 +51,7 @@ public sealed class TutorialDialogueView : MonoBehaviour
         string speaker,
         string message,
         bool dimBackground = true,
-        TutorialDialoguePlacement placement = TutorialDialoguePlacement.Bottom)
+        DialoguePlacement placement = DialoguePlacement.Bottom)
     {
         SetPlacement(placement);
         Color backgroundColor = _backgroundColor;
@@ -63,9 +63,9 @@ public sealed class TutorialDialogueView : MonoBehaviour
         _nextButton.Select();
     }
 
-    private void SetPlacement(TutorialDialoguePlacement placement)
+    private void SetPlacement(DialoguePlacement placement)
     {
-        bool placeAtTop = placement == TutorialDialoguePlacement.Top;
+        bool placeAtTop = placement == DialoguePlacement.Top;
         float anchorY = placeAtTop ? 1f : 0f;
         _dialoguePanel.anchorMin = new Vector2(0f, anchorY);
         _dialoguePanel.anchorMax = new Vector2(1f, anchorY);
