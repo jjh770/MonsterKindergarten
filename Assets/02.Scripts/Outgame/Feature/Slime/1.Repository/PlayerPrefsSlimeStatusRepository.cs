@@ -47,6 +47,14 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             int schemaVersion = root.Value<int?>(nameof(ISaveData.SchemaVersion)) ??
                                 SaveSchema.LegacyVersion;
 
+            if (schemaVersion > SaveSchema.SlimeCurrentVersion)
+            {
+                throw new UnsupportedSaveVersionException(
+                    "SlimeStatus",
+                    schemaVersion,
+                    SaveSchema.SlimeCurrentVersion);
+            }
+
             SlimeStatusSaveData saveData;
             if (schemaVersion < SaveSchema.SlimeCurrentVersion)
             {
@@ -66,6 +74,10 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
 
             saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
             return UniTask.FromResult(saveData);
+        }
+        catch (UnsupportedSaveVersionException)
+        {
+            throw;
         }
         catch (Exception e)
         {

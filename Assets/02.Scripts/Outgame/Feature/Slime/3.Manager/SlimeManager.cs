@@ -89,7 +89,19 @@ public class SlimeManager : MonoBehaviour
         _statusRepository = new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.UserId);
 #endif
 
-        SlimeStatusSaveData saveData = await _statusRepository.Load();
+        SlimeStatusSaveData saveData;
+        try
+        {
+            saveData = await _statusRepository.Load();
+        }
+        catch (UnsupportedSaveVersionException e)
+        {
+            Debug.LogError(
+                $"[SlimeManager] 현재 앱에서 저장 데이터를 불러올 수 없습니다. " +
+                $"앱을 업데이트해 주세요. {e.Message}");
+            return;
+        }
+
         var activeSlimes = new List<SlimeInstance>();
         var restoredIds = new HashSet<string>();
         foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)

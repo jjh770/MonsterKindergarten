@@ -45,6 +45,14 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                 schemaVersion = (int)storedSchemaVersion;
             }
 
+            if (schemaVersion > SaveSchema.SlimeCurrentVersion)
+            {
+                throw new UnsupportedSaveVersionException(
+                    "SlimeStatus",
+                    schemaVersion,
+                    SaveSchema.SlimeCurrentVersion);
+            }
+
             if (schemaVersion < SaveSchema.SlimeCurrentVersion)
             {
                 LegacySlimeStatusSaveData legacyData =
@@ -59,6 +67,10 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                 return data;
             }
             return SlimeStatusSaveData.Default;
+        }
+        catch (UnsupportedSaveVersionException)
+        {
+            throw;
         }
         catch (Exception e)
         {
