@@ -64,7 +64,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
                 return UniTask.FromResult(SlimeStatusSaveData.Default);
             }
 
-            saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstance>();
+            saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
             return UniTask.FromResult(saveData);
         }
         catch (Exception e)

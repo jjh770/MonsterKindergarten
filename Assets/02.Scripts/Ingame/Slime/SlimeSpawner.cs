@@ -45,7 +45,7 @@ public class SlimeSpawner : MonoBehaviour
     {
         if (instance == null) return null;
 
-        ESlimeGrade slimeGrade = instance.GetGrade();
+        ESlimeGrade slimeGrade = instance.Grade;
         Slime startSlime = SlimeManager.Instance.Get(slimeGrade);
         if (startSlime == null) return null;
 

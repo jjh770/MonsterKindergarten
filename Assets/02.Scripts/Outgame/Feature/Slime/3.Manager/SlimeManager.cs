@@ -90,9 +90,38 @@ public class SlimeManager : MonoBehaviour
 #endif
 
         SlimeStatusSaveData saveData = await _statusRepository.Load();
+        var activeSlimes = new List<SlimeInstance>();
+        var restoredIds = new HashSet<string>();
+        foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)
+        {
+            if (instanceData == null)
+            {
+                Debug.LogWarning("비어 있는 슬라임 저장 항목을 건너뜁니다.");
+                continue;
+            }
+
+            try
+            {
+                SlimeInstance instance = instanceData.ToDomain();
+                if (!restoredIds.Add(instance.InstanceId))
+                {
+                    Debug.LogWarning(
+                        $"중복된 슬라임 개체를 건너뜁니다: {instance.InstanceId}");
+                    continue;
+                }
+
+                activeSlimes.Add(instance);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning(
+                    $"복원할 수 없는 슬라임 개체를 건너뜁니다: {e.Message}");
+            }
+        }
+
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
-            saveData.ActiveSlimes,
+            activeSlimes,
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
 
@@ -191,14 +220,15 @@ public class SlimeManager : MonoBehaviour
         {
             SchemaVersion = SaveSchema.SlimeCurrentVersion,
             HighestGrade = (int)_status.HighestGrade,
-            ActiveSlimes = new List<SlimeInstance>(),
+            ActiveSlimes = new List<SlimeInstanceSaveData>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
         };
 
         foreach (SlimeInstance instance in _status.ActiveSlimes)
         {
-            saveData.ActiveSlimes.Add(new SlimeInstance(instance));
+            saveData.ActiveSlimes.Add(
+                SlimeInstanceSaveData.FromDomain(instance));
         }
 
         return _statusRepository.Save(saveData);

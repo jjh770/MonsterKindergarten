@@ -55,7 +55,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
             SlimeStatusSaveData data = snapshot.ConvertTo<SlimeStatusSaveData>();
             if (data != null)
             {
-                data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstance>();
+                data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
                 return data;
             }
             return SlimeStatusSaveData.Default;

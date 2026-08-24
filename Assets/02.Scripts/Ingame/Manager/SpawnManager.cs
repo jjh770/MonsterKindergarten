@@ -157,7 +157,7 @@ public class SpawnManager : MonoBehaviour
 
         foreach (SlimeInstance instance in status.ActiveSlimes)
         {
-            if (instance.GetLocation() != ESlimeLocation.MainStage)
+            if (instance.Location != ESlimeLocation.MainStage)
             {
                 continue;
             }

@@ -21,7 +21,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public string InstanceId => Instance?.InstanceId;
     public bool IsSpecial => Instance != null && Instance.IsSpecial;
     public ESlimeLocation Location => Instance != null
-        ? Instance.GetLocation()
+        ? Instance.Location
         : ESlimeLocation.MainStage;
     public bool IsDragging => _isDragging;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;

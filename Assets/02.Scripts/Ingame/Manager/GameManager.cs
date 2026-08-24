@@ -222,12 +222,12 @@ public class GameManager : MonoBehaviour
 
         foreach (SlimeInstance instance in SlimeManager.Instance.Status.ActiveSlimes)
         {
-            if (instance.GetLocation() != ESlimeLocation.MainStage)
+            if (instance.Location != ESlimeLocation.MainStage)
             {
                 continue;
             }
 
-            ESlimeGrade grade = instance.GetGrade();
+            ESlimeGrade grade = instance.Grade;
             Slime slime = SlimeManager.Instance.Get(grade);
             if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
 

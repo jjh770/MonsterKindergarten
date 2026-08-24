@@ -105,8 +105,8 @@ public class SlimeStatus
             throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
         }
 
-        ESlimeGrade fromGrade = keeper.GetGrade();
-        if (fromGrade != removed.GetGrade() || toGrade != fromGrade + 1)
+        ESlimeGrade fromGrade = keeper.Grade;
+        if (fromGrade != removed.Grade || toGrade != fromGrade + 1)
         {
             throw new InvalidOperationException("동일 등급의 다음 단계로만 합성할 수 있습니다.");
         }
@@ -128,8 +128,8 @@ public class SlimeStatus
             throw new ArgumentException("슬라임 개체 ID가 비어 있습니다.");
         }
 
-        ValidateGrade(instance.GetGrade());
-        if (!SlimeLocationRules.IsValid(instance.GetLocation()))
+        ValidateGrade(instance.Grade);
+        if (!SlimeLocationRules.IsValid(instance.Location))
         {
             throw new ArgumentException(
                 $"유효하지 않은 슬라임 위치입니다. : {instance.Location}");
@@ -138,7 +138,7 @@ public class SlimeStatus
 
     private static void ValidateGrade(ESlimeGrade grade)
     {
-        if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
+        if (grade < ESlimeGrade.Grade1 || grade >= ESlimeGrade.Count)
         {
             throw new ArgumentException($"올바른 등급 설정이 아닙니다. : {grade}");
         }

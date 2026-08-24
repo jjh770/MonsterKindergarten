@@ -50,7 +50,7 @@ public sealed class SlimeStatusSaveData : ISaveData
     public int HighestGrade { get; set; }
 
     [FirestoreProperty]
-    public List<SlimeInstance> ActiveSlimes { get; set; } = new();
+    public List<SlimeInstanceSaveData> ActiveSlimes { get; set; } = new();
 
     [FirestoreProperty]
     public int CurrentStage { get; set; }
@@ -70,7 +70,7 @@ public sealed class SlimeStatusSaveData : ISaveData
     {
         SchemaVersion = SaveSchema.SlimeCurrentVersion,
         HighestGrade = (int)ESlimeGrade.Grade1,
-        ActiveSlimes = new List<SlimeInstance>(),
+        ActiveSlimes = new List<SlimeInstanceSaveData>(),
         CurrentStage = (int)EGameStage.Ground,
         SkyIntroCompleted = false,
     };
@@ -87,23 +87,35 @@ public static class SlimeStatusSaveMigration
             return SlimeStatusSaveData.Default;
         }
 
-        var activeSlimes = new List<SlimeInstance>();
+        var countsByGrade = new SortedDictionary<int, int>();
         if (legacyData.ActiveSlimes != null)
         {
             foreach (LegacySlimeEntry entry in legacyData.ActiveSlimes)
             {
                 if (entry == null || entry.Count <= 0) continue;
 
-                ESlimeGrade grade = (ESlimeGrade)entry.Grade;
-                if (grade == ESlimeGrade.None || grade == ESlimeGrade.Count)
+                if (entry.Grade < (int)ESlimeGrade.Grade1 ||
+                    entry.Grade >= (int)ESlimeGrade.Count)
                 {
                     continue;
                 }
 
-                for (int i = 0; i < entry.Count; i++)
-                {
-                    activeSlimes.Add(SlimeInstance.Create(grade));
-                }
+                countsByGrade.TryGetValue(entry.Grade, out int currentCount);
+                countsByGrade[entry.Grade] = currentCount + entry.Count;
+            }
+        }
+
+        // 같은 레거시 내용은 항목 순서와 중복 여부에 관계없이 같은 ID를 만든다.
+        var activeSlimes = new List<SlimeInstanceSaveData>();
+        foreach (KeyValuePair<int, int> pair in countsByGrade)
+        {
+            for (int i = 0; i < pair.Value; i++)
+            {
+                activeSlimes.Add(new SlimeInstanceSaveData(
+                    $"legacy-{pair.Key}-{i}",
+                    (ESlimeGrade)pair.Key,
+                    false,
+                    ESlimeLocation.MainStage));
             }
         }
 
