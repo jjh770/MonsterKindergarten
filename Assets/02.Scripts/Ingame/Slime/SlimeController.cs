@@ -6,7 +6,7 @@ public class SlimeController : MonoBehaviour, IClickable
 {
     private Slime _slime;
     public Slime Slime => _slime;
-    public SlimeInstance Instance { get; private set; }
+    private SlimeInstance Instance { get; set; }
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private SlimeMove _slimeMove;

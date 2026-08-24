@@ -127,7 +127,7 @@ public class SlimeManager : MonoBehaviour
 
         if (saveData.WasMigrated)
         {
-            await SaveCurrentAsync();
+            await SaveMigratedAsync();
         }
 
         OnDataInitialized?.Invoke();
@@ -196,11 +196,11 @@ public class SlimeManager : MonoBehaviour
 
     // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.
     public void MergeSlime(
-        SlimeInstance keeper,
-        SlimeInstance removed,
+        string keeperId,
+        string removedId,
         ESlimeGrade toGrade)
     {
-        _status.MergeSlimes(keeper, removed, toGrade);
+        _status.MergeSlimes(keeperId, removedId, toGrade);
         Save();
     }
 
@@ -216,6 +216,17 @@ public class SlimeManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
+        return _statusRepository.Save(BuildSaveData());
+    }
+
+    // 데이터 형식 승격은 튜토리얼 진행 저장 게이트와 무관하게 반영한다.
+    private UniTask SaveMigratedAsync()
+    {
+        return _statusRepository.Save(BuildSaveData());
+    }
+
+    private SlimeStatusSaveData BuildSaveData()
+    {
         var saveData = new SlimeStatusSaveData
         {
             SchemaVersion = SaveSchema.SlimeCurrentVersion,
@@ -231,6 +242,6 @@ public class SlimeManager : MonoBehaviour
                 SlimeInstanceSaveData.FromDomain(instance));
         }
 
-        return _statusRepository.Save(saveData);
+        return saveData;
     }
 }

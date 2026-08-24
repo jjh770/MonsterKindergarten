@@ -91,16 +91,22 @@ public class SlimeStatus
     }
 
     public void MergeSlimes(
-        SlimeInstance keeper,
-        SlimeInstance removed,
+        string keeperId,
+        string removedId,
         ESlimeGrade toGrade)
     {
-        if (keeper == null || removed == null || keeper == removed)
+        if (string.IsNullOrWhiteSpace(keeperId) ||
+            string.IsNullOrWhiteSpace(removedId) ||
+            keeperId == removedId)
         {
             throw new ArgumentException("합성할 슬라임 개체가 올바르지 않습니다.");
         }
 
-        if (!_activeSlimes.Contains(keeper) || !_activeSlimes.Contains(removed))
+        SlimeInstance keeper = _activeSlimes.Find(
+            instance => instance.InstanceId == keeperId);
+        SlimeInstance removed = _activeSlimes.Find(
+            instance => instance.InstanceId == removedId);
+        if (keeper == null || removed == null)
         {
             throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
         }

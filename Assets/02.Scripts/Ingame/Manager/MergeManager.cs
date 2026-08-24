@@ -28,8 +28,8 @@ public class MergeManager : MonoBehaviour
         Slime nextSlime = SlimeManager.Instance.Get(toGrade);
         SlimeManager.Instance.TryUpdateHighestLevel(toGrade);
         SlimeManager.Instance.MergeSlime(
-            keeper.Instance,
-            removed.Instance,
+            keeper.InstanceId,
+            removed.InstanceId,
             toGrade);
         keeper.PromoteTo(nextSlime);
 
