@@ -331,6 +331,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _warningSequence?.Kill();
         _warningText.text = message;
         _warningRoot.SetActive(true);
+        _warningRoot.transform.SetAsLastSibling();
         _warningCanvasGroup.alpha = 0f;
         _warningSequence = DOTween.Sequence()
             .Append(_warningCanvasGroup.DOFade(1f, 0.15f))

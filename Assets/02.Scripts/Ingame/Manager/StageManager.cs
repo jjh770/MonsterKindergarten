@@ -149,6 +149,28 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.PlayDisplayRoomTransfer(target, onComplete);
     }
 
+    public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.FocusDisplayRoomSlime(target, onComplete);
+    }
+
+    public void RestoreDisplayRoomFocus(Action onComplete = null)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.RestoreDisplayRoomFocus(onComplete);
+    }
+
     public bool TryExitDisplayRoom()
     {
         if (!_isInitialized ||

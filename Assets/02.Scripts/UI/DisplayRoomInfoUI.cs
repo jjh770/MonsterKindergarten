@@ -4,9 +4,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 기획서 §8 정보 UI 중 Phase 2에 필요한 최소 범위만 담당한다.
-// 장식장 슬라임을 터치하면 이름과 번호를 보여주고 §7.5 꺼내기 진입점을 제공한다.
-// 카메라 포커스와 관찰하기 버튼은 Phase 2-B에서 이 컴포넌트에 덧붙인다.
+// 장식장 슬라임 선택과 기획서 §8의 관찰 진입 UI를 담당한다.
+// 카메라 연출은 StageTransitionPlayer에 위임하고 이 컴포넌트는 표시 상태만 소유한다.
 //
 // DisplayRoomUI와 합치지 않는다. GameExitManager가 소유자별로 뒤로가기 핸들러를
 // 하나만 유지하므로, 같은 소유자가 장식장 나가기와 정보 UI 닫기를 함께 등록하면
@@ -47,6 +46,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
             return;
         }
 
+        _infoCanvasGroup.interactable = false;
         _infoRoot.SetActive(false);
         _closeButton.onClick.AddListener(Close);
         _takeOutButton.onClick.AddListener(OnTakeOutButtonClicked);
@@ -127,6 +127,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
         _target = target;
         _infoRoot.SetActive(true);
         _infoRoot.transform.SetAsLastSibling();
+        _infoCanvasGroup.alpha = 0f;
+        _infoCanvasGroup.interactable = false;
         _clicker.SetInputMode(false, false);
         _gameExitManager.RegisterBackHandler(this, TryClose);
 
@@ -134,11 +136,19 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
             ? target.Slime.SpecData.Name
             : string.Empty;
         _numberText.text = $"No.{(int)target.Grade}";
-        RefreshTakeOutButton();
         RefreshLayout();
 
+        StageManager.Instance.FocusDisplayRoomSlime(
+            target,
+            () => ShowInfo(target));
+    }
+
+    private void ShowInfo(SlimeController target)
+    {
+        if (_target != target) return;
+
+        _infoCanvasGroup.interactable = true;
         _fadeTween?.Kill();
-        _infoCanvasGroup.alpha = 0f;
         _fadeTween = _infoCanvasGroup
             .DOFade(1f, _fadeDuration)
             .OnComplete(() => _fadeTween = null);
@@ -160,7 +170,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
 
         _target = null;
         _gameExitManager.UnregisterBackHandler(this);
-        StageManager.Instance?.RefreshInteraction();
+        _infoCanvasGroup.interactable = false;
 
         _fadeTween?.Kill();
         _fadeTween = _infoCanvasGroup
@@ -170,6 +180,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
                 _fadeTween = null;
                 _infoRoot.SetActive(false);
             });
+        StageManager.Instance?.RestoreDisplayRoomFocus(
+            () => StageManager.Instance?.RefreshInteraction());
         return true;
     }
 
@@ -182,13 +194,13 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
             !SpawnManager.Instance.HasMainStageRoom())
         {
             _displayRoomUI.ShowWarning("메인 필드가 가득 차서 꺼낼 수 없어요.");
-            RefreshTakeOutButton();
             return;
         }
 
         SlimeController target = _target;
         _isTakeOutPlaying = true;
         _takeOutStartPosition = target.transform.position;
+        _infoCanvasGroup.interactable = false;
         _clicker.SetInputMode(false, false);
         StageManager.Instance.PlayDisplayRoomTransfer(
             target,
@@ -227,7 +239,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
             target.transform.position = _takeOutStartPosition;
             StageManager.Instance?.RefreshSlimePresentation(target);
             _clicker.SetInputMode(false, false);
-            RefreshTakeOutButton();
+            _infoCanvasGroup.interactable = true;
             _displayRoomUI.ShowWarning("이 슬라임은 지금 꺼낼 수 없어요.");
         }
     }
@@ -248,16 +260,11 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
         _isTakeOutPlaying = false;
         _target = null;
         _gameExitManager.UnregisterBackHandler(this);
+        _infoCanvasGroup.interactable = false;
         _fadeTween?.Kill();
         _fadeTween = null;
         _infoCanvasGroup.alpha = 0f;
         _infoRoot.SetActive(false);
-    }
-
-    private void RefreshTakeOutButton()
-    {
-        _takeOutButton.interactable = SpawnManager.Instance != null &&
-                                      SpawnManager.Instance.HasMainStageRoom();
     }
 
     private void RefreshLayout()

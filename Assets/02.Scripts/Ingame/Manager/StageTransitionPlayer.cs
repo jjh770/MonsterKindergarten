@@ -18,6 +18,11 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _cameraTransitionDuration = 1.2f;
     [SerializeField, Min(1f)] private float _cameraTravelDistance = 6f;
 
+    [Header("Display Room Focus")]
+    [SerializeField, Min(0.1f)] private float _displayRoomFocusDuration = 0.35f;
+    [SerializeField, Min(0.1f)] private float _displayRoomFocusSize = 2.5f;
+    [SerializeField, Min(0f)] private float _displayRoomFollowSpeed = 8f;
+
     [Header("Slime Transfer")]
     [SerializeField] private SlimeTransferSettings _skyTransfer = new()
     {
@@ -33,7 +38,10 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     };
 
     private Vector3 _cameraBasePosition;
+    private float _cameraBaseOrthographicSize;
     private Sequence _transitionSequence;
+    private Sequence _focusSequence;
+    private SlimeController _displayRoomFocusTarget;
 
     public bool IsTransitioning { get; private set; }
 
@@ -47,11 +55,80 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         }
 
         _cameraBasePosition = _camera.transform.position;
+        _cameraBaseOrthographicSize = _camera.orthographicSize;
+    }
+
+    private void LateUpdate()
+    {
+        if (_displayRoomFocusTarget == null ||
+            _focusSequence != null ||
+            IsTransitioning)
+        {
+            return;
+        }
+
+        Vector3 destination = GetDisplayRoomFocusPosition(_displayRoomFocusTarget);
+        float followAmount = 1f - Mathf.Exp(-_displayRoomFollowSpeed * Time.deltaTime);
+        _camera.transform.position = Vector3.Lerp(
+            _camera.transform.position,
+            destination,
+            followAmount);
     }
 
     private void OnDestroy()
     {
         _transitionSequence?.Kill();
+        _focusSequence?.Kill();
+    }
+
+    public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
+    {
+        if (target == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _displayRoomFocusTarget = target;
+        _focusSequence?.Kill();
+        _focusSequence = DOTween.Sequence();
+        _focusSequence.Join(
+            _camera.transform
+                .DOMove(GetDisplayRoomFocusPosition(target), _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.Join(
+            _camera
+                .DOOrthoSize(
+                    Mathf.Min(_cameraBaseOrthographicSize, _displayRoomFocusSize),
+                    _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.OnComplete(() =>
+        {
+            _focusSequence = null;
+            onComplete?.Invoke();
+        });
+    }
+
+    public void RestoreDisplayRoomFocus(Action onComplete = null)
+    {
+        _displayRoomFocusTarget = null;
+        _focusSequence?.Kill();
+        _focusSequence = DOTween.Sequence();
+        _focusSequence.Join(
+            _camera.transform
+                .DOMove(_cameraBasePosition, _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.Join(
+            _camera
+                .DOOrthoSize(_cameraBaseOrthographicSize, _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.OnComplete(() =>
+        {
+            _focusSequence = null;
+            _camera.transform.position = _cameraBasePosition;
+            _camera.orthographicSize = _cameraBaseOrthographicSize;
+            onComplete?.Invoke();
+        });
     }
 
     public void ApplyEnvironment(EGameStage stage, float crossFadeDuration)
@@ -163,6 +240,8 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     {
         if (IsTransitioning) return;
 
+        ResetDisplayRoomFocus();
+
         IsTransitioning = true;
         _stageUI.SetButtonInteractable(false);
         _stageUI.BeginOverlay();
@@ -243,6 +322,24 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                 _displayRoomTransfer.Duration)
             .SetEase(_displayRoomTransfer.Ease)
             .OnComplete(() => onComplete?.Invoke());
+    }
+
+    private Vector3 GetDisplayRoomFocusPosition(SlimeController target)
+    {
+        if (target == null) return _cameraBasePosition;
+
+        Vector3 position = target.transform.position;
+        position.z = _cameraBasePosition.z;
+        return position;
+    }
+
+    private void ResetDisplayRoomFocus()
+    {
+        _displayRoomFocusTarget = null;
+        _focusSequence?.Kill();
+        _focusSequence = null;
+        _camera.transform.position = _cameraBasePosition;
+        _camera.orthographicSize = _cameraBaseOrthographicSize;
     }
 
     private AudioClip GetStageBgm(EGameStage stage)

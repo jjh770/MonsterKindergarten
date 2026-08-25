@@ -1146,6 +1146,7 @@ RectTransform:
   - {fileID: 1907240555}
   - {fileID: 66315038}
   - {fileID: 995200002}
+  - {fileID: 993100602}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3536,6 +3537,9 @@ MonoBehaviour:
   _skyBgm: {fileID: 8300000, guid: 4b75d5e95b5825f4583e868cb4226f00, type: 3}
   _cameraTransitionDuration: 1.2
   _cameraTravelDistance: 6
+  _displayRoomFocusDuration: 0.35
+  _displayRoomFocusSize: 2.5
+  _displayRoomFollowSpeed: 8
   _skyTransfer:
     Distance: 6
     Duration: 0.9
@@ -4796,7 +4800,6 @@ RectTransform:
   m_Children:
   - {fileID: 993100402}
   - {fileID: 993100502}
-  - {fileID: 993100602}
   m_Father: {fileID: 66315038}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -5262,7 +5265,7 @@ GameObject:
   - component: {fileID: 993100604}
   - component: {fileID: 993100605}
   m_Layer: 5
-  m_Name: SendModeWarning
+  m_Name: DisplayRoomWarning
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5281,7 +5284,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 993100612}
-  m_Father: {fileID: 993100202}
+  m_Father: {fileID: 457349917}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -5624,7 +5627,7 @@ CanvasGroup:
   m_GameObject: {fileID: 995200101}
   m_Enabled: 1
   m_Alpha: 0
-  m_Interactable: 1
+  m_Interactable: 0
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
 --- !u!1 &995200201
