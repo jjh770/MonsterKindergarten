@@ -14,9 +14,23 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [SerializeField] private AudioClip _groundBgm;
     [SerializeField] private AudioClip _skyBgm;
 
-    [Header("Transition")]
-    [SerializeField, Min(0.1f)] private float _transitionDuration = 1.2f;
+    [Header("Camera Transition")]
+    [SerializeField, Min(0.1f)] private float _cameraTransitionDuration = 1.2f;
     [SerializeField, Min(1f)] private float _cameraTravelDistance = 6f;
+
+    [Header("Slime Transfer")]
+    [SerializeField] private SlimeTransferSettings _skyTransfer = new()
+    {
+        Distance = 6f,
+        Duration = 0.9f,
+        Ease = Ease.InQuad,
+    };
+    [SerializeField] private SlimeTransferSettings _displayRoomTransfer = new()
+    {
+        Distance = 6f,
+        Duration = 0.45f,
+        Ease = Ease.InBack,
+    };
 
     private Vector3 _cameraBasePosition;
     private Sequence _transitionSequence;
@@ -61,7 +75,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         _stageUI.BeginOverlay();
 
         float direction = targetStage == EGameStage.Sky ? 1f : -1f;
-        float halfDuration = _transitionDuration * 0.5f;
+        float halfDuration = _cameraTransitionDuration * 0.5f;
         Vector2 slimeDestination = SpawnManager.Instance != null
             ? SpawnManager.Instance.GetRandomSpawnPosition()
             : Vector2.zero;
@@ -76,7 +90,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
         AudioManager.Instance?.CrossFadeBGM(
             GetStageBgm(targetStage),
-            _transitionDuration);
+            _cameraTransitionDuration);
 
         _transitionSequence?.Kill();
         _transitionSequence = DOTween.Sequence();
@@ -154,7 +168,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         _stageUI.BeginOverlay();
 
         float direction = targetSpace == EGameplaySpace.DisplayRoom ? 1f : -1f;
-        float halfDuration = _transitionDuration * 0.5f;
+        float halfDuration = _cameraTransitionDuration * 0.5f;
 
         _transitionSequence?.Kill();
         _transitionSequence = DOTween.Sequence();
@@ -200,9 +214,9 @@ public sealed class StageTransitionPlayer : MonoBehaviour
             ? SpawnManager.Instance.GetRandomSpawnPosition()
             : Vector2.zero;
         target.transform.DOMoveY(
-                startPosition.y + _cameraTravelDistance,
-                Mathf.Min(0.9f, _transitionDuration))
-            .SetEase(Ease.InQuad)
+                startPosition.y + _skyTransfer.Distance,
+                Mathf.Min(_skyTransfer.Duration, _cameraTransitionDuration))
+            .SetEase(_skyTransfer.Ease)
             .OnComplete(() =>
             {
                 if (target == null) return;
@@ -213,6 +227,22 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                     startPosition.z);
                 target.SetStagePresentationActive(currentStage == EGameStage.Sky);
             });
+    }
+
+    // 장식장으로 보낼 때는 화면 전환 없이 슬라임만 옆으로 내보낸다.
+    public Tween PlayDisplayRoomTransfer(SlimeController target, Action onComplete)
+    {
+        if (target == null) return null;
+
+        target.PrepareStageTransfer();
+
+        float direction = target.transform.position.x >= 0f ? 1f : -1f;
+        return target.transform
+            .DOMoveX(
+                target.transform.position.x + direction * _displayRoomTransfer.Distance,
+                _displayRoomTransfer.Duration)
+            .SetEase(_displayRoomTransfer.Ease)
+            .OnComplete(() => onComplete?.Invoke());
     }
 
     private AudioClip GetStageBgm(EGameStage stage)
