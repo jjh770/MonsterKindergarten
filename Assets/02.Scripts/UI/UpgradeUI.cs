@@ -132,25 +132,18 @@ public class UpgradeUI : MonoBehaviour
         _isRefreshingLayout = true;
         Canvas.ForceUpdateCanvases();
 
-        Vector2 rootSize = _rectTransform.rect.size;
         float panelWidth = _panelTarget.rect.width;
-
-        float leftSafeInset = GetCanvasInset(Screen.safeArea.xMin, Screen.width, rootSize.x);
-        float bottomSafeInset = GetCanvasInset(Screen.safeArea.yMin, Screen.height, rootSize.y);
-        float topSafeInset = GetCanvasInset(
-            Screen.height - Screen.safeArea.yMax,
-            Screen.height,
-            rootSize.y);
+        SafeAreaInsets insets = SafeAreaUtility.GetInsets(_rectTransform);
 
         _closedPanelX = -panelWidth;
-        _openPanelX = leftSafeInset;
-        _closedToggleX = leftSafeInset + _toggleEdgeOffset;
-        _openToggleX = leftSafeInset + panelWidth + _toggleEdgeOffset;
+        _openPanelX = insets.Left;
+        _closedToggleX = insets.Left + _toggleEdgeOffset;
+        _openToggleX = insets.Left + panelWidth + _toggleEdgeOffset;
 
         Vector2 panelOffsetMin = _panelTarget.offsetMin;
         Vector2 panelOffsetMax = _panelTarget.offsetMax;
-        panelOffsetMin.y = bottomSafeInset;
-        panelOffsetMax.y = -topSafeInset;
+        panelOffsetMin.y = insets.Bottom;
+        panelOffsetMax.y = -insets.Top;
         _panelTarget.offsetMin = panelOffsetMin;
         _panelTarget.offsetMax = panelOffsetMax;
 
@@ -184,13 +177,6 @@ public class UpgradeUI : MonoBehaviour
         Vector2 position = target.anchoredPosition;
         position.x = x;
         target.anchoredPosition = position;
-    }
-
-    private static float GetCanvasInset(float pixelInset, int screenSize, float canvasSize)
-    {
-        if (screenSize <= 0 || canvasSize <= 0f) return 0f;
-
-        return Mathf.Max(0f, pixelInset / screenSize * canvasSize);
     }
 
     public void SetToggleInputEnabled(bool isEnabled)

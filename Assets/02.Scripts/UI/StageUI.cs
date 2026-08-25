@@ -155,26 +155,9 @@ public sealed class StageUI : MonoBehaviour
         RectTransform buttonRect = _stageButton.transform as RectTransform;
         if (canvasRect == null || buttonRect == null) return;
 
-        float rightInset = GetCanvasInset(
-            Screen.width - Screen.safeArea.xMax,
-            Screen.width,
-            canvasRect.rect.width);
-        float topInset = GetCanvasInset(
-            Screen.height - Screen.safeArea.yMax,
-            Screen.height,
-            canvasRect.rect.height);
+        SafeAreaInsets insets = SafeAreaUtility.GetInsets(canvasRect);
         buttonRect.anchoredPosition = new Vector2(
-            -rightInset - _buttonMargin,
-            -topInset - _buttonMargin);
-    }
-
-    private static float GetCanvasInset(
-        float pixelInset,
-        int screenSize,
-        float canvasSize)
-    {
-        if (screenSize <= 0 || canvasSize <= 0f) return 0f;
-
-        return Mathf.Max(0f, pixelInset / screenSize * canvasSize);
+            -insets.Right - _buttonMargin,
+            -insets.Top - _buttonMargin);
     }
 }
