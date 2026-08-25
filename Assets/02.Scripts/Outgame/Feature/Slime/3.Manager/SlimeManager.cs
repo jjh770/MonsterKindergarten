@@ -24,6 +24,9 @@ public class SlimeManager : MonoBehaviour
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
+    public bool IsDisplayRoomUnlocked =>
+        _status != null &&
+        _status.HighestGrade >= UnlockGrades.DisplayRoom;
     public bool IsHigherGradeSpawnUnlocked =>
         _spawnWeightTable != null &&
         _status != null &&
@@ -211,6 +214,12 @@ public class SlimeManager : MonoBehaviour
     {
         _status.MoveSlime(instanceId, location);
         Save();
+    }
+
+    public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)
+    {
+        return _status != null &&
+               !_status.HasDisplayRoomSlime(grade, isSpecial);
     }
 
     // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.

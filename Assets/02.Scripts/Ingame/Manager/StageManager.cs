@@ -32,6 +32,7 @@ public sealed class StageManager : MonoBehaviour
     public bool IsTransitioning => _transitionPlayer != null &&
                                    _transitionPlayer.IsTransitioning;
     public event Action<EGameStage> StageChanged;
+    public event Action StageTransitionCompleted;
     public event Action<EGameplaySpace> SpaceChanged;
 
     private void Awake()
@@ -120,7 +121,7 @@ public sealed class StageManager : MonoBehaviour
             GameManager.Instance == null ||
             !GameManager.Instance.IsGameplayActive ||
             SlimeManager.Instance == null ||
-            SlimeManager.Instance.HighestGrade < ESlimeGrade.Grade3 ||
+            !SlimeManager.Instance.IsDisplayRoomUnlocked ||
             (SlimeManager.Instance.IsSkyUnlocked &&
              !SlimeManager.Instance.SkyIntroCompleted))
         {
@@ -134,6 +135,18 @@ public sealed class StageManager : MonoBehaviour
             () => SetCurrentSpace(EGameplaySpace.DisplayRoom),
             onCompleted: null);
         return true;
+    }
+
+    // 연출 값은 StageTransitionPlayer가 소유하므로 UI는 이 경계로만 호출한다.
+    public void PlayDisplayRoomTransfer(SlimeController target, Action onComplete)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.PlayDisplayRoomTransfer(target, onComplete);
     }
 
     public bool TryExitDisplayRoom()
@@ -251,7 +264,7 @@ public sealed class StageManager : MonoBehaviour
     {
         if (!_isInitialized || target == null) return;
 
-        target.SetStagePresentationActive(IsMainStageSlimeVisible(target));
+        RefreshSlimePresentation(target);
     }
 
     private void OnMerged(
@@ -380,6 +393,7 @@ public sealed class StageManager : MonoBehaviour
                 _stageUI.SetStage(_currentStage);
                 SetInteractionEnabled(true);
                 onComplete?.Invoke();
+                StageTransitionCompleted?.Invoke();
             });
     }
 
@@ -391,16 +405,19 @@ public sealed class StageManager : MonoBehaviour
         {
             if (target == null) continue;
 
-            target.SetStagePresentationActive(IsMainStageSlimeVisible(target));
+            RefreshSlimePresentation(target);
         }
     }
 
-    private bool IsMainStageSlimeVisible(SlimeController target)
+    public void RefreshSlimePresentation(SlimeController target)
     {
-        return target != null &&
-               IsMainStageActive &&
-               target.Location == ESlimeLocation.MainStage &&
-               GameStageRules.GetStage(target.Grade) == _currentStage;
+        if (target == null) return;
+
+        bool isVisible = IsMainStageActive
+            ? target.Location == ESlimeLocation.MainStage &&
+              GameStageRules.GetStage(target.Grade) == _currentStage
+            : target.Location == ESlimeLocation.DisplayRoom;
+        target.SetStagePresentationActive(isVisible);
     }
 
     private void SetCurrentSpace(EGameplaySpace space)
