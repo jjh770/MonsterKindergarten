@@ -65,6 +65,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomSelectSlimeMessage;
     [SerializeField] private string _displayRoomEnterMessage;
     [SerializeField] private string _displayRoomInfoMessage;
+    [SerializeField] private string _displayRoomInfoSummaryMessage;
     [SerializeField] private string _displayRoomObserveMessage;
     [SerializeField] private string _displayRoomTakeOutMessage;
     [SerializeField] private string _displayRoomCloseMessage;
@@ -88,6 +89,7 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;
     public string DisplayRoomEnterMessage => _displayRoomEnterMessage;
     public string DisplayRoomInfoMessage => _displayRoomInfoMessage;
+    public string DisplayRoomInfoSummaryMessage => _displayRoomInfoSummaryMessage;
     public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;

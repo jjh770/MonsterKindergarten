@@ -12,6 +12,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         EnterButton,
         EnterTransition,
         SlimeInfo,
+        InfoSummary,
         ObserveButton,
         TakeOutButton,
         CloseButton,
@@ -191,6 +192,10 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         {
             ShowTakeOutButtonStep();
         }
+        else if (_step == Step.InfoSummary)
+        {
+            ShowObserveButtonStep();
+        }
         else if (_step == Step.TakeOutButton)
         {
             ShowCloseButtonStep();
@@ -292,6 +297,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         return step == Step.EnterTransition ||
                step == Step.SlimeInfo ||
+               step == Step.InfoSummary ||
                step == Step.ObserveButton ||
                step == Step.TakeOutButton ||
                step == Step.CloseButton;
@@ -339,7 +345,24 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.SlimeInfo || target != _tutorialSlime) return;
 
-        ShowObserveButtonStep();
+        ShowInfoSummaryStep();
+    }
+
+    private void ShowInfoSummaryStep()
+    {
+        RectTransform target = _displayRoomInfoUI.InfoSummaryTarget;
+        if (target == null)
+        {
+            ShowObserveButtonStep();
+            return;
+        }
+
+        _step = Step.InfoSummary;
+        Spotlight.ShowUiTarget(
+            Content.DisplayRoomInfoSummaryMessage,
+            target,
+            SpotlightInteractionMode.AdvanceOnPrimaryTap,
+            useRectangularHole: true);
     }
 
     private void ShowObserveButtonStep()
@@ -397,7 +420,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     // 패널이 사라지면 남은 버튼 단계는 가리킬 대상이 없으므로 마무리로 넘어간다.
     private void OnInfoClosed()
     {
-        if (_step != Step.ObserveButton &&
+        if (_step != Step.InfoSummary &&
+            _step != Step.ObserveButton &&
             _step != Step.TakeOutButton &&
             _step != Step.CloseButton)
         {

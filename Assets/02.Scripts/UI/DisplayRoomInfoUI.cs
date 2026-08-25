@@ -24,6 +24,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TextMeshProUGUI _nameText;
     [SerializeField] private TextMeshProUGUI _numberText;
     [SerializeField] private TextMeshProUGUI _descriptionText;
+    [SerializeField] private RectTransform _infoSummaryTarget;
     [SerializeField] private Button _observeButton;
     [SerializeField] private Button _closeButton;
     [SerializeField] private Button _takeOutButton;
@@ -48,6 +49,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     public bool IsVisible => _target != null;
     public bool IsObserving => _isObserving;
+    public RectTransform InfoSummaryTarget => _infoSummaryTarget;
     public RectTransform ObserveButtonTarget =>
         _observeButton != null ? _observeButton.transform as RectTransform : null;
     public RectTransform TakeOutButtonTarget =>
@@ -114,6 +116,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _nameText != null &&
                              _numberText != null &&
                              _descriptionText != null &&
+                             _infoSummaryTarget != null &&
                              _observeButton != null &&
                              _closeButton != null &&
                              _takeOutButton != null &&
