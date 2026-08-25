@@ -78,7 +78,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     {
         _transitionSequence?.Kill();
         _focusSequence?.Kill();
-        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
+        ClearDisplayRoomFocusTarget();
     }
 
     public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
@@ -164,8 +164,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     public void RestoreDisplayRoomFocus(Action onComplete = null)
     {
-        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
-        _displayRoomFocusTarget = null;
+        ClearDisplayRoomFocusTarget();
         _focusSequence?.Kill();
         _focusSequence = DOTween.Sequence();
         _focusSequence.Join(
@@ -384,13 +383,36 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
         Vector3 position = target.transform.position;
         position.z = _cameraBasePosition.z;
+
+        // 확대된 화면의 세로 범위를 기본 화면 안에 가둔다.
+        // 위아래 벽까지 따라가면 배경 바깥의 여백이 드러난다.
+        // 가로는 배경이 기본 화면보다 넓어 가두지 않는다.
+        float verticalMargin = Mathf.Max(
+            0f,
+            _cameraBaseOrthographicSize - _camera.orthographicSize);
+        position.y = Mathf.Clamp(
+            position.y,
+            _cameraBasePosition.y - verticalMargin,
+            _cameraBasePosition.y + verticalMargin);
         return position;
+    }
+
+    // 추적 대상을 놓을 때 인터폴레이션도 함께 되돌린다.
+    // ?.는 참조 null만 보므로 파괴된 오브젝트를 거르지 못한다.
+    // Unity의 == 오버로드를 타도록 명시적으로 비교한다.
+    private void ClearDisplayRoomFocusTarget()
+    {
+        if (_displayRoomFocusTarget != null)
+        {
+            _displayRoomFocusTarget.SetDisplayRoomCameraFocus(false);
+        }
+
+        _displayRoomFocusTarget = null;
     }
 
     private void ResetDisplayRoomFocus()
     {
-        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
-        _displayRoomFocusTarget = null;
+        ClearDisplayRoomFocusTarget();
         _focusSequence?.Kill();
         _focusSequence = null;
         _camera.transform.position = _cameraBasePosition;
