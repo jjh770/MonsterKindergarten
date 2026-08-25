@@ -21,8 +21,8 @@ public readonly struct SafeAreaInsets
 // 슬라임의 스폰·드래그 경계는 월드 좌표계라 이 계산과 무관하다.
 public static class SafeAreaUtility
 {
-    // referenceRect의 크기를 기준으로 네 방향 여백을 환산한다.
-    // 캔버스 루트를 넘기면 화면 전체 기준, 하위 RectTransform을 넘기면 그 크기 기준이 된다.
+    // 화면 전체를 덮는 기준 RectTransform(캔버스 루트 또는 전체 스트레치 Rect)을 넘긴다.
+    // 화면 픽셀 비율에 rect 크기만 곱하므로 하위 영역의 위치와 앵커는 반영하지 않는다.
     public static SafeAreaInsets GetInsets(RectTransform referenceRect)
     {
         if (referenceRect == null) return default;

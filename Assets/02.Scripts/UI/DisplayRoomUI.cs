@@ -175,7 +175,12 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private bool TryCancelSendMode()
     {
-        if (!_isSendMode || _isTransferPlaying) return false;
+        if (!_isSendMode) return false;
+
+        // 전송 연출 중에는 취소하지 않되 입력은 소비한다.
+        // false를 반환하면 GameExitManager가 이 핸들러를 목록에서 제거해
+        // 전송이 끝난 뒤 뒤로가기로 선택 모드를 빠져나갈 수 없게 된다.
+        if (_isTransferPlaying) return true;
 
         EndSendMode();
         return true;
