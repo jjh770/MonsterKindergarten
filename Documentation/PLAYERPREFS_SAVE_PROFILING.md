@@ -187,3 +187,14 @@ SharedPreferencesImpl: Time required to fsync /data/user/0/com.skku_say.Monster_
 같은 리뷰에서 제기된 "매 프레임 힙 할당"(`AutoClicker`의 `new List`, `Clicker`의 `OverlapCircleAll`) 항목도 측정 없이 제기된 것입니다. **Profiler의 GC Alloc 수치를 확인하기 전까지는 우선순위를 부여하지 않습니다.**
 
 성능 항목은 코드를 읽어 추정하지 않고 실기기에서 측정한 뒤 판단합니다.
+
+## 9. Phase 2 후속 적용 범위 (2026-08-25)
+
+장식장 입고·출고는 `SlimeManager.MoveSlime()`을 통해 기존 슬라임 저장 경로를
+사용합니다. 이 문서의 측정 결과는 기존 Galaxy S23 Ultra 개발 빌드에서 수행한
+`PlayerPrefs.Save()` 호출 비용에만 적용되며, Phase 2 장식장 조작의 Android
+프레임 비용을 새로 측정한 결과는 아닙니다.
+
+Unity Editor에서 입고·출고와 저장 후 복원은 확인했습니다. Phase 2의 저장 비용
+또는 UI·카메라 성능 문제가 기기에서 재현될 경우 같은 방식으로 Android
+Profiler와 Logcat 증거를 수집한 뒤 최적화 여부를 판단합니다.

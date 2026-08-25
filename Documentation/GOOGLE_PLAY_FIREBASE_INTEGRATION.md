@@ -347,6 +347,21 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 - 재화, 슬라임 현황, 업그레이드가 앱 데이터 삭제 및 재설치 후 모두 정상적으로 복구되는 것을 확인했습니다.
 
+### 슬라임 저장 스키마 후속 상태 (2026-08-25)
+
+Phase 1.5에서 슬라임 저장을 등급별 개수에서 개체 목록으로 전환했습니다.
+현재 슬라임 저장 스키마는 v2이며 각 개체에 `InstanceId`, `Grade`,
+`IsSpecial`, `Location`을 기록합니다. 화면 좌표는 저장하지 않습니다.
+
+Phase 2 장식장은 `Location`을 사용해 메인 스테이지와 장식장 소속을 구분합니다.
+이동은 `SlimeManager.MoveSlime()`에서 검증과 저장을 함께 처리하며 기존
+PlayerPrefs 즉시 저장, Firestore 지연 저장, `LastSaveTime` 충돌 해결 규칙은
+바뀌지 않았습니다.
+
+Unity Editor에서는 저장 후 재실행 시 장식장 소속 복원을 확인했습니다.
+Phase 2가 포함된 Android 빌드의 Firestore 복원, 기기 간 충돌과 앱 데이터 삭제
+복구는 아직 재검증하지 않았으며 Phase 8 릴리스 준비에서 수행합니다.
+
 ## 8. 실제 기기 검증 결과
 
 - [x] 직접 설치한 릴리스 빌드에서 Google Play Games 로그인
