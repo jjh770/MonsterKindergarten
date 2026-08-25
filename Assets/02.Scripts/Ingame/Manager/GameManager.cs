@@ -118,6 +118,10 @@ public class GameManager : MonoBehaviour
             TutorialIds.HigherGradeSpawn,
             SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
             completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.DisplayRoom,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
     }

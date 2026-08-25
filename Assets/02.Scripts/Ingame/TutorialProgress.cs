@@ -5,6 +5,7 @@ public static class TutorialIds
 {
     public const string Main = "Tutorial";
     public const string HigherGradeSpawn = "HigherGradeSpawnTutorial";
+    public const string DisplayRoom = "DisplayRoomTutorial";
 }
 
 public static class TutorialProgress

@@ -34,6 +34,7 @@ public sealed class StageManager : MonoBehaviour
     public event Action<EGameStage> StageChanged;
     public event Action StageTransitionCompleted;
     public event Action<EGameplaySpace> SpaceChanged;
+    public event Action SpaceTransitionCompleted;
 
     private void Awake()
     {
@@ -133,7 +134,7 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.PlaySpace(
             EGameplaySpace.DisplayRoom,
             () => SetCurrentSpace(EGameplaySpace.DisplayRoom),
-            onCompleted: RefreshInteraction);
+            onCompleted: CompleteSpaceTransition);
         return true;
     }
 
@@ -173,11 +174,23 @@ public sealed class StageManager : MonoBehaviour
 
     public void BeginDisplayRoomObservation(Action onComplete = null)
     {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         _transitionPlayer.BeginDisplayRoomObservation(onComplete);
     }
 
     public void EndDisplayRoomObservation(Action onComplete = null)
     {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         _transitionPlayer.EndDisplayRoomObservation(onComplete);
     }
 
@@ -193,8 +206,14 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.PlaySpace(
             EGameplaySpace.MainStage,
             () => SetCurrentSpace(EGameplaySpace.MainStage),
-            onCompleted: RefreshInteraction);
+            onCompleted: CompleteSpaceTransition);
         return true;
+    }
+
+    private void CompleteSpaceTransition()
+    {
+        RefreshInteraction();
+        SpaceTransitionCompleted?.Invoke();
     }
 
     private bool HasRequiredReferences()
@@ -507,6 +526,10 @@ public sealed class StageManager : MonoBehaviour
     // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
     public void RefreshInteraction()
     {
+        // 튜토리얼이 입력을 소유하는 동안에는 되돌리지 않는다.
+        // 되돌리면 대사 도중 월드 탭이 살아나 안내 중인 UI가 다시 열린다.
+        if (TutorialManager.IsRunning) return;
+
         SetInteractionEnabled(
             GameManager.Instance != null &&
             GameManager.Instance.IsGameplayActive);

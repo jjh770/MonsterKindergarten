@@ -44,6 +44,17 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private bool _isTransferPlaying;
     private Vector3 _transferStartPosition;
 
+    public RectTransform SpaceButtonTarget => _spaceButton != null
+        ? _spaceButton.transform as RectTransform
+        : null;
+    public RectTransform SendButtonTarget => _sendButton != null
+        ? _sendButton.transform as RectTransform
+        : null;
+
+    public event Action SendModeStarted;
+    public event Action SendModeEnded;
+    public event Action<SlimeController> SlimeTransferred;
+
     private void Start()
     {
         if (!HasRequiredReferences())
@@ -176,9 +187,10 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _gameExitManager.RegisterBackHandler(this, TryCancelSendMode);
         PlayModePresentation(show: true);
         Refresh();
+        SendModeStarted?.Invoke();
     }
 
-    private void CancelSendMode()
+    public void CancelSendMode()
     {
         TryCancelSendMode();
     }
@@ -206,6 +218,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         StageManager.Instance?.RefreshInteraction();
         PlayModePresentation(show: false);
         Refresh();
+        SendModeEnded?.Invoke();
     }
 
     private void OnTargetClicked(SlimeController target)
@@ -257,6 +270,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
             StageManager.Instance?.RefreshSlimePresentation(target);
             _isTransferPlaying = false;
             ApplySendModeInput();
+            SlimeTransferred?.Invoke(target);
         }
         catch (Exception e) when (e is InvalidOperationException ||
                                   e is ArgumentException)

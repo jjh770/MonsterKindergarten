@@ -14,6 +14,9 @@ public enum DialogueId
     HigherGradeSpawn = 7,
     HigherGradeSpawnUpgrade = 8,
     SkyIntro = 9,
+    DisplayRoomUnlocked = 10,
+    DisplayRoomFinal = 11,
+    HigherGradeSpawnPool = 12,
 }
 
 [Serializable]
@@ -57,6 +60,14 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _upgradePanelMessage;
     [SerializeField] private string _systemUpgradeCarouselMessage;
     [SerializeField] private string _spawnPoolButtonMessage;
+    [SerializeField] private string _displayRoomButtonMessage;
+    [SerializeField] private string _displayRoomSendButtonMessage;
+    [SerializeField] private string _displayRoomSelectSlimeMessage;
+    [SerializeField] private string _displayRoomEnterMessage;
+    [SerializeField] private string _displayRoomInfoMessage;
+    [SerializeField] private string _displayRoomObserveMessage;
+    [SerializeField] private string _displayRoomTakeOutMessage;
+    [SerializeField] private string _displayRoomCloseMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
@@ -72,6 +83,14 @@ public sealed class TutorialContent : ScriptableObject
     public string UpgradePanelMessage => _upgradePanelMessage;
     public string SystemUpgradeCarouselMessage => _systemUpgradeCarouselMessage;
     public string SpawnPoolButtonMessage => _spawnPoolButtonMessage;
+    public string DisplayRoomButtonMessage => _displayRoomButtonMessage;
+    public string DisplayRoomSendButtonMessage => _displayRoomSendButtonMessage;
+    public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;
+    public string DisplayRoomEnterMessage => _displayRoomEnterMessage;
+    public string DisplayRoomInfoMessage => _displayRoomInfoMessage;
+    public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
+    public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
+    public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
     public string StageButtonMessage => _stageButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)

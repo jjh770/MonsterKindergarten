@@ -48,6 +48,20 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     public bool IsVisible => _target != null;
     public bool IsObserving => _isObserving;
+    public RectTransform ObserveButtonTarget =>
+        _observeButton != null ? _observeButton.transform as RectTransform : null;
+    public RectTransform TakeOutButtonTarget =>
+        _takeOutButton != null ? _takeOutButton.transform as RectTransform : null;
+    public RectTransform CloseButtonTarget =>
+        _closeButton != null ? _closeButton.transform as RectTransform : null;
+
+    // 확대 연출이 시작되는 시점. 튜토리얼이 안내 말풍선을 숨기는 데 쓴다.
+    public event Action<SlimeController> InfoOpening;
+    // 확대가 끝나고 패널이 나타나는 시점.
+    public event Action<SlimeController> InfoOpened;
+    // 닫기 버튼과 뒤로가기를 가리지 않고 패널이 닫힌 시점.
+    // 강제 정리(ForceClose)는 공간 전환이 별도로 처리하므로 발화하지 않는다.
+    public event Action InfoClosed;
 
     private void Start()
     {
@@ -135,6 +149,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     private void Open(SlimeController target)
     {
         _target = target;
+        InfoOpening?.Invoke(target);
         ResetObservationPresentation();
         _infoRoot.SetActive(true);
         _infoCanvasGroup.alpha = 0f;
@@ -162,6 +177,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _fadeTween = _infoCanvasGroup
             .DOFade(1f, _fadeDuration)
             .OnComplete(() => _fadeTween = null);
+        InfoOpened?.Invoke(target);
     }
 
     private void Close()
@@ -200,6 +216,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             });
         StageManager.Instance?.RestoreDisplayRoomFocus(
             () => StageManager.Instance?.RefreshInteraction());
+        InfoClosed?.Invoke();
         return true;
     }
 
