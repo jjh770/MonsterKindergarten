@@ -19,6 +19,7 @@ public class Clicker : MonoBehaviour
     private bool _isDragging;
     private bool _isClickEnabled = true;
     private bool _isDragEnabled = true;
+    private bool _invokeClickAction = true;
     private SlimeController _restrictedTarget;
     private SlimeController _secondaryRestrictedTarget;
 
@@ -135,15 +136,22 @@ public class Clicker : MonoBehaviour
         }
         else if (_isClickEnabled)
         {
-            // 클릭 처리 - ClickTarget의 레벨별 포인트 사용
-            ClickInfo clickInfo = new ClickInfo
+            if (_invokeClickAction)
             {
-                ClickType = EClickType.Manual,
-                Point = PointCalculator.Calculate(_selectedTarget.Point, _selectedTarget.Grade, EClickType.Manual),
-                Position = _mouseDownPos,
-                Grade = _selectedTarget.Grade
-            };
-            _selectedTarget.OnClick(clickInfo);
+                // 클릭 처리 - ClickTarget의 레벨별 포인트 사용
+                ClickInfo clickInfo = new ClickInfo
+                {
+                    ClickType = EClickType.Manual,
+                    Point = PointCalculator.Calculate(
+                        _selectedTarget.Point,
+                        _selectedTarget.Grade,
+                        EClickType.Manual),
+                    Position = _mouseDownPos,
+                    Grade = _selectedTarget.Grade
+                };
+                _selectedTarget.OnClick(clickInfo);
+            }
+
             TargetClicked?.Invoke(selectedTarget);
         }
 
@@ -156,13 +164,15 @@ public class Clicker : MonoBehaviour
         bool clickEnabled,
         bool dragEnabled,
         SlimeController restrictedTarget = null,
-        SlimeController secondaryRestrictedTarget = null)
+        SlimeController secondaryRestrictedTarget = null,
+        bool invokeClickAction = true)
     {
         CancelSelection();
         _isClickEnabled = clickEnabled;
         _isDragEnabled = dragEnabled;
         _restrictedTarget = restrictedTarget;
         _secondaryRestrictedTarget = secondaryRestrictedTarget;
+        _invokeClickAction = invokeClickAction;
     }
 
     private void UpdateMergeCandidate()

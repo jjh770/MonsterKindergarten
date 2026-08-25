@@ -118,7 +118,22 @@ public class SlimeStatus
                 $"이미 해당 위치에 있는 슬라임입니다. : {instanceId}, {location}");
         }
 
+        if (location == ESlimeLocation.DisplayRoom &&
+            HasDisplayRoomSlime(instance.Grade, instance.IsSpecial))
+        {
+            throw new InvalidOperationException(
+                "장식장에는 같은 종류와 타입의 슬라임을 한 마리만 보관할 수 있습니다.");
+        }
+
         instance.MoveTo(location);
+    }
+
+    public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)
+    {
+        return _activeSlimes.Exists(instance =>
+            instance.Location == ESlimeLocation.DisplayRoom &&
+            instance.Grade == grade &&
+            instance.IsSpecial == isSpecial);
     }
 
     public void MergeSlimes(
