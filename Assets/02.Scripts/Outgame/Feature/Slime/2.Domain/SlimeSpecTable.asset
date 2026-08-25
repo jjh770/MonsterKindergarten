@@ -14,101 +14,121 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpecTable
   slimeSpecs:
   - Name: "\uC2AC\uB77C\uC784"
+    Description: "말랑한 몸으로 통통 튀어 다니는 평범한 슬라임이에요."
     Grade: 1
     Point: 10
     AutoClickInterval: 5
     Sprite: {fileID: 21300000, guid: 2b153a5f3cc3ee846a5725b61d2b865d, type: 3}
   - Name: "\uAF43\uC78E \uC2AC\uB77C\uC784"
+    Description: "꽃잎 사이에서 포근한 낮잠을 즐기는 슬라임이에요."
     Grade: 2
     Point: 20
     AutoClickInterval: 4.8
     Sprite: {fileID: 21300000, guid: 5ce8d1bb62b42d04492bcdc3ced21459, type: 3}
   - Name: "\uAC15\uCCA0 \uC2AC\uB77C\uC784"
+    Description: "단단한 몸을 자랑하지만 마음은 누구보다 부드러워요."
     Grade: 3
     Point: 40
     AutoClickInterval: 4.6
     Sprite: {fileID: 21300000, guid: b222af5c33ef5b9419651d2ed4eab1b6, type: 3}
   - Name: "\uBBF8\uB77C \uC2AC\uB77C\uC784"
+    Description: "낡은 붕대를 소중한 보물처럼 꼭 감고 다녀요."
     Grade: 4
     Point: 120
     AutoClickInterval: 4.4
     Sprite: {fileID: 21300000, guid: f133a359f93e3cd42a59f4e153c5faa2, type: 3}
   - Name: "\uC544\uADC0 \uC2AC\uB77C\uC784"
+    Description: "커다란 입으로 세상의 모든 간식을 맛보고 싶어 해요."
     Grade: 5
     Point: 240
     AutoClickInterval: 4.2
     Sprite: {fileID: 21300000, guid: 5e12c4b1d9e1dbb4d9a648801498583f, type: 3}
   - Name: "\uD669\uAE08 \uC2AC\uB77C\uC784"
+    Description: "반짝이는 몸으로 주변까지 환하게 밝혀 줘요."
     Grade: 6
     Point: 720
     AutoClickInterval: 4
     Sprite: {fileID: 21300000, guid: 770663566eef1004f9cfb809696558d5, type: 3}
   - Name: "\uAD6D\uC655 \uC2AC\uB77C\uC784"
+    Description: "작은 왕관을 쓰고 모두에게 근엄하게 인사해요."
     Grade: 7
     Point: 1440
     AutoClickInterval: 3.8
     Sprite: {fileID: 21300000, guid: c691518a846b8a64cb1c8eb4e96fff80, type: 3}
   - Name: "\uCC9C\uC0AC \uC2AC\uB77C\uC784"
+    Description: "가벼운 날개로 친구들의 꿈속을 포근히 날아다녀요."
     Grade: 8
     Point: 5320
     AutoClickInterval: 3.6
     Sprite: {fileID: 21300000, guid: 93afa2d1c366aba49b137e8d5100d4a3, type: 3}
   - Name: "\uC608\uD2F0 \uC2AC\uB77C\uC784"
+    Description: "차가운 털 속에 따뜻한 마음을 숨기고 있어요."
     Grade: 9
     Point: 10640
     AutoClickInterval: 3.4
     Sprite: {fileID: 21300000, guid: 8b4b9f505a142ca4db8851313279c47e, type: 3}
   - Name: "\uBE14\uB799 \uC2AC\uB77C\uC784"
+    Description: "어두운 곳에서 반짝이는 눈으로 조용히 주변을 살펴요."
     Grade: 10
     Point: 31920
     AutoClickInterval: 3.2
     Sprite: {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
   - Name: "\uD654\uC5FC \uC2AC\uB77C\uC784"
+    Description: "뜨거운 불꽃을 품었지만 가까이 있으면 의외로 포근해요."
     Grade: 11
     Point: 63840
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 2083237eca0c4064a802c07e1b989e20, type: 3}
   - Name: "\uBC84\uC12F \uC2AC\uB77C\uC784"
+    Description: "머리 위 버섯에서 은은한 숲 향기가 흘러나와요."
     Grade: 12
     Point: 191520
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: c19d5d411737cde418b136e96f82f8c2, type: 3}
   - Name: "\uBAA8\uB798 \uC2AC\uB77C\uC784"
+    Description: "바람이 불면 몸의 모양이 살짝씩 달라져요."
     Grade: 13
     Point: 383040
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: f8a4125d376605b439b6a03339afa309, type: 3}
   - Name: "\uB098\uBB34 \uC2AC\uB77C\uC784"
+    Description: "계절이 바뀔 때마다 몸에서 새로운 잎이 돋아나요."
     Grade: 14
     Point: 1149120
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 832878304b18a3140bd3fb7c4e697832, type: 3}
   - Name: "\uC6A9\uC0AC \uC2AC\uB77C\uC784"
+    Description: "작은 검을 들고 친구들을 지키는 모험을 꿈꿔요."
     Grade: 15
     Point: 2298240
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 4fdfe9603630efd4f942d4e03bdc9196, type: 3}
   - Name: "\uB0A0\uAC1C \uC2AC\uB77C\uC784"
+    Description: "커다란 날개를 펼쳐 누구보다 높이 날고 싶어 해요."
     Grade: 16
     Point: 6894720
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 22ec042e4c3d793449247643e4a6057c, type: 3}
   - Name: "\uD574\uACE8 \uC2AC\uB77C\uC784"
+    Description: "뼈처럼 보여도 만져 보면 여전히 말랑말랑해요."
     Grade: 17
     Point: 13789440
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: d3b4bb9ba4dab0a4d89c094b83a3738c, type: 3}
   - Name: "\uC545\uB9C8 \uC2AC\uB77C\uC784"
+    Description: "장난을 좋아하지만 친구가 울면 가장 먼저 달래 줘요."
     Grade: 18
     Point: 41368320
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: 07dbed4917da98a4c967bef36ecea42c, type: 3}
   - Name: "\uACF5\uD5C8 \uC2AC\uB77C\uC784"
+    Description: "깊은 어둠 속에서 별빛 같은 기운이 조용히 일렁여요."
     Grade: 19
     Point: 82736640
     AutoClickInterval: 3
     Sprite: {fileID: 21300000, guid: fca85b8957632f8478f1170e1d08913a, type: 3}
   - Name: "\uAE30\uACC4 \uC2AC\uB77C\uC784"
+    Description: "정교한 톱니가 움직일 때마다 작은 콧노래가 들려요."
     Grade: 20
     Point: 248209920
     AutoClickInterval: 3

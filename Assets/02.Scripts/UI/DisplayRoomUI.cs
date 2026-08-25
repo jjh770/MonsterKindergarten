@@ -14,6 +14,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private UpgradeUI _upgradeUI;
+    [SerializeField] private RectTransform _systemUpgradePanel;
 
     [Header("Send Mode")]
     [SerializeField] private GameObject _sendModeRoot;
@@ -30,12 +31,15 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField, Min(0f)] private float _buttonMargin = 50f;
     [SerializeField, Min(0f)] private float _buttonGap = 20f;
     [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
+    [SerializeField, Min(0f)] private float _spaceUiAnimationDuration = 0.35f;
     [SerializeField, Min(0f)] private float _warningDisplayDuration = 1.2f;
 
     private Vector2[] _topUiPositions = Array.Empty<Vector2>();
     private Vector2[] _bottomUiPositions = Array.Empty<Vector2>();
     private Sequence _modeSequence;
     private Sequence _warningSequence;
+    private Tween _spaceUiTween;
+    private Vector2 _systemUpgradeStartPosition;
     private bool _isSendMode;
     private bool _isTransferPlaying;
     private Vector3 _transferStartPosition;
@@ -49,6 +53,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         CacheUiPositions();
+        _systemUpgradeStartPosition = _systemUpgradePanel.anchoredPosition;
         _sendModeRoot.SetActive(false);
         _warningRoot.SetActive(false);
 
@@ -63,6 +68,9 @@ public sealed class DisplayRoomUI : MonoBehaviour
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
 
         RefreshLayout();
+        ApplySpacePresentation(
+            StageManager.Instance.CurrentSpace == EGameplaySpace.DisplayRoom,
+            animated: false);
         Refresh();
     }
 
@@ -70,6 +78,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     {
         _modeSequence?.Kill();
         _warningSequence?.Kill();
+        _spaceUiTween?.Kill();
         _spaceButton?.onClick.RemoveListener(OnSpaceButtonClicked);
         _sendButton?.onClick.RemoveListener(BeginSendMode);
         _cancelButton?.onClick.RemoveListener(CancelSendMode);
@@ -104,6 +113,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _gameExitManager != null &&
                              _clicker != null &&
                              _upgradeUI != null &&
+                             _systemUpgradePanel != null &&
                              _sendModeRoot != null &&
                              _sendModeCanvasGroup != null &&
                              _sendModePrompt != null &&
@@ -278,7 +288,10 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void OnSpaceChanged(EGameplaySpace space)
     {
-        if (space == EGameplaySpace.DisplayRoom)
+        bool isDisplayRoom = space == EGameplaySpace.DisplayRoom;
+        ApplySpacePresentation(isDisplayRoom, animated: true);
+
+        if (isDisplayRoom)
         {
             _gameExitManager.RegisterBackHandler(this, TryExitDisplayRoom);
         }
@@ -288,6 +301,42 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         Refresh();
+    }
+
+    private void ApplySpacePresentation(bool isDisplayRoom, bool animated)
+    {
+        _upgradeUI.SetToggleVisible(!isDisplayRoom, animated);
+
+        _spaceUiTween?.Kill();
+        _spaceUiTween = null;
+        if (!isDisplayRoom)
+        {
+            _systemUpgradePanel.gameObject.SetActive(true);
+        }
+
+        Vector2 destination = _systemUpgradeStartPosition;
+        if (isDisplayRoom)
+        {
+            destination += Vector2.down * _systemUpgradePanel.rect.height;
+        }
+
+        if (!animated)
+        {
+            _systemUpgradePanel.anchoredPosition = destination;
+            _systemUpgradePanel.gameObject.SetActive(!isDisplayRoom);
+            return;
+        }
+
+        _spaceUiTween = _systemUpgradePanel
+            .DOAnchorPos(destination, _spaceUiAnimationDuration)
+            .OnComplete(() =>
+            {
+                _spaceUiTween = null;
+                if (isDisplayRoom)
+                {
+                    _systemUpgradePanel.gameObject.SetActive(false);
+                }
+            });
     }
 
     private bool TryExitDisplayRoom()

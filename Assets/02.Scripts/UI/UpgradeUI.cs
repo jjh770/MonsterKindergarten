@@ -12,6 +12,7 @@ public class UpgradeUI : MonoBehaviour
 
     private bool _isOpened = false;
     private bool _isToggleInputEnabled = true;
+    private bool _isToggleVisible = true;
     private bool _isInitialized;
     private bool _isRefreshingLayout;
     private RectTransform _toggleRectTransform;
@@ -21,6 +22,7 @@ public class UpgradeUI : MonoBehaviour
     private float _openPanelX;
     private float _closedToggleX;
     private float _openToggleX;
+    private float _hiddenToggleX;
 
     public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
     public RectTransform PanelTarget => _panelTarget;
@@ -139,6 +141,7 @@ public class UpgradeUI : MonoBehaviour
         _openPanelX = insets.Left;
         _closedToggleX = insets.Left + _toggleEdgeOffset;
         _openToggleX = insets.Left + panelWidth + _toggleEdgeOffset;
+        _hiddenToggleX = -_toggleRectTransform.rect.width;
 
         Vector2 panelOffsetMin = _panelTarget.offsetMin;
         Vector2 panelOffsetMax = _panelTarget.offsetMax;
@@ -157,7 +160,11 @@ public class UpgradeUI : MonoBehaviour
         _moveTween = null;
 
         float panelX = _isOpened ? _openPanelX : _closedPanelX;
-        float toggleX = _isOpened ? _openToggleX : _closedToggleX;
+        float toggleX = !_isToggleVisible
+            ? _hiddenToggleX
+            : _isOpened
+                ? _openToggleX
+                : _closedToggleX;
 
         if (!animated)
         {
@@ -182,6 +189,28 @@ public class UpgradeUI : MonoBehaviour
     public void SetToggleInputEnabled(bool isEnabled)
     {
         _isToggleInputEnabled = isEnabled;
+
+        if (_uiButton != null)
+        {
+            _uiButton.interactable = isEnabled;
+        }
+    }
+
+    public void SetToggleVisible(bool isVisible, bool animated = true)
+    {
+        if (_isToggleVisible == isVisible) return;
+
+        _isToggleVisible = isVisible;
+        if (!isVisible && _isOpened)
+        {
+            SetOpened(false);
+            return;
+        }
+
+        if (_isInitialized)
+        {
+            MoveDrawer(animated);
+        }
     }
 
 }
