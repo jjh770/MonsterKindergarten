@@ -192,6 +192,9 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         return other != null &&
                other != this &&
+               // 기획서 §7.2 - 장식장 개체는 합성 대상이 되지 않는다.
+               Location == ESlimeLocation.MainStage &&
+               other.Location == ESlimeLocation.MainStage &&
                _slime != null &&
                other.Slime != null &&
                SlimeManager.Instance != null &&

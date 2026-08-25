@@ -190,12 +190,7 @@ public class SpawnManager : MonoBehaviour
         HandleEditorSpawnShortcuts();
 #endif
 
-        if (SlimeSpawner.Instance != null &&
-            SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) >=
-            _maxActiveCount)
-        {
-            return;
-        }
+        if (!HasMainStageRoom()) return;
 
         _timer += Time.deltaTime;
 
@@ -328,6 +323,15 @@ public class SpawnManager : MonoBehaviour
     // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
     public int GetMainStageSlimeCount() =>
         SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage);
+
+    // 메인 필드에 개체를 더 놓을 자리가 있는지 판정한다.
+    // 자연 스폰과 장식장 꺼내기(기획서 §7.5)가 같은 기준을 쓰도록 한곳에 둔다.
+    public bool HasMainStageRoom()
+    {
+        return SlimeSpawner.Instance != null &&
+               SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) <
+               _maxActiveCount;
+    }
 
     public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

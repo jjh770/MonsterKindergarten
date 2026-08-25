@@ -133,7 +133,7 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.PlaySpace(
             EGameplaySpace.DisplayRoom,
             () => SetCurrentSpace(EGameplaySpace.DisplayRoom),
-            onCompleted: null);
+            onCompleted: RefreshInteraction);
         return true;
     }
 
@@ -161,9 +161,7 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.PlaySpace(
             EGameplaySpace.MainStage,
             () => SetCurrentSpace(EGameplaySpace.MainStage),
-            () => SetInteractionEnabled(
-                GameManager.Instance != null &&
-                GameManager.Instance.IsGameplayActive));
+            onCompleted: RefreshInteraction);
         return true;
     }
 
@@ -450,9 +448,35 @@ public sealed class StageManager : MonoBehaviour
         return null;
     }
 
+    // 공간별 입력 정책을 한곳에서 정한다.
+    // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
     private void SetInteractionEnabled(bool isEnabled)
     {
-        _clicker.SetInputMode(isEnabled, isEnabled);
-        _upgradeUI.SetToggleInputEnabled(isEnabled);
+        _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainStageActive);
+
+        if (!isEnabled)
+        {
+            _clicker.SetInputMode(false, false);
+            return;
+        }
+
+        if (IsMainStageActive)
+        {
+            _clicker.SetInputMode(true, true);
+            return;
+        }
+
+        _clicker.SetInputMode(
+            clickEnabled: true,
+            dragEnabled: false,
+            invokeClickAction: false);
+    }
+
+    // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
+    public void RefreshInteraction()
+    {
+        SetInteractionEnabled(
+            GameManager.Instance != null &&
+            GameManager.Instance.IsGameplayActive);
     }
 }

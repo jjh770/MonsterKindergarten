@@ -193,8 +193,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _warningSequence?.Kill();
         _warningRoot.SetActive(false);
         _gameExitManager.UnregisterBackHandler(this);
-        _upgradeUI.SetToggleInputEnabled(true);
-        _clicker.SetInputMode(true, true);
+        StageManager.Instance?.RefreshInteraction();
         PlayModePresentation(show: false);
         Refresh();
     }
@@ -249,7 +248,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
             _isTransferPlaying = false;
             ApplySendModeInput();
         }
-        catch (InvalidOperationException e)
+        catch (Exception e) when (e is InvalidOperationException ||
+                                  e is ArgumentException)
         {
             Debug.LogWarning($"슬라임을 장식장으로 보낼 수 없습니다: {e.Message}");
             _isTransferPlaying = false;
@@ -325,7 +325,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
             isUnlocked);
     }
 
-    private void ShowWarning(string message)
+    // 장식장 토스트는 DisplayRoomInfoUI의 꺼내기 실패 안내도 함께 쓴다.
+    public void ShowWarning(string message)
     {
         _warningSequence?.Kill();
         _warningText.text = message;
