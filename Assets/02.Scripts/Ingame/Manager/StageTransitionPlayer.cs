@@ -21,6 +21,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [Header("Display Room Focus")]
     [SerializeField, Min(0.1f)] private float _displayRoomFocusDuration = 0.35f;
     [SerializeField, Min(0.1f)] private float _displayRoomFocusSize = 2.5f;
+    [SerializeField, Min(0.1f)] private float _displayRoomObservationSize = 2.1f;
     [SerializeField, Min(0f)] private float _displayRoomFollowSpeed = 8f;
 
     [Header("Slime Transfer")]
@@ -60,9 +61,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_displayRoomFocusTarget == null ||
-            _focusSequence != null ||
-            IsTransitioning)
+        if (_displayRoomFocusTarget == null || IsTransitioning)
         {
             return;
         }
@@ -79,6 +78,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     {
         _transitionSequence?.Kill();
         _focusSequence?.Kill();
+        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
     }
 
     public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
@@ -89,13 +89,16 @@ public sealed class StageTransitionPlayer : MonoBehaviour
             return;
         }
 
+        if (_displayRoomFocusTarget != null &&
+            _displayRoomFocusTarget != target)
+        {
+            _displayRoomFocusTarget.SetDisplayRoomCameraFocus(false);
+        }
+
         _displayRoomFocusTarget = target;
+        target.SetDisplayRoomCameraFocus(true);
         _focusSequence?.Kill();
         _focusSequence = DOTween.Sequence();
-        _focusSequence.Join(
-            _camera.transform
-                .DOMove(GetDisplayRoomFocusPosition(target), _displayRoomFocusDuration)
-                .SetEase(Ease.OutQuad));
         _focusSequence.Join(
             _camera
                 .DOOrthoSize(
@@ -109,8 +112,59 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         });
     }
 
+    public void BeginDisplayRoomObservation(Action onComplete = null)
+    {
+        if (_displayRoomFocusTarget == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _focusSequence?.Kill();
+        _focusSequence = DOTween.Sequence();
+        _focusSequence.Join(
+            _camera
+                .DOOrthoSize(
+                    Mathf.Min(
+                        _cameraBaseOrthographicSize,
+                        _displayRoomObservationSize),
+                    _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.OnComplete(() =>
+        {
+            _focusSequence = null;
+            onComplete?.Invoke();
+        });
+    }
+
+    public void EndDisplayRoomObservation(Action onComplete = null)
+    {
+        if (_displayRoomFocusTarget == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _focusSequence?.Kill();
+        _focusSequence = DOTween.Sequence();
+        _focusSequence.Join(
+            _camera
+                .DOOrthoSize(
+                    Mathf.Min(
+                        _cameraBaseOrthographicSize,
+                        _displayRoomFocusSize),
+                    _displayRoomFocusDuration)
+                .SetEase(Ease.OutQuad));
+        _focusSequence.OnComplete(() =>
+        {
+            _focusSequence = null;
+            onComplete?.Invoke();
+        });
+    }
+
     public void RestoreDisplayRoomFocus(Action onComplete = null)
     {
+        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
         _displayRoomFocusTarget = null;
         _focusSequence?.Kill();
         _focusSequence = DOTween.Sequence();
@@ -335,6 +389,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     private void ResetDisplayRoomFocus()
     {
+        _displayRoomFocusTarget?.SetDisplayRoomCameraFocus(false);
         _displayRoomFocusTarget = null;
         _focusSequence?.Kill();
         _focusSequence = null;

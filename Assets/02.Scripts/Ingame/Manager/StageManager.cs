@@ -171,6 +171,16 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.RestoreDisplayRoomFocus(onComplete);
     }
 
+    public void BeginDisplayRoomObservation(Action onComplete = null)
+    {
+        _transitionPlayer.BeginDisplayRoomObservation(onComplete);
+    }
+
+    public void EndDisplayRoomObservation(Action onComplete = null)
+    {
+        _transitionPlayer.EndDisplayRoomObservation(onComplete);
+    }
+
     public bool TryExitDisplayRoom()
     {
         if (!_isInitialized ||

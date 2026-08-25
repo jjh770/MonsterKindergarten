@@ -220,6 +220,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoCanvasGroup.blocksRaycasts = false;
         _observationInputRoot.SetActive(true);
         _observationInputRoot.transform.SetAsLastSibling();
+        StageManager.Instance?.BeginDisplayRoomObservation();
 
         _fadeTween?.Kill();
         _fadeTween = null;
@@ -245,6 +246,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isObserving = false;
         _observationInputRoot.SetActive(false);
         _infoCanvasGroup.blocksRaycasts = true;
+        StageManager.Instance?.EndDisplayRoomObservation();
 
         _observationSequence?.Kill();
         _observationSequence = DOTween.Sequence();

@@ -13,6 +13,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private SpriteRenderer _spriteRenderer;
     private Collider2D[] _colliders = Array.Empty<Collider2D>();
     private Rigidbody2D _rigidbody;
+    private RigidbodyInterpolation2D _defaultInterpolation;
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
@@ -45,6 +46,10 @@ public class SlimeController : MonoBehaviour, IClickable
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _colliders = GetComponents<Collider2D>();
         _rigidbody = GetComponent<Rigidbody2D>();
+        if (_rigidbody != null)
+        {
+            _defaultInterpolation = _rigidbody.interpolation;
+        }
     }
 
     public void SetSlime(Slime slime)
@@ -82,6 +87,16 @@ public class SlimeController : MonoBehaviour, IClickable
     public void SetMovementLocked(bool isLocked)
     {
         _slimeMove?.SetMovementLocked(isLocked);
+    }
+
+    public void SetDisplayRoomCameraFocus(bool isFocused)
+    {
+        if (_rigidbody != null)
+        {
+            _rigidbody.interpolation = isFocused
+                ? RigidbodyInterpolation2D.Interpolate
+                : _defaultInterpolation;
+        }
     }
 
     public void SetStagePresentationActive(bool isActive)

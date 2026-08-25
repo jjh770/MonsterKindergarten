@@ -3611,6 +3611,7 @@ MonoBehaviour:
   _cameraTravelDistance: 6
   _displayRoomFocusDuration: 0.35
   _displayRoomFocusSize: 2.5
+  _displayRoomObservationSize: 2.1
   _displayRoomFollowSpeed: 8
   _skyTransfer:
     Distance: 6
