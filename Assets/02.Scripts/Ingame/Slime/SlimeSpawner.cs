@@ -78,7 +78,19 @@ public class SlimeSpawner : MonoBehaviour
         _pool.Despawn(target.gameObject);
     }
 
-    public int GetActiveCount() => _activeTargets.Count;
+    public int GetActiveCount(ESlimeLocation location)
+    {
+        int count = 0;
+        foreach (SlimeController target in _activeTargets)
+        {
+            if (target != null && target.Location == location)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
 
     public List<SlimeController> GetActiveTargets() => _activeTargets;
 }

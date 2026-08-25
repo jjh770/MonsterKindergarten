@@ -85,7 +85,7 @@ public class SpawnSliderUI : MonoBehaviour
 
         if (_spawnMaxText != null)
         {
-            int current = SpawnManager.Instance.GetActiveCount();
+            int current = SpawnManager.Instance.GetMainStageSlimeCount();
             int max = SpawnManager.Instance.MaxActiveCount;
 
             if (_displayedActiveCount != current || _displayedMaxCount != max)

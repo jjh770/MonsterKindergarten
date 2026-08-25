@@ -98,7 +98,7 @@ public class SpawnManager : MonoBehaviour
         InitSlimeSpawns();
 
         // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
-        if (SlimeSpawner.Instance.GetActiveCount() == 0)
+        if (SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) == 0)
         {
             if (TutorialProgress.ShouldRun(TutorialIds.Main))
             {
@@ -157,14 +157,13 @@ public class SpawnManager : MonoBehaviour
 
         foreach (SlimeInstance instance in status.ActiveSlimes)
         {
-            if (instance.Location != ESlimeLocation.MainStage)
-            {
-                continue;
-            }
-
-            SlimeSpawner.Instance.Restore(
+            SlimeController target = SlimeSpawner.Instance.Restore(
                 instance,
                 GetRandomSpawnPosition());
+            if (target != null && instance.Location == ESlimeLocation.DisplayRoom)
+            {
+                target.SetStagePresentationActive(false);
+            }
         }
     }
 
@@ -192,7 +191,8 @@ public class SpawnManager : MonoBehaviour
 #endif
 
         if (SlimeSpawner.Instance != null &&
-            SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
+            SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) >=
+            _maxActiveCount)
         {
             return;
         }
@@ -325,7 +325,9 @@ public class SpawnManager : MonoBehaviour
         _isSpawningPaused = isPaused;
     }
 
-    public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();
+    // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
+    public int GetMainStageSlimeCount() =>
+        SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage);
 
     public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

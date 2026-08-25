@@ -36,7 +36,7 @@ public sealed class SlimeInstance
     {
     }
 
-    public void PromoteTo(ESlimeGrade grade)
+    internal void PromoteTo(ESlimeGrade grade)
     {
         ValidateGrade(grade);
         if (grade != Grade + 1)
