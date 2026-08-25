@@ -9,6 +9,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
+    [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
 
@@ -19,6 +20,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     private SlimeController _pendingTarget;
     private Sequence _chargeSequence;
     private bool _isStarted;
+    private bool _isWaitingForMovePanel;
 
     public bool HasPendingTarget => _pendingTarget != null;
     public bool IsWaitingForStageButton { get; private set; }
@@ -31,17 +33,25 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (_canvas == null ||
             _stageUI == null ||
+            _displayRoomUI == null ||
             _dialoguePresentationPrefab == null ||
             _tutorialContent == null)
         {
             Debug.LogError("하늘 인트로 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
+            return;
         }
+
+        _displayRoomUI.MovePanelOpened += OnMovePanelOpened;
     }
 
     private void OnDestroy()
     {
         _chargeSequence?.Kill();
+        if (_displayRoomUI != null)
+        {
+            _displayRoomUI.MovePanelOpened -= OnMovePanelOpened;
+        }
         _presentation?.Dispose();
     }
 
@@ -76,6 +86,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     public void Complete()
     {
         IsWaitingForStageButton = false;
+        _isWaitingForMovePanel = false;
         _presentation?.Dispose();
         _presentation = null;
         InteractionEnableRequested?.Invoke(true);
@@ -115,6 +126,35 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _isStarted = false;
         _stageUI.SetButtonVisible(true, true);
 
+        if (_displayRoomUI.IsMovePanelOpen)
+        {
+            ShowStageButtonStep();
+            return;
+        }
+
+        RectTransform panelSwitchTarget = _displayRoomUI.PanelSwitchButtonTarget;
+        if (_presentation == null || panelSwitchTarget == null)
+        {
+            Complete();
+            return;
+        }
+
+        _isWaitingForMovePanel = true;
+        _presentation.Spotlight.ShowUiTarget(
+            _tutorialContent.StageMenuButtonMessage,
+            panelSwitchTarget,
+            SpotlightInteractionMode.PassThroughPrimary);
+    }
+
+    private void OnMovePanelOpened()
+    {
+        if (!_isWaitingForMovePanel || _presentation == null) return;
+
+        ShowStageButtonStep();
+    }
+
+    private void ShowStageButtonStep()
+    {
         RectTransform buttonTarget = _stageUI.ButtonTarget;
         if (_presentation == null || buttonTarget == null)
         {
@@ -122,6 +162,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
             return;
         }
 
+        _isWaitingForMovePanel = false;
         IsWaitingForStageButton = true;
         _presentation.Spotlight.ShowUiTarget(
             _tutorialContent.StageButtonMessage,

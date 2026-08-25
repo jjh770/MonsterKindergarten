@@ -63,6 +63,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomButtonMessage;
     [SerializeField] private string _displayRoomSendButtonMessage;
     [SerializeField] private string _displayRoomSelectSlimeMessage;
+    [SerializeField] private string _displayRoomReopenMenuMessage;
     [SerializeField] private string _displayRoomEnterMessage;
     [SerializeField] private string _displayRoomInfoMessage;
     [SerializeField] private string _displayRoomInfoSummaryMessage;
@@ -74,6 +75,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private DialogueSequence[] _dialogues;
 
     [Header("Stage")]
+    [SerializeField] private string _stageMenuButtonMessage;
     [SerializeField] private string _stageButtonMessage;
 
     public string ClickMessage => _clickMessage;
@@ -87,12 +89,14 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomButtonMessage => _displayRoomButtonMessage;
     public string DisplayRoomSendButtonMessage => _displayRoomSendButtonMessage;
     public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;
+    public string DisplayRoomReopenMenuMessage => _displayRoomReopenMenuMessage;
     public string DisplayRoomEnterMessage => _displayRoomEnterMessage;
     public string DisplayRoomInfoMessage => _displayRoomInfoMessage;
     public string DisplayRoomInfoSummaryMessage => _displayRoomInfoSummaryMessage;
     public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
+    public string StageMenuButtonMessage => _stageMenuButtonMessage;
     public string StageButtonMessage => _stageButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)

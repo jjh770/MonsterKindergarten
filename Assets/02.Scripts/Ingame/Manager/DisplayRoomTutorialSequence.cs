@@ -6,7 +6,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         None,
         Dialogue,
-        Button,
+        MenuButton,
         SendButton,
         SlimeSelection,
         EnterButton,
@@ -39,6 +39,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
         if (_displayRoomUI != null)
         {
+            _displayRoomUI.MovePanelOpened += OnMovePanelOpened;
             _displayRoomUI.SendModeStarted += OnSendModeStarted;
             _displayRoomUI.SendModeEnded += OnSendModeEnded;
             _displayRoomUI.SlimeTransferred += OnSlimeTransferred;
@@ -74,6 +75,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
         if (_displayRoomUI != null)
         {
+            _displayRoomUI.MovePanelOpened -= OnMovePanelOpened;
             _displayRoomUI.SendModeStarted -= OnSendModeStarted;
             _displayRoomUI.SendModeEnded -= OnSendModeEnded;
             _displayRoomUI.SlimeTransferred -= OnSlimeTransferred;
@@ -160,24 +162,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void ShowDisplayRoomButtonStep()
     {
-        RectTransform target = _displayRoomUI.SpaceButtonTarget;
-        if (target == null)
-        {
-            Abort("강조할 장식장 버튼이 없습니다.");
-            return;
-        }
-
-        _step = Step.Button;
-        Spotlight.ShowUiTarget(
-            Content.DisplayRoomButtonMessage,
-            target,
-            SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
-    }
-
-    private void OnGuideAdvanceRequested()
-    {
-        if (_step == Step.Button)
+        if (_displayRoomUI.IsMovePanelOpen)
         {
             if (_tutorialSlime != null)
             {
@@ -187,8 +172,27 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             {
                 ShowSendButtonStep();
             }
+            return;
         }
-        else if (_step == Step.ObserveButton)
+
+        RectTransform target = _displayRoomUI.PanelSwitchButtonTarget;
+        if (target == null)
+        {
+            Abort("강조할 하단 패널 전환 버튼이 없습니다.");
+            return;
+        }
+
+        _step = Step.MenuButton;
+        Spotlight.ShowUiTarget(
+            Content.DisplayRoomButtonMessage,
+            target,
+            SpotlightInteractionMode.PassThroughPrimary,
+            useRectangularHole: true);
+    }
+
+    private void OnGuideAdvanceRequested()
+    {
+        if (_step == Step.ObserveButton)
         {
             ShowTakeOutButtonStep();
         }
@@ -199,6 +203,21 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         else if (_step == Step.TakeOutButton)
         {
             ShowCloseButtonStep();
+        }
+    }
+
+    private void OnMovePanelOpened()
+    {
+        if (_step == Step.MenuButton)
+        {
+            if (_tutorialSlime != null)
+            {
+                ShowEnterButtonStep();
+            }
+            else
+            {
+                ShowSendButtonStep();
+            }
         }
     }
 

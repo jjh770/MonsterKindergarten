@@ -23,9 +23,10 @@ MonoBehaviour:
   _upgradePanelMessage: "\uB2EB\uAE30"
   _systemUpgradeCarouselMessage: "\uD558\uB2E8 \uD328\uB110\uC744 \uC88C\uC6B0\uB85C \uB3CC\uB824 \uBCF4\uC138\uC694!"
   _spawnPoolButtonMessage: "학자 슬라임을 눌러 자연 생성 확률을 확인해 보세요!"
-  _displayRoomButtonMessage: "이 버튼으로 장식장을 오갈 수 있어요!"
+  _displayRoomButtonMessage: "하단 패널 전환 버튼을 눌러 이동 패널을 열어 보세요!"
   _displayRoomSendButtonMessage: "장식장으로 보내기 버튼을 눌러 보세요!"
   _displayRoomSelectSlimeMessage: "장식장으로 보낼 슬라임을 선택하세요!"
+  _displayRoomReopenMenuMessage: "장식장 아이콘을 다시 눌러 이동 메뉴를 열어 보세요!"
   _displayRoomEnterMessage: "장식장으로 이동해 보세요!"
   _displayRoomInfoMessage: "슬라임을 터치하면 이름과 정보를 볼 수 있어요!"
   _displayRoomInfoSummaryMessage: "여기서 슬라임의 이름과 번호, 한 줄 설명을 확인할 수 있어요!"
@@ -110,5 +111,6 @@ MonoBehaviour:
     _lines:
     - _speaker: "선생님"
       _message: "이 확률표에서 지금 자연 생성될 수 있는 슬라임의 종류와 각각의 등장 확률을 확인할 수 있어."
+  _stageMenuButtonMessage: "\uD558\uB2E8 \uD328\uB110 \uC804\uD658 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC774\uB3D9 \uD328\uB110\uC744 \uC5F4\uC5B4 \uBCF4\uC790!"
   _stageButtonMessage: "\uC774 \uBC84\uD2BC\uC73C\uB85C \uB545\uACFC \uD558\uB298\uC744
     \uC624\uAC08 \uC218 \uC788\uC5B4!"
