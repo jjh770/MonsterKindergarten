@@ -126,7 +126,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour
     {
         _target = target;
         _infoRoot.SetActive(true);
-        _infoRoot.transform.SetAsLastSibling();
         _infoCanvasGroup.alpha = 0f;
         _infoCanvasGroup.interactable = false;
         _clicker.SetInputMode(false, false);
