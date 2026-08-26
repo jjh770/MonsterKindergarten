@@ -22,6 +22,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private DisplayRoomUI _displayRoomUI;
+    [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private DisplayRoomInfoUI _displayRoomInfoUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
@@ -37,9 +38,13 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
         }
 
+        if (_panelSwitcher != null)
+        {
+            _panelSwitcher.MovePanelOpened += OnMovePanelOpened;
+        }
+
         if (_displayRoomUI != null)
         {
-            _displayRoomUI.MovePanelOpened += OnMovePanelOpened;
             _displayRoomUI.SendModeStarted += OnSendModeStarted;
             _displayRoomUI.SendModeEnded += OnSendModeEnded;
             _displayRoomUI.SlimeTransferred += OnSlimeTransferred;
@@ -73,9 +78,13 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
         }
 
+        if (_panelSwitcher != null)
+        {
+            _panelSwitcher.MovePanelOpened -= OnMovePanelOpened;
+        }
+
         if (_displayRoomUI != null)
         {
-            _displayRoomUI.MovePanelOpened -= OnMovePanelOpened;
             _displayRoomUI.SendModeStarted -= OnSendModeStarted;
             _displayRoomUI.SendModeEnded -= OnSendModeEnded;
             _displayRoomUI.SlimeTransferred -= OnSlimeTransferred;
@@ -130,6 +139,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         if (_displayRoomUI == null ||
+            _panelSwitcher == null ||
             _displayRoomInfoUI == null ||
             _clicker == null ||
             _upgradeUI == null)
@@ -162,7 +172,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void ShowDisplayRoomButtonStep()
     {
-        if (_displayRoomUI.IsMovePanelOpen)
+        if (_panelSwitcher.IsMovePanelOpen)
         {
             if (_tutorialSlime != null)
             {
@@ -175,7 +185,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        RectTransform target = _displayRoomUI.PanelSwitchButtonTarget;
+        RectTransform target = _panelSwitcher.SwitchButtonTarget;
         if (target == null)
         {
             Abort("강조할 하단 패널 전환 버튼이 없습니다.");

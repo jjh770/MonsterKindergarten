@@ -267,6 +267,7 @@ GameObject:
   - component: {fileID: 66315038}
   - component: {fileID: 66315039}
   - component: {fileID: 66315040}
+  - component: {fileID: 993100210}
   m_Layer: 5
   m_Name: StageMovePanel
   m_TagString: Untagged
@@ -315,7 +316,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.06, g: 0.06, b: 0.08, a: 0.82}
@@ -1183,6 +1184,8 @@ RectTransform:
   - {fileID: 996000001}
   - {fileID: 996000011}
   - {fileID: 1907240555}
+  - {fileID: 998300002}
+  - {fileID: 990100002}
   - {fileID: 995200002}
   - {fileID: 993100602}
   m_Father: {fileID: 0}
@@ -2137,6 +2140,81 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 734613837}
+  m_CullTransparentMesh: 1
+--- !u!1 &742231864
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 742231865}
+  - component: {fileID: 742231867}
+  - component: {fileID: 742231866}
+  m_Layer: 5
+  m_Name: UpgradeButtonImage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &742231865
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742231864}
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1134167830}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -0, y: -6.7}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &742231866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742231864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 1b4fcb47bd7f1ac4bba6cd03dff408da, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &742231867
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742231864}
   m_CullTransparentMesh: 1
 --- !u!1 &772619834
 GameObject:
@@ -3617,7 +3695,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkyIntroDirector
   _canvas: {fileID: 457349916}
   _stageUI: {fileID: 1324579906}
-  _displayRoomUI: {fileID: 990000001}
+  _panelSwitcher: {fileID: 998300001}
   _dialoguePresentationPrefab: {fileID: 810001, guid: 7f1a9c3e5b2d4a6f8c0e1d3b5a7f9246, type: 3}
   _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
   _chargeDuration: 0.8
@@ -3627,39 +3705,32 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1324579905}
+  m_GameObject: {fileID: 990100000}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c0ad1d5f90f94ad09d1e256ea3b21472, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomUI
   _canvas: {fileID: 457349916}
-  _panelSwitchButton: {fileID: 998200105}
-  _stageMovePanel: {fileID: 66315038}
+  _panelSwitcher: {fileID: 998300001}
   _spaceButton: {fileID: 990000105}
   _sendButton: {fileID: 993100105}
   _stageUI: {fileID: 1324579906}
   _gameExitManager: {fileID: 286711904}
   _clicker: {fileID: 115063078}
   _upgradeUI: {fileID: 1526959884}
-  _systemUpgradePanel: {fileID: 920019898}
-  _sendModeRoot: {fileID: 993100201}
   _sendModeCanvasGroup: {fileID: 993100203}
   _sendModePrompt: {fileID: 993100402}
   _cancelButton: {fileID: 993100505}
-  _warningRoot: {fileID: 993100601}
-  _warningCanvasGroup: {fileID: 993100605}
-  _warningText: {fileID: 993100614}
+  _toast: {fileID: 993100620}
+  _sendModeRoot: {fileID: 993100201}
   _topUiTargets:
   - {fileID: 734613838}
   - {fileID: 2116618831}
   _bottomUiTargets:
   - {fileID: 920019898}
   - {fileID: 1526959883}
-  _buttonMargin: 50
-  _panelAnimationDuration: 0.25
   _modeAnimationDuration: 0.35
-  _warningDisplayDuration: 1.2
 --- !u!1 &990000101
 GameObject:
   m_ObjectHideFlags: 0
@@ -3856,6 +3927,42 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &990100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 990100002}
+  - component: {fileID: 990000001}
+  m_Layer: 5
+  m_Name: DisplayRoomUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &990100002
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990100000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 457349917}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &991000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -4792,6 +4899,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!225 &993100210
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 66315037}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &993100401
 GameObject:
   m_ObjectHideFlags: 0
@@ -5199,6 +5318,7 @@ GameObject:
   - component: {fileID: 993100603}
   - component: {fileID: 993100604}
   - component: {fileID: 993100605}
+  - component: {fileID: 993100620}
   m_Layer: 5
   m_Name: DisplayRoomWarning
   m_TagString: Untagged
@@ -5445,7 +5565,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomInfoUI
   _gameExitManager: {fileID: 286711904}
   _clicker: {fileID: 115063078}
-  _displayRoomUI: {fileID: 990000001}
+  _toast: {fileID: 993100620}
   _infoRoot: {fileID: 995200101}
   _infoCanvasGroup: {fileID: 995200105}
   _nameText: {fileID: 995200304}
@@ -7075,6 +7195,7 @@ MonoBehaviour:
   _unlockPopupUI: {fileID: 1432576204}
   _upgradeUI: {fileID: 1526959884}
   _displayRoomUI: {fileID: 990000001}
+  _panelSwitcher: {fileID: 998300001}
   _displayRoomInfoUI: {fileID: 995200001}
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
@@ -7622,6 +7743,61 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &998300000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 998300002}
+  - component: {fileID: 998300001}
+  m_Layer: 5
+  m_Name: BottomPanelSwitcher
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &998300001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998300000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f7b6d4e08a94c31b5e2790af6c14d83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BottomPanelSwitcher
+  _canvas: {fileID: 457349916}
+  _switchButton: {fileID: 998200105}
+  _systemUpgradePanel: {fileID: 920019898}
+  _movePanel: {fileID: 66315038}
+  _movePanelGroup: {fileID: 993100210}
+  _animationDuration: 0.25
+  _buttonMargin: 50
+--- !u!224 &998300002
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998300000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 457349917}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1045520509
 GameObject:
   m_ObjectHideFlags: 0
@@ -7878,6 +8054,7 @@ GameObject:
   - component: {fileID: 1134167832}
   - component: {fileID: 1134167831}
   - component: {fileID: 2099300001}
+  - component: {fileID: 2099300002}
   m_Layer: 5
   m_Name: UpgradeButton
   m_TagString: Untagged
@@ -7896,7 +8073,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 742231865}
   m_Father: {fileID: 1526959883}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0, y: 0.5}
@@ -8577,7 +8755,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1324579907}
   - component: {fileID: 1324579906}
-  - component: {fileID: 990000001}
   m_Layer: 0
   m_Name: StageUI
   m_TagString: Untagged
@@ -10540,6 +10717,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.9}
   m_EffectDistance: {x: 3, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &2099300002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134167829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
+  m_ShowMaskGraphic: 1
 --- !u!114 &2099400001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11383,3 +11573,20 @@ SceneRoots:
   - {fileID: 457349917}
   - {fileID: 1045520513}
   - {fileID: 376498427}
+--- !u!114 &993100620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993100601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c19e8a3b74d4f6082ae13c5d0972b4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToastMessageUI
+  _canvasGroup: {fileID: 993100605}
+  _text: {fileID: 993100614}
+  _fadeInDuration: 0.15
+  _displayDuration: 1.2
+  _fadeOutDuration: 0.2

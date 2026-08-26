@@ -9,7 +9,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
-    [SerializeField] private DisplayRoomUI _displayRoomUI;
+    [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
 
@@ -33,7 +33,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (_canvas == null ||
             _stageUI == null ||
-            _displayRoomUI == null ||
+            _panelSwitcher == null ||
             _dialoguePresentationPrefab == null ||
             _tutorialContent == null)
         {
@@ -42,15 +42,15 @@ public sealed class SkyIntroDirector : MonoBehaviour
             return;
         }
 
-        _displayRoomUI.MovePanelOpened += OnMovePanelOpened;
+        _panelSwitcher.MovePanelOpened += OnMovePanelOpened;
     }
 
     private void OnDestroy()
     {
         _chargeSequence?.Kill();
-        if (_displayRoomUI != null)
+        if (_panelSwitcher != null)
         {
-            _displayRoomUI.MovePanelOpened -= OnMovePanelOpened;
+            _panelSwitcher.MovePanelOpened -= OnMovePanelOpened;
         }
         _presentation?.Dispose();
     }
@@ -126,13 +126,13 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _isStarted = false;
         _stageUI.SetButtonVisible(true, true);
 
-        if (_displayRoomUI.IsMovePanelOpen)
+        if (_panelSwitcher.IsMovePanelOpen)
         {
             ShowStageButtonStep();
             return;
         }
 
-        RectTransform panelSwitchTarget = _displayRoomUI.PanelSwitchButtonTarget;
+        RectTransform panelSwitchTarget = _panelSwitcher.SwitchButtonTarget;
         if (_presentation == null || panelSwitchTarget == null)
         {
             Complete();

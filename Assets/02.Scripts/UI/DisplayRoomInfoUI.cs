@@ -16,7 +16,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [Header("Common")]
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private DisplayRoomUI _displayRoomUI;
+    [SerializeField] private ToastMessageUI _toast;
 
     [Header("Info Panel")]
     [SerializeField] private GameObject _infoRoot;
@@ -110,7 +110,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     {
         bool hasReferences = _gameExitManager != null &&
                              _clicker != null &&
-                             _displayRoomUI != null &&
+                             _toast != null &&
                              _infoRoot != null &&
                              _infoCanvasGroup != null &&
                              _nameText != null &&
@@ -291,7 +291,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         if (SpawnManager.Instance == null ||
             !SpawnManager.Instance.HasMainStageRoom())
         {
-            _displayRoomUI.ShowWarning("메인 필드가 가득 차서 꺼낼 수 없어요.");
+            _toast.Show("메인 필드가 가득 차서 꺼낼 수 없어요.");
             return;
         }
 
@@ -338,7 +338,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             StageManager.Instance?.RefreshSlimePresentation(target);
             _clicker.SetInputMode(false, false);
             _infoCanvasGroup.interactable = true;
-            _displayRoomUI.ShowWarning("이 슬라임은 지금 꺼낼 수 없어요.");
+            _toast.Show("이 슬라임은 지금 꺼낼 수 없어요.");
         }
     }
 
