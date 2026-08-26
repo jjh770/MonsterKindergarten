@@ -44,6 +44,16 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
         return UniTask.CompletedTask;
     }
 
+    public void Delete()
+    {
+        for (int i = 0; i < (int)ECurrencyType.Count; i++)
+        {
+            PlayerPrefs.DeleteKey($"{_userId}_{(ECurrencyType)i}");
+        }
+        PlayerPrefs.DeleteKey($"{_userId}_{LAST_SAVE_TIME_KEY}");
+        PlayerPrefs.DeleteKey($"{_userId}_{SCHEMA_VERSION_KEY}");
+    }
+
     public UniTask<CurrencySaveData> Load()
     {
         CurrencySaveData data = CurrencySaveData.Default;

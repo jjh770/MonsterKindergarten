@@ -16,6 +16,11 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
 
     private string GetKey() => $"{_userId}{KEY_SUFFIX}";
 
+    public void Delete()
+    {
+        PlayerPrefs.DeleteKey(GetKey());
+    }
+
     public UniTask Save(SlimeStatusSaveData saveData)
     {
         try

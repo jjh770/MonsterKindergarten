@@ -18,9 +18,13 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
 
     public async UniTask Save(T saveData)
     {
+        if (GameplaySaveGate.IsResetting) return;
+        int resetGeneration = GameplaySaveGate.ResetGeneration;
         // 로컬 저장 - 즉시 수행
         saveData.LastSaveTime = DateTime.UtcNow.ToString("O");
         await _playerprefsRepository.Save(saveData);
+        if (GameplaySaveGate.IsResetting ||
+            resetGeneration != GameplaySaveGate.ResetGeneration) return;
 
         // 서버 저장 - 이전 0.6초간 대기 작업이 있다면 취소 요청
         if (_firebaseSaveToken != null)
@@ -31,17 +35,18 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         // 새로운 취소 토큰 생성
         _firebaseSaveToken = new CancellationTokenSource();
         // 서버 저장 실행
-        SaveToFirebase(saveData, _firebaseSaveToken.Token).Forget();
+        SaveToFirebase(saveData, _firebaseSaveToken.Token, resetGeneration).Forget();
     }
 
-    private async UniTaskVoid SaveToFirebase(T saveData, CancellationToken token)
+    private async UniTaskVoid SaveToFirebase(T saveData, CancellationToken token, int resetGeneration)
     {
         try
         {
             // 0.6초간 대기 실행
             await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL), cancellationToken: token);
             // 취소 요청이 떨어지지 않았다면 넘어가기
-            if (token.IsCancellationRequested) return;
+            if (token.IsCancellationRequested || GameplaySaveGate.IsResetting ||
+                resetGeneration != GameplaySaveGate.ResetGeneration) return;
             // 모든 분기 통과 시 서버에 저장
             await _firebaseRepository.Save(saveData);
         }

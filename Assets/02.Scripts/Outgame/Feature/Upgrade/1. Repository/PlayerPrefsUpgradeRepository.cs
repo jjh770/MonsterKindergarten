@@ -16,6 +16,11 @@ public class PlayerPrefsUpgradeRepository : IUpgradeRepository
 
     private string GetKey() => $"{_userId}{KEY_SUFFIX}";
 
+    public void Delete()
+    {
+        PlayerPrefs.DeleteKey(GetKey());
+    }
+
     public UniTask Save(UpgradeSaveData saveData)
     {
         try

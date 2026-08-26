@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
     private bool _isGameplayActive;
     public bool IsGameplayActive
     {
-        get => _isGameplayActive;
+        get => _isGameplayActive && !GameplaySaveGate.IsResetting;
         private set
         {
             if (_isGameplayActive == value) return;
@@ -128,6 +128,7 @@ public class GameManager : MonoBehaviour
 
     public async UniTask CompleteTutorialAsync()
     {
+        if (GameplaySaveGate.IsResetting) return;
         if (!TutorialProgress.IsRegistered(TutorialIds.Main) ||
             TutorialProgress.IsCompleted(TutorialIds.Main))
         {
@@ -147,7 +148,7 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (!_isAllInitialized) return;
+        if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
 
         if (pauseStatus)
         {
