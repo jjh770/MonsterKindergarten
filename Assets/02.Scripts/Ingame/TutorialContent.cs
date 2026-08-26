@@ -17,6 +17,8 @@ public enum DialogueId
     DisplayRoomUnlocked = 10,
     DisplayRoomFinal = 11,
     HigherGradeSpawnPool = 12,
+    SkyArrived = 13,
+    SkyFinal = 14,
 }
 
 [Serializable]

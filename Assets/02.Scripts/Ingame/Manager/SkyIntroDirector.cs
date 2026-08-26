@@ -78,9 +78,14 @@ public sealed class SkyIntroDirector : MonoBehaviour
             PlayJourney);
     }
 
-    public void HideSpotlight()
+    public void AdvanceStageButtonStep()
     {
-        _presentation?.Spotlight.Hide();
+        if (!IsWaitingForStageButton || _presentation == null) return;
+
+        IsWaitingForStageButton = false;
+        _presentation.ShowDialogue(
+            _tutorialContent.GetDialogue(DialogueId.SkyFinal),
+            Complete);
     }
 
     public void Complete()
@@ -126,6 +131,21 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _isStarted = false;
         _stageUI.SetButtonVisible(true, true);
 
+        if (_presentation == null)
+        {
+            Complete();
+            return;
+        }
+
+        // 스테이지 전환이 복원한 입력을 안내가 끝날 때까지 다시 막는다.
+        InteractionEnableRequested?.Invoke(false);
+        _presentation.ShowDialogue(
+            _tutorialContent.GetDialogue(DialogueId.SkyArrived),
+            ShowMovePanelStep);
+    }
+
+    private void ShowMovePanelStep()
+    {
         if (_panelSwitcher.IsMovePanelOpen)
         {
             ShowStageButtonStep();

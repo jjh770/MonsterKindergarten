@@ -7,7 +7,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         None,
         Dialogue,
         PoolButton,
-        PoolPopup,
         Carousel,
         Complete,
     }
@@ -30,7 +29,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         if (_spawnSliderUI != null)
         {
             _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
-            _spawnSliderUI.SpawnPoolPopupClosed += OnSpawnPoolPopupClosed;
         }
     }
 
@@ -44,7 +42,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         if (_spawnSliderUI != null)
         {
             _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
-            _spawnSliderUI.SpawnPoolPopupClosed -= OnSpawnPoolPopupClosed;
         }
 
         if (_systemUpgradePanel != null)
@@ -112,24 +109,23 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.PoolButton) return;
 
-        Spotlight.Hide();
+        RectTransform popupTarget = _spawnSliderUI.SpawnPoolPopupTarget;
+        if (popupTarget != null)
+        {
+            Spotlight.ShowUiFocus(popupTarget, useRectangularHole: true);
+        }
+
         _step = Step.Dialogue;
         ShowDialogue(
             Content.GetDialogue(DialogueId.HigherGradeSpawnPool),
-            WaitForPoolPopupClose);
+            ClosePoolPopupAndShowUpgrade,
+            keepGuideVisible: popupTarget != null);
     }
 
-    private void WaitForPoolPopupClose()
+    private void ClosePoolPopupAndShowUpgrade()
     {
-        _step = Step.PoolPopup;
-    }
-
-    private void OnSpawnPoolPopupClosed()
-    {
-        if (_step == Step.PoolPopup)
-        {
-            ShowUpgradeStep();
-        }
+        _spawnSliderUI.CloseSpawnPoolPopup();
+        ShowUpgradeStep();
     }
 
     private void ShowUpgradeStep()

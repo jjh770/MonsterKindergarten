@@ -18,6 +18,8 @@ public class SpawnSliderUI : MonoBehaviour
         _spawnPoolButton != null
             ? _spawnPoolButton.transform as RectTransform
             : null;
+    public RectTransform SpawnPoolPopupTarget =>
+        _spawnPoolPopup != null ? _spawnPoolPopup.TutorialTarget : null;
     public event Action SpawnPoolPopupOpened;
     public event Action SpawnPoolPopupClosed;
 
@@ -103,6 +105,11 @@ public class SpawnSliderUI : MonoBehaviour
 
         RefreshSpawnPoolPopup();
         SpawnPoolPopupOpened?.Invoke();
+    }
+
+    public void CloseSpawnPoolPopup()
+    {
+        _spawnPoolPopup?.Close();
     }
 
     private void OnSpawnPoolPopupClosed()

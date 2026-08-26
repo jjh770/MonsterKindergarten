@@ -382,21 +382,17 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
+        if (_skyIntroDirector.IsWaitingForStageButton)
+        {
+            // 첫 안내에서는 이동하지 않고 버튼 설명 다음 대화로 이어진다.
+            _skyIntroDirector.AdvanceStageButtonStep();
+            return;
+        }
+
         _upgradeUI.TryClose();
         EGameStage targetStage = _currentStage == EGameStage.Ground
             ? EGameStage.Sky
             : EGameStage.Ground;
-
-        if (_skyIntroDirector.IsWaitingForStageButton)
-        {
-            _skyIntroDirector.HideSpotlight();
-            StartStageTransition(
-                targetStage,
-                null,
-                _skyIntroDirector.Complete,
-                saveStage: true);
-            return;
-        }
 
         StartStageTransition(
             targetStage,

@@ -12,6 +12,7 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
     [SerializeField] private Button _closeButton;
 
     public bool IsOpen => gameObject.activeSelf;
+    public RectTransform TutorialTarget => _panel;
 
     public event Action Closed;
 
@@ -65,7 +66,7 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private void Close()
+    public void Close()
     {
         Hide();
         Closed?.Invoke();
