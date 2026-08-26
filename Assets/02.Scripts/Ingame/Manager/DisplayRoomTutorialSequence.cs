@@ -22,6 +22,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private DisplayRoomUI _displayRoomUI;
+    [SerializeField] private SpaceToggleButtonUI _spaceToggleButton;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private DisplayRoomInfoUI _displayRoomInfoUI;
     [SerializeField] private Clicker _clicker;
@@ -68,6 +69,11 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             GameManager.Instance.OnGameplayActivated += TryStart;
         }
 
+        if (SpawnManager.Instance != null)
+        {
+            SpawnManager.Instance.Initialized += TryStart;
+        }
+
         TryStart();
     }
 
@@ -108,6 +114,11 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             GameManager.Instance.OnGameplayActivated -= TryStart;
         }
 
+        if (SpawnManager.Instance != null)
+        {
+            SpawnManager.Instance.Initialized -= TryStart;
+        }
+
         UnsubscribeGuide();
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
@@ -127,6 +138,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         if ((_step != Step.None && _step != Step.Complete) ||
             GameManager.Instance == null ||
             !GameManager.Instance.IsGameplayActive ||
+            SpawnManager.Instance == null ||
+            !SpawnManager.Instance.IsInitialized ||
             TutorialProgress.ShouldRun(TutorialIds.Main) ||
             !TutorialProgress.ShouldRun(TutorialIds.DisplayRoom) ||
             SlimeManager.Instance == null ||
@@ -140,6 +153,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         if (_displayRoomUI == null ||
+            _spaceToggleButton == null ||
             _panelSwitcher == null ||
             _displayRoomInfoUI == null ||
             _clicker == null ||
@@ -157,6 +171,14 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         SpawnManager.Instance?.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
         _upgradeUI.SetToggleInputEnabled(false);
+
+        // 입고 결과가 저장돼 있으면 추가 입고 없이 장식장 안내를 재개한다.
+        if (_tutorialSlime != null)
+        {
+            ShowDisplayRoomButtonStep();
+            return;
+        }
+
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.DisplayRoomUnlocked),
             ShowDisplayRoomButtonStep);
@@ -175,14 +197,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         if (_panelSwitcher.IsMovePanelOpen)
         {
-            if (_tutorialSlime != null)
-            {
-                ShowEnterButtonStep();
-            }
-            else
-            {
-                ShowSendButtonStep();
-            }
+            ShowSendButtonStep();
             return;
         }
 
@@ -194,6 +209,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.MenuButton;
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
             Content.DisplayRoomButtonMessage,
             target,
@@ -221,19 +237,20 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         if (_step == Step.MenuButton)
         {
-            if (_tutorialSlime != null)
-            {
-                ShowEnterButtonStep();
-            }
-            else
-            {
-                ShowSendButtonStep();
-            }
+            ShowSendButtonStep();
         }
     }
 
     private void ShowSendButtonStep()
     {
+        // 시작 시점의 캐시가 아니라 입고 안내 직전의 실제 상태로 분기한다.
+        _tutorialSlime = FindFirstDisplayRoomSlime();
+        if (_tutorialSlime != null)
+        {
+            ShowEnterButtonStep();
+            return;
+        }
+
         RectTransform target = _displayRoomUI.SendButtonTarget;
         if (target == null)
         {
@@ -253,6 +270,14 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     private void OnSendModeStarted()
     {
         if (_step != Step.SendButton) return;
+
+        _tutorialSlime = FindFirstDisplayRoomSlime();
+        if (_tutorialSlime != null)
+        {
+            _displayRoomUI.CancelSendMode();
+            ShowEnterButtonStep();
+            return;
+        }
 
         _tutorialSlime = FindTransferCandidate();
         if (_tutorialSlime == null)
@@ -287,7 +312,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void ShowEnterButtonStep()
     {
-        RectTransform target = _displayRoomUI.SpaceButtonTarget;
+        RectTransform target = _spaceToggleButton.ButtonTarget;
         if (target == null)
         {
             Abort("강조할 장식장 이동 버튼이 없습니다.");

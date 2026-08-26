@@ -118,6 +118,16 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         _isMovePanelSelected = selectMovePanel;
     }
 
+    // 튜토리얼이 숨겨진 업그레이드를 강조하지 않도록 표시까지 즉시 확정한다.
+    public bool TryShowSystemUpgradePanel()
+    {
+        if (!_isInitialized || !_isAreaVisible || _isForcedMovePanel) return false;
+
+        _isMovePanelSelected = false;
+        ApplyState();
+        return _systemUpgradePanel.gameObject.activeInHierarchy;
+    }
+
     public void RefreshLayout()
     {
         RectTransform canvasRect = _canvas.transform as RectTransform;

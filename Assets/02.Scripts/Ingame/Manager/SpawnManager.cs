@@ -31,6 +31,7 @@ public class SpawnManager : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
+    public bool IsInitialized => _isInitialized;
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
     public float MinSpawnInterval => _minSpawnInterval;
@@ -56,6 +57,7 @@ public class SpawnManager : MonoBehaviour
     public event Action<float, float> OnSpawnIntervalChanged;
     public event Action<int> OnSpawnMaxChanged;
     public event Action OnSpawned;
+    public event Action Initialized;
     public event Action<SlimeController> OnTutorialSlimeReady;
 
     private void Awake()
@@ -93,7 +95,6 @@ public class SpawnManager : MonoBehaviour
 
     private void OnAllDataInitialized()
     {
-        _isInitialized = true;
         ApplySavedUpgrades();
         InitSlimeSpawns();
 
@@ -109,6 +110,10 @@ public class SpawnManager : MonoBehaviour
                 Spawn(ESlimeGrade.Grade1);
             }
         }
+
+        // 저장된 개체 복원과 최초 생성까지 끝난 뒤 튜토리얼에 알린다.
+        _isInitialized = true;
+        Initialized?.Invoke();
     }
 
     private void SpawnTutorialSlime()

@@ -13,6 +13,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     [SerializeField] private SpawnSliderUI _spawnSliderUI;
     [SerializeField] private SystemUpgradePanel _systemUpgradePanel;
+    [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
@@ -129,7 +130,9 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
     private void ShowUpgradeStep()
     {
         RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
-        if (carouselTarget == null)
+        if (carouselTarget == null ||
+            _panelSwitcher == null ||
+            !_panelSwitcher.TryShowSystemUpgradePanel())
         {
             Complete();
             return;

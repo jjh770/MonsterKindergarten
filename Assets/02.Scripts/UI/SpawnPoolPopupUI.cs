@@ -26,6 +26,10 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
         }
 
         _closeButton.onClick.AddListener(Close);
+
+        // 팝업 높이를 글자에 맞추려면 글자 크기가 고정이어야 한다.
+        // 자동 크기 조절이 켜져 있으면 높이와 글자 크기가 서로를 따라가며 흔들린다.
+        _probabilityText.enableAutoSizing = false;
     }
 
     private void OnDestroy()
@@ -53,12 +57,36 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
         }
 
         builder.Append("\n눌러서 닫기");
+
         _probabilityText.text = builder.ToString();
+
+        // Awake가 첫 활성화까지 밀리므로 크기를 재기 전에 켠다.
+        gameObject.SetActive(true);
+        ResizeToText();
+        transform.SetAsLastSibling();
+    }
+
+    // 줄 수에 상수를 곱해 높이를 어림잡으면 글자가 팝업 밖으로 나간다.
+    // 스프라이트가 섞인 줄은 글자만 있는 줄보다 높아서 줄당 높이가 일정하지 않다.
+    // 그래서 한 번 배치해 본 뒤 첫 줄 위쪽 끝과 마지막 줄 아래쪽 끝의 간격을 그대로 쓴다.
+    // 피벗이 위쪽이라 높이를 키우면 아래로만 늘어난다.
+    private void ResizeToText()
+    {
+        _probabilityText.ForceMeshUpdate();
+
+        TMP_TextInfo textInfo = _probabilityText.textInfo;
+        if (textInfo == null || textInfo.lineCount == 0) return;
+
+        float top = textInfo.lineInfo[0].ascender;
+        float bottom = textInfo.lineInfo[textInfo.lineCount - 1].descender;
+
+        // 위아래 여백은 글자 영역의 인셋을 그대로 따른다.
+        RectTransform textRect = _probabilityText.rectTransform;
+        float verticalPadding = textRect.offsetMin.y - textRect.offsetMax.y;
+
         _panel.SetSizeWithCurrentAnchors(
             RectTransform.Axis.Vertical,
-            150f + probabilities.Count * 58f);
-        gameObject.SetActive(true);
-        transform.SetAsLastSibling();
+            top - bottom + verticalPadding);
     }
 
     public void Hide()

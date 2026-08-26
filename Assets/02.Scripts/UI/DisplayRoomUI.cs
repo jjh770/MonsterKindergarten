@@ -8,7 +8,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [Header("Common")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
-    [SerializeField] private Button _spaceButton;
+    [SerializeField] private SpaceToggleButtonUI _spaceToggleButton;
     [SerializeField] private Button _sendButton;
     [SerializeField] private StageUI _stageUI;
     [SerializeField] private GameExitManager _gameExitManager;
@@ -21,23 +21,24 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField] private RectTransform _sendModePrompt;
     [SerializeField] private Button _cancelButton;
     [SerializeField] private ToastMessageUI _toast;
-    [SerializeField] private RectTransform[] _topUiTargets = Array.Empty<RectTransform>();
-    [SerializeField] private RectTransform[] _bottomUiTargets = Array.Empty<RectTransform>();
+    // 상단은 개별 요소가 아니라 HUD 루트째로 올린다. 잎 노드를 직접 옮기면
+    // 세이프에어리어로 자기 위치를 다시 잡는 UI(옵션 버튼)와 좌표가 충돌한다.
+    [SerializeField] private RectTransform _topUiRoot;
+    // 하단은 BottomHudRoot에 보내기 모드 오버레이가 함께 들어 있어 루트째 내릴 수 없다.
+    // 업그레이드 서랍은 자기 폭으로 숨김 위치를 계산하므로 여기서 옮기지 않는다.
+    [SerializeField] private RectTransform _bottomUiTarget;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
 
-    private Vector2[] _topUiPositions = Array.Empty<Vector2>();
-    private Vector2[] _bottomUiPositions = Array.Empty<Vector2>();
+    private Vector2 _topUiStartPosition;
+    private Vector2 _bottomUiStartPosition;
     private Sequence _modeSequence;
     private bool _isSendMode;
     private bool _isTransferPlaying;
     private bool _wasUpgradeToggleInputEnabled;
     private Vector3 _transferStartPosition;
 
-    public RectTransform SpaceButtonTarget => _spaceButton != null
-        ? _spaceButton.transform as RectTransform
-        : null;
     public RectTransform SendButtonTarget => _sendButton != null
         ? _sendButton.transform as RectTransform
         : null;
@@ -58,7 +59,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _toast.Hide();
 
         _panelSwitcher.MovePanelPresentationChanged += OnMovePanelPresentationChanged;
-        _spaceButton.onClick.AddListener(OnSpaceButtonClicked);
+        _spaceToggleButton.Clicked += OnSpaceButtonClicked;
         _sendButton.onClick.AddListener(BeginSendMode);
         _cancelButton.onClick.AddListener(CancelSendMode);
         _clicker.TargetClicked += OnTargetClicked;
@@ -85,7 +86,11 @@ public sealed class DisplayRoomUI : MonoBehaviour
             _panelSwitcher.MovePanelPresentationChanged -= OnMovePanelPresentationChanged;
         }
 
-        _spaceButton?.onClick.RemoveListener(OnSpaceButtonClicked);
+        if (_spaceToggleButton != null)
+        {
+            _spaceToggleButton.Clicked -= OnSpaceButtonClicked;
+        }
+
         _sendButton?.onClick.RemoveListener(BeginSendMode);
         _cancelButton?.onClick.RemoveListener(CancelSendMode);
 
@@ -115,7 +120,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     {
         bool hasReferences = _canvas != null &&
                              _panelSwitcher != null &&
-                             _spaceButton != null &&
+                             _spaceToggleButton != null &&
                              _sendButton != null &&
                              _stageUI != null &&
                              _gameExitManager != null &&
@@ -124,6 +129,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _sendModeRoot != null &&
                              _sendModeCanvasGroup != null &&
                              _sendModePrompt != null &&
+                             _topUiRoot != null &&
+                             _bottomUiTarget != null &&
                              _cancelButton != null &&
                              _toast != null &&
                              GameManager.Instance != null &&
@@ -173,6 +180,9 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _upgradeUI.TryClose();
         _wasUpgradeToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
         _upgradeUI.SetToggleInputEnabled(false);
+        // 서랍은 자기 폭과 세이프에어리어로 숨김 위치를 계산한다.
+        // 좌우 이동을 여기서 흉내 내지 않고 서랍에 맡긴다.
+        _upgradeUI.SetToggleVisible(false);
         _isSendMode = true;
         _sendModeRoot.SetActive(true);
         _sendModeRoot.transform.SetAsLastSibling();
@@ -213,7 +223,10 @@ public sealed class DisplayRoomUI : MonoBehaviour
         // 튜토리얼이 이미 잠가둔 경우까지 활성화하지 않고 진입 전 상태로 복구한다.
         _upgradeUI.SetToggleInputEnabled(_wasUpgradeToggleInputEnabled);
         PlayModePresentation(show: false);
-        Refresh();
+
+        StageManager stageManager = StageManager.Instance;
+        bool isDisplayRoom = stageManager != null && !stageManager.IsMainStageActive;
+        ApplySpacePresentation(isDisplayRoom, animated: true);
         SendModeEnded?.Invoke();
     }
 
@@ -307,6 +320,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void ApplySpacePresentation(bool isDisplayRoom, bool animated)
     {
+        _spaceToggleButton.SetSpace(isDisplayRoom);
         _upgradeUI.SetToggleVisible(!isDisplayRoom, animated);
         Refresh();
     }
@@ -346,7 +360,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private void Refresh()
     {
         if (_panelSwitcher == null ||
-            _spaceButton == null ||
+            _spaceToggleButton == null ||
             _sendButton == null ||
             _stageUI == null)
         {
@@ -387,22 +401,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void CacheUiPositions()
     {
-        _topUiPositions = CachePositions(_topUiTargets);
-        _bottomUiPositions = CachePositions(_bottomUiTargets);
-    }
-
-    private static Vector2[] CachePositions(RectTransform[] targets)
-    {
-        var positions = new Vector2[targets.Length];
-        for (int i = 0; i < targets.Length; i++)
-        {
-            if (targets[i] != null)
-            {
-                positions[i] = targets[i].anchoredPosition;
-            }
-        }
-
-        return positions;
+        _topUiStartPosition = _topUiRoot.anchoredPosition;
+        _bottomUiStartPosition = _bottomUiTarget.anchoredPosition;
     }
 
     private void PlayModePresentation(bool show)
@@ -411,16 +411,12 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _modeSequence = DOTween.Sequence();
         float slideDistance = (_canvas.transform as RectTransform)?.rect.height ?? 1920f;
 
-        AppendUiMoves(
-            _modeSequence,
-            _topUiTargets,
-            _topUiPositions,
-            show ? slideDistance : 0f);
-        AppendUiMoves(
-            _modeSequence,
-            _bottomUiTargets,
-            _bottomUiPositions,
-            show ? -slideDistance : 0f);
+        _modeSequence.Join(_topUiRoot.DOAnchorPos(
+            _topUiStartPosition + Vector2.up * (show ? slideDistance : 0f),
+            _modeAnimationDuration));
+        _modeSequence.Join(_bottomUiTarget.DOAnchorPos(
+            _bottomUiStartPosition + Vector2.down * (show ? slideDistance : 0f),
+            _modeAnimationDuration));
         _modeSequence.Join(
             _sendModeCanvasGroup.DOFade(show ? 1f : 0f, _modeAnimationDuration));
         _modeSequence.OnComplete(() =>
@@ -431,22 +427,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
                 _sendModeRoot.SetActive(false);
             }
         });
-    }
-
-    private void AppendUiMoves(
-        Sequence sequence,
-        RectTransform[] targets,
-        Vector2[] basePositions,
-        float yOffset)
-    {
-        for (int i = 0; i < targets.Length; i++)
-        {
-            RectTransform target = targets[i];
-            if (target == null) continue;
-
-            Vector2 destination = basePositions[i] + Vector2.up * yOffset;
-            sequence.Join(target.DOAnchorPos(destination, _modeAnimationDuration));
-        }
     }
 
     private void RefreshLayout()

@@ -21,18 +21,30 @@ MonoBehaviour:
   _upgradeMessage: "\uC2AC\uB77C\uC784\uC744 \uB354 \uC131\uC7A5\uC2DC\uD0AC \uC218
     \uC788\uB294 \uC5C5\uADF8\uB808\uC774\uB4DC\uB3C4 \uC788\uC2B5\uB2C8\uB2E4!"
   _upgradePanelMessage: "\uB2EB\uAE30"
-  _systemUpgradeCarouselMessage: "\uD558\uB2E8 \uD328\uB110\uC744 \uC88C\uC6B0\uB85C \uB3CC\uB824 \uBCF4\uC138\uC694!"
-  _spawnPoolButtonMessage: "학자 슬라임을 눌러 자연 생성 확률을 확인해 보세요!"
-  _displayRoomButtonMessage: "하단 패널 전환 버튼을 눌러 이동 패널을 열어 보세요!"
-  _displayRoomSendButtonMessage: "장식장으로 보내기 버튼을 눌러 보세요!"
-  _displayRoomSelectSlimeMessage: "장식장으로 보낼 슬라임을 선택하세요!"
-  _displayRoomReopenMenuMessage: "장식장 아이콘을 다시 눌러 이동 메뉴를 열어 보세요!"
-  _displayRoomEnterMessage: "장식장으로 이동해 보세요!"
-  _displayRoomInfoMessage: "슬라임을 터치하면 이름과 정보를 볼 수 있어요!"
-  _displayRoomInfoSummaryMessage: "여기서 슬라임의 이름과 번호, 한 줄 설명을 확인할 수 있어요!"
-  _displayRoomObserveMessage: "관찰하기를 누르면 UI 없이 슬라임을 자세히 볼 수 있어요!"
-  _displayRoomTakeOutMessage: "꺼내기로 유치원에 돌려보낼 수 있어요. 유치원이 가득 차면 꺼낼 수 없어요!"
-  _displayRoomCloseMessage: "설명을 확인했으면 닫기 버튼을 눌러 보세요!"
+  _systemUpgradeCarouselMessage: "\uD558\uB2E8 \uD328\uB110\uC744 \uC88C\uC6B0\uB85C
+    \uB3CC\uB824 \uBCF4\uC138\uC694!"
+  _spawnPoolButtonMessage: "\uD559\uC790 \uC2AC\uB77C\uC784\uC744 \uB20C\uB7EC \uC790\uC5F0
+    \uC0DD\uC131 \uD655\uB960\uC744 \uD655\uC778\uD574 \uBCF4\uC138\uC694!"
+  _displayRoomButtonMessage: "\uD558\uB2E8 \uD328\uB110 \uC804\uD658 \uBC84\uD2BC\uC744
+    \uB20C\uB7EC \uC774\uB3D9 \uD328\uB110\uC744 \uC5F4\uC5B4 \uBCF4\uC138\uC694!"
+  _displayRoomSendButtonMessage: "\uC7A5\uC2DD\uC7A5\uC73C\uB85C \uBCF4\uB0B4\uAE30
+    \uBC84\uD2BC\uC744 \uB20C\uB7EC \uBCF4\uC138\uC694!"
+  _displayRoomSelectSlimeMessage: "\uC7A5\uC2DD\uC7A5\uC73C\uB85C \uBCF4\uB0BC \uC2AC\uB77C\uC784\uC744
+    \uC120\uD0DD\uD558\uC138\uC694!"
+  _displayRoomReopenMenuMessage: "\uC7A5\uC2DD\uC7A5 \uC544\uC774\uCF58\uC744 \uB2E4\uC2DC
+    \uB20C\uB7EC \uC774\uB3D9 \uBA54\uB274\uB97C \uC5F4\uC5B4 \uBCF4\uC138\uC694!"
+  _displayRoomEnterMessage: "\uC7A5\uC2DD\uC7A5\uC73C\uB85C \uC774\uB3D9\uD574 \uBCF4\uC138\uC694!"
+  _displayRoomInfoMessage: "\uC2AC\uB77C\uC784\uC744 \uD130\uCE58\uD558\uBA74 \uC774\uB984\uACFC
+    \uC815\uBCF4\uB97C \uBCFC \uC218 \uC788\uC5B4\uC694!"
+  _displayRoomInfoSummaryMessage: "\uC5EC\uAE30\uC11C \uC2AC\uB77C\uC784\uC758 \uC774\uB984\uACFC
+    \uBC88\uD638 \\n \uD55C \uC904 \uC124\uBA85\uC744 \uD655\uC778\uD560 \uC218 \uC788\uC5B4\uC694!"
+  _displayRoomObserveMessage: "\uAD00\uCC30\uD558\uAE30\uB97C \uB204\uB974\uBA74
+    UI \uC5C6\uC774 \uC2AC\uB77C\uC784\uC744 \uC790\uC138\uD788 \uBCFC \uC218 \uC788\uC5B4\uC694!"
+  _displayRoomTakeOutMessage: "\uAEBC\uB0B4\uAE30\uB85C \uC720\uCE58\uC6D0\uC5D0
+    \uB3CC\uB824\uBCF4\uB0BC \uC218 \uC788\uC5B4\uC694. \uC720\uCE58\uC6D0\uC774
+    \uAC00\uB4DD \uCC28\uBA74 \uAEBC\uB0BC \uC218 \uC5C6\uC5B4\uC694!"
+  _displayRoomCloseMessage: "\uC124\uBA85\uC744 \uD655\uC778\uD588\uC73C\uBA74 \uB2EB\uAE30
+    \uBC84\uD2BC\uC744 \uB20C\uB7EC \uBCF4\uC138\uC694!"
   _dialogues:
   - _id: 0
     _lines:
@@ -64,9 +76,13 @@ MonoBehaviour:
   - _id: 4
     _lines:
     - _speaker: "\uC120\uC0DD\uB2D8"
-      _message: "아래 가운데 버튼을 눌러 슬라임이 등장하는 시간과 최대 수를 업그레이드할 수 있어."
+      _message: "\uC544\uB798 \uAC00\uC6B4\uB370 \uBC84\uD2BC\uC744 \uB20C\uB7EC
+        \uC2AC\uB77C\uC784\uC774 \uB4F1\uC7A5\uD558\uB294 \uC2DC\uAC04\uACFC \uCD5C\uB300
+        \uC218\uB97C \uC5C5\uADF8\uB808\uC774\uB4DC\uD560 \uC218 \uC788\uC5B4."
     - _speaker: "\uC120\uC0DD\uB2D8"
-      _message: "하단 패널을 잡고 좌우로 돌리면 다른 업그레이드로 바꿀 수 있단다."
+      _message: "\uD558\uB2E8 \uD328\uB110\uC744 \uC7A1\uACE0 \uC88C\uC6B0\uB85C
+        \uB3CC\uB9AC\uBA74 \uB2E4\uB978 \uC5C5\uADF8\uB808\uC774\uB4DC\uB85C \uBC14\uAFC0
+        \uC218 \uC788\uB2E8\uB2E4."
   - _id: 5
     _lines:
     - _speaker: "\uC120\uC0DD\uB2D8"
@@ -81,15 +97,22 @@ MonoBehaviour:
   - _id: 7
     _lines:
     - _speaker: "\uC120\uC0DD\uB2D8"
-      _message: "5레벨 슬라임을 해금해서 자연 생성되는 슬라임의 종류가 늘어났어!"
+      _message: "5\uB808\uBCA8 \uC2AC\uB77C\uC784\uC744 \uD574\uAE08\uD574\uC11C
+        \uC790\uC5F0 \uC0DD\uC131\uB418\uB294 \uC2AC\uB77C\uC784\uC758 \uC885\uB958\uAC00
+        \uB298\uC5B4\uB0AC\uC5B4!"
   - _id: 8
     _lines:
     - _speaker: "\uC120\uC0DD\uB2D8"
-      _message: "상위 슬라임 등장 확률 업그레이드로 높은 등급 슬라임이 자연 생성될 확률을 높일 수 있어."
-    - _speaker: "선생님"
-      _message: "업그레이드 레벨이 더 높아지면 자연 생성되는 슬라임의 종류가 더 다양해질지도...?"
-    - _speaker: "선생님"
-      _message: "새로운 슬라임들을 만나면서 재미있게 즐겨 줘!"
+      _message: "\uC0C1\uC704 \uC2AC\uB77C\uC784 \uB4F1\uC7A5 \uD655\uB960 \uC5C5\uADF8\uB808\uC774\uB4DC\uB85C
+        \uB192\uC740 \uB4F1\uAE09 \uC2AC\uB77C\uC784\uC774 \uC790\uC5F0 \uC0DD\uC131\uB420
+        \uD655\uB960\uC744 \uB192\uC77C \uC218 \uC788\uC5B4."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC5C5\uADF8\uB808\uC774\uB4DC \uB808\uBCA8\uC774 \uB354 \uB192\uC544\uC9C0\uBA74
+        \uC790\uC5F0 \uC0DD\uC131\uB418\uB294 \uC2AC\uB77C\uC784\uC758 \uC885\uB958\uAC00
+        \uB354 \uB2E4\uC591\uD574\uC9C8\uC9C0\uB3C4...?"
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC0C8\uB85C\uC6B4 \uC2AC\uB77C\uC784\uB4E4\uC744 \uB9CC\uB098\uBA74\uC11C
+        \uC7AC\uBBF8\uC788\uAC8C \uC990\uACA8 \uC918!"
   - _id: 9
     _lines:
     - _speaker: "\uC120\uC0DD\uB2D8"
@@ -97,29 +120,44 @@ MonoBehaviour:
         \uC704\uD574 \uAE30\uB97C \uBAA8\uC73C\uACE0 \uC788\uC5B4!"
   - _id: 10
     _lines:
-    - _speaker: "선생님"
-      _message: "새로운 공간인 장식장이 열렸어! 마음에 드는 슬라임을 전시해 보자."
-    - _speaker: "선생님"
-      _message: "장식장에는 같은 종류의 슬라임을 한 마리만 보관할 수 있어."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC0C8\uB85C\uC6B4 \uACF5\uAC04\uC778 \uC7A5\uC2DD\uC7A5\uC774 \uC5F4\uB838\uC5B4!
+        \uB9C8\uC74C\uC5D0 \uB4DC\uB294 \uC2AC\uB77C\uC784\uC744 \uC804\uC2DC\uD574
+        \uBCF4\uC790."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC7A5\uC2DD\uC7A5\uC5D0\uB294 \uAC19\uC740 \uC885\uB958\uC758 \uC2AC\uB77C\uC784\uC744
+        \uD55C \uB9C8\uB9AC\uB9CC \uBCF4\uAD00\uD560 \uC218 \uC788\uC5B4."
   - _id: 11
     _lines:
-    - _speaker: "선생님"
-      _message: "장식장에 있는 슬라임은 어떤 방법으로도 포인트를 만들지 않아. 포인트를 얻으려면 꺼내기로 다시 유치원에 보내 줘."
-    - _speaker: "선생님"
-      _message: "이제 장식장도 마음껏 꾸미면서 재미있게 즐겨 줘!"
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC7A5\uC2DD\uC7A5\uC5D0 \uC788\uB294 \uC2AC\uB77C\uC784\uC740 \uC5B4\uB5A4
+        \uBC29\uBC95\uC73C\uB85C\uB3C4 \uD3EC\uC778\uD2B8\uB97C \uB9CC\uB4E4\uC9C0
+        \uC54A\uC544. \uD3EC\uC778\uD2B8\uB97C \uC5BB\uC73C\uB824\uBA74 \uAEBC\uB0B4\uAE30\uB85C
+        \uB2E4\uC2DC \uC720\uCE58\uC6D0\uC5D0 \uBCF4\uB0B4 \uC918."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC774\uC81C \uC7A5\uC2DD\uC7A5\uB3C4 \uB9C8\uC74C\uAECF \uAFB8\uBBF8\uBA74\uC11C
+        \uC7AC\uBBF8\uC788\uAC8C \uC990\uACA8 \uC918!"
   - _id: 12
     _lines:
-    - _speaker: "선생님"
-      _message: "이 확률표에서 지금 자연 생성될 수 있는 슬라임의 종류와 각각의 등장 확률을 확인할 수 있어."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC774 \uD655\uB960\uD45C\uC5D0\uC11C \uC9C0\uAE08 \uC790\uC5F0
+        \uC0DD\uC131\uB420 \uC218 \uC788\uB294 \uC2AC\uB77C\uC784\uC758 \uC885\uB958\uC640
+        \uAC01\uAC01\uC758 \uB4F1\uC7A5 \uD655\uB960\uC744 \uD655\uC778\uD560 \uC218
+        \uC788\uC5B4."
   - _id: 13
     _lines:
-    - _speaker: "선생님"
-      _message: "하늘로 올라왔어! 새로운 하늘 스테이지가 열렸네!"
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uD558\uB298\uB85C \uC62C\uB77C\uC654\uC5B4! \uC0C8\uB85C\uC6B4
+        \uD558\uB298 \uC2A4\uD14C\uC774\uC9C0\uAC00 \uC5F4\uB838\uB124!"
   - _id: 14
     _lines:
-    - _speaker: "선생님"
-      _message: "이제 땅과 하늘을 자유롭게 오가며 슬라임들을 키워 보자."
-    - _speaker: "선생님"
-      _message: "새로운 하늘에서도 슬라임들과 재미있게 즐겨 줘!"
-  _stageMenuButtonMessage: "\uD558\uB2E8 \uD328\uB110 \uC804\uD658 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC774\uB3D9 \uD328\uB110\uC744 \uC5F4\uC5B4 \uBCF4\uC790!"
-  _stageButtonMessage: "이 버튼으로 땅에 내려가거나 다시 하늘로 올라올 수 있어!"
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC774\uC81C \uB545\uACFC \uD558\uB298\uC744 \uC790\uC720\uB86D\uAC8C
+        \uC624\uAC00\uBA70 \uC2AC\uB77C\uC784\uB4E4\uC744 \uD0A4\uC6CC \uBCF4\uC790."
+    - _speaker: "\uC120\uC0DD\uB2D8"
+      _message: "\uC0C8\uB85C\uC6B4 \uD558\uB298\uC5D0\uC11C\uB3C4 \uC2AC\uB77C\uC784\uB4E4\uACFC
+        \uC7AC\uBBF8\uC788\uAC8C \uC990\uACA8 \uC918!"
+  _stageMenuButtonMessage: "\uD558\uB2E8 \uD328\uB110 \uC804\uD658 \uBC84\uD2BC\uC744
+    \uB20C\uB7EC \uC774\uB3D9 \uD328\uB110\uC744 \uC5F4\uC5B4 \uBCF4\uC790!"
+  _stageButtonMessage: "\uC774 \uBC84\uD2BC\uC73C\uB85C \uB545\uC5D0 \uB0B4\uB824\uAC00\uAC70\uB098
+    \uB2E4\uC2DC \uD558\uB298\uB85C \uC62C\uB77C\uC62C \uC218 \uC788\uC5B4!"
