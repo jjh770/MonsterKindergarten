@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public sealed class MainTutorialSequence : TutorialSequenceBase
@@ -57,13 +57,11 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
     private void OnDestroy()
     {
-        // 파괴 경로에서는 CompleteTutorial을 거치지 않아 RefreshInteraction이
-        // 튜토리얼 소유권 게이트에 막힌다. 최소 복구만 직접 수행한다.
         if (_clicker != null)
         {
             _clicker.TargetClicked -= OnTargetClicked;
             _clicker.TargetDragCompleted -= OnTargetDragCompleted;
-            _clicker.SetInputMode(true, true);
+            _clicker.ReleaseMode(this);
         }
 
         if (SpawnManager.Instance != null)
@@ -135,14 +133,14 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         DialoguePlacement placement = DialoguePlacement.Bottom)
     {
         _step = Step.Dialogue;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         ShowDialogue(lines, onComplete, keepGuideVisible, placement);
     }
 
     private void ShowClickStep()
     {
         _step = Step.Click;
-        _clicker.SetInputMode(true, false, _tutorialSlime);
+        _clicker.PushMode(this, ClickerInputMode.ClickOnly(_tutorialSlime), ClickerInputPriority.Tutorial);
         Spotlight.Show(Content.ClickMessage, _tutorialSlime.transform);
     }
 
@@ -165,7 +163,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.PointHighlight;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
             Content.PointMessage,
             _pointTarget,
@@ -184,7 +182,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     private void ShowDragStep()
     {
         _step = Step.Drag;
-        _clicker.SetInputMode(false, true, _tutorialSlime);
+        _clicker.PushMode(this, ClickerInputMode.DragOnly(_tutorialSlime), ClickerInputPriority.Tutorial);
         Spotlight.Show(Content.DragMessage, _tutorialSlime.transform);
     }
 
@@ -212,11 +210,9 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         _mergeTutorialSlime.OnPromoted += OnSecondaryTutorialSlimePromoted;
 
         _step = Step.Merge;
-        _clicker.SetInputMode(
-            false,
-            true,
+        _clicker.PushMode(this, ClickerInputMode.DragOnly(
             _tutorialSlime,
-            _mergeTutorialSlime);
+            _mergeTutorialSlime), ClickerInputPriority.Tutorial);
         Spotlight.ShowWorldTargets(
             Content.MergeMessage,
             _tutorialSlime.transform,
@@ -246,7 +242,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         _mergeTutorialSlime = null;
         _step = Step.WaitingForUnlock;
         Spotlight.Hide();
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
 
         if (_unlockPopupUI == null || !_unlockPopupUI.IsPresenting)
         {
@@ -293,7 +289,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
         _step = Step.UpgradeButton;
         _upgradeUI.SetToggleInputEnabled(true);
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
             Content.UpgradeMessage,
             upgradeTarget,
@@ -428,7 +424,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         _mergeTutorialSlime = null;
         SpawnManager.Instance?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
-        // 소유권을 먼저 반납해야 RefreshInteraction이 입력을 되돌린다.
+        _clicker.ReleaseMode(this);
         CompleteTutorial();
         StageManager.Instance?.RefreshInteraction();
     }

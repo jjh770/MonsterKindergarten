@@ -32,6 +32,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private Sequence _modeSequence;
     private bool _isSendMode;
     private bool _isTransferPlaying;
+    private bool _wasUpgradeToggleInputEnabled;
     private Vector3 _transferStartPosition;
 
     public RectTransform SpaceButtonTarget => _spaceButton != null
@@ -91,6 +92,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         if (_clicker != null)
         {
             _clicker.TargetClicked -= OnTargetClicked;
+            _clicker.ReleaseMode(this);
         }
 
         if (StageManager.Instance != null)
@@ -169,6 +171,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         _upgradeUI.TryClose();
+        _wasUpgradeToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
         _upgradeUI.SetToggleInputEnabled(false);
         _isSendMode = true;
         _sendModeRoot.SetActive(true);
@@ -206,7 +209,9 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _isTransferPlaying = false;
         _toast.Hide();
         _gameExitManager.UnregisterBackHandler(this);
-        StageManager.Instance?.RefreshInteraction();
+        _clicker.ReleaseMode(this);
+        // 튜토리얼이 이미 잠가둔 경우까지 활성화하지 않고 진입 전 상태로 복구한다.
+        _upgradeUI.SetToggleInputEnabled(_wasUpgradeToggleInputEnabled);
         PlayModePresentation(show: false);
         Refresh();
         SendModeEnded?.Invoke();
@@ -232,7 +237,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
         _isTransferPlaying = true;
         _transferStartPosition = target.transform.position;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         StageManager.Instance.PlayDisplayRoomTransfer(
             target,
             () => CompleteTransfer(target));
@@ -277,10 +282,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void ApplySendModeInput()
     {
-        _clicker.SetInputMode(
-            clickEnabled: true,
-            dragEnabled: false,
-            invokeClickAction: false);
+        _clicker.PushMode(this, ClickerInputMode.SelectOnly(), ClickerInputPriority.Selection);
     }
 
     private void OnStageTransitionCompleted()

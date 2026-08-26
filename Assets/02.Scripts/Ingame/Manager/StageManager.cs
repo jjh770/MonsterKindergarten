@@ -496,36 +496,29 @@ public sealed class StageManager : MonoBehaviour
     }
 
     // 공간별 입력 정책을 한곳에서 정한다.
-    // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
+    // 평상시는 공간 기본값이며, 초기화·전환 연출 중에는 차단 우선순위를 쓴다.
     private void SetInteractionEnabled(bool isEnabled)
     {
         _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainStageActive);
+        _clicker.PushMode(
+            this,
+            GetSpaceInputMode(isEnabled),
+            isEnabled ? ClickerInputPriority.Space : ClickerInputPriority.Modal);
+    }
 
-        if (!isEnabled)
-        {
-            _clicker.SetInputMode(false, false);
-            return;
-        }
+    private ClickerInputMode GetSpaceInputMode(bool isEnabled)
+    {
+        if (!isEnabled) return ClickerInputMode.Blocked;
+        if (IsMainStageActive) return ClickerInputMode.Free;
 
-        if (IsMainStageActive)
-        {
-            _clicker.SetInputMode(true, true);
-            return;
-        }
-
-        _clicker.SetInputMode(
-            clickEnabled: true,
-            dragEnabled: false,
-            invokeClickAction: false);
+        // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
+        return ClickerInputMode.SelectOnly();
     }
 
     // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
+    // 평상시 공간 기본값은 갱신 순서와 무관하게 선택 모드·튜토리얼보다 낮다.
     public void RefreshInteraction()
     {
-        // 튜토리얼이 입력을 소유하는 동안에는 되돌리지 않는다.
-        // 되돌리면 대사 도중 월드 탭이 살아나 안내 중인 UI가 다시 열린다.
-        if (TutorialManager.IsRunning) return;
-
         SetInteractionEnabled(
             GameManager.Instance != null &&
             GameManager.Instance.IsGameplayActive);

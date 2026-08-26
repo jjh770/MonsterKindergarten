@@ -26,6 +26,7 @@ public class UpgradeUI : MonoBehaviour
 
     public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
     public RectTransform PanelTarget => _panelTarget;
+    public bool IsToggleInputEnabled => _isToggleInputEnabled;
     public event System.Action Opened;
     public event System.Action Closed;
 

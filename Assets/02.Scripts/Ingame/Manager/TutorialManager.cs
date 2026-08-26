@@ -15,10 +15,6 @@ public sealed class TutorialManager : MonoBehaviour
     public TutorialContent Content => _content;
     public DialoguePresentation Presentation => _presentation;
 
-    // 튜토리얼이 입력을 소유하는 동안 다른 시스템이 기본 입력으로 되돌리지 못하게 한다.
-    // StageManager.RefreshInteraction이 이 값을 존중한다.
-    public static bool IsRunning { get; private set; }
-
     public bool TryBegin(TutorialSequenceBase sequence)
     {
         if (sequence == null ||
@@ -30,7 +26,6 @@ public sealed class TutorialManager : MonoBehaviour
         if (!EnsurePresentation()) return false;
 
         _activeSequence = sequence;
-        IsRunning = true;
         return true;
     }
 
@@ -40,7 +35,6 @@ public sealed class TutorialManager : MonoBehaviour
 
         _presentation?.Spotlight.Hide();
         _activeSequence = null;
-        IsRunning = false;
     }
 
     private bool EnsurePresentation()
@@ -69,6 +63,5 @@ public sealed class TutorialManager : MonoBehaviour
         _presentation?.Dispose();
         _presentation = null;
         _activeSequence = null;
-        IsRunning = false;
     }
 }

@@ -96,6 +96,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         if (_clicker != null)
         {
             _clicker.TargetClicked -= OnTargetClicked;
+            _clicker.ReleaseMode(this);
         }
 
         if (StageManager.Instance != null)
@@ -157,7 +158,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoRoot.SetActive(true);
         _infoCanvasGroup.alpha = 0f;
         _infoCanvasGroup.interactable = false;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, TryClose);
 
         SlimeSpecData specData = target.Slime?.SpecData;
@@ -217,8 +218,18 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                 _fadeTween = null;
                 _infoRoot.SetActive(false);
             });
-        StageManager.Instance?.RestoreDisplayRoomFocus(
-            () => StageManager.Instance?.RefreshInteraction());
+        // 카메라가 원래 자리로 돌아온 뒤에 입력을 돌려준다.
+        // 즉시 해제하면 축소가 풀리는 동안 슬라임이 탭돼 패널이 다시 열린다.
+        if (StageManager.Instance != null)
+        {
+            StageManager.Instance.RestoreDisplayRoomFocus(
+                () => _clicker.ReleaseMode(this));
+        }
+        else
+        {
+            _clicker.ReleaseMode(this);
+        }
+
         InfoClosed?.Invoke();
         return true;
     }
@@ -299,7 +310,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isTakeOutPlaying = true;
         _takeOutStartPosition = target.transform.position;
         _infoCanvasGroup.interactable = false;
-        _clicker.SetInputMode(false, false);
         StageManager.Instance.PlayDisplayRoomTransfer(
             target,
             () => CompleteTakeOut(target));
@@ -336,7 +346,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             Debug.LogWarning($"슬라임을 장식장에서 꺼낼 수 없습니다: {e.Message}");
             target.transform.position = _takeOutStartPosition;
             StageManager.Instance?.RefreshSlimePresentation(target);
-            _clicker.SetInputMode(false, false);
             _infoCanvasGroup.interactable = true;
             _toast.Show("이 슬라임은 지금 꺼낼 수 없어요.");
         }
@@ -353,6 +362,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     // 공간이 바뀌면 대상 슬라임이 화면에서 사라지므로 연출 없이 즉시 정리한다.
     private void ForceClose()
     {
+        // 닫기 연출이 공간 전환으로 취소돼도 이 UI의 입력 잠금은 해제한다.
+        _clicker.ReleaseMode(this);
         if (!IsVisible) return;
 
         _isTakeOutPlaying = false;

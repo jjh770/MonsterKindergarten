@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class Clicker : MonoBehaviour
@@ -22,6 +24,10 @@ public class Clicker : MonoBehaviour
     private bool _invokeClickAction = true;
     private SlimeController _restrictedTarget;
     private SlimeController _secondaryRestrictedTarget;
+
+    // 소유자별 입력 요청. 우선순위가 높은 요청을 적용한다.
+    // 같은 우선순위에서는 나중에 등록된 요청이 우선한다.
+    private readonly List<ModeRequest> _modeRequests = new();
 
     public event System.Action<SlimeController> MergeCandidateChanged;
     public event System.Action<SlimeController> TargetClicked;
@@ -160,19 +166,127 @@ public class Clicker : MonoBehaviour
         _isDragging = false;
     }
 
-    public void SetInputMode(
-        bool clickEnabled,
-        bool dragEnabled,
-        SlimeController restrictedTarget = null,
-        SlimeController secondaryRestrictedTarget = null,
-        bool invokeClickAction = true)
+    public void PushMode(
+        object owner,
+        ClickerInputMode mode,
+        ClickerInputPriority priority = ClickerInputPriority.Selection)
+    {
+        if (owner == null)
+        {
+            throw new ArgumentNullException(nameof(owner));
+        }
+
+        int index = FindRequestIndex(owner);
+        if (index >= 0)
+        {
+            // 같은 소유자의 갱신은 제자리에서 처리한다.
+            // 갱신만으로 같은 우선순위의 다른 요청을 밀어내지 않는다.
+            _modeRequests[index] = new ModeRequest(owner, mode, priority);
+        }
+        else
+        {
+            _modeRequests.Add(new ModeRequest(owner, mode, priority));
+            WarnIfStackTooDeep();
+        }
+
+        ApplyEffectiveMode();
+    }
+
+    // 소유자는 사라질 때 반드시 해제해야 한다. 빠뜨리면 입력이 잠긴 채 남는다.
+    public void ReleaseMode(object owner)
+    {
+        if (owner == null || !RemoveRequest(owner)) return;
+
+        ApplyEffectiveMode();
+    }
+
+    public bool HasMode(object owner)
+    {
+        return owner != null && FindRequestIndex(owner) >= 0;
+    }
+
+    private bool RemoveRequest(object owner)
+    {
+        int index = FindRequestIndex(owner);
+        if (index < 0) return false;
+
+        _modeRequests.RemoveAt(index);
+        return true;
+    }
+
+    private int FindRequestIndex(object owner)
+    {
+        for (int i = 0; i < _modeRequests.Count; ++i)
+        {
+            if (ReferenceEquals(_modeRequests[i].Owner, owner)) return i;
+        }
+
+        return -1;
+    }
+
+    // 초기화 순서가 달라도 공간 기본값이 튜토리얼을 덮지 않게 한다.
+    private void ApplyEffectiveMode()
+    {
+        int effectiveIndex = -1;
+        for (int i = 0; i < _modeRequests.Count; ++i)
+        {
+            if (effectiveIndex < 0 ||
+                _modeRequests[i].Priority >= _modeRequests[effectiveIndex].Priority)
+            {
+                effectiveIndex = i;
+            }
+        }
+
+        ApplyMode(effectiveIndex >= 0
+            ? _modeRequests[effectiveIndex].Mode
+            : ClickerInputMode.Free);
+    }
+
+    private void ApplyMode(ClickerInputMode mode)
     {
         CancelSelection();
-        _isClickEnabled = clickEnabled;
-        _isDragEnabled = dragEnabled;
-        _restrictedTarget = restrictedTarget;
-        _secondaryRestrictedTarget = secondaryRestrictedTarget;
-        _invokeClickAction = invokeClickAction;
+        _isClickEnabled = mode.ClickEnabled;
+        _isDragEnabled = mode.DragEnabled;
+        _restrictedTarget = mode.RestrictedTarget;
+        _secondaryRestrictedTarget = mode.SecondaryRestrictedTarget;
+        _invokeClickAction = mode.InvokeClickAction;
+    }
+
+    private void WarnIfStackTooDeep()
+    {
+#if UNITY_EDITOR
+        if (_modeRequests.Count <= ModeStackWarningDepth) return;
+
+        var owners = new List<string>(_modeRequests.Count);
+        foreach (ModeRequest request in _modeRequests)
+        {
+            owners.Add(request.Owner?.GetType().Name ?? "(null)");
+        }
+
+        Debug.LogWarning(
+            $"입력 모드 스택이 {_modeRequests.Count}단입니다. 해제를 빠뜨린 소유자가 있는지 확인하세요. : " +
+            string.Join(" > ", owners),
+            this);
+#endif
+    }
+
+#if UNITY_EDITOR
+    // 정상 상태에서 겹칠 수 있는 최대 깊이. 공간 + 모드 + 튜토리얼 + 여유 1.
+    private const int ModeStackWarningDepth = 4;
+#endif
+
+    private readonly struct ModeRequest
+    {
+        public object Owner { get; }
+        public ClickerInputMode Mode { get; }
+        public ClickerInputPriority Priority { get; }
+
+        public ModeRequest(object owner, ClickerInputMode mode, ClickerInputPriority priority)
+        {
+            Owner = owner;
+            Mode = mode;
+            Priority = priority;
+        }
     }
 
     private void UpdateMergeCandidate()

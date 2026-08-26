@@ -109,6 +109,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         UnsubscribeGuide();
+        _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
             SpawnManager.Instance?.SetSpawningPaused(false);
@@ -166,7 +167,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         System.Action onComplete)
     {
         _step = Step.Dialogue;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         ShowDialogue(lines, onComplete);
     }
 
@@ -241,6 +242,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.SendButton;
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
             Content.DisplayRoomSendButtonMessage,
             target,
@@ -261,11 +263,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.SlimeSelection;
-        _clicker.SetInputMode(
-            true,
-            false,
-            _tutorialSlime,
-            invokeClickAction: false);
+        _clicker.PushMode(this, ClickerInputMode.SelectOnly(_tutorialSlime), ClickerInputPriority.Tutorial);
         Spotlight.Show(Content.DisplayRoomSelectSlimeMessage, _tutorialSlime.transform);
     }
 
@@ -297,7 +295,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.EnterButton;
-        _clicker.SetInputMode(false, false);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
             Content.DisplayRoomEnterMessage,
             target,
@@ -311,7 +309,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         {
             _step = Step.EnterTransition;
             Spotlight.Hide();
-            _clicker.SetInputMode(false, false);
+            _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
             return;
         }
 
@@ -354,11 +352,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.SlimeInfo;
-        _clicker.SetInputMode(
-            true,
-            false,
-            _tutorialSlime,
-            invokeClickAction: false);
+        _clicker.PushMode(this, ClickerInputMode.SelectOnly(_tutorialSlime), ClickerInputPriority.Tutorial);
         Spotlight.Show(Content.DisplayRoomInfoMessage, _tutorialSlime.transform);
     }
 
@@ -476,7 +470,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _tutorialSlime = null;
         SpawnManager.Instance?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
-        // 소유권을 먼저 반납해야 RefreshInteraction이 입력을 되돌린다.
+        _clicker.ReleaseMode(this);
         CompleteTutorial();
         StageManager.Instance?.RefreshInteraction();
     }
@@ -490,6 +484,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _tutorialSlime = null;
         SpawnManager.Instance?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
+        _clicker?.ReleaseMode(this);
         CompleteTutorial();
         StageManager.Instance?.RefreshInteraction();
     }
