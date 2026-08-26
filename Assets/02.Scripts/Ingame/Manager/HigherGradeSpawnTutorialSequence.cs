@@ -52,6 +52,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
         }
 
+        // 파괴 경로에서는 CompleteTutorial을 거치지 않아 RefreshInteraction이
+        // 튜토리얼 소유권 게이트에 막힌다. 최소 복구만 직접 수행한다.
         if (_step != Step.None && _step != Step.Complete)
         {
             _clicker?.SetInputMode(true, true);
@@ -184,9 +186,10 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.Complete;
-        _clicker?.SetInputMode(true, true);
         SpawnManager.Instance?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
+        // 소유권을 먼저 반납해야 RefreshInteraction이 입력을 되돌린다.
         CompleteTutorial();
+        StageManager.Instance?.RefreshInteraction();
     }
 }

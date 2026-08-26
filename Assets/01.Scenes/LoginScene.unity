@@ -1644,16 +1644,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 463913323}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c24f01567fc0a924dafda1bfd09da70f, type: 3}
+  m_Script: {fileID: 11500000, guid: 9a3c05e71b8d4e62af47d19c6b208e35, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LobbyErrorPopupUI
+  m_EditorClassIdentifier: Assembly-CSharp::MessagePopupUI
   _popupPanel: {fileID: 463913323}
-  _errorText: {fileID: 574618120}
+  _messageText: {fileID: 574618120}
   _fadeInDuration: 0.2
   _punchDuration: 0.3
   _displayDuration: 1
   _fadeOutDuration: 0.2
-  _notEnoughSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
+  _punchStrength: 15
+  _popupSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
   _popupRectTransform: {fileID: 463913324}
   _canvasGroup: {fileID: 2099700001}
 --- !u!1 &466817952

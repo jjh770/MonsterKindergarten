@@ -50,6 +50,6 @@ public class LobbyScene : MonoBehaviour
 
     private void ShowLobbyPopup()
     {
-        LobbyErrorPopupUI.Instance.Show(_popupText);
+        MessagePopupUI.Instance.Show(_popupText);
     }
 }

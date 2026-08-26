@@ -408,7 +408,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
         if (!UpgradeManager.Instance.TryLevelUp(type, ESlimeGrade.None) &&
             !upgrade.IsMaxLevel)
         {
-            NotEnoughPointPopupUI.Instance?.Show();
+            MessagePopupUI.Instance?.Show();
         }
     }
 

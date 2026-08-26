@@ -203,30 +203,24 @@ public class SpawnManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // F1~F10을 Grade1~Grade10에 대응시킨다.
+    // Key 열거형은 F1부터 F12까지만 연속이므로 12를 넘겨서는 안 된다.
+    private const int EditorSpawnShortcutCount = 10;
+
     private void HandleEditorSpawnShortcuts()
     {
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
 
-        if (keyboard.f1Key.wasPressedThisFrame)
+        for (int offset = 0; offset < EditorSpawnShortcutCount; ++offset)
         {
-            Spawn(ESlimeGrade.Grade1);
-        }
-        else if (keyboard.f2Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade2);
-        }
-        else if (keyboard.f3Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade3);
-        }
-        else if (keyboard.f4Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade4);
-        }
-        else if (keyboard.f5Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade5);
+            ESlimeGrade grade = ESlimeGrade.Grade1 + offset;
+            if (grade >= ESlimeGrade.Count) return;
+
+            if (!keyboard[Key.F1 + offset].wasPressedThisFrame) continue;
+
+            Spawn(grade);
+            return;
         }
     }
 #endif
