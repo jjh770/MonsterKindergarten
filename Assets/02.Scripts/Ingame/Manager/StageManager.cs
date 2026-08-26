@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -252,11 +252,10 @@ public sealed class StageManager : MonoBehaviour
             ? SlimeManager.Instance.CurrentStage
             : EGameStage.Ground;
         _isInitialized = true;
-        _stageUI.SetStage(_currentStage);
         _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
         StageChanged?.Invoke(_currentStage);
         ApplyAllSlimeVisibility();
-        _stageUI.SetButtonVisible(false, false);
+        _stageUI.SetButtonVisible(false);
         SetInteractionEnabled(false);
 
         await WaitForGameplayActiveAsync(token);
@@ -265,11 +264,11 @@ public sealed class StageManager : MonoBehaviour
 
         if (!SlimeManager.Instance.IsSkyUnlocked)
         {
-            _stageUI.SetButtonVisible(false, false);
+            _stageUI.SetButtonVisible(false);
         }
         else if (SlimeManager.Instance.SkyIntroCompleted)
         {
-            _stageUI.SetButtonVisible(true, false);
+            _stageUI.SetButtonVisible(true);
         }
         else
         {
@@ -284,7 +283,7 @@ public sealed class StageManager : MonoBehaviour
                 SlimeManager.Instance.UpdateStageProgress(
                     EGameStage.Ground,
                     skyIntroCompleted: true);
-                _stageUI.SetButtonVisible(true, false);
+                _stageUI.SetButtonVisible(true);
             }
         }
     }
@@ -435,7 +434,6 @@ public sealed class StageManager : MonoBehaviour
                         SlimeManager.Instance.SkyIntroCompleted);
                 }
 
-                _stageUI.SetStage(_currentStage);
                 SetInteractionEnabled(true);
                 onComplete?.Invoke();
                 StageTransitionCompleted?.Invoke();
@@ -471,11 +469,9 @@ public sealed class StageManager : MonoBehaviour
 
         _currentSpace = space;
         ApplyAllSlimeVisibility();
-        _stageUI.SetButtonVisible(
-            IsMainStageActive &&
+        _stageUI.SetButtonVisible(IsMainStageActive &&
             SlimeManager.Instance != null &&
-            SlimeManager.Instance.IsSkyUnlocked,
-            animated: false);
+            SlimeManager.Instance.IsSkyUnlocked);
         SpaceChanged?.Invoke(_currentSpace);
     }
 

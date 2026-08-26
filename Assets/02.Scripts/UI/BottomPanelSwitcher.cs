@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,7 +19,7 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _animationDuration = 0.25f;
-    [SerializeField, Min(0f)] private float _buttonMargin = 50f;
+    [SerializeField, Min(0f)] private float _buttonMargin = 20f;
 
     private Sequence _sequence;
     private Vector2 _systemUpgradeStartPosition;

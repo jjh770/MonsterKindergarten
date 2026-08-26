@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -129,7 +129,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
             skyIntroCompleted: true);
         _pendingTarget = null;
         _isStarted = false;
-        _stageUI.SetButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true);
 
         if (_presentation == null)
         {
@@ -195,7 +195,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
         SlimeManager.Instance?.UpdateStageProgress(
             EGameStage.Ground,
             skyIntroCompleted: true);
-        _stageUI.SetButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true);
         Complete();
     }
 }

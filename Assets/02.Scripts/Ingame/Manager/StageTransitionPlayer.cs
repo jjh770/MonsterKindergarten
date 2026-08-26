@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 // 스테이지 전환의 카메라, 오버레이, 배경, BGM 연출만 담당한다.
 // 현재 스테이지 값과 저장 여부는 StageManager가 콜백으로 처리한다.
@@ -9,6 +10,8 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Camera _camera;
     [SerializeField] private StageUI _stageUI;
+    // 전환 중 화면을 덮는 판. 이 연출의 소유물이라 여기서 직접 다룬다.
+    [SerializeField] private Image _transitionOverlay;
 
     [Header("Stage Audio")]
     [SerializeField] private AudioClip _groundBgm;
@@ -57,6 +60,13 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
         _cameraBasePosition = _camera.transform.position;
         _cameraBaseOrthographicSize = _camera.orthographicSize;
+
+        // 오버레이는 전환 중에만 입력을 막는다. 씬에는 켜진 채 저장되므로 여기서 내린다.
+        if (_transitionOverlay != null)
+        {
+            _transitionOverlay.raycastTarget = false;
+            SetOverlayAlpha(0f);
+        }
     }
 
     private void LateUpdate()
@@ -202,7 +212,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     {
         IsTransitioning = true;
         _stageUI.SetButtonInteractable(false);
-        _stageUI.BeginOverlay();
+        BeginOverlay();
 
         float direction = targetStage == EGameStage.Sky ? 1f : -1f;
         float halfDuration = _cameraTransitionDuration * 0.5f;
@@ -229,7 +239,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                 _cameraBasePosition.y + direction * _cameraTravelDistance,
                 halfDuration).SetEase(Ease.InQuad));
         _transitionSequence.Join(
-            _stageUI.FadeOverlay(1f, halfDuration));
+            FadeOverlay(1f, halfDuration));
 
         if (travellingSlime != null)
         {
@@ -262,7 +272,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                 _cameraBasePosition.y,
                 halfDuration).SetEase(Ease.OutQuad));
         _transitionSequence.Join(
-            _stageUI.FadeOverlay(0f, halfDuration));
+            FadeOverlay(0f, halfDuration));
 
         if (travellingSlime != null)
         {
@@ -279,7 +289,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         {
             _transitionSequence = null;
             _camera.transform.position = _cameraBasePosition;
-            _stageUI.EndOverlay();
+            EndOverlay();
             IsTransitioning = false;
             _stageUI.SetButtonInteractable(true);
             onCompleted?.Invoke();
@@ -297,7 +307,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
         IsTransitioning = true;
         _stageUI.SetButtonInteractable(false);
-        _stageUI.BeginOverlay();
+        BeginOverlay();
 
         float direction = targetSpace == EGameplaySpace.DisplayRoom ? 1f : -1f;
         float halfDuration = _cameraTransitionDuration * 0.5f;
@@ -309,7 +319,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                 _cameraBasePosition.x + direction * _cameraTravelDistance,
                 halfDuration).SetEase(Ease.InQuad));
         _transitionSequence.Join(
-            _stageUI.FadeOverlay(1f, halfDuration));
+            FadeOverlay(1f, halfDuration));
         _transitionSequence.AppendCallback(() =>
         {
             onSpaceSwitched?.Invoke();
@@ -323,12 +333,12 @@ public sealed class StageTransitionPlayer : MonoBehaviour
                 _cameraBasePosition.x,
                 halfDuration).SetEase(Ease.OutQuad));
         _transitionSequence.Join(
-            _stageUI.FadeOverlay(0f, halfDuration));
+            FadeOverlay(0f, halfDuration));
         _transitionSequence.OnComplete(() =>
         {
             _transitionSequence = null;
             _camera.transform.position = _cameraBasePosition;
-            _stageUI.EndOverlay();
+            EndOverlay();
             IsTransitioning = false;
             _stageUI.SetButtonInteractable(true);
             onCompleted?.Invoke();
@@ -417,6 +427,37 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         _focusSequence = null;
         _camera.transform.position = _cameraBasePosition;
         _camera.orthographicSize = _cameraBaseOrthographicSize;
+    }
+
+    // 전환 시작 시 오버레이를 최상단으로 올리고 입력을 막는다.
+    private void BeginOverlay()
+    {
+        if (_transitionOverlay == null) return;
+
+        _transitionOverlay.transform.SetAsLastSibling();
+        _transitionOverlay.raycastTarget = true;
+        SetOverlayAlpha(0f);
+    }
+
+    private void EndOverlay()
+    {
+        if (_transitionOverlay == null) return;
+
+        _transitionOverlay.raycastTarget = false;
+    }
+
+    private Tween FadeOverlay(float alpha, float duration)
+    {
+        return _transitionOverlay != null
+            ? _transitionOverlay.DOFade(alpha, duration)
+            : null;
+    }
+
+    private void SetOverlayAlpha(float alpha)
+    {
+        Color color = _transitionOverlay.color;
+        color.a = alpha;
+        _transitionOverlay.color = color;
     }
 
     private AudioClip GetStageBgm(EGameStage stage)

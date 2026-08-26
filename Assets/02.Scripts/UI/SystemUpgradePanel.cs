@@ -19,6 +19,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
     [SerializeField, Range(0.2f, 0.5f)] private float _sideOffsetRatio = 0.42f;
     [SerializeField, Range(0.5f, 1f)] private float _sideScale = 0.72f;
     [SerializeField, Range(0f, 1f)] private float _sideAlpha = 0.35f;
+    // 중앙에서 멀어질수록 아래로 내려 뒤에서 올라오는 원근을 만든다.
+    [SerializeField, Range(0f, 200f)] private float _sideDropDistance = 40f;
     [SerializeField, Min(0f)] private float _rotationDuration = 0.25f;
     [SerializeField, Range(0.1f, 0.5f)] private float _dragThresholdRatio = 0.2f;
 
@@ -305,7 +307,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
                 ? Mathf.Lerp(1f, _sideAlpha, normalizedDistance)
                 : Mathf.Lerp(_sideAlpha, 0f, Mathf.Clamp01(normalizedDistance - 1f));
 
-            ApplySlotLayout(slot, positionX, scale, alpha);
+            ApplySlotLayout(
+                slot,
+                positionX,
+                GetPositionY(normalizedDistance),
+                scale,
+                alpha);
         }
 
         int incomingSlotIndex = CenterSlotIndex + (_dragOffset < 0f ? 1 : -1);
@@ -344,7 +351,9 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
             float scale = GetScale(normalizedDistance);
             float alpha = GetAlpha(normalizedDistance);
 
-            sequence.Join(slot.Root.DOAnchorPosX(positionX, _rotationDuration));
+            sequence.Join(slot.Root.DOAnchorPos(
+                new Vector2(positionX, GetPositionY(normalizedDistance)),
+                _rotationDuration));
             sequence.Join(slot.Root.DOScale(Vector3.one * scale, _rotationDuration));
             sequence.Join(slot.CanvasGroup.DOFade(alpha, _rotationDuration));
         }
@@ -377,8 +386,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
             float targetDistance = slotIndex - CenterSlotIndex - direction;
             float normalizedDistance = Mathf.Abs(targetDistance);
 
-            sequence.Join(slot.Root.DOAnchorPosX(
-                targetDistance * sideOffset,
+            sequence.Join(slot.Root.DOAnchorPos(
+                new Vector2(
+                    targetDistance * sideOffset,
+                    GetPositionY(normalizedDistance)),
                 _rotationDuration));
             sequence.Join(slot.Root.DOScale(
                 Vector3.one * GetScale(normalizedDistance),
@@ -481,6 +492,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
             ApplySlotLayout(
                 _slots[slotIndex],
                 distance * sideOffset,
+                GetPositionY(normalizedDistance),
                 GetScale(normalizedDistance),
                 GetAlpha(normalizedDistance));
         }
@@ -489,6 +501,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
     private float GetScale(float normalizedDistance)
     {
         return Mathf.Lerp(1f, _sideScale, Mathf.Clamp01(normalizedDistance));
+    }
+
+    // 축소·투명도와 같은 거리 값을 쓰므로 드래그 중에도 자연스럽게 이어진다.
+    private float GetPositionY(float normalizedDistance)
+    {
+        return -Mathf.Lerp(0f, _sideDropDistance, Mathf.Clamp01(normalizedDistance));
     }
 
     private float GetAlpha(float normalizedDistance)
@@ -507,10 +525,11 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
     private static void ApplySlotLayout(
         CarouselSlot slot,
         float positionX,
+        float positionY,
         float scale,
         float alpha)
     {
-        slot.Root.anchoredPosition = new Vector2(positionX, 0f);
+        slot.Root.anchoredPosition = new Vector2(positionX, positionY);
         slot.Root.localScale = Vector3.one * scale;
         slot.CanvasGroup.alpha = alpha;
     }
