@@ -29,6 +29,7 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
 
         // 팝업 높이를 글자에 맞추려면 글자 크기가 고정이어야 한다.
         // 자동 크기 조절이 켜져 있으면 높이와 글자 크기가 서로를 따라가며 흔들린다.
+        // 씬에서도 꺼두지만 이 컴포넌트가 성립하는 전제라 코드에서 보장한다.
         _probabilityText.enableAutoSizing = false;
     }
 

@@ -21,19 +21,14 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField] private RectTransform _sendModePrompt;
     [SerializeField] private Button _cancelButton;
     [SerializeField] private ToastMessageUI _toast;
-    // 상단은 개별 요소가 아니라 HUD 루트째로 올린다. 잎 노드를 직접 옮기면
-    // 세이프에어리어로 자기 위치를 다시 잡는 UI(옵션 버튼)와 좌표가 충돌한다.
-    [SerializeField] private RectTransform _topUiRoot;
-    // 하단은 BottomHudRoot에 보내기 모드 오버레이가 함께 들어 있어 루트째 내릴 수 없다.
-    // 업그레이드 서랍은 자기 폭으로 숨김 위치를 계산하므로 여기서 옮기지 않는다.
-    [SerializeField] private RectTransform _bottomUiTarget;
+    // 하단은 요청하지 않는다. 시스템 업그레이드 패널은 BottomPanelSwitcher가,
+    // 업그레이드 서랍은 UpgradeUI가 각자 숨김을 처리한다.
+    [SerializeField] private HudVisibility _hudVisibility;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
 
-    private Vector2 _topUiStartPosition;
-    private Vector2 _bottomUiStartPosition;
-    private Sequence _modeSequence;
+    private Tween _modeTween;
     private bool _isSendMode;
     private bool _isTransferPlaying;
     private bool _wasUpgradeToggleInputEnabled;
@@ -54,7 +49,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
             return;
         }
 
-        CacheUiPositions();
         _sendModeRoot.SetActive(false);
         _toast.Hide();
 
@@ -79,7 +73,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        _modeSequence?.Kill();
+        _modeTween?.Kill();
 
         if (_panelSwitcher != null)
         {
@@ -129,8 +123,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _sendModeRoot != null &&
                              _sendModeCanvasGroup != null &&
                              _sendModePrompt != null &&
-                             _topUiRoot != null &&
-                             _bottomUiTarget != null &&
+                             _hudVisibility != null &&
                              _cancelButton != null &&
                              _toast != null &&
                              GameManager.Instance != null &&
@@ -399,34 +392,28 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _sendButton.gameObject.SetActive(showChildren);
     }
 
-    private void CacheUiPositions()
-    {
-        _topUiStartPosition = _topUiRoot.anchoredPosition;
-        _bottomUiStartPosition = _bottomUiTarget.anchoredPosition;
-    }
-
     private void PlayModePresentation(bool show)
     {
-        _modeSequence?.Kill();
-        _modeSequence = DOTween.Sequence();
-        float slideDistance = (_canvas.transform as RectTransform)?.rect.height ?? 1920f;
-
-        _modeSequence.Join(_topUiRoot.DOAnchorPos(
-            _topUiStartPosition + Vector2.up * (show ? slideDistance : 0f),
-            _modeAnimationDuration));
-        _modeSequence.Join(_bottomUiTarget.DOAnchorPos(
-            _bottomUiStartPosition + Vector2.down * (show ? slideDistance : 0f),
-            _modeAnimationDuration));
-        _modeSequence.Join(
-            _sendModeCanvasGroup.DOFade(show ? 1f : 0f, _modeAnimationDuration));
-        _modeSequence.OnComplete(() =>
+        if (show)
         {
-            _modeSequence = null;
-            if (!show)
+            _hudVisibility.PushHide(this, EHudParts.Top);
+        }
+        else
+        {
+            _hudVisibility.Release(this);
+        }
+
+        _modeTween?.Kill();
+        _modeTween = _sendModeCanvasGroup
+            .DOFade(show ? 1f : 0f, _modeAnimationDuration)
+            .OnComplete(() =>
             {
-                _sendModeRoot.SetActive(false);
-            }
-        });
+                _modeTween = null;
+                if (!show)
+                {
+                    _sendModeRoot.SetActive(false);
+                }
+            });
     }
 
     private void RefreshLayout()

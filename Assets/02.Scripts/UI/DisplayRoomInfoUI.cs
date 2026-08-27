@@ -31,8 +31,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     [Header("Observation Mode")]
     [SerializeField] private GameObject _observationInputRoot;
-    [SerializeField] private RectTransform _topUiRoot;
-    [SerializeField] private RectTransform _bottomUiRoot;
+    [SerializeField] private HudVisibility _hudVisibility;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -41,8 +40,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     private Tween _fadeTween;
     private Sequence _observationSequence;
     private SlimeController _target;
-    private Vector2 _topUiStartPosition;
-    private Vector2 _bottomUiStartPosition;
     private Vector3 _takeOutStartPosition;
     private bool _isTakeOutPlaying;
     private bool _isObserving;
@@ -76,8 +73,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoCanvasGroup.interactable = false;
         _infoRoot.SetActive(false);
         _observationInputRoot.SetActive(false);
-        _topUiStartPosition = _topUiRoot.anchoredPosition;
-        _bottomUiStartPosition = _bottomUiRoot.anchoredPosition;
         _observeButton.onClick.AddListener(EnterObservationMode);
         _closeButton.onClick.AddListener(Close);
         _takeOutButton.onClick.AddListener(OnTakeOutButtonClicked);
@@ -122,8 +117,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _closeButton != null &&
                              _takeOutButton != null &&
                              _observationInputRoot != null &&
-                             _topUiRoot != null &&
-                             _bottomUiRoot != null &&
+                             _hudVisibility != null &&
                              StageManager.Instance != null;
         if (!hasReferences)
         {
@@ -259,15 +253,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _observationSequence = DOTween.Sequence();
         _observationSequence.Join(
             _infoCanvasGroup.DOFade(0f, _observationDuration));
-        _observationSequence.Join(
-            _topUiRoot.DOAnchorPos(
-                _topUiStartPosition + Vector2.up * _topUiRoot.rect.height,
-                _observationDuration));
-        _observationSequence.Join(
-            _bottomUiRoot.DOAnchorPos(
-                _bottomUiStartPosition + Vector2.down * _bottomUiRoot.rect.height,
-                _observationDuration));
         _observationSequence.OnComplete(() => _observationSequence = null);
+        _hudVisibility.PushHide(this, EHudParts.All);
     }
 
     private void ExitObservationMode()
@@ -283,10 +270,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _observationSequence = DOTween.Sequence();
         _observationSequence.Join(
             _infoCanvasGroup.DOFade(1f, _observationDuration));
-        _observationSequence.Join(
-            _topUiRoot.DOAnchorPos(_topUiStartPosition, _observationDuration));
-        _observationSequence.Join(
-            _bottomUiRoot.DOAnchorPos(_bottomUiStartPosition, _observationDuration));
+        _hudVisibility.Release(this);
         _observationSequence.OnComplete(() =>
         {
             _observationSequence = null;
@@ -383,8 +367,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _observationSequence?.Kill();
         _observationSequence = null;
         _observationInputRoot.SetActive(false);
-        _topUiRoot.anchoredPosition = _topUiStartPosition;
-        _bottomUiRoot.anchoredPosition = _bottomUiStartPosition;
+        _hudVisibility.Release(this, animated: false);
         _infoCanvasGroup.blocksRaycasts = true;
     }
 
