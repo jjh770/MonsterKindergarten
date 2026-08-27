@@ -62,17 +62,15 @@ public class SpawnManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            _baseSpawnInterval = _spawnInterval;
-            _baseMaxActiveCount = _maxActiveCount;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
+        _baseSpawnInterval = _spawnInterval;
+        _baseMaxActiveCount = _maxActiveCount;
     }
 
     private void Start()

@@ -6,7 +6,7 @@ public class AudioManager : MonoBehaviour
 {
     private const string BgmVolumeKey = "Audio_BGMVolume";
     private const string SfxVolumeKey = "Audio_SFXVolume";
-    public static AudioManager Instance;
+    public static AudioManager Instance { get; private set; }
 
     [Header("Audio Mixer")]
     [SerializeField] private AudioMixerGroup _bgmMixerGroup;
@@ -37,15 +37,13 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
 
         BGMVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(BgmVolumeKey, BGMVolume));
         SFXVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumeKey, SFXVolume));

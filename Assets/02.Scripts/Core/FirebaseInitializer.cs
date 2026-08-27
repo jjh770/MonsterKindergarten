@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class FirebaseInitializer : MonoBehaviour
 {
-    public static FirebaseInitializer Instance { get; set; }
+    public static FirebaseInitializer Instance { get; private set; }
 
     private void Awake()
     {

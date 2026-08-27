@@ -13,7 +13,7 @@ public class CurrencyManager : MonoBehaviour
 {
     // 재화에 대한 CRUD 생성 조회 사용 소모 + 재화에 대한 이벤트 추가
     // 비즈니스 로직 - 데이터를 어떻게 다룰 것인가에 대한 핵심 규칙
-    public static CurrencyManager Instance;
+    public static CurrencyManager Instance { get; private set; }
 
     // 재화 데이터 (배열로 관리)
     private Currency[] _currencies = new Currency[(int)ECurrencyType.Count];
@@ -48,15 +48,13 @@ public class CurrencyManager : MonoBehaviour
 
     private async void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
 
         await UniTask.Yield();
 

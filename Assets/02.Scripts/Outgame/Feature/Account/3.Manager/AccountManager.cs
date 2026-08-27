@@ -15,15 +15,13 @@ public class AccountManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
 
 
 #if UNITY_ANDROID && !UNITY_EDITOR
