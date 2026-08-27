@@ -7,7 +7,8 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private RectTransform _rectTransform;
     [SerializeField] private RectTransform _panelTarget;
     [SerializeField] private Button _uiButton;
-    [SerializeField] private GameObject _doNotTouchPanel;
+    [SerializeField] private Button _dismissBackdropButton;
+    [SerializeField] private Clicker _clicker;
     [SerializeField] private float _movingDuration = 0.5f;
 
     private bool _isOpened = false;
@@ -35,7 +36,8 @@ public class UpgradeUI : MonoBehaviour
         if (_rectTransform == null ||
             _panelTarget == null ||
             _uiButton == null ||
-            _doNotTouchPanel == null)
+            _dismissBackdropButton == null ||
+            _clicker == null)
         {
             Debug.LogError("업그레이드 UI의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -52,7 +54,8 @@ public class UpgradeUI : MonoBehaviour
 
         _toggleEdgeOffset = _toggleRectTransform.anchoredPosition.x;
         _uiButton.onClick.AddListener(ViewUI);
-        _doNotTouchPanel.SetActive(false);
+        _dismissBackdropButton.onClick.AddListener(CloseFromBackdrop);
+        _dismissBackdropButton.gameObject.SetActive(false);
 
         _isInitialized = true;
         RefreshLayout();
@@ -86,12 +89,18 @@ public class UpgradeUI : MonoBehaviour
     {
         _moveTween?.Kill();
         _moveTween = null;
+        _clicker?.ReleaseMode(this);
     }
 
     private void OnEnable()
     {
         if (_isInitialized)
         {
+            if (_isOpened)
+            {
+                _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+            }
+
             RefreshLayout();
         }
     }
@@ -99,6 +108,8 @@ public class UpgradeUI : MonoBehaviour
     private void OnDestroy()
     {
         _uiButton?.onClick.RemoveListener(ViewUI);
+        _dismissBackdropButton?.onClick.RemoveListener(CloseFromBackdrop);
+        _clicker?.ReleaseMode(this);
     }
 
     private void ViewUI()
@@ -106,6 +117,11 @@ public class UpgradeUI : MonoBehaviour
         if (!_isToggleInputEnabled) return;
 
         SetOpened(!_isOpened);
+    }
+
+    private void CloseFromBackdrop()
+    {
+        TryClose();
     }
 
     public bool TryClose()
@@ -121,7 +137,16 @@ public class UpgradeUI : MonoBehaviour
         if (_isOpened == isOpened) return;
 
         _isOpened = isOpened;
-        _doNotTouchPanel.SetActive(_isOpened);
+        _dismissBackdropButton.gameObject.SetActive(_isOpened);
+        if (_isOpened)
+        {
+            _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+        }
+        else
+        {
+            _clicker.ReleaseMode(this);
+        }
+
         MoveDrawer(animated: true);
 
         if (_isOpened) Opened?.Invoke();
