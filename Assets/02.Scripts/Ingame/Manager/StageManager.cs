@@ -452,6 +452,41 @@ public sealed class StageManager : MonoBehaviour
         }
     }
 
+    // PlayDisplayRoomTransfer의 완료 처리다. 저장 위치를 옮기고 새 자리에 배치한 뒤
+    // 표시를 갱신한다. 실패하면 연출 시작 전 자리로 되돌린다.
+    //
+    // 연출 전반부를 이 클래스가 소유하므로 후반부도 여기 둔다. 호출부마다 복사하면
+    // 저장·좌표·표시 세 계층을 건드리는 절차가 UI로 흩어진다.
+    public bool TryRelocateSlime(
+        SlimeController target,
+        ESlimeLocation destination,
+        Vector3 fallbackPosition)
+    {
+        if (target == null || SlimeManager.Instance == null) return false;
+
+        try
+        {
+            SlimeManager.Instance.MoveSlime(target.InstanceId, destination);
+            Vector2 spawnPoint = SpawnManager.Instance != null
+                ? SpawnManager.Instance.GetRandomSpawnPosition()
+                : Vector2.zero;
+            target.transform.position = new Vector3(
+                spawnPoint.x,
+                spawnPoint.y,
+                target.transform.position.z);
+            RefreshSlimePresentation(target);
+            return true;
+        }
+        catch (Exception e) when (e is InvalidOperationException ||
+                                  e is ArgumentException)
+        {
+            Debug.LogWarning($"슬라임 위치를 옮길 수 없습니다: {e.Message}");
+            target.transform.position = fallbackPosition;
+            RefreshSlimePresentation(target);
+            return false;
+        }
+    }
+
     public void RefreshSlimePresentation(SlimeController target)
     {
         if (target == null) return;

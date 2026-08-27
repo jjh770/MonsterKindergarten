@@ -303,36 +303,24 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     {
         _isTakeOutPlaying = false;
 
-        if (target == null || SlimeManager.Instance == null)
+        StageManager stageManager = StageManager.Instance;
+        if (target == null || stageManager == null)
         {
             TryClose();
             return;
         }
 
-        try
+        if (stageManager.TryRelocateSlime(
+                target,
+                ESlimeLocation.MainStage,
+                _takeOutStartPosition))
         {
-            SlimeManager.Instance.MoveSlime(
-                target.InstanceId,
-                ESlimeLocation.MainStage);
-            Vector2 destination = SpawnManager.Instance != null
-                ? SpawnManager.Instance.GetRandomSpawnPosition()
-                : Vector2.zero;
-            target.transform.position = new Vector3(
-                destination.x,
-                destination.y,
-                target.transform.position.z);
-            StageManager.Instance?.RefreshSlimePresentation(target);
             TryClose();
+            return;
         }
-        catch (Exception e) when (e is InvalidOperationException ||
-                                  e is ArgumentException)
-        {
-            Debug.LogWarning($"슬라임을 장식장에서 꺼낼 수 없습니다: {e.Message}");
-            target.transform.position = _takeOutStartPosition;
-            StageManager.Instance?.RefreshSlimePresentation(target);
-            _infoCanvasGroup.interactable = true;
-            _toast.Show("이 슬라임은 지금 꺼낼 수 없어요.");
-        }
+
+        _infoCanvasGroup.interactable = true;
+        _toast.Show("이 슬라임은 지금 꺼낼 수 없어요.");
     }
 
     private void OnSpaceChanged(EGameplaySpace space)

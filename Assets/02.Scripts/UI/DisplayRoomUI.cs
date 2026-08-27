@@ -251,39 +251,27 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void CompleteTransfer(SlimeController target)
     {
-        if (target == null || SlimeManager.Instance == null)
+        StageManager stageManager = StageManager.Instance;
+        if (target == null || stageManager == null)
         {
             EndSendMode();
             return;
         }
 
-        try
+        _isTransferPlaying = false;
+        bool moved = stageManager.TryRelocateSlime(
+            target,
+            ESlimeLocation.DisplayRoom,
+            _transferStartPosition);
+        ApplySendModeInput();
+
+        if (moved)
         {
-            SlimeManager.Instance.MoveSlime(
-                target.InstanceId,
-                ESlimeLocation.DisplayRoom);
-            Vector2 destination = SpawnManager.Instance != null
-                ? SpawnManager.Instance.GetRandomSpawnPosition()
-                : Vector2.zero;
-            target.transform.position = new Vector3(
-                destination.x,
-                destination.y,
-                target.transform.position.z);
-            StageManager.Instance?.RefreshSlimePresentation(target);
-            _isTransferPlaying = false;
-            ApplySendModeInput();
             SlimeTransferred?.Invoke(target);
+            return;
         }
-        catch (Exception e) when (e is InvalidOperationException ||
-                                  e is ArgumentException)
-        {
-            Debug.LogWarning($"슬라임을 장식장으로 보낼 수 없습니다: {e.Message}");
-            _isTransferPlaying = false;
-            target.transform.position = _transferStartPosition;
-            StageManager.Instance?.RefreshSlimePresentation(target);
-            ApplySendModeInput();
-            _toast.Show("이 슬라임은 장식장으로 보낼 수 없어요.");
-        }
+
+        _toast.Show("이 슬라임은 장식장으로 보낼 수 없어요.");
     }
 
     private void ApplySendModeInput()
