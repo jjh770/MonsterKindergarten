@@ -17,7 +17,7 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
-- Release profile version: `0.1.04` (Android Version Code `5`)
+- Release profile version: `0.1.05` (Android Version Code `6`)
 - Development profile version: `0.1.03` (Android Version Code `4`)
 - Version snapshot: 2026-08-27. Profile-specific Player Settings override the project-wide version.
 
@@ -27,6 +27,7 @@ Generated `.csproj` files are not the source of truth for Unity package compatib
 
 ## Runtime Modes
 
+- Android is the only supported build target. WebGL support was removed on 2026-08-27 along with its Firestore attribute stub and browser focus plugin; do not reintroduce `UNITY_WEBGL` branches.
 - Unity Editor and non-Android players use `LocalAccountRepository` with the fixed user ID `LocalPlayer`. Currency, slime state, and upgrades are stored locally.
 - Android players use Google Play Games v2 authentication, exchange the server auth code for a Firebase Auth session, and use the Firebase UID as the save owner.
 - Android game data uses `HybridRepository<T>`: PlayerPrefs saves immediately, Firebase writes are debounced by 0.6 seconds, and load resolves local and cloud data by `LastSaveTime`.
@@ -98,8 +99,12 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 - `UpgradeUI` derives its closed position from the actual panel width and applies `Screen.safeArea` insets. Layout refresh is event-driven through rect-size, focus, and pause callbacks; do not restore a fixed movement distance or per-frame layout polling.
 - `GameExitManager` depends on the public `UpgradeUI.TryClose()` API. Preserve that API and its close-first behavior when changing the upgrade panel.
 - `BottomPanelSwitcher` owns bottom-panel selection and presentation; `StageUI` owns the Ground/Sky button, and `SpaceToggleButtonUI` owns the DisplayRoom/MainStage button label and click event. `DisplayRoomUI` orchestrates transfers and space changes.
-- Send mode moves TopHudRoot as a whole; UpgradeUI owns its drawer visibility. Keep static UI, audio sources, and references authored in scenes/prefabs rather than constructing their hierarchy at runtime.
+- `HudVisibility` owns the position of TopHudRoot and BottomHudRoot. Send mode requests `Top`, observation requests `All`, and requests are stacked per owner so overlapping presentations stay safe. Never cache or restore those roots' positions elsewhere; a second owner that remembers a displaced position leaves the HUD off screen.
+- The upgrade drawer is not a HUD part. `UpgradeUI` computes its own hidden position from panel width and safe-area insets, so hide it through `SetToggleVisible()` instead of moving its transform.
+- Keep static UI, audio sources, and references authored in scenes/prefabs rather than constructing their hierarchy at runtime.
 - `Clicker.PushMode(owner, mode, priority)` / `ReleaseMode(owner)` arbitrate world input: Space < Selection < Tutorial < Modal. Same-owner updates keep their position; release only the owner's request on completion or teardown.
+- `StageManager.PlayDisplayRoomTransfer()` starts a space transfer and `StageManager.TryRelocateSlime()` finishes it: save location, reposition, refresh presentation, and restore the pre-transfer position on failure. UI owns only the policy around it - toast text, input restore, popup closing. Do not reimplement the completion half in a caller.
+- Never place a `Button` or other `Selectable` under a `Slider`, `Scrollbar`, `ScrollRect`, or any `IDragHandler`. `Slider.OnInitializePotentialDrag` clears the drag threshold, so any finger movement starts a parent drag and cancels the child's click. The spawn gauge keeps its `Slider` on a dedicated `SpawnBar` child for this reason.
 
 **Options and progress reset**
 
@@ -111,7 +116,7 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 ### Key Patterns
 
-- Scene-level singleton managers
+- Scene-level singleton managers. Declare as `public static T Instance { get; private set; }` and guard `Awake` with `if (Instance != null && Instance != this) { Destroy(gameObject); return; }` before assigning. The `Instance != this` check keeps a re-entered `Awake` from destroying the already registered instance.
 - Repository interfaces with platform-specific implementations
 - Domain data separated from manager orchestration
 - ScriptableObject balance tables
@@ -143,7 +148,9 @@ The offline reward, tutorial, exit popup, and audio systems have since shipped o
 
 Current work on `feature/phase-2-display-room` includes Phase 2/2-B DisplayRoom, observation UX, tutorials, options, and follow-up fixes. Next feature phase is Phase 3 (collection book); collection, gacha, and special-slime gameplay are not implemented yet.
 
-As of 2026-08-27, a local `0.1.04` AAB and `Builds/Release/0.1.04/build-info.txt` exist. The working tree contains uncommitted changes; HEAD alone does not identify the full build source. Existing user confirmations cover the earlier DisplayRoom flow, not all later tutorial/UI fixes or this AAB's Android validation and store upload.
+As of 2026-08-27, a local `0.1.05` AAB, `Builds/Release/0.1.05/build-info.txt`, and `release-notes.txt` exist. The AAB was built from HEAD `6f2b2e7` plus uncommitted release-profile and project-setting changes, so HEAD alone does not identify the full build source. Existing Unity confirmations do not establish this AAB's Android login/save validation or store upload.
+
+A structural cleanup pass landed before that build: `HudVisibility` took over HUD hiding, `SpaceToggleButtonUI` took the space button out of `DisplayRoomUI`, `StageManager.TryRelocateSlime()` absorbed the duplicated transfer completion, singleton declarations and `Awake` guards were unified, WebGL support was removed, and the spawn gauge `Slider` moved onto a `SpawnBar` child so its sibling buttons stop losing clicks. These have static-check evidence and Editor confirmation of the send/observation/transfer paths only.
 
 The responsive UpgradeUI/Safe Area work and drag-merge target feedback have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
 

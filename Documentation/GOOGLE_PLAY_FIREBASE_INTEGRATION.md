@@ -313,7 +313,7 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 주요 파일:
 
-- `Assets/02.Scripts/Outgame/Feature/Common/HybirdRepository.cs`
+- `Assets/02.Scripts/Outgame/Feature/Common/HybridRepository.cs`
 - 각 기능의 PlayerPrefs 및 Firebase Repository
 - `CurrencySaveData`, `SlimeStatusSaveData`, `UpgradeSaveData`
 
@@ -395,17 +395,18 @@ Phase 2가 포함된 Android 빌드의 Firestore 복원, 기기 간 충돌과 �
 장식장 입고 위치는 슬라임 문서에 저장하고, 미완료 튜토리얼은 복원 완료 후
 장식장에 이미 있는 개체를 찾아 추가 입고 없이 안내를 재개합니다.
 
-### 0.1.04 빌드 상태
+### 0.1.05 빌드 상태
 
-- 릴리스 프로필: `0.1.04 / Version Code 5`, AAB, Development Build 꺼짐.
+- 릴리스 프로필: `0.1.05 / Version Code 6`, AAB, Development Build 꺼짐.
 - 개발 프로필: `0.1.03 / Version Code 4`, APK, Development Build 켜짐.
-- 로컬 AAB와 `build-info.txt`는 `Builds/Release/0.1.04/`에 있으며 Git에서 제외됩니다.
+- 로컬 AAB, `build-info.txt`와 `release-notes.txt`는 `Builds/Release/0.1.05/`에
+  있으며 Git에서 제외됩니다.
 - 파일 생성과 설정은 확인했지만 이번 AAB의 초기화·복원·스토어 업로드 결과는
   아직 기록되지 않았습니다. 기존 기기 검증 결과와 구분합니다.
 
 ## 8. 실제 기기 검증 결과
 
-아래는 기존 인증·저장 통합의 확인 기록입니다. `0.1.04` 장식장·옵션 초기화가
+아래는 기존 인증·저장 통합의 확인 기록입니다. `0.1.05` 장식장·옵션 초기화가
 포함된 AAB의 검증 완료를 의미하지 않습니다.
 
 - [x] 직접 설치한 릴리스 빌드에서 Google Play Games 로그인

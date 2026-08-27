@@ -127,7 +127,7 @@ Android Logcat 패키지를 추가하고, 기존 템플릿 파일과 어긋나 �
 
 | 항목 | 규모 | 선행 조건 |
 |---|---|---|
-| 미호출 public 메서드 12건 | 작음 | 오디오 볼륨 설정 UI 및 `Crypto` 유틸리티 유지 여부 확인 |
+| 미호출 public 메서드 11건 | 작음 | `AudioManager`의 BGM 정지·일시정지와 마스터 음량은 배선이 살아 있어 남김 |
 | `Slime.cs:19`의 이미 해결된 TODO 주석 | 1줄 | |
 | DOTween 용량 설정 | 1줄 | |
 | `GameManager` 책임 분리 | 큼 | |
@@ -135,7 +135,7 @@ Android Logcat 패키지를 추가하고, 기존 템플릿 파일과 어긋나 �
 
 `GameManager`는 초기화 게이트, 오프라인 보상, 튜토리얼 진행도, 게임플레이 상태 4가지를 담당하고 있습니다. `OfflineRewardService` 분리가 첫 단계로 적절합니다.
 
-미호출 public 메서드 집계는 Unity 인터페이스가 직접 호출하는 `TutorialSpotlightView.IsRaycastLocationValid()`와 `OnPointerClick()`을 제외합니다. 기존 11건 외에 외부 소비자가 없는 `Crypto.VerifyPassword()`를 포함해 12건입니다.
+미호출 public 메서드 집계는 Unity 인터페이스가 직접 호출하는 `TutorialSpotlightView.IsRaycastLocationValid()`와 `OnPointerClick()`을 제외합니다. `Crypto.VerifyPassword()`는 2026-08-27에 `Crypto` 유틸리티와 함께 제거해 집계에서 빠졌습니다. 호출 횟수만 세면 `AudioManager.PlayBGM()`처럼 같은 파일 안에서 쓰이는 메서드가 잘못 잡히므로, 제거 전에 파일 내부 호출과 `[RuntimeInitializeOnLoadMethod]`·확장 메서드·인터페이스 구현을 확인해야 합니다.
 
 DOTween은 4시간 이상 방치 후 오프라인 보상 팝업을 열면 Sequence를 51개 생성해 기본 용량 50을 초과합니다. 자동 확장되므로 기능 문제는 없으며, 콘솔 경고 제거 목적입니다.
 
@@ -175,7 +175,8 @@ Android 터치, Firestore 복원, 다양한 화면 비율과 Release AAB는 이�
 검증하지 않았습니다.
 
 후속으로 옵션·진행도 초기화, 하단 메뉴 책임 분리, 장식장 튜토리얼 중단 후
-재개와 상위 스폰 안내 시 패널 자동 표시를 구현했습니다. `0.1.04 / Code 5`
-로컬 AAB가 생성됐지만 최근 수정의 기기 확인·스토어 업로드 결과는 아직
+재개와 상위 스폰 안내 시 패널 자동 표시를 구현했습니다. 이후 하단 메뉴 상태,
+팝업 입력과 HUD 리소스 정리를 반영한 `0.1.05 / Code 6` 로컬 AAB가 생성됐지만
+이 빌드의 기기 확인·스토어 업로드 결과는 아직
 기록되지 않았습니다. 현재 구현 상태는 [기획서](MonsterKindergarten_GAME_DESIGN_IMPLEMENTATION_SPEC.md)의
 부록 E를 참고하며, 이 문서의 과거 리뷰 결과를 새 코드의 재검토 결과로 사용하지 않습니다.
