@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -7,11 +6,6 @@ public class AudioManager : MonoBehaviour
 {
     private const string BgmVolumeKey = "Audio_BGMVolume";
     private const string SfxVolumeKey = "Audio_SFXVolume";
-#if UNITY_WEBGL 
-    [DllImport("__Internal")]
-    private static extern void RegisterVisibilityChangeEvent();
-#endif
-
     public static AudioManager Instance;
 
     [Header("Audio Mixer")]
@@ -66,10 +60,6 @@ public class AudioManager : MonoBehaviour
         {
             PlayBGM(_startBGM);
         }
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        RegisterVisibilityChangeEvent();
-#endif
     }
 
     private void ApplyVolumes()
@@ -104,12 +94,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-
-    // JavaScript visibilitychange 이벤트에서 SendMessage로 호출
-    public void OnBrowserPause(int paused)
-    {
-        HandlePause(paused == 1);
-    }
 
     private void HandlePause(bool pause)
     {

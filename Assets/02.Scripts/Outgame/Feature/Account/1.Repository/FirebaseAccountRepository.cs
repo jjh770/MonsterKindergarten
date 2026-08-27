@@ -1,4 +1,3 @@
-#if !UNITY_WEBGL || UNITY_EDITOR
 
 using Cysharp.Threading.Tasks;
 using Firebase;
@@ -101,4 +100,3 @@ public class FirebaseAccountRepository : IAccountRepository
         return completionSource.Task;
     }
 }
-#endif
