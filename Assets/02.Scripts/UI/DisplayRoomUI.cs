@@ -290,7 +290,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private void OnSpaceChanged(EGameplaySpace space)
     {
         bool isDisplayRoom = space == EGameplaySpace.DisplayRoom;
-        _panelSwitcher.ResetSelection(isDisplayRoom);
+        _panelSwitcher.ResetSelection(selectMovePanel: true);
         ApplySpacePresentation(isDisplayRoom, animated: true);
         RefreshLayout();
 
