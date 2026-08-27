@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: a2a099f0a4e71b949800508ee1db7a5a
+guid: 4b27da1c621382042a46ecba1702c7cd
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6600480541900435395
-    second: MoveDisplayRoom_0
-  - first:
-      213: 5980401721661211346
-    second: MoveDisplayRoom_1
+      213: 573788678223057470
+    second: StageMoveButton_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -75,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: MoveDisplayRoom_0
+      name: StageMoveButton_0
       rect:
         serializedVersion: 2
-        x: 315
-        y: 280
-        width: 624
-        height: 693
+        x: 0
+        y: 276
+        width: 930
+        height: 978
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3cf6adef41e999b50800000000000000
-      internalID: 6600480541900435395
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: MoveDisplayRoom_1
-      rect:
-        serializedVersion: 2
-        x: 543
-        y: 120
-        width: 167
-        height: 130
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2d240c92ea7aef250800000000000000
-      internalID: 5980401721661211346
+      spriteID: e3250a543c186f700800000000000000
+      internalID: 573788678223057470
       vertices: []
       indices: 
       edges: []
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      MoveDisplayRoom_0: 6600480541900435395
-      MoveDisplayRoom_1: 5980401721661211346
+      StageMoveButton_0: 573788678223057470
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
