@@ -3,14 +3,16 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 씬에 미리 배치한 옵션과 초기화 확인 UI의 입력·표시만 담당한다.
-public sealed class OptionsUI : MonoBehaviour
+public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private Canvas _canvas;
     [SerializeField] private Button _openButton;
     [SerializeField] private GameObject _panelRoot;
+    [SerializeField] private RectTransform _panel;
     [SerializeField] private CanvasGroup _panelGroup;
     [SerializeField] private Button _closeButton;
     [SerializeField] private Slider _bgmSlider;
@@ -19,6 +21,7 @@ public sealed class OptionsUI : MonoBehaviour
     [SerializeField] private TMP_Text _sfxValue;
     [SerializeField] private Button _resetButton;
     [SerializeField] private GameObject _confirmationRoot;
+    [SerializeField] private RectTransform _confirmationPanel;
     [SerializeField] private TMP_Text _confirmationMessage;
     [SerializeField] private Button _confirmButton;
     [SerializeField] private Button _cancelButton;
@@ -36,10 +39,11 @@ public sealed class OptionsUI : MonoBehaviour
 
     private void Start()
     {
-        if (_canvas == null || _openButton == null || _panelRoot == null ||
+        if (_canvas == null || _openButton == null || _panelRoot == null || _panel == null ||
             _panelGroup == null || _closeButton == null || _bgmSlider == null ||
             _sfxSlider == null || _bgmValue == null || _sfxValue == null ||
-            _resetButton == null || _confirmationRoot == null || _confirmationMessage == null ||
+            _resetButton == null || _confirmationRoot == null || _confirmationPanel == null ||
+            _confirmationMessage == null ||
             _confirmButton == null || _cancelButton == null || _confirmLabel == null ||
             _cancelLabel == null || _clicker == null || _gameExitManager == null)
         {
@@ -119,6 +123,20 @@ public sealed class OptionsUI : MonoBehaviour
     }
 
     private void Close() => TryClose();
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (!_isOpen || _isBusy || _isClosing) return;
+
+        RectTransform activePanel = _confirmationRoot.activeSelf ? _confirmationPanel : _panel;
+        if (RectTransformUtility.RectangleContainsScreenPoint(
+                activePanel, eventData.position, eventData.pressEventCamera)) return;
+
+        if (_confirmationRoot.activeSelf)
+            CancelConfirmation();
+        else
+            TryClose();
+    }
 
     private bool TryClose()
     {

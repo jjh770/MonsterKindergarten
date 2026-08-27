@@ -15489,6 +15489,7 @@ MonoBehaviour:
   _canvas: {fileID: 457349916}
   _openButton: {fileID: 2201000004}
   _panelRoot: {fileID: 2201000011}
+  _panel: {fileID: 2201000017}
   _panelGroup: {fileID: 2201000015}
   _closeButton: {fileID: 2201000095}
   _bgmSlider: {fileID: 2201000052}
@@ -15497,6 +15498,7 @@ MonoBehaviour:
   _sfxValue: {fileID: 2201000060}
   _resetButton: {fileID: 2201000086}
   _confirmationRoot: {fileID: 2201000100}
+  _confirmationPanel: {fileID: 2201000105}
   _confirmationMessage: {fileID: 2201000115}
   _confirmButton: {fileID: 2201000129}
   _cancelButton: {fileID: 2201000120}
