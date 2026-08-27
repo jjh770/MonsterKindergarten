@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -9,17 +9,18 @@ public sealed class SkyIntroDirector : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private StageUI _stageUI;
-    [SerializeField] private TutorialDialogueView _dialoguePrefab;
-    [SerializeField] private TutorialSpotlightView _guidePrefab;
+    [SerializeField] private BottomPanelSwitcher _panelSwitcher;
+    [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
 
     [Header("Intro")]
     [SerializeField, Min(0f)] private float _chargeDuration = 0.8f;
 
-    private TutorialPresentation _presentation;
+    private DialoguePresentation _presentation;
     private SlimeController _pendingTarget;
     private Sequence _chargeSequence;
     private bool _isStarted;
+    private bool _isWaitingForMovePanel;
 
     public bool HasPendingTarget => _pendingTarget != null;
     public bool IsWaitingForStageButton { get; private set; }
@@ -32,18 +33,25 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (_canvas == null ||
             _stageUI == null ||
-            _dialoguePrefab == null ||
-            _guidePrefab == null ||
+            _panelSwitcher == null ||
+            _dialoguePresentationPrefab == null ||
             _tutorialContent == null)
         {
             Debug.LogError("하늘 인트로 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
+            return;
         }
+
+        _panelSwitcher.MovePanelOpened += OnMovePanelOpened;
     }
 
     private void OnDestroy()
     {
         _chargeSequence?.Kill();
+        if (_panelSwitcher != null)
+        {
+            _panelSwitcher.MovePanelOpened -= OnMovePanelOpened;
+        }
         _presentation?.Dispose();
     }
 
@@ -61,24 +69,29 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _pendingTarget.PrepareStageTransfer();
 
         _presentation?.Dispose();
-        _presentation = new TutorialPresentation(
+        _presentation = new DialoguePresentation(
             _canvas,
             _canvas,
-            _dialoguePrefab,
-            _guidePrefab);
+            _dialoguePresentationPrefab);
         _presentation.ShowDialogue(
             _tutorialContent.GetDialogue(DialogueId.SkyIntro),
             PlayJourney);
     }
 
-    public void HideSpotlight()
+    public void AdvanceStageButtonStep()
     {
-        _presentation?.Spotlight.Hide();
+        if (!IsWaitingForStageButton || _presentation == null) return;
+
+        IsWaitingForStageButton = false;
+        _presentation.ShowDialogue(
+            _tutorialContent.GetDialogue(DialogueId.SkyFinal),
+            Complete);
     }
 
     public void Complete()
     {
         IsWaitingForStageButton = false;
+        _isWaitingForMovePanel = false;
         _presentation?.Dispose();
         _presentation = null;
         InteractionEnableRequested?.Invoke(true);
@@ -116,8 +129,52 @@ public sealed class SkyIntroDirector : MonoBehaviour
             skyIntroCompleted: true);
         _pendingTarget = null;
         _isStarted = false;
-        _stageUI.SetButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true);
 
+        if (_presentation == null)
+        {
+            Complete();
+            return;
+        }
+
+        // 스테이지 전환이 복원한 입력을 안내가 끝날 때까지 다시 막는다.
+        InteractionEnableRequested?.Invoke(false);
+        _presentation.ShowDialogue(
+            _tutorialContent.GetDialogue(DialogueId.SkyArrived),
+            ShowMovePanelStep);
+    }
+
+    private void ShowMovePanelStep()
+    {
+        if (_panelSwitcher.IsMovePanelOpen)
+        {
+            ShowStageButtonStep();
+            return;
+        }
+
+        RectTransform panelSwitchTarget = _panelSwitcher.SwitchButtonTarget;
+        if (_presentation == null || panelSwitchTarget == null)
+        {
+            Complete();
+            return;
+        }
+
+        _isWaitingForMovePanel = true;
+        _presentation.Spotlight.ShowUiTarget(
+            _tutorialContent.StageMenuButtonMessage,
+            panelSwitchTarget,
+            SpotlightInteractionMode.PassThroughPrimary);
+    }
+
+    private void OnMovePanelOpened()
+    {
+        if (!_isWaitingForMovePanel || _presentation == null) return;
+
+        ShowStageButtonStep();
+    }
+
+    private void ShowStageButtonStep()
+    {
         RectTransform buttonTarget = _stageUI.ButtonTarget;
         if (_presentation == null || buttonTarget == null)
         {
@@ -125,6 +182,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
             return;
         }
 
+        _isWaitingForMovePanel = false;
         IsWaitingForStageButton = true;
         _presentation.Spotlight.ShowUiTarget(
             _tutorialContent.StageButtonMessage,
@@ -137,7 +195,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
         SlimeManager.Instance?.UpdateStageProgress(
             EGameStage.Ground,
             skyIntroCompleted: true);
-        _stageUI.SetButtonVisible(true, true);
+        _stageUI.SetButtonVisible(true);
         Complete();
     }
 }

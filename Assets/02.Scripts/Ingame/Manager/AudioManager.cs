@@ -1,16 +1,12 @@
-﻿using System.Runtime.InteropServices;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 public class AudioManager : MonoBehaviour
 {
-#if UNITY_WEBGL 
-    [DllImport("__Internal")]
-    private static extern void RegisterVisibilityChangeEvent();
-#endif
-
-    public static AudioManager Instance;
+    private const string BgmVolumeKey = "Audio_BGMVolume";
+    private const string SfxVolumeKey = "Audio_SFXVolume";
+    public static AudioManager Instance { get; private set; }
 
     [Header("Audio Mixer")]
     [SerializeField] private AudioMixerGroup _bgmMixerGroup;
@@ -41,16 +37,16 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
+        Instance = this;
+
+        BGMVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(BgmVolumeKey, BGMVolume));
+        SFXVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumeKey, SFXVolume));
         InitializeAudioSources();
     }
 
@@ -62,89 +58,58 @@ public class AudioManager : MonoBehaviour
         {
             PlayBGM(_startBGM);
         }
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        RegisterVisibilityChangeEvent();
-#endif
     }
 
     private void ApplyVolumes()
     {
+        if (_audioMixer != null)
+        {
+            // MainMixer의 실제 노출 이름. 믹서와 소스에 음량을 중복 적용하지 않는다.
+            _audioMixer.SetFloat("Master", VolumeToDecibel(_isPaused ? 0f : MasterVolume));
+            _audioMixer.SetFloat("BGM", VolumeToDecibel(BGMVolume));
+            _audioMixer.SetFloat("SFX", VolumeToDecibel(SFXVolume));
+        }
         ApplyBgmVolumes();
 
         if (_sfxSource != null)
         {
-            _sfxSource.volume = SFXVolume * MasterVolume;
+            _sfxSource.volume = _audioMixer != null ? 1f : (_isPaused ? 0f : SFXVolume * MasterVolume);
         }
     }
 
     private void OnApplicationPause(bool pause)
     {
+        if (pause) SaveVolumeSettings();
         HandlePause(pause);
     }
 
-
-    // JavaScript visibilitychange 이벤트에서 SendMessage로 호출
-    public void OnBrowserPause(int paused)
+    private void OnDestroy()
     {
-        HandlePause(paused == 1);
+        if (Instance == this)
+        {
+            SaveVolumeSettings();
+            Instance = null;
+        }
     }
+
 
     private void HandlePause(bool pause)
     {
         if (pause == _isPaused) return;
         _isPaused = pause;
 
-        if (pause)
-        {
-            if (_audioMixer != null)
-            {
-                _audioMixer.SetFloat("MasterVolume", VolumeToDecibel(0f));
-            }
-            else
-            {
-                if (_bgmSource != null) _bgmSource.volume = 0f;
-                if (_secondaryBgmSource != null) _secondaryBgmSource.volume = 0f;
-                if (_sfxSource != null) _sfxSource.volume = 0f;
-            }
-        }
-        else
-        {
-            if (_audioMixer != null)
-            {
-                _audioMixer.SetFloat("MasterVolume", VolumeToDecibel(MasterVolume));
-            }
-            ApplyVolumes();
-        }
+        ApplyVolumes();
     }
 
     private void InitializeAudioSources()
     {
-        if (_bgmSource == null)
+        if (_bgmSource == null ||
+            _secondaryBgmSource == null ||
+            _sfxSource == null)
         {
-            var bgmObj = new GameObject("BGM Source");
-            bgmObj.transform.SetParent(transform);
-            _bgmSource = bgmObj.AddComponent<AudioSource>();
-            _bgmSource.loop = true;
-            _bgmSource.playOnAwake = false;
-        }
-
-        if (_secondaryBgmSource == null)
-        {
-            var secondaryBgmObj = new GameObject("Secondary BGM Source");
-            secondaryBgmObj.transform.SetParent(transform);
-            _secondaryBgmSource = secondaryBgmObj.AddComponent<AudioSource>();
-            _secondaryBgmSource.loop = true;
-            _secondaryBgmSource.playOnAwake = false;
-        }
-
-        if (_sfxSource == null)
-        {
-            var sfxObj = new GameObject("SFX Source");
-            sfxObj.transform.SetParent(transform);
-            _sfxSource = sfxObj.AddComponent<AudioSource>();
-            _sfxSource.loop = false;
-            _sfxSource.playOnAwake = false;
+            Debug.LogError("AudioManager의 AudioSource 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
         }
 
         if (_bgmMixerGroup != null)
@@ -271,15 +236,16 @@ public class AudioManager : MonoBehaviour
 
     private void ApplyBgmVolumes()
     {
+        float volume = _audioMixer != null ? 1f : (_isPaused ? 0f : BGMVolume * MasterVolume);
         if (_bgmSource != null)
         {
-            _bgmSource.volume = BGMVolume * MasterVolume * _primaryBgmWeight;
+            _bgmSource.volume = volume * _primaryBgmWeight;
         }
 
         if (_secondaryBgmSource != null)
         {
             _secondaryBgmSource.volume =
-                BGMVolume * MasterVolume * _secondaryBgmWeight;
+                volume * _secondaryBgmWeight;
         }
     }
 
@@ -291,7 +257,7 @@ public class AudioManager : MonoBehaviour
     {
         if (clip == null) return;
 
-        _sfxSource.PlayOneShot(clip, SFXVolume);
+        _sfxSource.PlayOneShot(clip);
     }
 
     public void PlaySFXWithCooldown(AudioClip clip, float cooldown)
@@ -306,7 +272,7 @@ public class AudioManager : MonoBehaviour
         }
 
         _lastSfxPlayedTimes[clip] = currentTime;
-        _sfxSource.PlayOneShot(clip, SFXVolume);
+        _sfxSource.PlayOneShot(clip);
     }
 
     public void PlaySFX(AudioClip clip, float pitch)
@@ -314,7 +280,7 @@ public class AudioManager : MonoBehaviour
         if (clip == null) return;
 
         _sfxSource.pitch = pitch;
-        _sfxSource.PlayOneShot(clip, SFXVolume);
+        _sfxSource.PlayOneShot(clip);
         _sfxSource.pitch = 1f;
     }
 
@@ -333,31 +299,26 @@ public class AudioManager : MonoBehaviour
     public void SetMasterVolume(float volume)
     {
         MasterVolume = Mathf.Clamp01(volume);
-        if (_audioMixer != null)
-        {
-            _audioMixer.SetFloat("MasterVolume", VolumeToDecibel(MasterVolume));
-        }
         ApplyVolumes();
     }
 
     public void SetBGMVolume(float volume)
     {
         BGMVolume = Mathf.Clamp01(volume);
-        if (_audioMixer != null)
-        {
-            _audioMixer.SetFloat("BGMVolume", VolumeToDecibel(BGMVolume));
-        }
+        PlayerPrefs.SetFloat(BgmVolumeKey, BGMVolume);
         ApplyVolumes();
     }
 
     public void SetSFXVolume(float volume)
     {
         SFXVolume = Mathf.Clamp01(volume);
-        if (_audioMixer != null)
-        {
-            _audioMixer.SetFloat("SFXVolume", VolumeToDecibel(SFXVolume));
-        }
+        PlayerPrefs.SetFloat(SfxVolumeKey, SFXVolume);
         ApplyVolumes();
+    }
+
+    public void SaveVolumeSettings()
+    {
+        PlayerPrefs.Save();
     }
 
     private float VolumeToDecibel(float volume)

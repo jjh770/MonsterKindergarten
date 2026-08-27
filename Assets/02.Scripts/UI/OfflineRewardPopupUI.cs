@@ -31,19 +31,18 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private AudioClip _popupOpenSound;
     [SerializeField] private AudioClip _collectSound;
     [SerializeField] private AudioClip _arrivalSound;
+    [SerializeField] private CanvasGroup _canvasGroup;
 
-    private CanvasGroup _canvasGroup;
     private Sequence _currentSequence;
     private readonly List<RectTransform> _flyingVisuals = new();
 
     private void Awake()
     {
-        if (_popupPanel == null) return;
-
-        _canvasGroup = _popupPanel.GetComponent<CanvasGroup>();
-        if (_canvasGroup == null)
+        if (_popupPanel == null || _canvasGroup == null)
         {
-            _canvasGroup = _popupPanel.AddComponent<CanvasGroup>();
+            Debug.LogError("오프라인 보상 팝업의 필수 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
         }
 
         _popupPanel.SetActive(false);

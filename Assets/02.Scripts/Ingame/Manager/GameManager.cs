@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
     public static event Action OnAllDataInitialized;
     public event Action OnOfflineRewardReady;
@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
     private bool _isGameplayActive;
     public bool IsGameplayActive
     {
-        get => _isGameplayActive;
+        get => _isGameplayActive && !GameplaySaveGate.IsResetting;
         private set
         {
             if (_isGameplayActive == value) return;
@@ -47,15 +47,13 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
     }
 
     private void Start()
@@ -118,12 +116,17 @@ public class GameManager : MonoBehaviour
             TutorialIds.HigherGradeSpawn,
             SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
             completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.DisplayRoom,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
     }
 
     public async UniTask CompleteTutorialAsync()
     {
+        if (GameplaySaveGate.IsResetting) return;
         if (!TutorialProgress.IsRegistered(TutorialIds.Main) ||
             TutorialProgress.IsCompleted(TutorialIds.Main))
         {
@@ -143,7 +146,7 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (!_isAllInitialized) return;
+        if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
 
         if (pauseStatus)
         {

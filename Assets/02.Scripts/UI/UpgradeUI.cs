@@ -7,11 +7,13 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private RectTransform _rectTransform;
     [SerializeField] private RectTransform _panelTarget;
     [SerializeField] private Button _uiButton;
-    [SerializeField] private GameObject _doNotTouchPanel;
+    [SerializeField] private Button _dismissBackdropButton;
+    [SerializeField] private Clicker _clicker;
     [SerializeField] private float _movingDuration = 0.5f;
 
     private bool _isOpened = false;
     private bool _isToggleInputEnabled = true;
+    private bool _isToggleVisible = true;
     private bool _isInitialized;
     private bool _isRefreshingLayout;
     private RectTransform _toggleRectTransform;
@@ -21,9 +23,11 @@ public class UpgradeUI : MonoBehaviour
     private float _openPanelX;
     private float _closedToggleX;
     private float _openToggleX;
+    private float _hiddenToggleX;
 
     public RectTransform ToggleTarget => _uiButton?.transform as RectTransform;
     public RectTransform PanelTarget => _panelTarget;
+    public bool IsToggleInputEnabled => _isToggleInputEnabled;
     public event System.Action Opened;
     public event System.Action Closed;
 
@@ -32,7 +36,8 @@ public class UpgradeUI : MonoBehaviour
         if (_rectTransform == null ||
             _panelTarget == null ||
             _uiButton == null ||
-            _doNotTouchPanel == null)
+            _dismissBackdropButton == null ||
+            _clicker == null)
         {
             Debug.LogError("업그레이드 UI의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -49,8 +54,8 @@ public class UpgradeUI : MonoBehaviour
 
         _toggleEdgeOffset = _toggleRectTransform.anchoredPosition.x;
         _uiButton.onClick.AddListener(ViewUI);
-        _doNotTouchPanel.SetActive(false);
-        AddButtonOutline();
+        _dismissBackdropButton.onClick.AddListener(CloseFromBackdrop);
+        _dismissBackdropButton.gameObject.SetActive(false);
 
         _isInitialized = true;
         RefreshLayout();
@@ -84,12 +89,18 @@ public class UpgradeUI : MonoBehaviour
     {
         _moveTween?.Kill();
         _moveTween = null;
+        _clicker?.ReleaseMode(this);
     }
 
     private void OnEnable()
     {
         if (_isInitialized)
         {
+            if (_isOpened)
+            {
+                _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+            }
+
             RefreshLayout();
         }
     }
@@ -97,21 +108,8 @@ public class UpgradeUI : MonoBehaviour
     private void OnDestroy()
     {
         _uiButton?.onClick.RemoveListener(ViewUI);
-    }
-
-    private void AddButtonOutline()
-    {
-        if (_uiButton == null || _uiButton.targetGraphic == null) return;
-
-        Outline outline = _uiButton.targetGraphic.GetComponent<Outline>();
-        if (outline == null)
-        {
-            outline = _uiButton.targetGraphic.gameObject.AddComponent<Outline>();
-        }
-
-        outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-        outline.effectDistance = new Vector2(3f, -3f);
-        outline.useGraphicAlpha = true;
+        _dismissBackdropButton?.onClick.RemoveListener(CloseFromBackdrop);
+        _clicker?.ReleaseMode(this);
     }
 
     private void ViewUI()
@@ -119,6 +117,11 @@ public class UpgradeUI : MonoBehaviour
         if (!_isToggleInputEnabled) return;
 
         SetOpened(!_isOpened);
+    }
+
+    private void CloseFromBackdrop()
+    {
+        TryClose();
     }
 
     public bool TryClose()
@@ -134,7 +137,16 @@ public class UpgradeUI : MonoBehaviour
         if (_isOpened == isOpened) return;
 
         _isOpened = isOpened;
-        _doNotTouchPanel.SetActive(_isOpened);
+        _dismissBackdropButton.gameObject.SetActive(_isOpened);
+        if (_isOpened)
+        {
+            _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+        }
+        else
+        {
+            _clicker.ReleaseMode(this);
+        }
+
         MoveDrawer(animated: true);
 
         if (_isOpened) Opened?.Invoke();
@@ -148,25 +160,19 @@ public class UpgradeUI : MonoBehaviour
         _isRefreshingLayout = true;
         Canvas.ForceUpdateCanvases();
 
-        Vector2 rootSize = _rectTransform.rect.size;
         float panelWidth = _panelTarget.rect.width;
-
-        float leftSafeInset = GetCanvasInset(Screen.safeArea.xMin, Screen.width, rootSize.x);
-        float bottomSafeInset = GetCanvasInset(Screen.safeArea.yMin, Screen.height, rootSize.y);
-        float topSafeInset = GetCanvasInset(
-            Screen.height - Screen.safeArea.yMax,
-            Screen.height,
-            rootSize.y);
+        SafeAreaInsets insets = SafeAreaUtility.GetInsets(_rectTransform);
 
         _closedPanelX = -panelWidth;
-        _openPanelX = leftSafeInset;
-        _closedToggleX = leftSafeInset + _toggleEdgeOffset;
-        _openToggleX = leftSafeInset + panelWidth + _toggleEdgeOffset;
+        _openPanelX = insets.Left;
+        _closedToggleX = insets.Left + _toggleEdgeOffset;
+        _openToggleX = insets.Left + panelWidth + _toggleEdgeOffset;
+        _hiddenToggleX = -_toggleRectTransform.rect.width;
 
         Vector2 panelOffsetMin = _panelTarget.offsetMin;
         Vector2 panelOffsetMax = _panelTarget.offsetMax;
-        panelOffsetMin.y = bottomSafeInset;
-        panelOffsetMax.y = -topSafeInset;
+        panelOffsetMin.y = insets.Bottom;
+        panelOffsetMax.y = -insets.Top;
         _panelTarget.offsetMin = panelOffsetMin;
         _panelTarget.offsetMax = panelOffsetMax;
 
@@ -180,7 +186,11 @@ public class UpgradeUI : MonoBehaviour
         _moveTween = null;
 
         float panelX = _isOpened ? _openPanelX : _closedPanelX;
-        float toggleX = _isOpened ? _openToggleX : _closedToggleX;
+        float toggleX = !_isToggleVisible
+            ? _hiddenToggleX
+            : _isOpened
+                ? _openToggleX
+                : _closedToggleX;
 
         if (!animated)
         {
@@ -202,16 +212,31 @@ public class UpgradeUI : MonoBehaviour
         target.anchoredPosition = position;
     }
 
-    private static float GetCanvasInset(float pixelInset, int screenSize, float canvasSize)
-    {
-        if (screenSize <= 0 || canvasSize <= 0f) return 0f;
-
-        return Mathf.Max(0f, pixelInset / screenSize * canvasSize);
-    }
-
     public void SetToggleInputEnabled(bool isEnabled)
     {
         _isToggleInputEnabled = isEnabled;
+
+        if (_uiButton != null)
+        {
+            _uiButton.interactable = isEnabled;
+        }
+    }
+
+    public void SetToggleVisible(bool isVisible, bool animated = true)
+    {
+        if (_isToggleVisible == isVisible) return;
+
+        _isToggleVisible = isVisible;
+        if (!isVisible && _isOpened)
+        {
+            SetOpened(false);
+            return;
+        }
+
+        if (_isInitialized)
+        {
+            MoveDrawer(animated);
+        }
     }
 
 }

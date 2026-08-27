@@ -6,6 +6,9 @@ public class SlimeSpecData
 {
     // 슬라임 이름
     public string Name;
+    // 장식장 정보 UI에 표시할 한 문장 소개
+    [UnityEngine.TextArea(2, 3)]
+    public string Description;
     // 슬라임 등급 (레벨) 
     public ESlimeGrade Grade;
     // 슬라임의 클릭 포인트

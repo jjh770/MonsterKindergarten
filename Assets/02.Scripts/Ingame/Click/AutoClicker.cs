@@ -21,7 +21,12 @@ public class AutoClicker : MonoBehaviour
         // 각 타겟별 자동 클릭 처리
         foreach (var target in activeTargets)
         {
-            if (target == null || target.IsDragging) continue;
+            if (target == null ||
+                target.IsDragging ||
+                target.Location != ESlimeLocation.MainStage)
+            {
+                continue;
+            }
 
             float interval = target.AutoClickInterval;
             if (interval <= 0f) continue;

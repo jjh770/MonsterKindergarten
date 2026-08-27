@@ -1,5 +1,4 @@
-﻿#if !UNITY_WEBGL || UNITY_EDITOR
-
+﻿
 using Cysharp.Threading.Tasks;
 using Firebase;
 using System;
@@ -7,7 +6,7 @@ using UnityEngine;
 
 public class FirebaseInitializer : MonoBehaviour
 {
-    public static FirebaseInitializer Instance { get; set; }
+    public static FirebaseInitializer Instance { get; private set; }
 
     private void Awake()
     {
@@ -48,4 +47,3 @@ public class FirebaseInitializer : MonoBehaviour
         }
     }
 }
-#endif

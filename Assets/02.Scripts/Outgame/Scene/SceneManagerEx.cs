@@ -23,8 +23,9 @@ public class SceneManagerEx : MonoBehaviour
         SceneManager.LoadScene("GameScene");
     }
 
-    public void LoadLoginScene()
+    public void LoadLoginScene(bool skipAutomaticLogin = false)
     {
+        LobbyScene.SkipNextAutomaticLogin = skipAutomaticLogin;
         SceneManager.LoadScene("LoginScene");
     }
 }

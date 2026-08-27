@@ -31,6 +31,7 @@ public class SpawnManager : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
+    public bool IsInitialized => _isInitialized;
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
     public float MinSpawnInterval => _minSpawnInterval;
@@ -56,21 +57,20 @@ public class SpawnManager : MonoBehaviour
     public event Action<float, float> OnSpawnIntervalChanged;
     public event Action<int> OnSpawnMaxChanged;
     public event Action OnSpawned;
+    public event Action Initialized;
     public event Action<SlimeController> OnTutorialSlimeReady;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            _baseSpawnInterval = _spawnInterval;
-            _baseMaxActiveCount = _maxActiveCount;
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
+        Instance = this;
+        _baseSpawnInterval = _spawnInterval;
+        _baseMaxActiveCount = _maxActiveCount;
     }
 
     private void Start()
@@ -93,12 +93,11 @@ public class SpawnManager : MonoBehaviour
 
     private void OnAllDataInitialized()
     {
-        _isInitialized = true;
         ApplySavedUpgrades();
         InitSlimeSpawns();
 
         // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
-        if (SlimeSpawner.Instance.GetActiveCount() == 0)
+        if (SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) == 0)
         {
             if (TutorialProgress.ShouldRun(TutorialIds.Main))
             {
@@ -109,6 +108,10 @@ public class SpawnManager : MonoBehaviour
                 Spawn(ESlimeGrade.Grade1);
             }
         }
+
+        // 저장된 개체 복원과 최초 생성까지 끝난 뒤 튜토리얼에 알린다.
+        _isInitialized = true;
+        Initialized?.Invoke();
     }
 
     private void SpawnTutorialSlime()
@@ -157,14 +160,13 @@ public class SpawnManager : MonoBehaviour
 
         foreach (SlimeInstance instance in status.ActiveSlimes)
         {
-            if (instance.Location != ESlimeLocation.MainStage)
-            {
-                continue;
-            }
-
-            SlimeSpawner.Instance.Restore(
+            SlimeController target = SlimeSpawner.Instance.Restore(
                 instance,
                 GetRandomSpawnPosition());
+            if (target != null && instance.Location == ESlimeLocation.DisplayRoom)
+            {
+                target.SetStagePresentationActive(false);
+            }
         }
     }
 
@@ -191,11 +193,7 @@ public class SpawnManager : MonoBehaviour
         HandleEditorSpawnShortcuts();
 #endif
 
-        if (SlimeSpawner.Instance != null &&
-            SlimeSpawner.Instance.GetActiveCount() >= _maxActiveCount)
-        {
-            return;
-        }
+        if (!HasMainStageRoom()) return;
 
         _timer += Time.deltaTime;
 
@@ -208,30 +206,24 @@ public class SpawnManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // F1~F10을 Grade1~Grade10에 대응시킨다.
+    // Key 열거형은 F1부터 F12까지만 연속이므로 12를 넘겨서는 안 된다.
+    private const int EditorSpawnShortcutCount = 10;
+
     private void HandleEditorSpawnShortcuts()
     {
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
 
-        if (keyboard.f1Key.wasPressedThisFrame)
+        for (int offset = 0; offset < EditorSpawnShortcutCount; ++offset)
         {
-            Spawn(ESlimeGrade.Grade1);
-        }
-        else if (keyboard.f2Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade2);
-        }
-        else if (keyboard.f3Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade3);
-        }
-        else if (keyboard.f4Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade4);
-        }
-        else if (keyboard.f5Key.wasPressedThisFrame)
-        {
-            Spawn(ESlimeGrade.Grade5);
+            ESlimeGrade grade = ESlimeGrade.Grade1 + offset;
+            if (grade >= ESlimeGrade.Count) return;
+
+            if (!keyboard[Key.F1 + offset].wasPressedThisFrame) continue;
+
+            Spawn(grade);
+            return;
         }
     }
 #endif
@@ -325,7 +317,18 @@ public class SpawnManager : MonoBehaviour
         _isSpawningPaused = isPaused;
     }
 
-    public int GetActiveCount() => SlimeSpawner.Instance.GetActiveCount();
+    // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
+    public int GetMainStageSlimeCount() =>
+        SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage);
+
+    // 메인 필드에 개체를 더 놓을 자리가 있는지 판정한다.
+    // 자연 스폰과 장식장 꺼내기(기획서 §7.5)가 같은 기준을 쓰도록 한곳에 둔다.
+    public bool HasMainStageRoom()
+    {
+        return SlimeSpawner.Instance != null &&
+               SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) <
+               _maxActiveCount;
+    }
 
     public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

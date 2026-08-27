@@ -1,7 +1,13 @@
-using System;
+﻿using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+
+public enum EGameplaySpace
+{
+    MainStage,
+    DisplayRoom,
+}
 
 public sealed class StageManager : MonoBehaviour
 {
@@ -16,11 +22,19 @@ public sealed class StageManager : MonoBehaviour
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
 
     private EGameStage _currentStage = EGameStage.Ground;
+    private EGameplaySpace _currentSpace = EGameplaySpace.MainStage;
     private bool _isInitializeStarted;
     private bool _isInitialized;
 
     public EGameStage CurrentStage => _currentStage;
+    public EGameplaySpace CurrentSpace => _currentSpace;
+    public bool IsMainStageActive => _currentSpace == EGameplaySpace.MainStage;
+    public bool IsTransitioning => _transitionPlayer != null &&
+                                   _transitionPlayer.IsTransitioning;
     public event Action<EGameStage> StageChanged;
+    public event Action StageTransitionCompleted;
+    public event Action<EGameplaySpace> SpaceChanged;
+    public event Action SpaceTransitionCompleted;
 
     private void Awake()
     {
@@ -95,8 +109,111 @@ public sealed class StageManager : MonoBehaviour
 
     public bool IsStageActive(ESlimeGrade grade)
     {
-        return !_transitionPlayer.IsTransitioning &&
+        return IsMainStageActive &&
+               !_transitionPlayer.IsTransitioning &&
                GameStageRules.GetStage(grade) == _currentStage;
+    }
+
+    public bool TryEnterDisplayRoom()
+    {
+        if (!_isInitialized ||
+            !IsMainStageActive ||
+            _transitionPlayer.IsTransitioning ||
+            GameManager.Instance == null ||
+            !GameManager.Instance.IsGameplayActive ||
+            SlimeManager.Instance == null ||
+            !SlimeManager.Instance.IsDisplayRoomUnlocked ||
+            (SlimeManager.Instance.IsSkyUnlocked &&
+             !SlimeManager.Instance.SkyIntroCompleted))
+        {
+            return false;
+        }
+
+        _upgradeUI.TryClose();
+        SetInteractionEnabled(false);
+        _transitionPlayer.PlaySpace(
+            EGameplaySpace.DisplayRoom,
+            () => SetCurrentSpace(EGameplaySpace.DisplayRoom),
+            onCompleted: CompleteSpaceTransition);
+        return true;
+    }
+
+    // 연출 값은 StageTransitionPlayer가 소유하므로 UI는 이 경계로만 호출한다.
+    public void PlayDisplayRoomTransfer(SlimeController target, Action onComplete)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.PlayDisplayRoomTransfer(target, onComplete);
+    }
+
+    public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.FocusDisplayRoomSlime(target, onComplete);
+    }
+
+    public void RestoreDisplayRoomFocus(Action onComplete = null)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.RestoreDisplayRoomFocus(onComplete);
+    }
+
+    public void BeginDisplayRoomObservation(Action onComplete = null)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.BeginDisplayRoomObservation(onComplete);
+    }
+
+    public void EndDisplayRoomObservation(Action onComplete = null)
+    {
+        if (_transitionPlayer == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        _transitionPlayer.EndDisplayRoomObservation(onComplete);
+    }
+
+    public bool TryExitDisplayRoom()
+    {
+        if (!_isInitialized ||
+            IsMainStageActive ||
+            _transitionPlayer.IsTransitioning)
+        {
+            return false;
+        }
+
+        _transitionPlayer.PlaySpace(
+            EGameplaySpace.MainStage,
+            () => SetCurrentSpace(EGameplaySpace.MainStage),
+            onCompleted: CompleteSpaceTransition);
+        return true;
+    }
+
+    private void CompleteSpaceTransition()
+    {
+        RefreshInteraction();
+        SpaceTransitionCompleted?.Invoke();
     }
 
     private bool HasRequiredReferences()
@@ -135,11 +252,10 @@ public sealed class StageManager : MonoBehaviour
             ? SlimeManager.Instance.CurrentStage
             : EGameStage.Ground;
         _isInitialized = true;
-        _stageUI.SetStage(_currentStage);
         _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
         StageChanged?.Invoke(_currentStage);
         ApplyAllSlimeVisibility();
-        _stageUI.SetButtonVisible(false, false);
+        _stageUI.SetButtonVisible(false);
         SetInteractionEnabled(false);
 
         await WaitForGameplayActiveAsync(token);
@@ -148,11 +264,11 @@ public sealed class StageManager : MonoBehaviour
 
         if (!SlimeManager.Instance.IsSkyUnlocked)
         {
-            _stageUI.SetButtonVisible(false, false);
+            _stageUI.SetButtonVisible(false);
         }
         else if (SlimeManager.Instance.SkyIntroCompleted)
         {
-            _stageUI.SetButtonVisible(true, false);
+            _stageUI.SetButtonVisible(true);
         }
         else
         {
@@ -167,7 +283,7 @@ public sealed class StageManager : MonoBehaviour
                 SlimeManager.Instance.UpdateStageProgress(
                     EGameStage.Ground,
                     skyIntroCompleted: true);
-                _stageUI.SetButtonVisible(true, false);
+                _stageUI.SetButtonVisible(true);
             }
         }
     }
@@ -196,8 +312,7 @@ public sealed class StageManager : MonoBehaviour
     {
         if (!_isInitialized || target == null) return;
 
-        bool isActive = GameStageRules.GetStage(target.Grade) == _currentStage;
-        target.SetStagePresentationActive(isActive);
+        RefreshSlimePresentation(target);
     }
 
     private void OnMerged(
@@ -256,6 +371,7 @@ public sealed class StageManager : MonoBehaviour
     private void OnStageButtonClicked()
     {
         if (!_isInitialized ||
+            !IsMainStageActive ||
             _transitionPlayer.IsTransitioning ||
             GameManager.Instance == null ||
             !GameManager.Instance.IsGameplayActive ||
@@ -265,21 +381,17 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
+        if (_skyIntroDirector.IsWaitingForStageButton)
+        {
+            // 첫 안내에서는 이동하지 않고 버튼 설명 다음 대화로 이어진다.
+            _skyIntroDirector.AdvanceStageButtonStep();
+            return;
+        }
+
         _upgradeUI.TryClose();
         EGameStage targetStage = _currentStage == EGameStage.Ground
             ? EGameStage.Sky
             : EGameStage.Ground;
-
-        if (_skyIntroDirector.IsWaitingForStageButton)
-        {
-            _skyIntroDirector.HideSpotlight();
-            StartStageTransition(
-                targetStage,
-                null,
-                _skyIntroDirector.Complete,
-                saveStage: true);
-            return;
-        }
 
         StartStageTransition(
             targetStage,
@@ -322,9 +434,9 @@ public sealed class StageManager : MonoBehaviour
                         SlimeManager.Instance.SkyIntroCompleted);
                 }
 
-                _stageUI.SetStage(_currentStage);
                 SetInteractionEnabled(true);
                 onComplete?.Invoke();
+                StageTransitionCompleted?.Invoke();
             });
     }
 
@@ -336,9 +448,66 @@ public sealed class StageManager : MonoBehaviour
         {
             if (target == null) continue;
 
-            bool isActive = GameStageRules.GetStage(target.Grade) == _currentStage;
-            target.SetStagePresentationActive(isActive);
+            RefreshSlimePresentation(target);
         }
+    }
+
+    // PlayDisplayRoomTransfer의 완료 처리다. 저장 위치를 옮기고 새 자리에 배치한 뒤
+    // 표시를 갱신한다. 실패하면 연출 시작 전 자리로 되돌린다.
+    //
+    // 연출 전반부를 이 클래스가 소유하므로 후반부도 여기 둔다. 호출부마다 복사하면
+    // 저장·좌표·표시 세 계층을 건드리는 절차가 UI로 흩어진다.
+    public bool TryRelocateSlime(
+        SlimeController target,
+        ESlimeLocation destination,
+        Vector3 fallbackPosition)
+    {
+        if (target == null || SlimeManager.Instance == null) return false;
+
+        try
+        {
+            SlimeManager.Instance.MoveSlime(target.InstanceId, destination);
+            Vector2 spawnPoint = SpawnManager.Instance != null
+                ? SpawnManager.Instance.GetRandomSpawnPosition()
+                : Vector2.zero;
+            target.transform.position = new Vector3(
+                spawnPoint.x,
+                spawnPoint.y,
+                target.transform.position.z);
+            RefreshSlimePresentation(target);
+            return true;
+        }
+        catch (Exception e) when (e is InvalidOperationException ||
+                                  e is ArgumentException)
+        {
+            Debug.LogWarning($"슬라임 위치를 옮길 수 없습니다: {e.Message}");
+            target.transform.position = fallbackPosition;
+            RefreshSlimePresentation(target);
+            return false;
+        }
+    }
+
+    public void RefreshSlimePresentation(SlimeController target)
+    {
+        if (target == null) return;
+
+        bool isVisible = IsMainStageActive
+            ? target.Location == ESlimeLocation.MainStage &&
+              GameStageRules.GetStage(target.Grade) == _currentStage
+            : target.Location == ESlimeLocation.DisplayRoom;
+        target.SetStagePresentationActive(isVisible);
+    }
+
+    private void SetCurrentSpace(EGameplaySpace space)
+    {
+        if (_currentSpace == space) return;
+
+        _currentSpace = space;
+        ApplyAllSlimeVisibility();
+        _stageUI.SetButtonVisible(IsMainStageActive &&
+            SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsSkyUnlocked);
+        SpaceChanged?.Invoke(_currentSpace);
     }
 
     private SlimeController FindFirstSkySlime()
@@ -357,9 +526,32 @@ public sealed class StageManager : MonoBehaviour
         return null;
     }
 
+    // 공간별 입력 정책을 한곳에서 정한다.
+    // 평상시는 공간 기본값이며, 초기화·전환 연출 중에는 차단 우선순위를 쓴다.
     private void SetInteractionEnabled(bool isEnabled)
     {
-        _clicker.SetInputMode(isEnabled, isEnabled);
-        _upgradeUI.SetToggleInputEnabled(isEnabled);
+        _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainStageActive);
+        _clicker.PushMode(
+            this,
+            GetSpaceInputMode(isEnabled),
+            isEnabled ? ClickerInputPriority.Space : ClickerInputPriority.Modal);
+    }
+
+    private ClickerInputMode GetSpaceInputMode(bool isEnabled)
+    {
+        if (!isEnabled) return ClickerInputMode.Blocked;
+        if (IsMainStageActive) return ClickerInputMode.Free;
+
+        // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
+        return ClickerInputMode.SelectOnly();
+    }
+
+    // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
+    // 평상시 공간 기본값은 갱신 순서와 무관하게 선택 모드·튜토리얼보다 낮다.
+    public void RefreshInteraction()
+    {
+        SetInteractionEnabled(
+            GameManager.Instance != null &&
+            GameManager.Instance.IsGameplayActive);
     }
 }

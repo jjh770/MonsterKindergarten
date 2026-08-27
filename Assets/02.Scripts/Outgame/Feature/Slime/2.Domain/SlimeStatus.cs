@@ -90,6 +90,52 @@ public class SlimeStatus
         _activeSlimes.Add(instance);
     }
 
+    public void MoveSlime(string instanceId, ESlimeLocation location)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId))
+        {
+            throw new ArgumentException("이동할 슬라임 개체 ID가 비어 있습니다.", nameof(instanceId));
+        }
+
+        if (!SlimeLocationRules.IsValid(location))
+        {
+            throw new ArgumentException(
+                $"유효하지 않은 슬라임 위치입니다. : {location}",
+                nameof(location));
+        }
+
+        SlimeInstance instance = _activeSlimes.Find(
+            active => active.InstanceId == instanceId);
+        if (instance == null)
+        {
+            throw new InvalidOperationException(
+                $"저장 상태에 없는 슬라임은 이동할 수 없습니다. : {instanceId}");
+        }
+
+        if (instance.Location == location)
+        {
+            throw new InvalidOperationException(
+                $"이미 해당 위치에 있는 슬라임입니다. : {instanceId}, {location}");
+        }
+
+        if (location == ESlimeLocation.DisplayRoom &&
+            HasDisplayRoomSlime(instance.Grade, instance.IsSpecial))
+        {
+            throw new InvalidOperationException(
+                "장식장에는 같은 종류와 타입의 슬라임을 한 마리만 보관할 수 있습니다.");
+        }
+
+        instance.MoveTo(location);
+    }
+
+    public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)
+    {
+        return _activeSlimes.Exists(instance =>
+            instance.Location == ESlimeLocation.DisplayRoom &&
+            instance.Grade == grade &&
+            instance.IsSpecial == isSpecial);
+    }
+
     public void MergeSlimes(
         string keeperId,
         string removedId,

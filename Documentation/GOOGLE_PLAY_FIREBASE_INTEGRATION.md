@@ -5,6 +5,8 @@
 대상 플랫폼: Android  
 패키지명: `com.skku_say.Monster_Kindergarten`
 
+구현 기록 갱신: 2026-08-27 (과거 기기 검증일과 별개)
+
 > 이 문서에는 실제 SHA 인증서 지문, OAuth 클라이언트 ID와 보안 비밀번호, Firebase UID, 키스토어 경로와 비밀번호를 기록하지 않았습니다.
 
 ## 1. 현재 완료 상태
@@ -311,7 +313,7 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 주요 파일:
 
-- `Assets/02.Scripts/Outgame/Feature/Common/HybirdRepository.cs`
+- `Assets/02.Scripts/Outgame/Feature/Common/HybridRepository.cs`
 - 각 기능의 PlayerPrefs 및 Firebase Repository
 - `CurrencySaveData`, `SlimeStatusSaveData`, `UpgradeSaveData`
 
@@ -347,7 +349,65 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 - 재화, 슬라임 현황, 업그레이드가 앱 데이터 삭제 및 재설치 후 모두 정상적으로 복구되는 것을 확인했습니다.
 
+### 슬라임 저장 스키마 후속 상태 (2026-08-25)
+
+Phase 1.5에서 슬라임 저장을 등급별 개수에서 개체 목록으로 전환했습니다.
+현재 슬라임 저장 스키마는 v2이며 각 개체에 `InstanceId`, `Grade`,
+`IsSpecial`, `Location`을 기록합니다. 화면 좌표는 저장하지 않습니다.
+
+Phase 2 장식장은 `Location`을 사용해 메인 스테이지와 장식장 소속을 구분합니다.
+이동은 `SlimeManager.MoveSlime()`에서 검증과 저장을 함께 처리하며 기존
+PlayerPrefs 즉시 저장, Firestore 지연 저장, `LastSaveTime` 충돌 해결 규칙은
+바뀌지 않았습니다.
+
+Unity Editor에서는 저장 후 재실행 시 장식장 소속 복원을 확인했습니다.
+Phase 2가 포함된 Android 빌드의 Firestore 복원, 기기 간 충돌과 앱 데이터 삭제
+복구는 아직 재검증하지 않았으며 Phase 8 릴리스 준비에서 수행합니다.
+
+### 옵션의 진행도 초기화 (2026-08-27 구현 기록)
+
+`OptionsUI`의 확인창에서 초기화를 승인하면 `GameDataResetService`가 다음
+범위만 삭제합니다. 계정 탈퇴나 모든 기기의 데이터 무효화 기능은 아닙니다.
+
+- Android: 로그인한 UID의 `Currency`, `SlimeStatus`, `Upgrade` 문서와
+  해당 사용자의 이 기기 PlayerPrefs 저장·튜토리얼 완료 기록.
+- Editor: `LocalPlayer`의 로컬 진행도·튜토리얼 완료 기록만 삭제.
+- 유지: Firebase Authentication 계정, 다른 UID 데이터, 기기 음량 설정.
+
+초기화 흐름:
+
+1. 현재 로그인 UID와 Android 연결 상태를 확인합니다.
+2. `GameplaySaveGate.BeginReset()`으로 진행·저장을 잠그고 로컬 중단 표시를 남깁니다.
+3. `HybridRepository`는 초기화 이전 세대의 지연 쓰기를 폐기합니다.
+   이미 전송된 Firestore 쓰기는 완료를 기다린 뒤 세 문서를 배치 삭제합니다.
+4. 로컬 진행도·튜토리얼 완료 기록과 중단 표시를 삭제합니다.
+5. 로그아웃하고 로그인 화면으로 돌아가며 이번 자동 로그인은 생략합니다.
+
+초기화가 중단되면 다음 로그인에서 중단 표시를 확인해 게임 진입 전에 다시
+처리합니다. 타임아웃은 서버 작업 취소를 보장하지 않으므로 결과가 불명확한
+상태에서 기존 게임을 다시 저장하도록 허용하지 않습니다.
+
+**다기기 제한:** 다른 기기의 로컬 저장은 그대로 남습니다. 해당 기기가 나중에
+접속하면 이전 진행도가 클라우드에 다시 저장될 수 있습니다. 계정 전체를
+초기화하는 세대 번호나 서버 삭제 표식 정책은 아직 구현하지 않았습니다.
+
+튜토리얼 완료 기록은 현재 PlayerPrefs 전용이며 Firestore 동기화 대상이 아닙니다.
+장식장 입고 위치는 슬라임 문서에 저장하고, 미완료 튜토리얼은 복원 완료 후
+장식장에 이미 있는 개체를 찾아 추가 입고 없이 안내를 재개합니다.
+
+### 0.1.05 빌드 상태
+
+- 릴리스 프로필: `0.1.05 / Version Code 6`, AAB, Development Build 꺼짐.
+- 개발 프로필: `0.1.03 / Version Code 4`, APK, Development Build 켜짐.
+- 로컬 AAB, `build-info.txt`와 `release-notes.txt`는 `Builds/Release/0.1.05/`에
+  있으며 Git에서 제외됩니다.
+- 파일 생성과 설정은 확인했지만 이번 AAB의 초기화·복원·스토어 업로드 결과는
+  아직 기록되지 않았습니다. 기존 기기 검증 결과와 구분합니다.
+
 ## 8. 실제 기기 검증 결과
+
+아래는 기존 인증·저장 통합의 확인 기록입니다. `0.1.05` 장식장·옵션 초기화가
+포함된 AAB의 검증 완료를 의미하지 않습니다.
 
 - [x] 직접 설치한 릴리스 빌드에서 Google Play Games 로그인
 - [x] Play 스토어 내부 테스트 빌드 설치

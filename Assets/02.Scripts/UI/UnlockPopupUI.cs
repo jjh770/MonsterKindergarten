@@ -14,8 +14,8 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
     [SerializeField] private AudioClip _unlockSound;
+    [SerializeField] private CanvasGroup _canvasGroup;
 
-    private CanvasGroup _canvasGroup;
     private Sequence _sequence;
     private Tween _glowScaleTween;
     private Tween _glowRotateTween;
@@ -28,10 +28,10 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void Awake()
     {
-        _canvasGroup = _popupPanel.GetComponent<CanvasGroup>();
-        if (_canvasGroup == null)
+        if (_popupPanel == null || _canvasGroup == null)
         {
-            _canvasGroup = _popupPanel.AddComponent<CanvasGroup>();
+            Debug.LogError("해금 팝업의 필수 참조가 비어 있습니다.", this);
+            enabled = false;
         }
     }
 
