@@ -1216,6 +1216,7 @@ RectTransform:
   - {fileID: 998300002}
   - {fileID: 990100002}
   - {fileID: 995200002}
+  - {fileID: 999900002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7816,6 +7817,84 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &999900001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 457349917}
+    m_Modifications:
+    - target: {fileID: 1000, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_Name
+      value: CollectionBookUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _clicker
+      value:
+      objectReference: {fileID: 115063078}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _upgradeUI
+      value:
+      objectReference: {fileID: 1526959884}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _openButton
+      value:
+      objectReference: {fileID: 767234363}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _hudVisibility
+      value:
+      objectReference: {fileID: 336420519}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _gameExitManager
+      value:
+      objectReference: {fileID: 286711904}
+    - target: {fileID: 1200, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1204, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_Alpha
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1223, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278851379
+      objectReference: {fileID: 0}
+    - target: {fileID: 1238, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289914623
+      objectReference: {fileID: 0}
+    - target: {fileID: 1423, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278850606
+      objectReference: {fileID: 0}
+    - target: {fileID: 1513, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289586943
+      objectReference: {fileID: 0}
+    - target: {fileID: 1523, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278851379
+      objectReference: {fileID: 0}
+    - target: {fileID: 1543, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289586943
+      objectReference: {fileID: 0}
+    - target: {fileID: 1600, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+--- !u!224 &999900002 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1001, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+  m_PrefabInstance: {fileID: 999900001}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1045520509
 GameObject:
   m_ObjectHideFlags: 0

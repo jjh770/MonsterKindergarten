@@ -137,14 +137,17 @@ public class SlimeManager : MonoBehaviour
             }
         }
 
+        var registeredNormalCollection = new List<ESlimeGrade>(
+            GetRegisteredNormalCollection(saveData.NormalCollectionRegistered));
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
             activeSlimes,
-            GetRegisteredNormalCollection(saveData.NormalCollectionRegistered),
+            registeredNormalCollection,
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
 
-        if (saveData.WasMigrated)
+        if (saveData.WasMigrated ||
+            _status.NormalCollectionCount > registeredNormalCollection.Count)
         {
             await SaveMigratedAsync();
         }
@@ -216,28 +219,15 @@ public class SlimeManager : MonoBehaviour
     // 이동 검증과 저장을 한 경계에서 처리해 UI가 개체를 직접 변경하지 않게 한다.
     public void MoveSlime(string instanceId, ESlimeLocation location)
     {
-        _status.MoveSlime(instanceId, location);
+        ESlimeGrade? registeredGrade = _status.MoveSlime(instanceId, location);
         Save();
-    }
-
-    public bool CanRegisterNormalCollection(ESlimeGrade grade)
-    {
-        return _status != null &&
-               _status.CanRegisterNormalCollection(grade);
-    }
-
-    public bool TryRegisterNormalCollection(ESlimeGrade grade)
-    {
-        if (_status == null ||
-            !_status.TryRegisterNormalCollection(grade))
+        if (!registeredGrade.HasValue)
         {
-            return false;
+            return;
         }
 
-        Save();
-        OnNormalCollectionRegistered?.Invoke(grade);
+        OnNormalCollectionRegistered?.Invoke(registeredGrade.Value);
         OnNormalCollectionCountChanged?.Invoke(_status.NormalCollectionCount);
-        return true;
     }
 
     public bool IsNormalCollectionRegistered(ESlimeGrade grade)

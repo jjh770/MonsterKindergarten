@@ -57,6 +57,15 @@ public class SlimeStatus
             ValidateGrade(grade);
             _registeredNormalCollection.Add(grade);
         }
+
+        foreach (SlimeInstance instance in _activeSlimes)
+        {
+            if (instance.Location == ESlimeLocation.DisplayRoom &&
+                !instance.IsSpecial)
+            {
+                _registeredNormalCollection.Add(instance.Grade);
+            }
+        }
     }
 
     public void UpdateStageProgress(
@@ -104,7 +113,7 @@ public class SlimeStatus
         _activeSlimes.Add(instance);
     }
 
-    public void MoveSlime(string instanceId, ESlimeLocation location)
+    public ESlimeGrade? MoveSlime(string instanceId, ESlimeLocation location)
     {
         if (string.IsNullOrWhiteSpace(instanceId))
         {
@@ -140,28 +149,20 @@ public class SlimeStatus
         }
 
         instance.MoveTo(location);
+        if (location == ESlimeLocation.DisplayRoom &&
+            !instance.IsSpecial &&
+            _registeredNormalCollection.Add(instance.Grade))
+        {
+            return instance.Grade;
+        }
+
+        return null;
     }
 
     public bool IsNormalCollectionRegistered(ESlimeGrade grade)
     {
         ValidateGrade(grade);
         return _registeredNormalCollection.Contains(grade);
-    }
-
-    public bool CanRegisterNormalCollection(ESlimeGrade grade)
-    {
-        ValidateGrade(grade);
-        return !_registeredNormalCollection.Contains(grade) &&
-               _activeSlimes.Exists(instance =>
-                   instance.Location == ESlimeLocation.DisplayRoom &&
-                   instance.Grade == grade &&
-                   !instance.IsSpecial);
-    }
-
-    public bool TryRegisterNormalCollection(ESlimeGrade grade)
-    {
-        return CanRegisterNormalCollection(grade) &&
-               _registeredNormalCollection.Add(grade);
     }
 
     public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)
