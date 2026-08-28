@@ -31,10 +31,13 @@ public class AutoClicker : MonoBehaviour
             float interval = target.AutoClickInterval;
             if (interval <= 0f) continue;
 
-            // 타이머 초기화
+            // 같은 등급이 한꺼번에 복원되거나 스폰되면 전부 같은 순간에 터진다.
+            // 첫 등록에만 위상을 흩고 주기 자체는 건드리지 않는다.
+            // 오프라인 보상이 AutoClickInterval을 평균 주기로 나눠 쓰므로
+            // 평균이 달라지는 변경은 그 계산과 어긋난다.
             if (!_timers.ContainsKey(target))
             {
-                _timers[target] = 0f;
+                _timers[target] = Random.Range(0f, interval);
             }
 
             _timers[target] += Time.deltaTime;

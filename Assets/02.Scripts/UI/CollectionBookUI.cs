@@ -1,6 +1,9 @@
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using DG.Tweening;
 using TMPro;
+using Utility;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -36,6 +39,9 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _detailNumberText;
     [SerializeField] private TextMeshProUGUI _detailNameText;
     [SerializeField] private TextMeshProUGUI _detailDescriptionText;
+    [SerializeField] private CollectionPreviewStage _previewStage;
+    // 선택이 없을 때 상세와 미리보기에 함께 쓰는 기본 그림.
+    [SerializeField] private Sprite _unlockSlimeSprite;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -118,6 +124,8 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailNumberText != null &&
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
+                             _previewStage != null &&
+                             _unlockSlimeSprite != null &&
                              GameManager.Instance != null &&
                              StageManager.Instance != null;
         if (!hasReferences)
@@ -146,20 +154,8 @@ public sealed class CollectionBookUI : MonoBehaviour
                 _entriesRoot);
             entry.gameObject.name = $"CollectionEntry{i + 1}";
             entry.gameObject.SetActive(true);
-            PositionEntry(entry.RectTransform, i);
             _entries.Add(entry);
         }
-    }
-
-    private static void PositionEntry(RectTransform entry, int index)
-    {
-        entry.anchorMin = new Vector2(0.5f, 0.5f);
-        entry.anchorMax = new Vector2(0.5f, 0.5f);
-        entry.pivot = new Vector2(0.5f, 0.5f);
-        entry.sizeDelta = new Vector2(420f, 300f);
-        entry.anchoredPosition = new Vector2(
-            index == 0 ? -220f : 220f,
-            0f);
     }
 
     private void Open()
@@ -207,6 +203,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         RestoreUpgradeToggle();
         _hudVisibility.Release(this);
         _toast.Hide();
+        // 도감이 닫히면 미리보기 카메라를 끈다.
+        _previewStage.SetVisible(false);
 
         _fadeTween?.Kill();
         _fadeTween = _bookCanvasGroup
@@ -314,18 +312,64 @@ public sealed class CollectionBookUI : MonoBehaviour
             ? specData?.Name ?? string.Empty
             : "??? 슬라임";
         _detailDescriptionText.text = isRegistered
-            ? specData?.Description ?? string.Empty
+            ? BuildRegisteredDetail(grade, specData)
             : "장식장에 데려오면 도감에 자동 등록돼요.";
+        _previewStage.SetVisible(true);
+        _previewStage.Show(specData, isRegistered);
+    }
+
+    private static string BuildRegisteredDetail(
+        ESlimeGrade grade,
+        SlimeSpecData specData)
+    {
+        double manualPoint = PointCalculator.Calculate(
+            specData?.Point ?? 0,
+            grade,
+            EClickType.Manual);
+        double autoPoint = PointCalculator.Calculate(
+            specData?.Point ?? 0,
+            grade,
+            EClickType.Auto);
+        float autoInterval = specData?.AutoClickInterval ?? 0f;
+        NormalSlimeCollectionStatsSnapshot stats =
+            SlimeManager.Instance.GetNormalCollectionStats(grade);
+
+        return $"{specData?.Description ?? string.Empty}\n\n" +
+               "현재 능력\n" +
+               $"터치 포인트 {manualPoint.ToFormattedString()}\n" +
+               $"자동 포인트 {autoPoint.ToFormattedString()} | " +
+               $"{autoInterval:0.#}초\n\n" +
+               "나의 기록\n" +
+               $"최초 등록 {FormatRegisteredAt(stats.FirstRegisteredAt)}\n" +
+               $"자연 출현 {stats.NaturalSpawnCount:N0} | " +
+               $"합성 탄생 {stats.MergeCreatedCount:N0}\n" +
+               $"유효 터치 {stats.ManualTouchCount:N0} | " +
+               $"누적 생산 {stats.ProducedPointTotal.ToFormattedString()}";
+    }
+
+    private static string FormatRegisteredAt(string registeredAt)
+    {
+        if (!DateTime.TryParse(
+                registeredAt,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out DateTime parsed))
+        {
+            return "기록 이전";
+        }
+
+        return parsed.ToLocalTime().ToString("yyyy.MM.dd");
     }
 
     private void ClearDetail()
     {
         _selectedGrade = null;
-        _detailIcon.sprite = null;
-        _detailIcon.color = Color.clear;
-        _detailNumberText.text = string.Empty;
+        _detailIcon.sprite = _unlockSlimeSprite;
+        _detailIcon.color = Color.white;
+        _detailNumberText.text = "No.???";
         _detailNameText.text = "슬라임 정보";
         _detailDescriptionText.text = "위 슬라임을 선택해 주세요.";
+        _previewStage.ShowPlaceholder(_unlockSlimeSprite);
     }
 
     private void ShowPreviousPage()

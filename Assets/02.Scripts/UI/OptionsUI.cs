@@ -29,7 +29,6 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _cancelLabel;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private GameExitManager _gameExitManager;
-    [SerializeField] private Vector2 _buttonMargin = new(35f, 35f);
     [SerializeField, Min(0f)] private float _fadeDuration = 0.15f;
 
     private bool _isOpen;
@@ -64,7 +63,6 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         if (GameManager.Instance != null)
             GameManager.Instance.OnGameplayActivated += RefreshAvailability;
         RefreshAvailability();
-        RefreshLayout();
     }
 
     private void OnDestroy()
@@ -81,20 +79,6 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             GameManager.Instance.OnGameplayActivated -= RefreshAvailability;
         if (_clicker != null) _clicker.ReleaseMode(this);
         if (_gameExitManager != null) _gameExitManager.UnregisterBackHandler(this);
-    }
-
-    private void OnRectTransformDimensionsChange() => RefreshLayout();
-    private void OnApplicationFocus(bool focused)
-    {
-        if (focused) RefreshLayout();
-    }
-
-    private void RefreshLayout()
-    {
-        if (_canvas == null || _openButton == null) return;
-        SafeAreaInsets insets = SafeAreaUtility.GetInsets(_canvas.transform as RectTransform);
-        if (_openButton.transform is RectTransform rect)
-            rect.anchoredPosition = new Vector2(-insets.Right - _buttonMargin.x, -insets.Top - _buttonMargin.y);
     }
 
     private void RefreshAvailability()
