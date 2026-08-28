@@ -52,7 +52,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                     SaveSchema.SlimeCurrentVersion);
             }
 
-            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            if (schemaVersion < SaveSchema.SlimeInstanceVersion)
             {
                 LegacySlimeStatusSaveData legacyData =
                     snapshot.ConvertTo<LegacySlimeStatusSaveData>();
@@ -62,7 +62,15 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
             SlimeStatusSaveData data = snapshot.ConvertTo<SlimeStatusSaveData>();
             if (data != null)
             {
+                if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+                {
+                    data = SlimeStatusSaveMigration.UpgradeInstanceData(data);
+                }
+
                 data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+                data.NormalCollectionRegistered =
+                    SlimeStatusSaveData.NormalizeNormalCollection(
+                        data.NormalCollectionRegistered);
                 return data;
             }
             return SlimeStatusSaveData.Default;

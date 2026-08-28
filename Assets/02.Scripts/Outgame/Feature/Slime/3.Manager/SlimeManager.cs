@@ -32,6 +32,7 @@ public class SlimeManager : MonoBehaviour
         _status != null &&
         _status.HighestGrade >=
         _spawnWeightTable.GetRequiredHighestGradeForTier(0);
+    public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
 
     // 자연 스폰 상한은 최고 해금 등급으로 결정되므로 슬라임 도메인이 판정한다.
     public bool IsHigherGradeSpawnTierLocked(int currentUpgradeLevel)
@@ -60,6 +61,8 @@ public class SlimeManager : MonoBehaviour
 
     public static event Action OnDataInitialized;
     public static event Action<ESlimeGrade> OnHighestGradeChanged;
+    public static event Action<ESlimeGrade> OnNormalCollectionRegistered;
+    public static event Action<int> OnNormalCollectionCountChanged;
 
     private void Awake()
     {
@@ -137,6 +140,7 @@ public class SlimeManager : MonoBehaviour
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
             activeSlimes,
+            GetRegisteredNormalCollection(saveData.NormalCollectionRegistered),
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
 
@@ -216,6 +220,32 @@ public class SlimeManager : MonoBehaviour
         Save();
     }
 
+    public bool CanRegisterNormalCollection(ESlimeGrade grade)
+    {
+        return _status != null &&
+               _status.CanRegisterNormalCollection(grade);
+    }
+
+    public bool TryRegisterNormalCollection(ESlimeGrade grade)
+    {
+        if (_status == null ||
+            !_status.TryRegisterNormalCollection(grade))
+        {
+            return false;
+        }
+
+        Save();
+        OnNormalCollectionRegistered?.Invoke(grade);
+        OnNormalCollectionCountChanged?.Invoke(_status.NormalCollectionCount);
+        return true;
+    }
+
+    public bool IsNormalCollectionRegistered(ESlimeGrade grade)
+    {
+        return _status != null &&
+               _status.IsNormalCollectionRegistered(grade);
+    }
+
     public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)
     {
         return _status != null &&
@@ -262,6 +292,7 @@ public class SlimeManager : MonoBehaviour
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
+            NormalCollectionRegistered = BuildNormalCollectionSaveData(),
         };
 
         foreach (SlimeInstance instance in _status.ActiveSlimes)
@@ -271,5 +302,40 @@ public class SlimeManager : MonoBehaviour
         }
 
         return saveData;
+    }
+
+    private static IEnumerable<ESlimeGrade> GetRegisteredNormalCollection(
+        IReadOnlyList<bool> registered)
+    {
+        if (registered == null)
+        {
+            yield break;
+        }
+
+        int count = Math.Min(
+            registered.Count,
+            SlimeStatusSaveData.NormalCollectionSize);
+        for (int i = 0; i < count; i++)
+        {
+            if (registered[i])
+            {
+                yield return (ESlimeGrade)(
+                    (int)ESlimeGrade.Grade1 + i);
+            }
+        }
+    }
+
+    private List<bool> BuildNormalCollectionSaveData()
+    {
+        List<bool> registered =
+            SlimeStatusSaveData.CreateEmptyNormalCollection();
+        for (int i = 0; i < registered.Count; i++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)(
+                (int)ESlimeGrade.Grade1 + i);
+            registered[i] = _status.IsNormalCollectionRegistered(grade);
+        }
+
+        return registered;
     }
 }

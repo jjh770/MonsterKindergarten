@@ -7,13 +7,16 @@ public class SlimeStatus
     public ESlimeGrade HighestGrade { get; private set; }
 
     private readonly List<SlimeInstance> _activeSlimes = new();
+    private readonly HashSet<ESlimeGrade> _registeredNormalCollection = new();
     public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
+    public int NormalCollectionCount => _registeredNormalCollection.Count;
     public EGameStage CurrentStage { get; private set; }
     public bool SkyIntroCompleted { get; private set; }
 
     public SlimeStatus(
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
+        IEnumerable<ESlimeGrade> registeredNormalCollection,
         EGameStage currentStage,
         bool skyIntroCompleted)
     {
@@ -42,6 +45,17 @@ public class SlimeStatus
             }
 
             _activeSlimes.Add(instance);
+        }
+
+        if (registeredNormalCollection == null)
+        {
+            throw new ArgumentNullException(nameof(registeredNormalCollection));
+        }
+
+        foreach (ESlimeGrade grade in registeredNormalCollection)
+        {
+            ValidateGrade(grade);
+            _registeredNormalCollection.Add(grade);
         }
     }
 
@@ -126,6 +140,28 @@ public class SlimeStatus
         }
 
         instance.MoveTo(location);
+    }
+
+    public bool IsNormalCollectionRegistered(ESlimeGrade grade)
+    {
+        ValidateGrade(grade);
+        return _registeredNormalCollection.Contains(grade);
+    }
+
+    public bool CanRegisterNormalCollection(ESlimeGrade grade)
+    {
+        ValidateGrade(grade);
+        return !_registeredNormalCollection.Contains(grade) &&
+               _activeSlimes.Exists(instance =>
+                   instance.Location == ESlimeLocation.DisplayRoom &&
+                   instance.Grade == grade &&
+                   !instance.IsSpecial);
+    }
+
+    public bool TryRegisterNormalCollection(ESlimeGrade grade)
+    {
+        return CanRegisterNormalCollection(grade) &&
+               _registeredNormalCollection.Add(grade);
     }
 
     public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)

@@ -61,7 +61,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             SlimeStatusSaveData saveData;
-            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            if (schemaVersion < SaveSchema.SlimeInstanceVersion)
             {
                 LegacySlimeStatusSaveData legacyData =
                     JsonConvert.DeserializeObject<LegacySlimeStatusSaveData>(json);
@@ -70,6 +70,11 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             else
             {
                 saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(json);
+                if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+                {
+                    saveData = SlimeStatusSaveMigration.UpgradeInstanceData(
+                        saveData);
+                }
             }
 
             if (saveData == null)
@@ -78,6 +83,9 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            saveData.NormalCollectionRegistered =
+                SlimeStatusSaveData.NormalizeNormalCollection(
+                    saveData.NormalCollectionRegistered);
             return UniTask.FromResult(saveData);
         }
         catch (UnsupportedSaveVersionException)

@@ -43,6 +43,9 @@ public sealed class LegacySlimeStatusSaveData : ISaveData
 [FirestoreData]
 public sealed class SlimeStatusSaveData : ISaveData
 {
+    public const int NormalCollectionSize =
+        (int)ESlimeGrade.Count - (int)ESlimeGrade.Grade1;
+
     [FirestoreProperty]
     public int SchemaVersion { get; set; }
 
@@ -59,6 +62,10 @@ public sealed class SlimeStatusSaveData : ISaveData
     public bool SkyIntroCompleted { get; set; }
 
     [FirestoreProperty]
+    public List<bool> NormalCollectionRegistered { get; set; } =
+        CreateEmptyNormalCollection();
+
+    [FirestoreProperty]
     public string LastSaveTime { get; set; }
 
     [JsonIgnore]
@@ -73,7 +80,31 @@ public sealed class SlimeStatusSaveData : ISaveData
         ActiveSlimes = new List<SlimeInstanceSaveData>(),
         CurrentStage = (int)EGameStage.Ground,
         SkyIntroCompleted = false,
+        NormalCollectionRegistered = CreateEmptyNormalCollection(),
     };
+
+    public static List<bool> CreateEmptyNormalCollection()
+    {
+        return new List<bool>(new bool[NormalCollectionSize]);
+    }
+
+    public static List<bool> NormalizeNormalCollection(
+        IReadOnlyList<bool> registered)
+    {
+        List<bool> normalized = CreateEmptyNormalCollection();
+        if (registered == null)
+        {
+            return normalized;
+        }
+
+        int copyCount = Math.Min(registered.Count, normalized.Count);
+        for (int i = 0; i < copyCount; i++)
+        {
+            normalized[i] = registered[i];
+        }
+
+        return normalized;
+    }
 }
 
 public static class SlimeStatusSaveMigration
@@ -126,8 +157,27 @@ public static class SlimeStatusSaveMigration
             ActiveSlimes = activeSlimes,
             CurrentStage = legacyData.CurrentStage,
             SkyIntroCompleted = legacyData.SkyIntroCompleted,
+            NormalCollectionRegistered =
+                SlimeStatusSaveData.CreateEmptyNormalCollection(),
             LastSaveTime = legacyData.LastSaveTime,
             WasMigrated = true,
         };
+    }
+
+    public static SlimeStatusSaveData UpgradeInstanceData(
+        SlimeStatusSaveData saveData)
+    {
+        if (saveData == null)
+        {
+            return SlimeStatusSaveData.Default;
+        }
+
+        saveData.SchemaVersion = SaveSchema.SlimeCurrentVersion;
+        saveData.ActiveSlimes ??= new List<SlimeInstanceSaveData>();
+        saveData.NormalCollectionRegistered =
+            SlimeStatusSaveData.NormalizeNormalCollection(
+                saveData.NormalCollectionRegistered);
+        saveData.WasMigrated = true;
+        return saveData;
     }
 }

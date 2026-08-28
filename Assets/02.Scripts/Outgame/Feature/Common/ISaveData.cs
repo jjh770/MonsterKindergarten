@@ -12,6 +12,8 @@ public static class SaveSchema
     public const int LegacyVersion = 0;
     public const int CurrencyCurrentVersion = 1;
     // v2: ActiveSlimes를 등급별 개수에서 SlimeInstance 목록으로 전환했다.
-    public const int SlimeCurrentVersion = 2;
+    public const int SlimeInstanceVersion = 2;
+    // v3: 일반 슬라임 도감 등록 상태를 추가했다.
+    public const int SlimeCurrentVersion = 3;
     public const int UpgradeCurrentVersion = 1;
 }
