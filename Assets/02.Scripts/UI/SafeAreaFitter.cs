@@ -16,6 +16,7 @@ public sealed class SafeAreaFitter : MonoBehaviour
 
     private RectTransform _rectTransform;
     private bool _isInitialized;
+    private bool _isApplying;
 
     private void Awake()
     {
@@ -64,9 +65,24 @@ public sealed class SafeAreaFitter : MonoBehaviour
 
     private void Apply()
     {
+        if (_isApplying) return;
+
         SafeAreaInsets insets = SafeAreaUtility.GetInsets(_referenceRect);
-        _rectTransform.offsetMin = new Vector2(insets.Left, insets.Bottom);
-        _rectTransform.offsetMax = new Vector2(-insets.Right, -insets.Top);
+        Vector2 offsetMin = new Vector2(insets.Left, insets.Bottom);
+        Vector2 offsetMax = new Vector2(-insets.Right, -insets.Top);
+
+        if (_rectTransform.offsetMin == offsetMin && _rectTransform.offsetMax == offsetMax) return;
+
+        _isApplying = true;
+        try
+        {
+            _rectTransform.offsetMin = offsetMin;
+            _rectTransform.offsetMax = offsetMax;
+        }
+        finally
+        {
+            _isApplying = false;
+        }
     }
 
 }
