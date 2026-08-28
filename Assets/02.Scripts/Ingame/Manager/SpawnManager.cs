@@ -200,7 +200,13 @@ public class SpawnManager : MonoBehaviour
         if (_timer >= _spawnInterval)
         {
             _timer = 0f;
-            Spawn(PickSpawnGrade());
+            ESlimeGrade grade = PickSpawnGrade();
+            SlimeController spawned = Spawn(grade);
+            if (spawned != null)
+            {
+                SlimeManager.Instance.RecordNaturalSpawn(grade);
+            }
+
             OnSpawned?.Invoke();
         }
     }

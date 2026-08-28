@@ -9,10 +9,14 @@ public class SlimeManager : MonoBehaviour
 
     [SerializeField] private SlimeSpecTable _specTable;
     [SerializeField] private SpawnWeightTable _spawnWeightTable;
+    [SerializeField, Min(1f)] private float _statsSaveIntervalSeconds = 30f;
     private List<Slime> _slimes = new();
 
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
+    private NormalSlimeCollectionStats _collectionStats;
+    private bool _statsDirty;
+    private float _statsSaveTimer;
     public SlimeStatus Status => _status;
     // 호출부가 SlimeStatus 내부 구조를 거치지 않도록 최고 등급은 매니저가 직접 노출한다.
     public ESlimeGrade HighestGrade => _status.HighestGrade;
@@ -85,6 +89,38 @@ public class SlimeManager : MonoBehaviour
         _ = InitAsync();
     }
 
+    private void Update()
+    {
+        if (!_statsDirty ||
+            _statusRepository == null ||
+            !GameplaySaveGate.IsSavingEnabled)
+        {
+            return;
+        }
+
+        _statsSaveTimer += Time.unscaledDeltaTime;
+        if (_statsSaveTimer >= _statsSaveIntervalSeconds)
+        {
+            Save();
+        }
+    }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus && _statsDirty)
+        {
+            Save();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (_statsDirty)
+        {
+            Save();
+        }
+    }
+
     private async UniTaskVoid InitAsync()
     {
         await UniTask.Yield();
@@ -139,6 +175,9 @@ public class SlimeManager : MonoBehaviour
 
         var registeredNormalCollection = new List<ESlimeGrade>(
             GetRegisteredNormalCollection(saveData.NormalCollectionRegistered));
+        var registeredBeforeRestore = new HashSet<ESlimeGrade>(
+            registeredNormalCollection);
+        _collectionStats = new NormalSlimeCollectionStats(saveData);
         _status = new SlimeStatus(
             saveData.GetHighestGrade(),
             activeSlimes,
@@ -146,8 +185,24 @@ public class SlimeManager : MonoBehaviour
             (EGameStage)saveData.CurrentStage,
             saveData.SkyIntroCompleted);
 
+        bool restoredRegistrationStats = false;
+        DateTime restoredAt = DateTime.UtcNow;
+        for (int gradeValue = (int)ESlimeGrade.Grade1;
+             gradeValue < (int)ESlimeGrade.Count;
+             gradeValue++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)gradeValue;
+            if (_status.IsNormalCollectionRegistered(grade) &&
+                !registeredBeforeRestore.Contains(grade))
+            {
+                restoredRegistrationStats |=
+                    _collectionStats.RecordRegistration(grade, restoredAt);
+            }
+        }
+
         if (saveData.WasMigrated ||
-            _status.NormalCollectionCount > registeredNormalCollection.Count)
+            _status.NormalCollectionCount > registeredNormalCollection.Count ||
+            restoredRegistrationStats)
         {
             await SaveMigratedAsync();
         }
@@ -220,6 +275,14 @@ public class SlimeManager : MonoBehaviour
     public void MoveSlime(string instanceId, ESlimeLocation location)
     {
         ESlimeGrade? registeredGrade = _status.MoveSlime(instanceId, location);
+        if (registeredGrade.HasValue)
+        {
+            _collectionStats.RecordRegistration(
+                registeredGrade.Value,
+                DateTime.UtcNow);
+            MarkStatsDirty();
+        }
+
         Save();
         if (!registeredGrade.HasValue)
         {
@@ -236,6 +299,33 @@ public class SlimeManager : MonoBehaviour
                _status.IsNormalCollectionRegistered(grade);
     }
 
+    public NormalSlimeCollectionStatsSnapshot GetNormalCollectionStats(
+        ESlimeGrade grade)
+    {
+        return _collectionStats != null
+            ? _collectionStats.Get(grade)
+            : default;
+    }
+
+    public void RecordNaturalSpawn(ESlimeGrade grade)
+    {
+        if (_collectionStats == null) return;
+
+        _collectionStats.RecordNaturalSpawn(grade);
+        MarkStatsDirty();
+    }
+
+    public void RecordProduction(
+        ESlimeGrade grade,
+        EClickType clickType,
+        double point)
+    {
+        if (_collectionStats == null) return;
+
+        _collectionStats.RecordProduction(grade, clickType, point);
+        MarkStatsDirty();
+    }
+
     public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)
     {
         return _status != null &&
@@ -249,6 +339,8 @@ public class SlimeManager : MonoBehaviour
         ESlimeGrade toGrade)
     {
         _status.MergeSlimes(keeperId, removedId, toGrade);
+        _collectionStats?.RecordMergeCreated(toGrade);
+        MarkStatsDirty();
         Save();
     }
 
@@ -264,6 +356,8 @@ public class SlimeManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
+        _statsDirty = false;
+        _statsSaveTimer = 0f;
         return _statusRepository.Save(BuildSaveData());
     }
 
@@ -283,6 +377,11 @@ public class SlimeManager : MonoBehaviour
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
             NormalCollectionRegistered = BuildNormalCollectionSaveData(),
+            NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
+            NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),
+            NormalMergeCreatedCounts = _collectionStats.BuildMergeCreatedCounts(),
+            NormalManualTouchCounts = _collectionStats.BuildManualTouchCounts(),
+            NormalProducedPointTotals = _collectionStats.BuildProducedPointTotals(),
         };
 
         foreach (SlimeInstance instance in _status.ActiveSlimes)
@@ -327,5 +426,10 @@ public class SlimeManager : MonoBehaviour
         }
 
         return registered;
+    }
+
+    private void MarkStatsDirty()
+    {
+        _statsDirty = true;
     }
 }

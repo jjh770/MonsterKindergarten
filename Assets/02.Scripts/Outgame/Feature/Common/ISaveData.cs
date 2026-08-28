@@ -14,6 +14,7 @@ public static class SaveSchema
     // v2: ActiveSlimes를 등급별 개수에서 SlimeInstance 목록으로 전환했다.
     public const int SlimeInstanceVersion = 2;
     // v3: 일반 슬라임 도감 등록 상태를 추가했다.
-    public const int SlimeCurrentVersion = 3;
+    // v4: 도감에 표시할 등급별 누적 통계를 추가했다.
+    public const int SlimeCurrentVersion = 4;
     public const int UpgradeCurrentVersion = 1;
 }

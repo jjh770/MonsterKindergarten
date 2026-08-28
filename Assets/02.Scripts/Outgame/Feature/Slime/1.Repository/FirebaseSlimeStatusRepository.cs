@@ -71,6 +71,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                 data.NormalCollectionRegistered =
                     SlimeStatusSaveData.NormalizeNormalCollection(
                         data.NormalCollectionRegistered);
+                SlimeStatusSaveData.NormalizeCollectionStats(data);
                 return data;
             }
             return SlimeStatusSaveData.Default;

@@ -66,6 +66,26 @@ public sealed class SlimeStatusSaveData : ISaveData
         CreateEmptyNormalCollection();
 
     [FirestoreProperty]
+    public List<string> NormalFirstRegisteredAt { get; set; } =
+        CreateEmptyStringStats();
+
+    [FirestoreProperty]
+    public List<long> NormalNaturalSpawnCounts { get; set; } =
+        CreateEmptyLongStats();
+
+    [FirestoreProperty]
+    public List<long> NormalMergeCreatedCounts { get; set; } =
+        CreateEmptyLongStats();
+
+    [FirestoreProperty]
+    public List<long> NormalManualTouchCounts { get; set; } =
+        CreateEmptyLongStats();
+
+    [FirestoreProperty]
+    public List<double> NormalProducedPointTotals { get; set; } =
+        CreateEmptyDoubleStats();
+
+    [FirestoreProperty]
     public string LastSaveTime { get; set; }
 
     [JsonIgnore]
@@ -81,6 +101,11 @@ public sealed class SlimeStatusSaveData : ISaveData
         CurrentStage = (int)EGameStage.Ground,
         SkyIntroCompleted = false,
         NormalCollectionRegistered = CreateEmptyNormalCollection(),
+        NormalFirstRegisteredAt = CreateEmptyStringStats(),
+        NormalNaturalSpawnCounts = CreateEmptyLongStats(),
+        NormalMergeCreatedCounts = CreateEmptyLongStats(),
+        NormalManualTouchCounts = CreateEmptyLongStats(),
+        NormalProducedPointTotals = CreateEmptyDoubleStats(),
     };
 
     public static List<bool> CreateEmptyNormalCollection()
@@ -104,6 +129,81 @@ public sealed class SlimeStatusSaveData : ISaveData
         }
 
         return normalized;
+    }
+
+    public static List<string> CreateEmptyStringStats() =>
+        new(new string[NormalCollectionSize]);
+
+    public static List<long> CreateEmptyLongStats() =>
+        new(new long[NormalCollectionSize]);
+
+    public static List<double> CreateEmptyDoubleStats() =>
+        new(new double[NormalCollectionSize]);
+
+    public static List<string> NormalizeStringStats(IReadOnlyList<string> values)
+    {
+        List<string> normalized = CreateEmptyStringStats();
+        if (values == null) return normalized;
+
+        int copyCount = Math.Min(values.Count, normalized.Count);
+        for (int i = 0; i < copyCount; i++)
+        {
+            normalized[i] = values[i] ?? string.Empty;
+        }
+
+        return normalized;
+    }
+
+    public static List<long> NormalizeLongStats(IReadOnlyList<long> values)
+    {
+        List<long> normalized = CreateEmptyLongStats();
+        if (values == null) return normalized;
+
+        int copyCount = Math.Min(values.Count, normalized.Count);
+        for (int i = 0; i < copyCount; i++)
+        {
+            normalized[i] = Math.Max(0L, values[i]);
+        }
+
+        return normalized;
+    }
+
+    public static List<double> NormalizeDoubleStats(IReadOnlyList<double> values)
+    {
+        List<double> normalized = CreateEmptyDoubleStats();
+        if (values == null) return normalized;
+
+        int copyCount = Math.Min(values.Count, normalized.Count);
+        for (int i = 0; i < copyCount; i++)
+        {
+            double value = values[i];
+            if (value < 0d || double.IsNaN(value))
+            {
+                continue;
+            }
+
+            normalized[i] = double.IsPositiveInfinity(value)
+                ? double.MaxValue
+                : value;
+        }
+
+        return normalized;
+    }
+
+    public static void NormalizeCollectionStats(SlimeStatusSaveData saveData)
+    {
+        if (saveData == null) return;
+
+        saveData.NormalFirstRegisteredAt = NormalizeStringStats(
+            saveData.NormalFirstRegisteredAt);
+        saveData.NormalNaturalSpawnCounts = NormalizeLongStats(
+            saveData.NormalNaturalSpawnCounts);
+        saveData.NormalMergeCreatedCounts = NormalizeLongStats(
+            saveData.NormalMergeCreatedCounts);
+        saveData.NormalManualTouchCounts = NormalizeLongStats(
+            saveData.NormalManualTouchCounts);
+        saveData.NormalProducedPointTotals = NormalizeDoubleStats(
+            saveData.NormalProducedPointTotals);
     }
 }
 
@@ -159,6 +259,11 @@ public static class SlimeStatusSaveMigration
             SkyIntroCompleted = legacyData.SkyIntroCompleted,
             NormalCollectionRegistered =
                 SlimeStatusSaveData.CreateEmptyNormalCollection(),
+            NormalFirstRegisteredAt = SlimeStatusSaveData.CreateEmptyStringStats(),
+            NormalNaturalSpawnCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
+            NormalMergeCreatedCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
+            NormalManualTouchCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
+            NormalProducedPointTotals = SlimeStatusSaveData.CreateEmptyDoubleStats(),
             LastSaveTime = legacyData.LastSaveTime,
             WasMigrated = true,
         };
@@ -177,6 +282,7 @@ public static class SlimeStatusSaveMigration
         saveData.NormalCollectionRegistered =
             SlimeStatusSaveData.NormalizeNormalCollection(
                 saveData.NormalCollectionRegistered);
+        SlimeStatusSaveData.NormalizeCollectionStats(saveData);
         saveData.WasMigrated = true;
         return saveData;
     }

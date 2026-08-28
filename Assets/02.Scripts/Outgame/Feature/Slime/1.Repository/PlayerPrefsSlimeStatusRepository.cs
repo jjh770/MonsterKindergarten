@@ -86,6 +86,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             saveData.NormalCollectionRegistered =
                 SlimeStatusSaveData.NormalizeNormalCollection(
                     saveData.NormalCollectionRegistered);
+            SlimeStatusSaveData.NormalizeCollectionStats(saveData);
             return UniTask.FromResult(saveData);
         }
         catch (UnsupportedSaveVersionException)
