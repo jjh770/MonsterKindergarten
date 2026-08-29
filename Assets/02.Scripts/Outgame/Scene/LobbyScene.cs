@@ -38,6 +38,31 @@ public class LobbyScene : MonoBehaviour
         AccountResult result = await AccountManager.Instance.TryLogin(useManualSignIn);
         if (result.Success)
         {
+            if (GameAccountDeletionService.HasPendingDeletion(result.UserId))
+            {
+                _loginButtonText.text = "계정 삭제 마무리 중...";
+                try
+                {
+                    await GameAccountDeletionService.DeleteAsync(result.UserId);
+                    GameplaySaveGate.EndReset();
+                    _isLoggingIn = false;
+                    _loginButton.interactable = true;
+                    _loginButtonText.text = "Google Play 로그인";
+                    _popupText = "게임 계정을 삭제했습니다.";
+                    ShowLobbyPopup();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"게임 계정 삭제를 완료하지 못했습니다: {e.Message}");
+                    _isLoggingIn = false;
+                    _loginButton.interactable = true;
+                    _loginButtonText.text = "계정 삭제 다시 시도";
+                    _popupText = "계정 삭제를 완료하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+                    ShowLobbyPopup();
+                }
+                return;
+            }
+
             if (GameDataResetService.HasPendingReset(result.UserId))
             {
                 _loginButtonText.text = "초기화 마무리 중...";

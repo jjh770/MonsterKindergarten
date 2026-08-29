@@ -57,4 +57,13 @@ public class AccountManager : MonoBehaviour
         _repository.Logout();
         UserId = null;
     }
+
+    public async UniTask DeleteAccount()
+    {
+        if (string.IsNullOrWhiteSpace(UserId))
+            throw new System.InvalidOperationException("로그인한 계정을 확인할 수 없습니다.");
+
+        await _repository.DeleteAccount();
+        UserId = null;
+    }
 }

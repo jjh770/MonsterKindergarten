@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>몬스터 유치원 계정 및 데이터 삭제 안내</title>
+
+    <style>
+        body {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            font-family: Arial, sans-serif;
+            line-height: 1.7;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            margin-top: 32px;
+        }
+
+        .notice {
+            padding: 16px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>몬스터 유치원 계정 및 데이터 삭제 안내</h1>
+
+    <p>최종 수정일: 2026년 8월 29일</p>
+
+    <p>
+        개발자 정종혁은 '몬스터 유치원' 사용자가
+        자신의 계정 및 관련 데이터를 직접 삭제할 수 있는 기능을 제공합니다.
+    </p>
+
+
+    <h2>1. 게임 내에서 계정 삭제하기</h2>
+
+    <p>
+        몬스터 유치원에 로그인한 상태에서 게임 내 설정 화면을 통해
+        계정 삭제를 진행할 수 있습니다.
+    </p>
+
+    <div class="notice">
+        <strong>계정 삭제 방법</strong><br><br>
+
+        1. 몬스터 유치원을 실행하고 Google Play Games 계정으로 로그인합니다.<br>
+        2. 게임 내 설정 메뉴를 엽니다.<br>
+        3. '계정 삭제' 기능을 선택합니다.<br>
+        4. 삭제 안내를 확인한 후 계정 삭제를 진행합니다.
+    </div>
+
+    <p>
+        계정 삭제가 완료되면 해당 계정에 연결된 게임 진행 데이터와
+        Firebase Authentication 사용자 계정이 삭제됩니다.
+    </p>
+
+
+    <h2>2. 게임에 접속할 수 없는 경우</h2>
+
+    <p>
+        앱에 로그인할 수 없거나 게임 내 계정 삭제 기능을 사용할 수 없는 경우,
+        아래 이메일을 통해 계정 및 데이터 삭제를 요청할 수 있습니다.
+    </p>
+
+    <div class="notice">
+        <strong>삭제 요청 이메일</strong><br>
+        <a href="mailto:whdgur1068@gmail.com">
+            whdgur1068@gmail.com
+        </a>
+    </div>
+
+    <p>
+        이메일 제목은 다음과 같이 작성해 주세요.
+    </p>
+
+    <p>
+        <strong>[몬스터 유치원 계정 삭제 요청]</strong>
+    </p>
+
+    <p>
+        가능한 경우 몬스터 유치원에서 사용한
+        Google Play Games 계정의 이메일 주소를 함께 알려 주세요.
+    </p>
+
+    <p>
+        계정 소유 여부를 확인하기 위해 필요한 범위 내에서
+        추가 정보를 요청할 수 있습니다.
+    </p>
+
+
+    <h2>3. 계정 삭제 시 삭제되는 데이터</h2>
+
+    <p>
+        계정 삭제가 완료되면 개발자가 관리하는 다음 데이터가 삭제됩니다.
+    </p>
+
+    <ul>
+        <li>Firebase Authentication 사용자 계정</li>
+        <li>Firebase 사용자 식별자(UID)와 연결된 게임 진행 데이터</li>
+        <li>보유 재화 정보</li>
+        <li>슬라임 및 스테이지 진행 정보</li>
+        <li>도감 및 플레이 기록</li>
+        <li>업그레이드 정보</li>
+        <li>기타 해당 계정에 연결된 게임 진행 데이터</li>
+    </ul>
+
+
+    <h2>4. 기기에 저장된 데이터</h2>
+
+    <p>
+        일부 게임 설정 및 게임 데이터는 사용자의 기기에도 저장될 수 있습니다.
+    </p>
+
+    <p>
+        계정 삭제 과정에서 계정과 연결된 게임 진행 데이터가 삭제되며,
+        앱을 삭제하면 해당 기기에 남아 있는 로컬 데이터도 삭제할 수 있습니다.
+    </p>
+
+
+    <h2>5. 데이터 보관</h2>
+
+    <p>
+        계정 삭제가 정상적으로 완료되면
+        개발자가 관리하는 Firebase Authentication 사용자 계정과
+        해당 계정에 연결된 게임 진행 데이터를 별도로 보관하지 않습니다.
+    </p>
+
+    <p>
+        단, Google Play Games 또는 Firebase 등 외부 서비스가
+        자체적으로 처리하는 데이터에는 각 서비스 제공자의
+        개인정보처리방침 및 데이터 보관 정책이 적용될 수 있습니다.
+    </p>
+
+
+    <h2>6. 계정을 유지하면서 게임 데이터만 삭제하기</h2>
+
+    <p>
+        계정을 삭제하지 않고 게임 진행 데이터만 초기화하려는 경우,
+        게임 내 '게임 데이터 초기화' 기능을 이용할 수 있습니다.
+    </p>
+
+    <p>
+        이 기능을 사용할 경우 게임 진행 데이터는 초기화되지만
+        Firebase Authentication 사용자 계정은 유지됩니다.
+    </p>
+
+
+    <h2>7. 문의</h2>
+
+    <p>
+        개발자: 정종혁<br>
+        이메일:
+        <a href="mailto:whdgur1068@gmail.com">
+            whdgur1068@gmail.com
+        </a>
+    </p>
+
+
+    <hr>
+
+    <p>
+        <a href="./index.html">
+            개인정보처리방침 보기
+        </a>
+    </p>
+
+</body>
+</html>

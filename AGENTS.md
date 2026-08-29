@@ -106,10 +106,11 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 - `StageManager.PlayDisplayRoomTransfer()` starts a space transfer and `StageManager.TryRelocateSlime()` finishes it: save location, reposition, refresh presentation, and restore the pre-transfer position on failure. UI owns only the policy around it - toast text, input restore, popup closing. Do not reimplement the completion half in a caller.
 - Never place a `Button` or other `Selectable` under a `Slider`, `Scrollbar`, `ScrollRect`, or any `IDragHandler`. `Slider.OnInitializePotentialDrag` clears the drag threshold, so any finger movement starts a parent drag and cancels the child's click. The spawn gauge keeps its `Slider` on a dedicated `SpawnBar` child for this reason.
 
-**Options and progress reset**
+**Options, progress reset, and account deletion**
 
-- `OptionsUI` provides volume sliders and an explicit progress-reset confirmation, not account deletion.
+- `OptionsUI` provides volume sliders plus separate confirmations for progress reset and game-account deletion.
 - `GameDataResetService` deletes only the current UID's Currency, SlimeStatus, and Upgrade documents on Android, plus that user's local progress and tutorial flags. Editor deletes local progress only; authentication accounts and audio preferences remain.
+- `GameAccountDeletionService` runs the same data deletion first, then deletes the Firebase Auth user. It keeps a per-UID pending marker so LobbyScene can resume an interrupted deletion before GameScene entry. Never delete authentication before its Firestore documents.
 - Reset locks gameplay/saves, invalidates old debounced writes by ResetGeneration, waits for pending Firestore writes, then deletes. A local pending marker resumes interrupted resets in LobbyScene before GameScene entry.
 - A reset timeout does not cancel the server operation. Do not resume the old game while the result is uncertain. Return to login without automatic sign-in after reset.
 - Other devices' local saves are not invalidated and can restore old cloud progress later. Account-wide reset generations are not implemented.

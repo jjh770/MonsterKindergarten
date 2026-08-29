@@ -20,6 +20,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _bgmValue;
     [SerializeField] private TMP_Text _sfxValue;
     [SerializeField] private Button _resetButton;
+    [SerializeField] private Button _deleteAccountButton;
     [SerializeField] private GameObject _confirmationRoot;
     [SerializeField] private RectTransform _confirmationPanel;
     [SerializeField] private TMP_Text _confirmationMessage;
@@ -35,13 +36,22 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     private bool _isBusy;
     private bool _isClosing;
     private Tween _fadeTween;
+    private ConfirmationAction _confirmationAction;
+
+    private enum ConfirmationAction
+    {
+        None,
+        ResetProgress,
+        DeleteAccount,
+    }
 
     private void Start()
     {
         if (_canvas == null || _openButton == null || _panelRoot == null || _panel == null ||
             _panelGroup == null || _closeButton == null || _bgmSlider == null ||
             _sfxSlider == null || _bgmValue == null || _sfxValue == null ||
-            _resetButton == null || _confirmationRoot == null || _confirmationPanel == null ||
+            _resetButton == null || _deleteAccountButton == null ||
+            _confirmationRoot == null || _confirmationPanel == null ||
             _confirmationMessage == null ||
             _confirmButton == null || _cancelButton == null || _confirmLabel == null ||
             _cancelLabel == null || _clicker == null || _gameExitManager == null)
@@ -56,7 +66,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
         _resetButton.onClick.AddListener(ShowResetConfirmation);
-        _confirmButton.onClick.AddListener(ConfirmReset);
+        _deleteAccountButton.onClick.AddListener(ShowDeleteAccountConfirmation);
+        _confirmButton.onClick.AddListener(ConfirmDestructiveAction);
         _cancelButton.onClick.AddListener(CancelConfirmation);
         _bgmSlider.onValueChanged.AddListener(ChangeBgmVolume);
         _sfxSlider.onValueChanged.AddListener(ChangeSfxVolume);
@@ -71,7 +82,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
         _resetButton?.onClick.RemoveListener(ShowResetConfirmation);
-        _confirmButton?.onClick.RemoveListener(ConfirmReset);
+        _deleteAccountButton?.onClick.RemoveListener(ShowDeleteAccountConfirmation);
+        _confirmButton?.onClick.RemoveListener(ConfirmDestructiveAction);
         _cancelButton?.onClick.RemoveListener(CancelConfirmation);
         _bgmSlider?.onValueChanged.RemoveListener(ChangeBgmVolume);
         _sfxSlider?.onValueChanged.RemoveListener(ChangeSfxVolume);
@@ -163,9 +175,21 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     private void ShowResetConfirmation()
     {
         if (_isBusy) return;
+        _confirmationAction = ConfirmationAction.ResetProgress;
         _confirmationRoot.SetActive(true);
         _confirmationMessage.text = "현재 계정의 재화, 슬라임, 업그레이드와\n튜토리얼 진행도를 삭제합니다.\n\n이 기기와 클라우드의 진행도는 복구할 수 없어요.\n다른 기기의 로컬 저장은 지워지지 않으며,\n그 기기로 접속하면 이전 진행도가 복원될 수 있어요.\n\n계정과 음량 설정은 유지됩니다.";
         _confirmLabel.text = "초기화";
+        _cancelLabel.text = "취소";
+        _cancelButton.Select();
+    }
+
+    private void ShowDeleteAccountConfirmation()
+    {
+        if (_isBusy) return;
+        _confirmationAction = ConfirmationAction.DeleteAccount;
+        _confirmationRoot.SetActive(true);
+        _confirmationMessage.text = "현재 게임 계정과 이 계정의 모든 진행도를\n영구적으로 삭제합니다.\n\n재화, 슬라임, 업그레이드, 도감과\n튜토리얼 기록은 복구할 수 없어요.\nGoogle 계정과 Play 게임 프로필은 삭제되지 않습니다.";
+        _confirmLabel.text = "계정 삭제";
         _cancelLabel.text = "취소";
         _cancelButton.Select();
     }
@@ -174,17 +198,24 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     {
         if (_isBusy) return;
         if (GameplaySaveGate.IsResetting ||
-            GameDataResetService.HasPendingReset(AccountManager.Instance?.UserId))
+            GameDataResetService.HasPendingReset(AccountManager.Instance?.UserId) ||
+            GameAccountDeletionService.HasPendingDeletion(AccountManager.Instance?.UserId))
         {
             ReturnToLogin();
             return;
         }
+        _confirmationAction = ConfirmationAction.None;
         _confirmationRoot.SetActive(false);
     }
 
-    private void ConfirmReset()
+    private void ConfirmDestructiveAction()
     {
-        if (!_isBusy) ResetProgressAsync().Forget();
+        if (_isBusy) return;
+
+        if (_confirmationAction == ConfirmationAction.ResetProgress)
+            ResetProgressAsync().Forget();
+        else if (_confirmationAction == ConfirmationAction.DeleteAccount)
+            DeleteAccountAsync().Forget();
     }
 
     private async UniTask ResetProgressAsync()
@@ -216,6 +247,41 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             _confirmButton.interactable = true;
             _cancelButton.interactable = true;
             _closeButton.interactable = true;
+        }
+    }
+
+    private async UniTask DeleteAccountAsync()
+    {
+        _isBusy = true;
+        _confirmButton.interactable = false;
+        _cancelButton.interactable = false;
+        _closeButton.interactable = false;
+        _confirmationMessage.text = "계정과 데이터를 삭제하고 있어요.\n인터넷 연결을 유지해 주세요.";
+        try
+        {
+            string userId = AccountManager.Instance?.UserId;
+            await GameAccountDeletionService.DeleteAsync(userId);
+            if (this == null) return;
+            ReturnToLogin();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"게임 계정 삭제 실패: {e.Message}");
+            if (this == null) return;
+
+            bool pending = GameplaySaveGate.IsResetting ||
+                           GameDataResetService.HasPendingReset(AccountManager.Instance?.UserId) ||
+                           GameAccountDeletionService.HasPendingDeletion(AccountManager.Instance?.UserId);
+            _confirmationMessage.text = pending
+                ? "계정 삭제를 완료하지 못했어요.\n인터넷 연결을 확인해 주세요.\n\n게임으로 돌아가지 말고 로그인 화면에서\n삭제를 다시 마무리해 주세요."
+                : "계정 삭제를 시작하지 못했어요.\n인터넷 연결과 로그인 상태를 확인해 주세요.\n계정과 진행도는 삭제되지 않았어요.";
+            _confirmLabel.text = "다시 시도";
+            _cancelLabel.text = pending ? "로그인 화면" : "취소";
+
+            _isBusy = false;
+            _confirmButton.interactable = true;
+            _cancelButton.interactable = true;
+            _closeButton.interactable = !pending;
         }
     }
 

@@ -73,6 +73,15 @@ public class FirebaseAccountRepository : IAccountRepository
         _auth.SignOut();
     }
 
+    public async UniTask DeleteAccount()
+    {
+        FirebaseUser user = _auth.CurrentUser;
+        if (user == null)
+            throw new InvalidOperationException("로그인한 계정을 확인할 수 없습니다.");
+
+        await user.DeleteAsync().AsUniTask();
+    }
+
     private static UniTask<SignInStatus> AuthenticatePlayGames(
         PlayGamesPlatform playGames,
         bool useManualSignIn)
