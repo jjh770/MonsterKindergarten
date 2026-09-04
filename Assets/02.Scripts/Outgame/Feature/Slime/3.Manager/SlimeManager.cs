@@ -190,12 +190,26 @@ public class SlimeManager : MonoBehaviour
         var registeredBeforeRestore = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
         _collectionStats = new NormalSlimeCollectionStats(saveData);
-        _status = new SlimeStatus(
-            saveData.GetHighestGrade(),
-            activeSlimes,
-            registeredNormalCollection,
-            (EGameStage)saveData.CurrentStage,
-            saveData.SkyIntroCompleted);
+
+        // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
+        // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
+        // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
+        try
+        {
+            _status = new SlimeStatus(
+                saveData.GetHighestGrade(),
+                activeSlimes,
+                registeredNormalCollection,
+                (EGameStage)saveData.CurrentStage,
+                saveData.SkyIntroCompleted);
+        }
+        catch (ArgumentException e)
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"SlimeStatus : 슬라임 진행 상태를 복원할 수 없습니다. : {e.Message}");
+            return;
+        }
 
         bool restoredRegistrationStats = false;
         DateTime restoredAt = DateTime.UtcNow;

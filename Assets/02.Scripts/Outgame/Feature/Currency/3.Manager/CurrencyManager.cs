@@ -77,8 +77,21 @@ public class CurrencyManager : MonoBehaviour
         CurrencySaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : CurrencySaveData.Default;
-        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
+        // 저장은 항상 ECurrencyType.Count 길이의 배열을 쓴다. 길이가 다르거나
+        // 배열이 없는 문서는 해석할 수 없다. 그대로 두면 초기화가 중단돼
+        // 안내 없이 화면이 멈추고, 0으로 채우면 재화가 조용히 사라진다.
+        // 재화 종류를 늘릴 때는 스키마 버전을 올리고 승격 로직을 함께 넣는다.
         double[] currencyValues = saveData.Currencies;
+        if (currencyValues == null || currencyValues.Length != _currencies.Length)
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"Currency : 재화 배열을 해석할 수 없습니다. : " +
+                $"{currencyValues?.Length.ToString() ?? "없음"}");
+            return;
+        }
+
+        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         for (int i = 0; i < _currencies.Length; i++)
         {
             _currencies[i] = currencyValues[i];

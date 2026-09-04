@@ -55,10 +55,29 @@ public class UpgradeManager : MonoBehaviour
         UpgradeSaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : UpgradeSaveData.Default;
+        // 저장은 항상 목록을 쓰므로 비어 있을 수는 있어도 없을 수는 없다.
+        // 목록이나 항목이 없는 문서는 해석할 수 없다. 그대로 두면 초기화가
+        // 중단돼 안내 없이 화면이 멈춘다.
+        if (saveData.Entries == null)
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                "Upgrade : 업그레이드 목록이 없습니다.");
+            return;
+        }
+
         // Entries를 딕셔너리로 변환해서 빠르게 조회
         var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
         foreach (var entry in saveData.Entries)
         {
+            if (entry == null)
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "Upgrade : 비어 있는 업그레이드 항목이 있습니다.");
+                return;
+            }
+
             savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
         }
 
