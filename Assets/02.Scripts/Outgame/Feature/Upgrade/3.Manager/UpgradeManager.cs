@@ -42,7 +42,19 @@ public class UpgradeManager : MonoBehaviour
         _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId);
 #endif
 
-        var saveData = await _repository.Load();
+        SaveLoadResult<UpgradeSaveData> loadResult = await _repository.Load();
+        if (loadResult.IsFailed)
+        {
+            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+            SaveDataLoadGuard.Report(
+                loadResult.Failure,
+                $"Upgrade : {loadResult.FailureMessage}");
+            return;
+        }
+
+        UpgradeSaveData saveData = loadResult.IsLoaded
+            ? loadResult.Data
+            : UpgradeSaveData.Default;
         // Entries를 딕셔너리로 변환해서 빠르게 조회
         var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
         foreach (var entry in saveData.Entries)

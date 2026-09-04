@@ -7,6 +7,11 @@ using UnityEngine.UI;
 public class LobbyScene : MonoBehaviour
 {
     public static bool SkipNextAutomaticLogin { get; set; }
+
+    // 게임 씬에서 저장 데이터를 읽지 못해 돌아왔을 때 안내할 원인.
+    // 문구는 UI 경계인 이곳에서 만든다.
+    public static ESaveLoadFailure PendingLoadFailure { get; set; }
+
     [SerializeField] private Button _loginButton;
 
     private string _popupText;
@@ -16,12 +21,37 @@ public class LobbyScene : MonoBehaviour
     private void Start()
     {
         GameplaySaveGate.EndReset();
+        // 게임 세션이 없는 이 화면에서만 저장 데이터 잠금을 푼다.
+        SaveDataLoadGuard.Clear();
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = "Google Play 로그인";
         _loginButton.onClick.AddListener(() => Login(true).Forget());
         bool skipAutomaticLogin = SkipNextAutomaticLogin;
         SkipNextAutomaticLogin = false;
+
+        ESaveLoadFailure loadFailure = PendingLoadFailure;
+        PendingLoadFailure = ESaveLoadFailure.None;
+        if (loadFailure != ESaveLoadFailure.None)
+        {
+            _popupText = BuildLoadFailureMessage(loadFailure);
+            ShowLobbyPopup();
+            return;
+        }
+
         if (!skipAutomaticLogin) Login(false).Forget();
+    }
+
+    private static string BuildLoadFailureMessage(ESaveLoadFailure failure)
+    {
+        switch (failure)
+        {
+            case ESaveLoadFailure.UnsupportedVersion:
+                return "저장된 진행도가 현재 앱 버전보다 최신이에요.\n스토어에서 앱을 업데이트한 뒤\n다시 로그인해 주세요.";
+            case ESaveLoadFailure.Unreadable:
+                return "저장된 진행도를 읽지 못했어요.\n다시 로그인해 주세요.\n\n진행도를 덮어쓰지 않으려고\n게임을 시작하지 않았어요.";
+            default:
+                return "저장된 진행도를 불러오지 못했어요.\n인터넷 연결을 확인하고\n다시 로그인해 주세요.\n\n진행도를 덮어쓰지 않으려고\n게임을 시작하지 않았어요.";
+        }
     }
 
     private async UniTask Login(bool useManualSignIn)

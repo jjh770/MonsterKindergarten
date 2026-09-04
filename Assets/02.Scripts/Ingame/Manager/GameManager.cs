@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     private OfflineRewardResult? _pendingOfflineReward;
     private bool _isOfflineRewardConsumed;
     private bool _isOfflineRewardClaimed;
+    private bool _isReturningToLogin;
 
     // TODO : 데이터 초기화 고려사항
     // 1. 이렇게 전체 데이터를 이벤트 구독해서 확인하는 방법도 있지만
@@ -61,6 +62,13 @@ public class GameManager : MonoBehaviour
         UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
+        SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
+
+        // 이미 실패가 신고된 경우
+        if (SaveDataLoadGuard.HasFailure)
+        {
+            OnSaveDataLoadFailed();
+        }
     }
 
     private void OnDestroy()
@@ -68,6 +76,31 @@ public class GameManager : MonoBehaviour
         UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
+        SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
+    }
+
+    // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.
+    //
+    // 그냥 두면 OnAllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
+    // 기본값으로 진행시키면 첫 저장이 확인하지 못한 원본을 덮어써 복구할 수 없다.
+    // 로그인 화면으로 돌려보내 다시 시도하게 한다.
+    private void OnSaveDataLoadFailed()
+    {
+        if (_isReturningToLogin) return;
+
+        _isReturningToLogin = true;
+        LobbyScene.PendingLoadFailure = SaveDataLoadGuard.Failure;
+        AudioManager.Instance?.SaveVolumeSettings();
+        AccountManager.Instance?.Logout();
+
+        if (SceneManagerEx.Instance != null)
+        {
+            SceneManagerEx.Instance.LoadLoginScene(skipAutomaticLogin: true);
+            return;
+        }
+
+        LobbyScene.SkipNextAutomaticLogin = true;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
     private void OnUpgradeDataInitialized()

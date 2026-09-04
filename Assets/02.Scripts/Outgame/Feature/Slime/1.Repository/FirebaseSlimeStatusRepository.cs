@@ -24,7 +24,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
         }
     }
 
-    public async UniTask<SlimeStatusSaveData> Load()
+    public async UniTask<SaveLoadResult<SlimeStatusSaveData>> Load()
     {
         try
         {
@@ -33,7 +33,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
 
             if (!snapshot.Exists)
             {
-                return SlimeStatusSaveData.Default;
+                return SaveLoadResult<SlimeStatusSaveData>.NotFound();
             }
 
             int schemaVersion = SaveSchema.LegacyVersion;
@@ -46,44 +46,49 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
 
             if (schemaVersion > SaveSchema.SlimeCurrentVersion)
             {
-                throw new UnsupportedSaveVersionException(
-                    "SlimeStatus",
-                    schemaVersion,
-                    SaveSchema.SlimeCurrentVersion);
+                return SaveLoadResult<SlimeStatusSaveData>.Failed(
+                    ESaveLoadFailure.UnsupportedVersion,
+                    UnsupportedSaveVersionException.BuildMessage(
+                        "SlimeStatus",
+                        schemaVersion,
+                        SaveSchema.SlimeCurrentVersion));
             }
 
             if (schemaVersion < SaveSchema.SlimeInstanceVersion)
             {
                 LegacySlimeStatusSaveData legacyData =
                     snapshot.ConvertTo<LegacySlimeStatusSaveData>();
-                return SlimeStatusSaveMigration.Upgrade(legacyData);
+                return SaveLoadResult<SlimeStatusSaveData>.Loaded(
+                    SlimeStatusSaveMigration.Upgrade(legacyData));
             }
 
             SlimeStatusSaveData data = snapshot.ConvertTo<SlimeStatusSaveData>();
-            if (data != null)
+            if (data == null)
             {
-                if (schemaVersion < SaveSchema.SlimeCurrentVersion)
-                {
-                    data = SlimeStatusSaveMigration.UpgradeInstanceData(data);
-                }
-
-                data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
-                data.NormalCollectionRegistered =
-                    SlimeStatusSaveData.NormalizeNormalCollection(
-                        data.NormalCollectionRegistered);
-                SlimeStatusSaveData.NormalizeCollectionStats(data);
-                return data;
+                return SaveLoadResult<SlimeStatusSaveData>.Failed(
+                    ESaveLoadFailure.Unreadable,
+                    "SlimeStatus 문서를 변환하지 못했습니다.");
             }
-            return SlimeStatusSaveData.Default;
-        }
-        catch (UnsupportedSaveVersionException)
-        {
-            throw;
+
+            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            {
+                data = SlimeStatusSaveMigration.UpgradeInstanceData(data);
+            }
+
+            data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            data.NormalCollectionRegistered =
+                SlimeStatusSaveData.NormalizeNormalCollection(
+                    data.NormalCollectionRegistered);
+            SlimeStatusSaveData.NormalizeCollectionStats(data);
+            return SaveLoadResult<SlimeStatusSaveData>.Loaded(data);
         }
         catch (Exception e)
         {
+            // 문서가 없는 것과 읽지 못한 것은 다르다. 실패를 기본값으로 바꾸지 않는다.
             Debug.LogError("SlimeStatus 로드 실패: " + e.Message);
-            return SlimeStatusSaveData.Default;
+            return SaveLoadResult<SlimeStatusSaveData>.Failed(
+                ESaveLoadFailure.Unreachable,
+                e.Message);
         }
     }
 }

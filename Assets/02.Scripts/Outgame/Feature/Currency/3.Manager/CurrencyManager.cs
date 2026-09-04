@@ -64,7 +64,19 @@ public class CurrencyManager : MonoBehaviour
         _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
 #endif
 
-        CurrencySaveData saveData = await _repository.Load();
+        SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
+        if (loadResult.IsFailed)
+        {
+            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+            SaveDataLoadGuard.Report(
+                loadResult.Failure,
+                $"Currency : {loadResult.FailureMessage}");
+            return;
+        }
+
+        CurrencySaveData saveData = loadResult.IsLoaded
+            ? loadResult.Data
+            : CurrencySaveData.Default;
         LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         double[] currencyValues = saveData.Currencies;
         for (int i = 0; i < _currencies.Length; i++)

@@ -158,7 +158,8 @@ The `Android™` profile is the development build and is signed with the same cu
 
 ## Working Guidelines
 
-- Prefer minimal, incremental edits and preserve existing public APIs and serialized references.
+- Make the smallest edit that resolves the stated request, and preserve existing public APIs and serialized references. One concern per change: do not bundle adjacent refactors, cleanups, or "while I am here" improvements into the same pass, even when they touch the same file. When a fix needs several layers, split it into steps, deliver the first, and wait for the user before starting the next.
+- The user performs all verification. Do not run builds, `dotnet build`, Play Mode, or device tests. When a change is ready, hand over the exact steps to check it — what to open, what to do, what a pass and a failure look like.
 - Check the current branch, working tree, app version, and release profile before starting a version-scoped change. Work directly on `main` only when the user explicitly chooses that flow.
 - Do not modify package, generated resolver, Firebase configuration, or Google Play Games files as incidental cleanup.
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
