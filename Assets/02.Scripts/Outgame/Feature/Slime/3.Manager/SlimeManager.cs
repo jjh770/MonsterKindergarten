@@ -37,6 +37,8 @@ public class SlimeManager : MonoBehaviour
         _status.HighestGrade >=
         _spawnWeightTable.GetRequiredHighestGradeForTier(0);
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
 
     // 자연 스폰 상한은 최고 해금 등급으로 결정되므로 슬라임 도메인이 판정한다.
     public bool IsHigherGradeSpawnTierLocked(int currentUpgradeLevel)
@@ -141,6 +143,7 @@ public class SlimeManager : MonoBehaviour
             return;
         }
 
+        HasStoredSaveData = loadResult.IsLoaded;
         SlimeStatusSaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : SlimeStatusSaveData.Default;

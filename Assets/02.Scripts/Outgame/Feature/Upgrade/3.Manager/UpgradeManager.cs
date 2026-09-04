@@ -18,6 +18,8 @@ public class UpgradeManager : MonoBehaviour
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
     public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
 
     private void Awake()
     {
@@ -52,6 +54,7 @@ public class UpgradeManager : MonoBehaviour
             return;
         }
 
+        HasStoredSaveData = loadResult.IsLoaded;
         UpgradeSaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : UpgradeSaveData.Default;

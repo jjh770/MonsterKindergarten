@@ -127,11 +127,41 @@ public class GameManager : MonoBehaviour
 
         if (_isUpgradeInitialized && _isSlimeInitialized && _isCurrencyInitialized)
         {
+            if (!HasConsistentStoredSaveData()) return;
+
             _isAllInitialized = true;
             InitializeTutorialProgress();
             GrantOfflineReward();
             OnAllDataInitialized?.Invoke();
         }
+    }
+
+    // 세 저장 문서는 함께 만들어지고 함께 지워진다. 튜토리얼을 마칠 때 셋을 같이
+    // 저장하고, 초기화와 계정 삭제도 셋을 한 배치로 지운다.
+    //
+    // 그래서 일부만 없는 상태는 신규 계정이 아니라 결손이다. 기본값으로 출발하면
+    // 남은 도메인은 복원되고 없는 도메인만 초기화된 채 시작하며, 다음 저장이 그
+    // 손실을 확정한다. 도메인별 가드는 자기 안만 보므로 여기서 교차로 확인한다.
+    private bool HasConsistentStoredSaveData()
+    {
+        bool hasCurrency = CurrencyManager.Instance.HasStoredSaveData;
+        bool hasSlime = SlimeManager.Instance.HasStoredSaveData;
+        bool hasUpgrade = UpgradeManager.Instance.HasStoredSaveData;
+
+        if (hasCurrency == hasSlime && hasSlime == hasUpgrade) return true;
+
+        SaveDataLoadGuard.Report(
+            ESaveLoadFailure.Unreadable,
+            "저장 문서가 일부만 있습니다. : " +
+            $"재화 {Describe(hasCurrency)}, " +
+            $"슬라임 {Describe(hasSlime)}, " +
+            $"업그레이드 {Describe(hasUpgrade)}");
+        return false;
+    }
+
+    private static string Describe(bool hasStoredSaveData)
+    {
+        return hasStoredSaveData ? "있음" : "없음";
     }
 
     private void InitializeTutorialProgress()

@@ -26,6 +26,8 @@ public class CurrencyManager : MonoBehaviour
     // 재화 조회 +@ (편의를 위해 이정도는 눈감아주자)
     public Currency Point => Get(ECurrencyType.Point);
     public DateTime LastSaveTime { get; private set; } = DateTime.MinValue;
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
     public bool HasExistingProgress
     {
         get
@@ -74,6 +76,7 @@ public class CurrencyManager : MonoBehaviour
             return;
         }
 
+        HasStoredSaveData = loadResult.IsLoaded;
         CurrencySaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : CurrencySaveData.Default;
