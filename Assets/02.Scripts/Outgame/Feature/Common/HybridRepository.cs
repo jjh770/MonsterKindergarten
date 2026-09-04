@@ -133,9 +133,22 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
     }
 
     // 클라우드를 채택하면 로컬 사본도 같은 내용으로 맞춘다.
+    //
+    // 미러 쓰기는 로드 결과가 아니라 로컬 캐시 갱신이다. 여기서 예외가 새어 나가면
+    // 로드 전체가 중단돼 호출부가 실패 결과조차 받지 못하고 초기화가 멈춘다.
+    // 저장소 구현이 동기라 예외는 Forget()에 닿기 전에 호출 지점에서 터진다.
     private SaveLoadResult<T> AdoptFirebase(SaveLoadResult<T> firebase)
     {
-        _playerprefsRepository.Save(firebase.Data).Forget();
+        try
+        {
+            _playerprefsRepository.Save(firebase.Data).Forget();
+        }
+        catch (Exception e)
+        {
+            // 채택한 값은 그대로 돌려준다. 해석할 수 없는 내용이면 호출부가 판정한다.
+            Debug.LogWarning($"로컬 사본 갱신 실패 : {e.Message}");
+        }
+
         return firebase;
     }
 
