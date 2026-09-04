@@ -145,33 +145,44 @@ public class SlimeManager : MonoBehaviour
             ? loadResult.Data
             : SlimeStatusSaveData.Default;
 
+        // 개체 ID는 Guid로만 만들어지고, 중복 등록은 도메인이 막고,
+        // 레거시 승격도 등급별 순번으로 고유한 ID를 만든다. 그러므로 복원할 수 없는
+        // 항목이 있다는 것은 저장 데이터가 변질됐다는 뜻이다.
+        // 일부만 버리고 진행하면 다음 저장이 그 손실을 확정하므로 세션을 차단한다.
         var activeSlimes = new List<SlimeInstance>();
         var restoredIds = new HashSet<string>();
         foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)
         {
             if (instanceData == null)
             {
-                Debug.LogWarning("비어 있는 슬라임 저장 항목을 건너뜁니다.");
-                continue;
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "SlimeStatus : 비어 있는 슬라임 저장 항목이 있습니다.");
+                return;
             }
 
+            SlimeInstance instance;
             try
             {
-                SlimeInstance instance = instanceData.ToDomain();
-                if (!restoredIds.Add(instance.InstanceId))
-                {
-                    Debug.LogWarning(
-                        $"중복된 슬라임 개체를 건너뜁니다: {instance.InstanceId}");
-                    continue;
-                }
-
-                activeSlimes.Add(instance);
+                instance = instanceData.ToDomain();
             }
             catch (ArgumentException e)
             {
-                Debug.LogWarning(
-                    $"복원할 수 없는 슬라임 개체를 건너뜁니다: {e.Message}");
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"SlimeStatus : 복원할 수 없는 슬라임 개체가 있습니다. : {e.Message}");
+                return;
             }
+
+            if (!restoredIds.Add(instance.InstanceId))
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"SlimeStatus : 중복된 슬라임 개체 ID가 있습니다. : {instance.InstanceId}");
+                return;
+            }
+
+            activeSlimes.Add(instance);
         }
 
         var registeredNormalCollection = new List<ESlimeGrade>(
