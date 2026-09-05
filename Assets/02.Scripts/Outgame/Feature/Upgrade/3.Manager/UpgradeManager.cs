@@ -58,14 +58,18 @@ public class UpgradeManager : MonoBehaviour
         UpgradeSaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : UpgradeSaveData.Default;
-        // 저장은 항상 목록을 쓰므로 비어 있을 수는 있어도 없을 수는 없다.
-        // 목록이나 항목이 없는 문서는 해석할 수 없다. 그대로 두면 초기화가
-        // 중단돼 안내 없이 화면이 멈춘다.
-        if (saveData.Entries == null)
+        // 저장은 스펙 테이블의 모든 업그레이드를 레벨 0까지 포함해 기록한다.
+        // 그러므로 읽어 온 목록이 비어 있으면 정상 경로가 아니다.
+        //
+        // null만 보면 안 된다. Firestore에서 필드가 없어도 UpgradeSaveData.Entries의
+        // 속성 초기화자 때문에 null이 아니라 빈 목록으로 들어오기 때문이다.
+        // 저장이 없는 신규 계정의 기본값은 비어 있는 게 정상이므로 제외한다.
+        if (loadResult.IsLoaded &&
+            (saveData.Entries == null || saveData.Entries.Count == 0))
         {
             SaveDataLoadGuard.Report(
                 ESaveLoadFailure.Unreadable,
-                "Upgrade : 업그레이드 목록이 없습니다.");
+                "Upgrade : 업그레이드 목록이 비어 있습니다.");
             return;
         }
 
