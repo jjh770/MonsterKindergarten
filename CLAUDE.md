@@ -17,9 +17,9 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
-- Release profile version: `0.1.05` (Android Version Code `6`)
-- Development profile version: `0.1.03` (Android Version Code `4`)
-- Version snapshot: 2026-08-27. Profile-specific Player Settings override the project-wide version.
+- Release profile version: `0.1.08` (Android Version Code `9`)
+- Development profile version: `0.1.08` (Android Version Code `9`)
+- Version snapshot: 2026-09-05. Profile-specific Player Settings override the project-wide version.
 
 The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. The user performs Unity Play Mode and device testing; do not run builds or add test scripts unless requested. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
 
@@ -32,6 +32,7 @@ Generated `.csproj` files are not the source of truth for Unity package compatib
 - Android players use Google Play Games v2 authentication, exchange the server auth code for a Firebase Auth session, and use the Firebase UID as the save owner.
 - Android game data uses `HybridRepository<T>`: PlayerPrefs saves immediately, Firebase writes are debounced by 0.6 seconds, and load resolves local and cloud data by `LastSaveTime`.
 - When timestamps are equal or invalid, Firebase wins and refreshes the local copy. Keep `[FirestoreProperty]` on every cloud-persisted field, including `LastSaveTime`.
+- `HybridRepository` refuses to resolve when either store failed to read, because an unread store may hold progress the first save would overwrite. A corrupt local copy still recovers from a readable cloud document; a local save newer than the app's schema blocks even when the cloud is readable. The mirror write that refreshes the local copy is best-effort and must never abort the load.
 
 Do not change save keys, Firestore document ownership, Firebase UID handling, or serialized save fields without an explicit migration plan. Preserve existing player documents when testing schema changes.
 
@@ -66,12 +67,18 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `CurrencyManager`, `SlimeManager`, and `UpgradeManager` own their domains and repository selection.
 - `GameManager` waits for all three managers, then raises `OnAllDataInitialized` for gameplay systems.
 - Repository interfaces separate local PlayerPrefs storage from Firebase Firestore storage.
-- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 1, SlimeStatus 2, and Upgrade 1. Preserve deterministic legacy migration IDs and future-version rejection in slime repositories.
+- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 1, SlimeStatus 4, and Upgrade 1. Preserve deterministic legacy migration IDs. All six repositories reject a stored version higher than the app supports.
+- `IRepository<T>.Load()` returns `SaveLoadResult<T>`: `Loaded`, `NotFound`, or `Failed` with a reason. Never collapse a read failure into a default value - a session that starts from defaults overwrites the progress it could not read. Repositories decide whether the document was read faithfully; managers decide whether it can become a valid domain state, and report anything unusable the same way.
+- `SaveDataLoadGuard.Report()` locks saving and returns to LoginScene with per-reason guidance; `LobbyScene` clears the lock. Managers must not raise `OnDataInitialized` after reporting, and must never leave initialization hanging instead.
+- Values that the writer cannot produce are treated as tampering and block the session: unrestorable or duplicate slime entries, an out-of-range `HighestGrade`, negative/NaN/infinite currency, a currency array of the wrong length, and upgrade entries outside their enum range. Values that a balance change can legitimately produce are absorbed instead: an upgrade level above the spec's `MaxLevel` is clamped, and a saved entry whose upgrade is no longer in the spec table is ignored.
+- The three save documents are created and deleted together, so `GameManager` blocks entry when only some of them exist. Values inside the valid range - a raised `HighestGrade`, an inflated currency total - are indistinguishable from legitimate progress and are out of scope for client-side checks.
+- Firestore leaves absent fields at their C# defaults, so a property initializer hides a missing field. `CurrencySaveData.Currencies` deliberately has none. `UpgradeSaveData.Entries` has one, so its guard checks for an empty list rather than null.
 - Each manager delays its initialization by one `await UniTask.Yield()` so `OnDataInitialized` fires after every subscriber has wired up in `Start`. Do not remove it.
 
 **Offline reward and tutorial**
 
 - `GameManager` also computes the offline reward from `CurrencyManager.LastSaveTime` and per-slime auto-production, gated by a minimum interval, a maximum accrual window, and an efficiency factor. Gameplay stays inactive until the reward popup is dismissed.
+- Computing the reward and presenting it are separate. While `TutorialManager.IsRunning`, presentation waits for `TutorialManager.Finished`; the spotlight overlay and the popup's blocker each cover the screen, so showing both locks input in every direction. Compute at resume and keep the larger pending reward - play continues while presentation waits, and every currency change refreshes `LastSaveTime`, so recomputing later would shrink it. The count-up start value is re-read at presentation. Entering GameScene never defers, because no sequence has begun yet.
 - `TutorialProgress` stores completion per user ID in PlayerPrefs and treats existing progress as completion of the main tutorial. DisplayRoom remains incomplete until its final dialogue; these local flags are not cloud-synced.
 - `TutorialManager` owns execution and shared presentation; MainTutorialSequence, HigherGradeSpawnTutorialSequence, and DisplayRoomTutorialSequence own their steps. `GameplaySaveGate` blocks progress saves during the main tutorial, not DisplayRoom transfers.
 - DisplayRoom guidance requires both gameplay activation and `SpawnManager.IsInitialized`. `SpawnManager.Initialized` fires after restoration and first spawn. If a stored slime already exists, resume entry/info guidance without requesting another transfer.
@@ -146,7 +153,13 @@ The active baseline is the Android version on `main`. Google Play Games login, F
 
 The offline reward, tutorial, exit popup, and audio systems have since shipped on `main`.
 
-Current work on `feature/phase-2-display-room` includes Phase 2/2-B DisplayRoom, observation UX, tutorials, options, and follow-up fixes. Next feature phase is Phase 3 (collection book); collection, gacha, and special-slime gameplay are not implemented yet.
+Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, and game-account deletion have since merged to `main`. Gacha and special-slime gameplay are not implemented yet.
+
+Current work on `fix/save-load-failure-state` hardens the save layer. `Load()` now separates read failure from missing data, all six repositories reject future schema versions, unusable values block the session instead of starting from defaults, `GameManager` rejects a partial set of save documents, and the offline reward waits for a running tutorial instead of overlapping it. Editor Play Mode covered every path reachable without Firestore, including new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
+
+Two gaps stayed open. A session blocked by these guards has no in-app recovery, because progress reset lives inside the options screen that the player can no longer reach. Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
+
+The `0.1.08` version bump has no recorded build handoff under `Builds/Release/`; only a local development APK was produced for the checks above.
 
 As of 2026-08-27, a local `0.1.05` AAB, `Builds/Release/0.1.05/build-info.txt`, and `release-notes.txt` exist. The AAB was built from HEAD `6f2b2e7` plus uncommitted release-profile and project-setting changes, so HEAD alone does not identify the full build source. Existing Unity confirmations do not establish this AAB's Android login/save validation or store upload.
 
