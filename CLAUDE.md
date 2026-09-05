@@ -21,7 +21,9 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Development profile version: `0.1.08` (Android Version Code `9`)
 - Version snapshot: 2026-09-05. Profile-specific Player Settings override the project-wide version.
 
-The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. The user performs Unity Play Mode and device testing; do not run builds or add test scripts unless requested. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
+The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
+
+The `Android™` profile is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
 
 Generated `.csproj` files are not the source of truth for Unity package compatibility. A standalone `dotnet build` may fail on Firebase framework references even when the Unity project is valid; confirm compilation in the Unity Console.
 
@@ -125,12 +127,6 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 ### Key Patterns
 
 - Scene-level singleton managers. Declare as `public static T Instance { get; private set; }` and guard `Awake` with `if (Instance != null && Instance != this) { Destroy(gameObject); return; }` before assigning. The `Instance != this` check keeps a re-entered `Awake` from destroying the already registered instance.
-- Repository interfaces with platform-specific implementations
-- Domain data separated from manager orchestration
-- ScriptableObject balance tables
-- Event-driven initialization and UI refresh
-- Component-composed feedback
-- Object pooling for runtime slimes and floaters
 
 ### Physics and Input
 
@@ -152,9 +148,7 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 The active baseline is the Android version on `main`. Google Play Games login, Firebase UID-based saves, cloud restoration after app-data deletion, and Play Console internal installation have been device-tested. Editor gameplay intentionally bypasses Google Play login and uses local saves.
 
-The offline reward, tutorial, exit popup, and audio systems have since shipped on `main`.
-
-Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, and game-account deletion have since merged to `main`. Gacha and special-slime gameplay are not implemented yet.
+The offline reward, tutorial, exit popup, audio, Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, and game-account deletion have since shipped on `main`. Gacha and special-slime gameplay are not implemented yet.
 
 Current work on `fix/save-load-failure-state` hardens the save layer. `Load()` now separates read failure from missing data, all six repositories reject future schema versions, unusable values block the session instead of starting from defaults, `GameManager` rejects a partial set of save documents, and the offline reward waits for a running tutorial instead of overlapping it. Editor Play Mode covered every path reachable without Firestore, including new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
 
@@ -164,13 +158,7 @@ One gap stayed open. Tampered values that fall inside their valid range remain u
 
 The `0.1.08` version bump has no recorded build handoff under `Builds/Release/`; only a local development APK was produced for the checks above.
 
-As of 2026-08-27, a local `0.1.05` AAB, `Builds/Release/0.1.05/build-info.txt`, and `release-notes.txt` exist. The AAB was built from HEAD `6f2b2e7` plus uncommitted release-profile and project-setting changes, so HEAD alone does not identify the full build source. Existing Unity confirmations do not establish this AAB's Android login/save validation or store upload.
-
-A structural cleanup pass landed before that build: `HudVisibility` took over HUD hiding, `SpaceToggleButtonUI` took the space button out of `DisplayRoomUI`, `StageManager.TryRelocateSlime()` absorbed the duplicated transfer completion, singleton declarations and `Awake` guards were unified, WebGL support was removed, and the spawn gauge `Slider` moved onto a `SpawnBar` child so its sibling buttons stop losing clicks. These have static-check evidence and Editor confirmation of the send/observation/transfer paths only.
-
-The responsive UpgradeUI/Safe Area work and drag-merge target feedback have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
-
-The `Android™` profile is the development build and is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
+The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
 
 ## Working Guidelines
 
