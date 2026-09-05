@@ -47,16 +47,6 @@ public sealed class TutorialManager : MonoBehaviour
         Finished?.Invoke();
     }
 
-    private void OnDestroy()
-    {
-        // 씬이 내려갈 때 실행 상태가 남으면 다음 씬에서 안내가 영영 미뤄진다.
-        // 구독자도 함께 파괴되는 시점이므로 완료 알림은 보내지 않는다.
-        if (_activeSequence == null) return;
-
-        _activeSequence = null;
-        IsRunning = false;
-    }
-
     private bool EnsurePresentation()
     {
         if (_presentation != null) return true;
@@ -82,6 +72,10 @@ public sealed class TutorialManager : MonoBehaviour
     {
         _presentation?.Dispose();
         _presentation = null;
+
+        // 씬이 내려갈 때 실행 상태가 남으면 다음 씬에서 안내가 영영 미뤄진다.
+        // 구독자도 함께 파괴되는 시점이므로 완료 알림은 보내지 않는다.
+        if (_activeSequence != null) IsRunning = false;
         _activeSequence = null;
     }
 }
