@@ -115,7 +115,8 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 **Options and progress reset**
 
-- `OptionsUI` provides volume sliders and an explicit progress-reset confirmation, not account deletion.
+- `OptionsUI` provides volume sliders and explicit confirmations for progress reset and game-account deletion.
+- `SaveRecoveryUI` is the same reset reached from LoginScene, for a session that `SaveDataLoadGuard` blocked before the options screen was reachable. `LobbyScene` opens it only for `Unreadable`: a network failure needs a retry and a future schema version needs an app update, so offering reset there would delete progress that is still intact. The panel owns its presentation; `LobbyScene` owns which failure qualifies and the login-then-reset order.
 - `GameDataResetService` deletes only the current UID's Currency, SlimeStatus, and Upgrade documents on Android, plus that user's local progress and tutorial flags. Editor deletes local progress only; authentication accounts and audio preferences remain.
 - Reset locks gameplay/saves, invalidates old debounced writes by ResetGeneration, waits for pending Firestore writes, then deletes. A local pending marker resumes interrupted resets in LobbyScene before GameScene entry.
 - A reset timeout does not cancel the server operation. Do not resume the old game while the result is uncertain. Return to login without automatic sign-in after reset.
@@ -157,7 +158,9 @@ Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, and game-accoun
 
 Current work on `fix/save-load-failure-state` hardens the save layer. `Load()` now separates read failure from missing data, all six repositories reject future schema versions, unusable values block the session instead of starting from defaults, `GameManager` rejects a partial set of save documents, and the offline reward waits for a running tutorial instead of overlapping it. Editor Play Mode covered every path reachable without Firestore, including new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
 
-Two gaps stayed open. A session blocked by these guards has no in-app recovery, because progress reset lives inside the options screen that the player can no longer reach. Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
+A blocked session recovers through `SaveRecoveryUI` on the login screen, verified in Editor Play Mode from corrupt save through reset, tutorial, and the first save that recreates all three documents together.
+
+One gap stayed open. Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
 
 The `0.1.08` version bump has no recorded build handoff under `Builds/Release/`; only a local development APK was produced for the checks above.
 
