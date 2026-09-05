@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 // 튜토리얼 실행권과 공용 프레젠테이션만 소유한다.
@@ -15,6 +16,12 @@ public sealed class TutorialManager : MonoBehaviour
     public TutorialContent Content => _content;
     public DialoguePresentation Presentation => _presentation;
 
+    // 튜토리얼이 도는 동안에는 다른 전면 안내를 띄우면 안 된다. 스포트라이트와
+    // 팝업이 각자 전체 화면 입력을 막아 어느 쪽도 진행할 수 없게 된다.
+    // 씬 밖에서도 봐야 하므로 정적으로 노출한다.
+    public static bool IsRunning { get; private set; }
+    public static event Action Finished;
+
     public bool TryBegin(TutorialSequenceBase sequence)
     {
         if (sequence == null ||
@@ -26,6 +33,7 @@ public sealed class TutorialManager : MonoBehaviour
         if (!EnsurePresentation()) return false;
 
         _activeSequence = sequence;
+        IsRunning = true;
         return true;
     }
 
@@ -35,6 +43,18 @@ public sealed class TutorialManager : MonoBehaviour
 
         _presentation?.Spotlight.Hide();
         _activeSequence = null;
+        IsRunning = false;
+        Finished?.Invoke();
+    }
+
+    private void OnDestroy()
+    {
+        // 씬이 내려갈 때 실행 상태가 남으면 다음 씬에서 안내가 영영 미뤄진다.
+        // 구독자도 함께 파괴되는 시점이므로 완료 알림은 보내지 않는다.
+        if (_activeSequence == null) return;
+
+        _activeSequence = null;
+        IsRunning = false;
     }
 
     private bool EnsurePresentation()

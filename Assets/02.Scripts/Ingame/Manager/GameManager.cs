@@ -63,6 +63,7 @@ public class GameManager : MonoBehaviour
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
+        TutorialManager.Finished += TryPresentOfflineReward;
 
         // 이미 실패가 신고된 경우
         if (SaveDataLoadGuard.HasFailure)
@@ -77,6 +78,7 @@ public class GameManager : MonoBehaviour
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
+        TutorialManager.Finished -= TryPresentOfflineReward;
     }
 
     // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.
@@ -261,25 +263,53 @@ public class GameManager : MonoBehaviour
 
         if (reward > 0d)
         {
-            Currency pointBeforeReward = CurrencyManager.Instance.Point;
-            Currency pointAfterReward = pointBeforeReward + (Currency)reward;
+            // 발표를 미룬 사이에도 플레이는 이어지므로 클릭마다 LastSaveTime이 갱신된다.
+            // 그 뒤 다시 계산하면 경과 시간이 짧아지므로, 아직 받지 않은 보상이 더
+            // 크면 그대로 둔다. 팝업이 떠 있는 동안의 누적은 그대로 동작한다.
+            bool keepPendingReward =
+                _pendingOfflineReward.HasValue &&
+                !_isOfflineRewardClaimed &&
+                _pendingOfflineReward.Value.Reward >= (Currency)reward;
 
-            IsGameplayActive = false;
-            _isOfflineRewardConsumed = false;
-            _isOfflineRewardClaimed = false;
-            _pendingOfflineReward = new OfflineRewardResult(
-                TimeSpan.FromSeconds(elapsedSeconds),
-                reward,
-                pointBeforeReward,
-                pointAfterReward);
+            if (!keepPendingReward)
+            {
+                _isOfflineRewardConsumed = false;
+                _isOfflineRewardClaimed = false;
+                _pendingOfflineReward = new OfflineRewardResult(
+                    TimeSpan.FromSeconds(elapsedSeconds),
+                    reward,
+                    CurrencyManager.Instance.Point,
+                    CurrencyManager.Instance.Point + (Currency)reward);
+            }
 
-            OnOfflineRewardReady?.Invoke();
+            TryPresentOfflineReward();
         }
         else
         {
             CurrencyManager.Instance.SaveCurrent();
             ActivateGameplayIfNoPendingReward();
         }
+    }
+
+    // 계산과 발표를 나눈다. 튜토리얼이 도는 동안 팝업을 띄우면 서로의 입력을 막아
+    // 어느 쪽도 진행할 수 없으므로, 보상은 계산해 두고 튜토리얼이 끝난 뒤 띄운다.
+    private void TryPresentOfflineReward()
+    {
+        if (!_pendingOfflineReward.HasValue || _isOfflineRewardClaimed) return;
+        if (TutorialManager.IsRunning) return;
+
+        // 미뤄 둔 사이 포인트가 늘었을 수 있다. 카운트업 시작값은 발표 시점에 잡는다.
+        OfflineRewardResult pendingReward = _pendingOfflineReward.Value;
+        Currency pointBeforeReward = CurrencyManager.Instance.Point;
+        _pendingOfflineReward = new OfflineRewardResult(
+            pendingReward.ElapsedTime,
+            pendingReward.Reward,
+            pointBeforeReward,
+            pointBeforeReward + pendingReward.Reward);
+
+        IsGameplayActive = false;
+        _isOfflineRewardConsumed = false;
+        OnOfflineRewardReady?.Invoke();
     }
 
     private static double CalculateAutoPointPerSecond()
