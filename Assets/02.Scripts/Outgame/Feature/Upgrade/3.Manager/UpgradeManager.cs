@@ -81,6 +81,21 @@ public class UpgradeManager : MonoBehaviour
                 return;
             }
 
+            // 저장은 항상 유효한 열거형 값과 0 이상의 레벨을 쓴다. 범위를 벗어난 항목은
+            // 변질이고, 그대로 두면 딕셔너리에서 매칭되지 않아 그 업그레이드만 조용히
+            // 0레벨로 시작한다. 열거형 범위 안이면서 스펙 테이블에 없는 조합은
+            // 밸런스 개편으로도 생기므로 아래에서 그냥 무시한다.
+            if (entry.Type < 0 || entry.Type >= (int)EUpgradeType.Count ||
+                entry.Grade < 0 || entry.Grade >= (int)ESlimeGrade.Count ||
+                entry.Level < 0)
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "Upgrade : 해석할 수 없는 업그레이드 항목이 있습니다. : " +
+                    $"Type {entry.Type}, Grade {entry.Grade}, Level {entry.Level}");
+                return;
+            }
+
             savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
         }
 
@@ -92,7 +107,10 @@ public class UpgradeManager : MonoBehaviour
                 throw new Exception($"이미 같은 타입의 업그레이드 정보를 가지고 있습니다. {specData.Type}, {specData.SlimeGrade}");
             }
 
-            int savedLevel = savedLevels.TryGetValue(key, out var lv) ? lv : 0;
+            // 스펙에서 MaxLevel을 낮추는 개편은 정상이므로 차단하지 않고 조인다.
+            int savedLevel = savedLevels.TryGetValue(key, out var lv)
+                ? Math.Min(lv, specData.MaxLevel)
+                : 0;
             _upgrades.Add(key, new Upgrade(specData, savedLevel));
         }
 

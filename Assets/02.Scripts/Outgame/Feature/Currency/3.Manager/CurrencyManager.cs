@@ -94,6 +94,19 @@ public class CurrencyManager : MonoBehaviour
             return;
         }
 
+        // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
+        // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
+        foreach (double value in currencyValues)
+        {
+            if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                return;
+            }
+        }
+
         LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         for (int i = 0; i < _currencies.Length; i++)
         {
