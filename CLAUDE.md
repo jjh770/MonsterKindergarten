@@ -94,7 +94,7 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `SlimeSpawner` uses Lean Pool and tracks active slime instances.
 - `Clicker` uses Unity's Input System pointer API for both mouse and touch input.
 - `SlimeController` handles manual clicks, dragging, point rewards, and overlap-based merge requests.
-- `MergeManager` validates same-grade merges and promotes the surviving slime.
+- `MergeManager` validates same-grade merges and promotes the surviving slime. It moves the save state first and only then raises the highest grade and updates the visuals, because `SlimeManager.MergeSlime()` throws on an entry the save does not have. Ordering the irreversible grade update after that check is what keeps a failure from leaving the save and the screen disagreeing, so no rollback is needed.
 - `AutoClicker` maintains an independent timer for each eligible, non-dragged main-stage slime; DisplayRoom is excluded from manual, automatic, and offline production.
 
 **Feedback**
@@ -148,15 +148,13 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 The active baseline is the Android version on `main`. Google Play Games login, Firebase UID-based saves, cloud restoration after app-data deletion, and Play Console internal installation have been device-tested. Editor gameplay intentionally bypasses Google Play login and uses local saves.
 
-The offline reward, tutorial, exit popup, audio, Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, and game-account deletion have since shipped on `main`. Gacha and special-slime gameplay are not implemented yet.
+The offline reward, tutorial, exit popup, audio, Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, game-account deletion, and the save-layer hardening described above have since shipped on `main`. Gacha and special-slime gameplay are not implemented yet.
 
-Current work on `fix/save-load-failure-state` hardens the save layer. `Load()` now separates read failure from missing data, all six repositories reject future schema versions, unusable values block the session instead of starting from defaults, `GameManager` rejects a partial set of save documents, and the offline reward waits for a running tutorial instead of overlapping it. Editor Play Mode covered every path reachable without Firestore, including new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
+The save-layer rules were verified as follows. Editor Play Mode covered every path reachable without Firestore - corrupt data, future schema versions, partial save sets, the recovery flow from corrupt save through reset and tutorial to the first save that recreates all three documents, and new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
 
-A blocked session recovers through `SaveRecoveryUI` on the login screen, verified in Editor Play Mode from corrupt save through reset, tutorial, and the first save that recreates all three documents together.
+Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
 
-One gap stayed open. Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
-
-`Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there predates this branch and does not contain the save-layer work, which was checked with a development APK instead.
+`Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there was built on 2026-08-29 and does not contain the save-layer work, which was checked with a development APK instead.
 
 The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
 
