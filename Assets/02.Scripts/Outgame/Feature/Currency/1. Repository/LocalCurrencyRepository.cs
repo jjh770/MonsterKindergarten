@@ -13,6 +13,7 @@
 // 저장 로직은 레포지토리에게.
 // 1. 코드가 깔끔해지고 유지보수가 쉬워진다.
 using Cysharp.Threading.Tasks;
+using System;
 using System.Globalization;
 using UnityEngine;
 
@@ -54,39 +55,67 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
         PlayerPrefs.DeleteKey($"{_userId}_{SCHEMA_VERSION_KEY}");
     }
 
-    public UniTask<CurrencySaveData> Load()
+    public UniTask<SaveLoadResult<CurrencySaveData>> Load()
     {
-        CurrencySaveData data = CurrencySaveData.Default;
-        bool hasExistingData = PlayerPrefs.HasKey($"{_userId}_{LAST_SAVE_TIME_KEY}");
-
-        for (int i = 0; i < (int)ECurrencyType.Count; i++)
+        try
         {
-            var type = (ECurrencyType)i;
-            string key = $"{_userId}_{type.ToString()}";
+            CurrencySaveData data = CurrencySaveData.Default;
+            bool hasExistingData = PlayerPrefs.HasKey($"{_userId}_{LAST_SAVE_TIME_KEY}");
 
-            if (PlayerPrefs.HasKey(key))
+            for (int i = 0; i < (int)ECurrencyType.Count; i++)
             {
+                var type = (ECurrencyType)i;
+                string key = $"{_userId}_{type.ToString()}";
+
+                if (!PlayerPrefs.HasKey(key)) continue;
+
                 hasExistingData = true;
                 string value = PlayerPrefs.GetString(key, "0");
-                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double currency))
+                if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double currency))
                 {
-                    data.Currencies[i] = currency;
+                    // 키가 있는데 해석되지 않으면 손상이다. 0으로 채우면 재화가 조용히 사라진다.
+                    return UniTask.FromResult(
+                        SaveLoadResult<CurrencySaveData>.Failed(
+                            ESaveLoadFailure.Unreadable,
+                            $"재화 값을 해석하지 못했습니다. : {type}"));
                 }
+
+                data.Currencies[i] = currency;
             }
-        }
 
-        string schemaVersionKey = $"{_userId}_{SCHEMA_VERSION_KEY}";
-        if (PlayerPrefs.HasKey(schemaVersionKey))
-        {
-            data.SchemaVersion = PlayerPrefs.GetInt(schemaVersionKey);
-        }
-        else if (hasExistingData)
-        {
-            data.SchemaVersion = SaveSchema.LegacyVersion;
-        }
+            if (!hasExistingData)
+            {
+                return UniTask.FromResult(SaveLoadResult<CurrencySaveData>.NotFound());
+            }
 
-        data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);
-        return UniTask.FromResult(data);
+            string schemaVersionKey = $"{_userId}_{SCHEMA_VERSION_KEY}";
+            data.SchemaVersion = PlayerPrefs.HasKey(schemaVersionKey)
+                ? PlayerPrefs.GetInt(schemaVersionKey)
+                : SaveSchema.LegacyVersion;
+
+            // 상위 버전은 현재 앱이 해석할 수 없다. 그대로 로드하면 다음 저장이
+            // 최신 데이터를 낮은 버전으로 덮어쓴다.
+            if (data.SchemaVersion > SaveSchema.CurrencyCurrentVersion)
+            {
+                return UniTask.FromResult(
+                    SaveLoadResult<CurrencySaveData>.Failed(
+                        ESaveLoadFailure.UnsupportedVersion,
+                        UnsupportedSaveVersionException.BuildMessage(
+                            "Currency",
+                            data.SchemaVersion,
+                            SaveSchema.CurrencyCurrentVersion)));
+            }
+
+            data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);
+            return UniTask.FromResult(SaveLoadResult<CurrencySaveData>.Loaded(data));
+        }
+        catch (Exception e)
+        {
+            return UniTask.FromResult(
+                SaveLoadResult<CurrencySaveData>.Failed(
+                    ESaveLoadFailure.Unreadable,
+                    $"재화 저장 데이터를 읽지 못했습니다. : {e.Message}"));
+        }
     }
 }
 

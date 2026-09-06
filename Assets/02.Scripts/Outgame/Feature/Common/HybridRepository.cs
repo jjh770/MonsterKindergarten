@@ -61,44 +61,95 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
     }
 
 
-    public async UniTask<T> Load()
+    public async UniTask<SaveLoadResult<T>> Load()
     {
         var playerprefsTask = _playerprefsRepository.Load();
         var firebaseTask = _firebaseRepository.Load();
 
-        var (playerprefsData, firebaseData) = await UniTask.WhenAll(playerprefsTask, firebaseTask);
+        var (playerprefsResult, firebaseResult) = await UniTask.WhenAll(playerprefsTask, firebaseTask);
 
-        return ResolveConflict(playerprefsData, firebaseData);
+        return ResolveConflict(playerprefsResult, firebaseResult);
     }
 
-    private T ResolveConflict(T playerprefs, T firebase)
+    // 어느 쪽이든 읽지 못했으면 진행하지 않는다.
+    //
+    // 읽지 못한 저장소에 무엇이 들어 있는지 알 수 없는데 게임을 시작하면,
+    // 첫 저장이 확인하지 못한 원본을 덮어써 복구할 수 없게 만든다.
+    // 로그인이 이미 네트워크를 요구하므로 클라우드 실패는 드문 상태다.
+    private SaveLoadResult<T> ResolveConflict(
+        SaveLoadResult<T> playerprefs,
+        SaveLoadResult<T> firebase)
     {
-        if (playerprefs == null && firebase == null)
+        // 로컬에 현재 앱보다 높은 버전이 있으면 앱 업데이트가 먼저다.
+        // 클라우드의 낮은 버전을 채택하면 이 기기의 최신 진행도를 되돌린다.
+        if (playerprefs.IsFailed &&
+            playerprefs.Failure == ESaveLoadFailure.UnsupportedVersion)
         {
-            return null;
+            return playerprefs;
         }
-        if (playerprefs == null)
+
+        if (firebase.IsFailed)
         {
             return firebase;
         }
-        if (firebase == null)
+
+        if (playerprefs.IsFailed)
+        {
+            // 로컬이 손상돼도 클라우드를 읽었다면 그것으로 복구한다.
+            if (firebase.IsLoaded)
+            {
+                return AdoptFirebase(firebase);
+            }
+
+            // 클라우드가 비어 있으면 복구할 원본이 없다. 새 게임으로 덮지 않는다.
+            return playerprefs;
+        }
+
+        if (playerprefs.IsNotFound && firebase.IsNotFound)
+        {
+            return SaveLoadResult<T>.NotFound();
+        }
+
+        if (playerprefs.IsNotFound)
+        {
+            return AdoptFirebase(firebase);
+        }
+
+        if (firebase.IsNotFound)
         {
             return playerprefs;
         }
 
         // LastSaveTime이 null이거나 파싱 실패 시 DateTime.MinValue 사용
-        DateTime playerprefsTime = ParseSaveTime(playerprefs.LastSaveTime);
-        DateTime firebaseTime = ParseSaveTime(firebase.LastSaveTime);
+        DateTime playerprefsTime = ParseSaveTime(playerprefs.Data.LastSaveTime);
+        DateTime firebaseTime = ParseSaveTime(firebase.Data.LastSaveTime);
 
         if (playerprefsTime > firebaseTime)
         {
             return playerprefs;
         }
-        else
+
+        return AdoptFirebase(firebase);
+    }
+
+    // 클라우드를 채택하면 로컬 사본도 같은 내용으로 맞춘다.
+    //
+    // 미러 쓰기는 로드 결과가 아니라 로컬 캐시 갱신이다. 여기서 예외가 새어 나가면
+    // 로드 전체가 중단돼 호출부가 실패 결과조차 받지 못하고 초기화가 멈춘다.
+    // 저장소 구현이 동기라 예외는 Forget()에 닿기 전에 호출 지점에서 터진다.
+    private SaveLoadResult<T> AdoptFirebase(SaveLoadResult<T> firebase)
+    {
+        try
         {
-            _playerprefsRepository.Save(firebase).Forget();
-            return firebase;
+            _playerprefsRepository.Save(firebase.Data).Forget();
         }
+        catch (Exception e)
+        {
+            // 채택한 값은 그대로 돌려준다. 해석할 수 없는 내용이면 호출부가 판정한다.
+            Debug.LogWarning($"로컬 사본 갱신 실패 : {e.Message}");
+        }
+
+        return firebase;
     }
 
     private DateTime ParseSaveTime(string saveTime)

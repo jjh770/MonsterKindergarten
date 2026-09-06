@@ -27,6 +27,19 @@ return UniTask.FromResult(SlimeStatusSaveData.Default);
 
 Android에서는 `HybridRepository`가 `LastSaveTime`을 비교해 Firebase 데이터를 선택하므로 클라우드 저장에 영향이 없습니다.
 
+> **후속 (2026-09-05): 이 판단은 틀렸고 수정도 되돌렸습니다.**
+>
+> 위 문장이 놓친 경우는 **양쪽 `LastSaveTime`이 모두 없는 상태**입니다. 앱 데이터를
+> 삭제한 기기에서 Firestore 읽기가 실패하면 로컬과 클라우드가 모두 `Default`로
+> 들어오고, 둘 다 `DateTime.MinValue`라 비교에서 Firebase 쪽이 채택됩니다.
+> 플레이어는 신규 계정 화면을 보고, 첫 저장이 남아 있던 클라우드 문서를 빈 값으로
+> 덮어씁니다. 클라우드 저장에 영향이 없기는커녕 복구 불가능한 손실 경로였습니다.
+>
+> 근본 원인은 `Default` 반환 자체가 아니라 **읽기 실패와 데이터 없음을 같은 값으로
+> 뭉갠 것**입니다. `Load()`가 `Loaded`/`NotFound`/`Failed` 세 상태를 반환하도록
+> 계약을 바꾸고, 실패는 세션을 차단하도록 고쳤습니다.
+> 자세한 규칙은 `CLAUDE.md`의 Game data 절에 있습니다.
+
 ### 1.2 불필요한 async 메서드 (`cdbd6db`)
 
 `LocalCurrencyRepository`의 `Save()`와 `Load()`가 `await` 없이 `async`로 선언되어 CS1998 경고가 발생했습니다. `UniTask`를 직접 반환하도록 변경해 다른 PlayerPrefs 저장소와 구현 방식을 통일했습니다.

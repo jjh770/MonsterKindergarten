@@ -37,6 +37,8 @@ public class SlimeManager : MonoBehaviour
         _status.HighestGrade >=
         _spawnWeightTable.GetRequiredHighestGradeForTier(0);
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
 
     // 자연 스폰 상한은 최고 해금 등급으로 결정되므로 슬라임 도메인이 판정한다.
     public bool IsHigherGradeSpawnTierLocked(int currentUpgradeLevel)
@@ -131,46 +133,59 @@ public class SlimeManager : MonoBehaviour
         _statusRepository = new PlayerPrefsSlimeStatusRepository(AccountManager.Instance.UserId);
 #endif
 
-        SlimeStatusSaveData saveData;
-        try
+        SaveLoadResult<SlimeStatusSaveData> loadResult = await _statusRepository.Load();
+        if (loadResult.IsFailed)
         {
-            saveData = await _statusRepository.Load();
-        }
-        catch (UnsupportedSaveVersionException e)
-        {
-            Debug.LogError(
-                $"[SlimeManager] 현재 앱에서 저장 데이터를 불러올 수 없습니다. " +
-                $"앱을 업데이트해 주세요. {e.Message}");
+            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+            SaveDataLoadGuard.Report(
+                loadResult.Failure,
+                $"SlimeStatus : {loadResult.FailureMessage}");
             return;
         }
 
+        HasStoredSaveData = loadResult.IsLoaded;
+        SlimeStatusSaveData saveData = loadResult.IsLoaded
+            ? loadResult.Data
+            : SlimeStatusSaveData.Default;
+
+        // 개체 ID는 Guid로만 만들어지고, 중복 등록은 도메인이 막고,
+        // 레거시 승격도 등급별 순번으로 고유한 ID를 만든다. 그러므로 복원할 수 없는
+        // 항목이 있다는 것은 저장 데이터가 변질됐다는 뜻이다.
+        // 일부만 버리고 진행하면 다음 저장이 그 손실을 확정하므로 세션을 차단한다.
         var activeSlimes = new List<SlimeInstance>();
         var restoredIds = new HashSet<string>();
         foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)
         {
             if (instanceData == null)
             {
-                Debug.LogWarning("비어 있는 슬라임 저장 항목을 건너뜁니다.");
-                continue;
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "SlimeStatus : 비어 있는 슬라임 저장 항목이 있습니다.");
+                return;
             }
 
+            SlimeInstance instance;
             try
             {
-                SlimeInstance instance = instanceData.ToDomain();
-                if (!restoredIds.Add(instance.InstanceId))
-                {
-                    Debug.LogWarning(
-                        $"중복된 슬라임 개체를 건너뜁니다: {instance.InstanceId}");
-                    continue;
-                }
-
-                activeSlimes.Add(instance);
+                instance = instanceData.ToDomain();
             }
             catch (ArgumentException e)
             {
-                Debug.LogWarning(
-                    $"복원할 수 없는 슬라임 개체를 건너뜁니다: {e.Message}");
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"SlimeStatus : 복원할 수 없는 슬라임 개체가 있습니다. : {e.Message}");
+                return;
             }
+
+            if (!restoredIds.Add(instance.InstanceId))
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"SlimeStatus : 중복된 슬라임 개체 ID가 있습니다. : {instance.InstanceId}");
+                return;
+            }
+
+            activeSlimes.Add(instance);
         }
 
         var registeredNormalCollection = new List<ESlimeGrade>(
@@ -178,12 +193,26 @@ public class SlimeManager : MonoBehaviour
         var registeredBeforeRestore = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
         _collectionStats = new NormalSlimeCollectionStats(saveData);
-        _status = new SlimeStatus(
-            saveData.GetHighestGrade(),
-            activeSlimes,
-            registeredNormalCollection,
-            (EGameStage)saveData.CurrentStage,
-            saveData.SkyIntroCompleted);
+
+        // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
+        // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
+        // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
+        try
+        {
+            _status = new SlimeStatus(
+                saveData.GetHighestGrade(),
+                activeSlimes,
+                registeredNormalCollection,
+                (EGameStage)saveData.CurrentStage,
+                saveData.SkyIntroCompleted);
+        }
+        catch (ArgumentException e)
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"SlimeStatus : 슬라임 진행 상태를 복원할 수 없습니다. : {e.Message}");
+            return;
+        }
 
         bool restoredRegistrationStats = false;
         DateTime restoredAt = DateTime.UtcNow;

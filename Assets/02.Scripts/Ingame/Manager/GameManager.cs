@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     private OfflineRewardResult? _pendingOfflineReward;
     private bool _isOfflineRewardConsumed;
     private bool _isOfflineRewardClaimed;
+    private bool _isReturningToLogin;
 
     // TODO : 데이터 초기화 고려사항
     // 1. 이렇게 전체 데이터를 이벤트 구독해서 확인하는 방법도 있지만
@@ -61,6 +62,14 @@ public class GameManager : MonoBehaviour
         UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
+        SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
+        TutorialManager.Finished += TryPresentOfflineReward;
+
+        // 이미 실패가 신고된 경우
+        if (SaveDataLoadGuard.HasFailure)
+        {
+            OnSaveDataLoadFailed();
+        }
     }
 
     private void OnDestroy()
@@ -68,6 +77,32 @@ public class GameManager : MonoBehaviour
         UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
+        SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
+        TutorialManager.Finished -= TryPresentOfflineReward;
+    }
+
+    // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.
+    //
+    // 그냥 두면 OnAllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
+    // 기본값으로 진행시키면 첫 저장이 확인하지 못한 원본을 덮어써 복구할 수 없다.
+    // 로그인 화면으로 돌려보내 다시 시도하게 한다.
+    private void OnSaveDataLoadFailed()
+    {
+        if (_isReturningToLogin) return;
+
+        _isReturningToLogin = true;
+        LobbyScene.PendingLoadFailure = SaveDataLoadGuard.Failure;
+        AudioManager.Instance?.SaveVolumeSettings();
+        AccountManager.Instance?.Logout();
+
+        if (SceneManagerEx.Instance != null)
+        {
+            SceneManagerEx.Instance.LoadLoginScene(skipAutomaticLogin: true);
+            return;
+        }
+
+        LobbyScene.SkipNextAutomaticLogin = true;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
     private void OnUpgradeDataInitialized()
@@ -94,11 +129,41 @@ public class GameManager : MonoBehaviour
 
         if (_isUpgradeInitialized && _isSlimeInitialized && _isCurrencyInitialized)
         {
+            if (!HasConsistentStoredSaveData()) return;
+
             _isAllInitialized = true;
             InitializeTutorialProgress();
             GrantOfflineReward();
             OnAllDataInitialized?.Invoke();
         }
+    }
+
+    // 세 저장 문서는 함께 만들어지고 함께 지워진다. 튜토리얼을 마칠 때 셋을 같이
+    // 저장하고, 초기화와 계정 삭제도 셋을 한 배치로 지운다.
+    //
+    // 그래서 일부만 없는 상태는 신규 계정이 아니라 결손이다. 기본값으로 출발하면
+    // 남은 도메인은 복원되고 없는 도메인만 초기화된 채 시작하며, 다음 저장이 그
+    // 손실을 확정한다. 도메인별 가드는 자기 안만 보므로 여기서 교차로 확인한다.
+    private bool HasConsistentStoredSaveData()
+    {
+        bool hasCurrency = CurrencyManager.Instance.HasStoredSaveData;
+        bool hasSlime = SlimeManager.Instance.HasStoredSaveData;
+        bool hasUpgrade = UpgradeManager.Instance.HasStoredSaveData;
+
+        if (hasCurrency == hasSlime && hasSlime == hasUpgrade) return true;
+
+        SaveDataLoadGuard.Report(
+            ESaveLoadFailure.Unreadable,
+            "저장 문서가 일부만 있습니다. : " +
+            $"재화 {Describe(hasCurrency)}, " +
+            $"슬라임 {Describe(hasSlime)}, " +
+            $"업그레이드 {Describe(hasUpgrade)}");
+        return false;
+    }
+
+    private static string Describe(bool hasStoredSaveData)
+    {
+        return hasStoredSaveData ? "있음" : "없음";
     }
 
     private void InitializeTutorialProgress()
@@ -198,25 +263,53 @@ public class GameManager : MonoBehaviour
 
         if (reward > 0d)
         {
-            Currency pointBeforeReward = CurrencyManager.Instance.Point;
-            Currency pointAfterReward = pointBeforeReward + (Currency)reward;
+            // 발표를 미룬 사이에도 플레이는 이어지므로 클릭마다 LastSaveTime이 갱신된다.
+            // 그 뒤 다시 계산하면 경과 시간이 짧아지므로, 아직 받지 않은 보상이 더
+            // 크면 그대로 둔다. 팝업이 떠 있는 동안의 누적은 그대로 동작한다.
+            bool keepPendingReward =
+                _pendingOfflineReward.HasValue &&
+                !_isOfflineRewardClaimed &&
+                _pendingOfflineReward.Value.Reward >= (Currency)reward;
 
-            IsGameplayActive = false;
-            _isOfflineRewardConsumed = false;
-            _isOfflineRewardClaimed = false;
-            _pendingOfflineReward = new OfflineRewardResult(
-                TimeSpan.FromSeconds(elapsedSeconds),
-                reward,
-                pointBeforeReward,
-                pointAfterReward);
+            if (!keepPendingReward)
+            {
+                _isOfflineRewardConsumed = false;
+                _isOfflineRewardClaimed = false;
+                _pendingOfflineReward = new OfflineRewardResult(
+                    TimeSpan.FromSeconds(elapsedSeconds),
+                    reward,
+                    CurrencyManager.Instance.Point,
+                    CurrencyManager.Instance.Point + (Currency)reward);
+            }
 
-            OnOfflineRewardReady?.Invoke();
+            TryPresentOfflineReward();
         }
         else
         {
             CurrencyManager.Instance.SaveCurrent();
             ActivateGameplayIfNoPendingReward();
         }
+    }
+
+    // 계산과 발표를 나눈다. 튜토리얼이 도는 동안 팝업을 띄우면 서로의 입력을 막아
+    // 어느 쪽도 진행할 수 없으므로, 보상은 계산해 두고 튜토리얼이 끝난 뒤 띄운다.
+    private void TryPresentOfflineReward()
+    {
+        if (!_pendingOfflineReward.HasValue || _isOfflineRewardClaimed) return;
+        if (TutorialManager.IsRunning) return;
+
+        // 미뤄 둔 사이 포인트가 늘었을 수 있다. 카운트업 시작값은 발표 시점에 잡는다.
+        OfflineRewardResult pendingReward = _pendingOfflineReward.Value;
+        Currency pointBeforeReward = CurrencyManager.Instance.Point;
+        _pendingOfflineReward = new OfflineRewardResult(
+            pendingReward.ElapsedTime,
+            pendingReward.Reward,
+            pointBeforeReward,
+            pointBeforeReward + pendingReward.Reward);
+
+        IsGameplayActive = false;
+        _isOfflineRewardConsumed = false;
+        OnOfflineRewardReady?.Invoke();
     }
 
     private static double CalculateAutoPointPerSecond()

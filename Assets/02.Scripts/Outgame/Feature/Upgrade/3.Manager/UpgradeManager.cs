@@ -18,6 +18,8 @@ public class UpgradeManager : MonoBehaviour
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
     public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
 
     private void Awake()
     {
@@ -42,11 +44,62 @@ public class UpgradeManager : MonoBehaviour
         _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId);
 #endif
 
-        var saveData = await _repository.Load();
+        SaveLoadResult<UpgradeSaveData> loadResult = await _repository.Load();
+        if (loadResult.IsFailed)
+        {
+            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+            SaveDataLoadGuard.Report(
+                loadResult.Failure,
+                $"Upgrade : {loadResult.FailureMessage}");
+            return;
+        }
+
+        HasStoredSaveData = loadResult.IsLoaded;
+        UpgradeSaveData saveData = loadResult.IsLoaded
+            ? loadResult.Data
+            : UpgradeSaveData.Default;
+        // 저장은 스펙 테이블의 모든 업그레이드를 레벨 0까지 포함해 기록한다.
+        // 그러므로 읽어 온 목록이 비어 있으면 정상 경로가 아니다.
+        //
+        // null만 보면 안 된다. Firestore에서 필드가 없어도 UpgradeSaveData.Entries의
+        // 속성 초기화자 때문에 null이 아니라 빈 목록으로 들어오기 때문이다.
+        // 저장이 없는 신규 계정의 기본값은 비어 있는 게 정상이므로 제외한다.
+        if (loadResult.IsLoaded &&
+            (saveData.Entries == null || saveData.Entries.Count == 0))
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                "Upgrade : 업그레이드 목록이 비어 있습니다.");
+            return;
+        }
+
         // Entries를 딕셔너리로 변환해서 빠르게 조회
         var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
         foreach (var entry in saveData.Entries)
         {
+            if (entry == null)
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "Upgrade : 비어 있는 업그레이드 항목이 있습니다.");
+                return;
+            }
+
+            // 저장은 항상 유효한 열거형 값과 0 이상의 레벨을 쓴다. 범위를 벗어난 항목은
+            // 변질이고, 그대로 두면 딕셔너리에서 매칭되지 않아 그 업그레이드만 조용히
+            // 0레벨로 시작한다. 열거형 범위 안이면서 스펙 테이블에 없는 조합은
+            // 밸런스 개편으로도 생기므로 아래에서 그냥 무시한다.
+            if (entry.Type < 0 || entry.Type >= (int)EUpgradeType.Count ||
+                entry.Grade < 0 || entry.Grade >= (int)ESlimeGrade.Count ||
+                entry.Level < 0)
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    "Upgrade : 해석할 수 없는 업그레이드 항목이 있습니다. : " +
+                    $"Type {entry.Type}, Grade {entry.Grade}, Level {entry.Level}");
+                return;
+            }
+
             savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
         }
 
@@ -58,7 +111,10 @@ public class UpgradeManager : MonoBehaviour
                 throw new Exception($"이미 같은 타입의 업그레이드 정보를 가지고 있습니다. {specData.Type}, {specData.SlimeGrade}");
             }
 
-            int savedLevel = savedLevels.TryGetValue(key, out var lv) ? lv : 0;
+            // 스펙에서 MaxLevel을 낮추는 개편은 정상이므로 차단하지 않고 조인다.
+            int savedLevel = savedLevels.TryGetValue(key, out var lv)
+                ? Math.Min(lv, specData.MaxLevel)
+                : 0;
             _upgrades.Add(key, new Upgrade(specData, savedLevel));
         }
 

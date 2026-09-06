@@ -37,14 +37,15 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
         return UniTask.CompletedTask;
     }
 
-    public UniTask<SlimeStatusSaveData> Load()
+    public UniTask<SaveLoadResult<SlimeStatusSaveData>> Load()
     {
         try
         {
             string key = GetKey();
             if (!PlayerPrefs.HasKey(key))
             {
-                return UniTask.FromResult(SlimeStatusSaveData.Default);
+                return UniTask.FromResult(
+                    SaveLoadResult<SlimeStatusSaveData>.NotFound());
             }
 
             string json = PlayerPrefs.GetString(key);
@@ -54,10 +55,13 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
 
             if (schemaVersion > SaveSchema.SlimeCurrentVersion)
             {
-                throw new UnsupportedSaveVersionException(
-                    "SlimeStatus",
-                    schemaVersion,
-                    SaveSchema.SlimeCurrentVersion);
+                return UniTask.FromResult(
+                    SaveLoadResult<SlimeStatusSaveData>.Failed(
+                        ESaveLoadFailure.UnsupportedVersion,
+                        UnsupportedSaveVersionException.BuildMessage(
+                            "SlimeStatus",
+                            schemaVersion,
+                            SaveSchema.SlimeCurrentVersion)));
             }
 
             SlimeStatusSaveData saveData;
@@ -79,7 +83,10 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
 
             if (saveData == null)
             {
-                return UniTask.FromResult(SlimeStatusSaveData.Default);
+                return UniTask.FromResult(
+                    SaveLoadResult<SlimeStatusSaveData>.Failed(
+                        ESaveLoadFailure.Unreadable,
+                        "슬라임 저장 데이터를 변환하지 못했습니다."));
             }
 
             saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
@@ -87,17 +94,18 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
                 SlimeStatusSaveData.NormalizeNormalCollection(
                     saveData.NormalCollectionRegistered);
             SlimeStatusSaveData.NormalizeCollectionStats(saveData);
-            return UniTask.FromResult(saveData);
-        }
-        catch (UnsupportedSaveVersionException)
-        {
-            throw;
+            return UniTask.FromResult(
+                SaveLoadResult<SlimeStatusSaveData>.Loaded(saveData));
         }
         catch (Exception e)
         {
             Debug.LogError($"[PlayerPrefsSlimeStatusRepository] 로드 실패: {e.Message}");
-            // null을 반환하면 SlimeManager 초기화가 중단되어 게임이 진행 불가 상태가 된다.
-            return UniTask.FromResult(SlimeStatusSaveData.Default);
+            // 기본값으로 바꾸면 손상된 저장이 신규 계정이 되고, 첫 저장이 원본을 덮어쓴다.
+            // 초기화가 멈추지 않도록 실패는 SaveDataLoadGuard가 세션 단위로 처리한다.
+            return UniTask.FromResult(
+                SaveLoadResult<SlimeStatusSaveData>.Failed(
+                    ESaveLoadFailure.Unreadable,
+                    e.Message));
         }
     }
 }

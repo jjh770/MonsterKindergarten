@@ -26,6 +26,8 @@ public class CurrencyManager : MonoBehaviour
     // 재화 조회 +@ (편의를 위해 이정도는 눈감아주자)
     public Currency Point => Get(ECurrencyType.Point);
     public DateTime LastSaveTime { get; private set; } = DateTime.MinValue;
+    // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
+    public bool HasStoredSaveData { get; private set; }
     public bool HasExistingProgress
     {
         get
@@ -64,9 +66,48 @@ public class CurrencyManager : MonoBehaviour
         _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
 #endif
 
-        CurrencySaveData saveData = await _repository.Load();
-        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
+        SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
+        if (loadResult.IsFailed)
+        {
+            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+            SaveDataLoadGuard.Report(
+                loadResult.Failure,
+                $"Currency : {loadResult.FailureMessage}");
+            return;
+        }
+
+        HasStoredSaveData = loadResult.IsLoaded;
+        CurrencySaveData saveData = loadResult.IsLoaded
+            ? loadResult.Data
+            : CurrencySaveData.Default;
+        // 저장은 항상 ECurrencyType.Count 길이의 배열을 쓴다. 길이가 다르거나
+        // 배열이 없는 문서는 해석할 수 없다. 그대로 두면 초기화가 중단돼
+        // 안내 없이 화면이 멈추고, 0으로 채우면 재화가 조용히 사라진다.
+        // 재화 종류를 늘릴 때는 스키마 버전을 올리고 승격 로직을 함께 넣는다.
         double[] currencyValues = saveData.Currencies;
+        if (currencyValues == null || currencyValues.Length != _currencies.Length)
+        {
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"Currency : 재화 배열을 해석할 수 없습니다. : " +
+                $"{currencyValues?.Length.ToString() ?? "없음"}");
+            return;
+        }
+
+        // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
+        // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
+        foreach (double value in currencyValues)
+        {
+            if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+            {
+                SaveDataLoadGuard.Report(
+                    ESaveLoadFailure.Unreadable,
+                    $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                return;
+            }
+        }
+
+        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         for (int i = 0; i < _currencies.Length; i++)
         {
             _currencies[i] = currencyValues[i];
