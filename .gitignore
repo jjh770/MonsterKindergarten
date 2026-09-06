@@ -77,3 +77,6 @@ crashlytics-build.properties
 # Paid Asset Store packages
 /Assets/Plugins/AllIn1VfxToolkit/
 /Assets/Plugins/AllIn1VfxToolkit.meta
+
+# 로컬 전용 트러블슈팅 기록
+/Documentation/Troubleshooting/

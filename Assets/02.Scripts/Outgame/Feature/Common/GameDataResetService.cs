@@ -58,6 +58,9 @@ public static class GameDataResetService
             batch.Delete(db.Collection("Currency").Document(userId));
             batch.Delete(db.Collection("SlimeStatus").Document(userId));
             batch.Delete(db.Collection("Upgrade").Document(userId));
+            // 진행도는 아니지만 계정에 딸린 문서라 함께 지운다. 남겨도 무해하지만
+            // 계정 삭제 뒤 고아 문서가 남는다.
+            batch.Delete(db.Collection("TimeSync").Document(userId));
             await batch.CommitAsync().AsUniTask().AttachExternalCancellation(timeout.Token);
 #else
             await UniTask.CompletedTask;

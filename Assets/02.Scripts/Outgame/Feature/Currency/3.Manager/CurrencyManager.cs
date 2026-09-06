@@ -161,7 +161,7 @@ public class CurrencyManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
-        LastSaveTime = DateTime.UtcNow;
+        LastSaveTime = ServerClock.TrustedUtcNow;
         return _repository.Save(new CurrencySaveData()
         {
             SchemaVersion = SaveSchema.CurrencyCurrentVersion,

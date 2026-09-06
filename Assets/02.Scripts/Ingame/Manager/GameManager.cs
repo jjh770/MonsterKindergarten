@@ -223,8 +223,20 @@ public class GameManager : MonoBehaviour
         }
         else if (!_pendingOfflineReward.HasValue || !_isOfflineRewardClaimed)
         {
-            GrantOfflineReward();
+            ResyncThenGrantOfflineReward().Forget();
         }
+    }
+
+    // 보정값은 기기 시계와의 차이라, 실행 중에 시계가 바뀌면 함께 어긋난다.
+    // 복귀할 때마다 다시 맞춘다. 실패해도 기존 보정값으로 지급한다. 버리면 오프라인
+    // 상태로 돌아온 정직한 플레이어가 쌓인 보상을 잃는다.
+    private async UniTaskVoid ResyncThenGrantOfflineReward()
+    {
+        await ServerClock.TrySync(AccountManager.Instance?.UserId, force: true);
+
+        if (this == null || !_isAllInitialized || GameplaySaveGate.IsResetting) return;
+
+        GrantOfflineReward();
     }
 
     private void OnApplicationQuit()
@@ -238,7 +250,7 @@ public class GameManager : MonoBehaviour
     private void GrantOfflineReward()
     {
         DateTime lastSaveTime = CurrencyManager.Instance.LastSaveTime;
-        DateTime currentTime = DateTime.UtcNow;
+        DateTime currentTime = ServerClock.TrustedUtcNow;
 
         if (lastSaveTime == DateTime.MinValue || currentTime <= lastSaveTime)
         {

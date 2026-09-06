@@ -86,7 +86,10 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - DisplayRoom guidance requires both gameplay activation and `SpawnManager.IsInitialized`. `SpawnManager.Initialized` fires after restoration and first spawn. If a stored slime already exists, resume entry/info guidance without requesting another transfer.
 - Higher-grade spawn guidance calls `BottomPanelSwitcher.TryShowSystemUpgradePanel()` before focusing the carousel. Selecting an upgrade does not make a hidden panel visible.
 - Offline reward is not offline play. Android cold start still requires Google Play/Firebase login before GameScene loads; do not describe offline play as supported.
-- Offline elapsed time uses the device's `DateTime.UtcNow`, with a 60-second minimum, an 8-hour cap, and 50% efficiency. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
+- Offline elapsed time comes from `ServerClock.TrustedUtcNow`, not the device clock, with a 60-second minimum, an 8-hour cap, and 50% efficiency. `LobbyScene` syncs before entering GameScene and refuses entry when it fails; `GameManager` re-syncs on resume but keeps the previous offset when that fails, so an honest player returning offline still gets paid.
+- `ServerClock` writes its marker to a dedicated `TimeSync/{userId}` document, never to a progress document. Writing to `Currency` creates that document for a brand-new account, which then fails the "three save documents are created together" rule and blocks entry.
+- That marker needs a Firestore rule allowing the owner to write only `ServerSyncTime`, and only when it equals `request.time`. Without the rule, login succeeds and GameScene entry is blocked; without the `request.time` check, a client can write its own timestamp and the whole defence is bypassed. The rules live in the Firebase console, not in this repository.
+- Values inside their valid range still cannot be checked on the client. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
 
 **Spawn and merge loop**
 

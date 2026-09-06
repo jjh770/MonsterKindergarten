@@ -26,6 +26,8 @@ public class LobbyScene : MonoBehaviour
         GameplaySaveGate.EndReset();
         // 게임 세션이 없는 이 화면에서만 저장 데이터 잠금을 푼다.
         SaveDataLoadGuard.Clear();
+        // 계정이 바뀌면 이전 서버 시각 보정값은 의미가 없다.
+        ServerClock.Clear();
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = "Google Play 로그인";
         _loginButton.onClick.AddListener(() => Login(true).Forget());
@@ -123,8 +125,29 @@ public class LobbyScene : MonoBehaviour
             return;
         }
 
+        if (!await TrySyncServerClock(result.UserId))
+        {
+            _recoveryUI.SetMessage(
+                "서버 시각을 확인하지 못했어요.\n인터넷 연결을 확인하고 다시 시도해 주세요.");
+            _isLoggingIn = false;
+            SetRecoveryInteractable(true);
+            return;
+        }
+
         GameplaySaveGate.EndReset();
         SceneManagerEx.Instance.LoadGameScene();
+    }
+
+    // 오프라인 보상이 경과 시간으로 정해지므로, 게임에 들어가기 전에 서버 시각을
+    // 확인해 둔다. 확인하지 못한 채로 들어가면 기기 시계를 돌린 만큼 그대로 준다.
+    // 콜드 스타트는 어차피 로그인에 네트워크가 필요해 새 실패 지점이 아니다.
+    private async UniTask<bool> TrySyncServerClock(string userId)
+    {
+        if (await ServerClock.TrySync(userId)) return true;
+
+        _popupText = "서버 시각을 확인하지 못했어요.\n인터넷 연결을 확인하고\n다시 시도해 주세요.";
+        ShowLobbyPopup();
+        return false;
     }
 
     private void SetRecoveryInteractable(bool isInteractable)
@@ -204,6 +227,14 @@ public class LobbyScene : MonoBehaviour
                     return;
                 }
             }
+            if (!await TrySyncServerClock(result.UserId))
+            {
+                _isLoggingIn = false;
+                _loginButton.interactable = true;
+                _loginButtonText.text = "다시 시도";
+                return;
+            }
+
             GameplaySaveGate.EndReset();
             SceneManagerEx.Instance.LoadGameScene();
             return;

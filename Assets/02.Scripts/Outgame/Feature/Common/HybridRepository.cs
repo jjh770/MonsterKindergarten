@@ -21,7 +21,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         if (GameplaySaveGate.IsResetting) return;
         int resetGeneration = GameplaySaveGate.ResetGeneration;
         // 로컬 저장 - 즉시 수행
-        saveData.LastSaveTime = DateTime.UtcNow.ToString("O");
+        saveData.LastSaveTime = ServerClock.TrustedUtcNow.ToString("O");
         await _playerprefsRepository.Save(saveData);
         if (GameplaySaveGate.IsResetting ||
             resetGeneration != GameplaySaveGate.ResetGeneration) return;
