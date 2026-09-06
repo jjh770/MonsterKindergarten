@@ -336,5 +336,5 @@ public class SpawnManager : MonoBehaviour
                _maxActiveCount;
     }
 
-    public List<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
+    public IReadOnlyList<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
 }

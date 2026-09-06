@@ -91,11 +91,11 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 **Spawn and merge loop**
 
 - `SpawnManager` applies saved upgrades, restores individual slimes in both locations, and creates a Grade 1 slime if no MainStage slime remains, even when DisplayRoom contains slimes. Timed spawning uses the unlocked weighted pool.
-- `SlimeSpawner` uses Lean Pool and tracks active slime instances.
+- `SlimeSpawner` uses Lean Pool and tracks active slime instances. `GetActiveTargets()` hands that list out as `IReadOnlyList`, because only `Spawn` and `Despawn` may change it. That does not make iteration safe: spawning or despawning inside a loop over it still throws, so never do either from within one.
 - `Clicker` uses Unity's Input System pointer API for both mouse and touch input.
 - `SlimeController` handles manual clicks, dragging, point rewards, and overlap-based merge requests.
 - `MergeManager` validates same-grade merges and promotes the surviving slime. It moves the save state first and only then raises the highest grade and updates the visuals, because `SlimeManager.MergeSlime()` throws on an entry the save does not have. Ordering the irreversible grade update after that check is what keeps a failure from leaving the save and the screen disagreeing, so no rollback is needed.
-- `AutoClicker` maintains an independent timer for each eligible, non-dragged main-stage slime; DisplayRoom is excluded from manual, automatic, and offline production.
+- Auto production is split: each `SlimeController` owns its own timer so the timer's lifetime matches the pooled object, and `AutoClicker` owns the single tick loop, the eligibility rule, and `SetPaused`. Keep the rule there - tutorials pause every slime at once through it, and `GameManager`'s offline reward reproduces the same rule. `OnSpawn` re-scatters the timer's phase, never its period, because the offline reward divides by `AutoClickInterval` as the average. DisplayRoom is excluded from manual, automatic, and offline production.
 
 **Feedback**
 
@@ -105,6 +105,7 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 **Gameplay UI**
 
+- The game is portrait-only. Auto Rotation is on with every orientation but Portrait disallowed, in the project settings and in both Android build profiles. Re-enabling any of them, `PortraitUpsideDown` included, breaks the layout: a 180-degree flip moves the notch without changing screen size, so `SafeAreaFitter` never re-applies and the insets stay on the wrong edge.
 - `UpgradeUI` derives its closed position from the actual panel width and applies `Screen.safeArea` insets. Layout refresh is event-driven through rect-size, focus, and pause callbacks; do not restore a fixed movement distance or per-frame layout polling.
 - `GameExitManager` depends on the public `UpgradeUI.TryClose()` API. Preserve that API and its close-first behavior when changing the upgrade panel.
 - `BottomPanelSwitcher` owns bottom-panel selection and presentation; `StageUI` owns the Ground/Sky button, and `SpaceToggleButtonUI` owns the DisplayRoom/MainStage button label and click event. `DisplayRoomUI` orchestrates transfers and space changes.
@@ -156,7 +157,9 @@ Tampered values that fall inside their valid range remain undetectable on the cl
 
 `Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there was built on 2026-08-29 and does not contain the save-layer work, which was checked with a development APK instead.
 
-The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
+Phase 3's collection book has been checked on device. Portrait layout was checked across resolutions in the Game view and in the Device Simulator. The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths still have only implementation and static-check evidence plus that layout pass; re-run them on device before treating them as release-verified.
+
+The next milestone is `0.1.09` after Phase 4's gacha ticket. No release AAB contains the save-layer work yet, so that build is the first chance to verify it outside a development build.
 
 ## Working Guidelines
 

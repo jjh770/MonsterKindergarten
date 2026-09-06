@@ -17,6 +17,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _hasLanded = false;
 
     private bool _isDragging = false;
+    private float _autoProductionTimer;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
@@ -75,7 +76,34 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         _isDragging = false;
         _hasLanded = false;
+        ResetAutoProductionPhase();
         OnSpawned?.Invoke();
+    }
+
+    // 스폰할 때마다 위상을 다시 흩는다. 같은 등급이 한꺼번에 복원되거나 스폰되면
+    // 전부 같은 순간에 터지기 때문이다. 주기 자체는 건드리지 않는다.
+    // 오프라인 보상이 AutoClickInterval을 평균 주기로 나눠 쓰므로 평균이 달라지면
+    // 그 계산과 어긋난다.
+    public void ResetAutoProductionPhase()
+    {
+        float interval = AutoClickInterval;
+        _autoProductionTimer = interval > 0f
+            ? UnityEngine.Random.Range(0f, interval)
+            : 0f;
+    }
+
+    // 자동 생산 주기를 진행시키고, 한 주기를 채웠으면 true를 돌려준다.
+    // 대상 판정과 일시정지는 호출부인 AutoClicker가 맡는다.
+    public bool TickAutoProduction(float deltaTime)
+    {
+        float interval = AutoClickInterval;
+        if (interval <= 0f) return false;
+
+        _autoProductionTimer += deltaTime;
+        if (_autoProductionTimer < interval) return false;
+
+        _autoProductionTimer = 0f;
+        return true;
     }
 
     public void OnDespawn()

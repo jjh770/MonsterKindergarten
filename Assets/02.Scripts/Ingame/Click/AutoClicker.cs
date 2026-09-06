@@ -1,10 +1,13 @@
-﻿using System.Collections.Generic;
 using UnityEngine;
 
+// 자동 생산의 대상 판정과 진행을 한곳에서 돌린다.
+//
+// 주기 자체는 각 슬라임이 들고 있다. 슬라임은 풀에서 재사용되므로 타이머를 여기서
+// 개체별로 들고 있으면 수명을 따로 맞춰 줘야 하고, 그 정리 코드가 곧 비용이 된다.
+// 반면 대상 규칙과 일시정지는 여기 남는다. 튜토리얼이 한 번에 멈출 수 있어야 하고,
+// GameManager의 오프라인 보상이 같은 대상 규칙을 재현하기 때문이다.
 public class AutoClicker : MonoBehaviour
 {
-    private Dictionary<SlimeController, float> _timers = new Dictionary<SlimeController, float>();
-    private HashSet<SlimeController> _activeTargetsCache = new HashSet<SlimeController>();
     private bool _isPaused;
 
     private void Update()
@@ -13,13 +16,8 @@ public class AutoClicker : MonoBehaviour
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (SpawnManager.Instance == null) return;
 
-        var activeTargets = SpawnManager.Instance.GetActiveTargets();
-
-        // 비활성화된 타겟 타이머 정리
-        CleanupTimers(activeTargets);
-
-        // 각 타겟별 자동 클릭 처리
-        foreach (var target in activeTargets)
+        // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 예외가 난다.
+        foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
         {
             if (target == null ||
                 target.IsDragging ||
@@ -28,23 +26,8 @@ public class AutoClicker : MonoBehaviour
                 continue;
             }
 
-            float interval = target.AutoClickInterval;
-            if (interval <= 0f) continue;
-
-            // 같은 등급이 한꺼번에 복원되거나 스폰되면 전부 같은 순간에 터진다.
-            // 첫 등록에만 위상을 흩고 주기 자체는 건드리지 않는다.
-            // 오프라인 보상이 AutoClickInterval을 평균 주기로 나눠 쓰므로
-            // 평균이 달라지는 변경은 그 계산과 어긋난다.
-            if (!_timers.ContainsKey(target))
+            if (target.TickAutoProduction(Time.deltaTime))
             {
-                _timers[target] = Random.Range(0f, interval);
-            }
-
-            _timers[target] += Time.deltaTime;
-
-            if (_timers[target] >= interval)
-            {
-                _timers[target] = 0f;
                 AutoClick(target);
             }
         }
@@ -61,40 +44,6 @@ public class AutoClicker : MonoBehaviour
         };
 
         target.OnClick(clickInfo);
-    }
-
-    private void CleanupTimers(List<SlimeController> activeTargets)
-    {
-        // 매 프레임마다 HashSet을 생성하지 않고 미리 캐싱해둔 HashSet을 재사용
-        _activeTargetsCache.Clear();
-        foreach (var target in activeTargets)
-        {
-            // List를 HashSet으로 변환하여 O(1) 탐색 효율 확보
-            _activeTargetsCache.Add(target);
-        }
-
-        var keysToRemove = new List<SlimeController>();
-
-        foreach (var key in _timers.Keys)
-        {
-            if (key == null || !_activeTargetsCache.Contains(key))
-            {
-                keysToRemove.Add(key);
-            }
-        }
-
-        foreach (var key in keysToRemove)
-        {
-            _timers.Remove(key);
-        }
-    }
-
-    public void ResetTimer(SlimeController target)
-    {
-        if (_timers.ContainsKey(target))
-        {
-            _timers[target] = 0f;
-        }
     }
 
     public void SetPaused(bool isPaused)

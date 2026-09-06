@@ -90,5 +90,8 @@ public class SlimeSpawner : MonoBehaviour
         return count;
     }
 
-    public List<SlimeController> GetActiveTargets() => _activeTargets;
+    // 활성 목록의 추가와 제거는 Spawn과 Despawn만 한다. 호출부에는 읽기 전용으로
+    // 넘겨 밖에서 목록을 바꾸지 못하게 한다. 순회 중 Spawn·Despawn을 부르면 여전히
+    // 예외가 나므로, 루프 안에서 개체를 만들거나 없애지 않는다.
+    public IReadOnlyList<SlimeController> GetActiveTargets() => _activeTargets;
 }
