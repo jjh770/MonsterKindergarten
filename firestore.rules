@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 로그인한 사용자의 UID와 문서 ID가 같은지 확인
+    function isOwner(userId) {
+      return request.auth != null
+          && request.auth.uid == userId;
+    }
+
+    // 사용자 재화 데이터
+    // 본인의 UID 문서만 읽기 및 쓰기 허용
+    match /Currency/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 사용자 업그레이드 데이터
+    // 본인의 UID 문서만 읽기 및 쓰기 허용
+    match /Upgrade/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 사용자 슬라임 진행 데이터
+    // 본인의 UID 문서만 읽기 및 쓰기 허용
+    match /SlimeStatus/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 서버 시각 확인용 표식. 진행도가 아니다.
+    //
+    // ServerClock이 오프라인 보상의 경과 시간을 기기 시계 대신 서버 시각으로 재기
+    // 위해 쓴다. 이 규칙이 없으면 로그인은 되지만 게임 진입이 막힌다.
+    //
+    // request.time 비교가 핵심이다. 없으면 클라이언트가 자기가 만든 시각을 써넣고
+    // 되읽어 서버 시각을 받은 척할 수 있고, 그러면 방어가 통째로 무의미해진다.
+    match /TimeSync/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+                   && request.resource.data.keys().hasOnly(['ServerSyncTime'])
+                   && request.resource.data.ServerSyncTime == request.time;
+    }
+
+    // 위에서 명시하지 않은 경로는 기본적으로 접근 거부
+  }
+}

@@ -88,7 +88,7 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - Offline reward is not offline play. Android cold start still requires Google Play/Firebase login before GameScene loads; do not describe offline play as supported.
 - Offline elapsed time comes from `ServerClock.TrustedUtcNow`, not the device clock, with a 60-second minimum, an 8-hour cap, and 50% efficiency. `LobbyScene` syncs before entering GameScene and refuses entry when it fails; `GameManager` re-syncs on resume but keeps the previous offset when that fails, so an honest player returning offline still gets paid.
 - `ServerClock` writes its marker to a dedicated `TimeSync/{userId}` document, never to a progress document. Writing to `Currency` creates that document for a brand-new account, which then fails the "three save documents are created together" rule and blocks entry.
-- That marker needs a Firestore rule allowing the owner to write only `ServerSyncTime`, and only when it equals `request.time`. Without the rule, login succeeds and GameScene entry is blocked; without the `request.time` check, a client can write its own timestamp and the whole defence is bypassed. The rules live in the Firebase console, not in this repository.
+- That marker needs a Firestore rule allowing the owner to write only `ServerSyncTime`, and only when it equals `request.time`. Without the rule, login succeeds and GameScene entry is blocked; without the `request.time` check, a client can write its own timestamp and the whole defence is bypassed.
 - Values inside their valid range still cannot be checked on the client. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
 
 **Spawn and merge loop**
@@ -170,6 +170,7 @@ The next milestone is `0.1.09` after Phase 4's gacha ticket. No release AAB cont
 - The user performs all verification. Do not run builds, `dotnet build`, Play Mode, or device tests. When a change is ready, hand over the exact steps to check it — what to open, what to do, what a pass and a failure look like.
 - Check the current branch, working tree, app version, and release profile before starting a version-scoped change. Work directly on `main` only when the user explicitly chooses that flow.
 - Do not modify package, generated resolver, Firebase configuration, or Google Play Games files as incidental cleanup.
+- `firestore.rules` in the repository is the source of truth; deploy it with `firebase deploy --only firestore:rules` from the project root. Never edit the rules in the Firebase console - the repository copy would go stale and the next deploy would silently revert the change. Code that reaches a new collection needs its rule in the same change, or login succeeds and the feature fails with a permission error that is hard to trace from the client.
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
 - Treat Unity Play Mode and Android device results separately from static or `.csproj` checks.
 - Preserve unrelated working-tree changes and inspect the exact Git diff before staging.

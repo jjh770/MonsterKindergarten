@@ -80,3 +80,7 @@ crashlytics-build.properties
 
 # 로컬 전용 트러블슈팅 기록
 /Documentation/Troubleshooting/
+
+# Firebase CLI 캐시
+/.firebase/
+firebase-debug.log
