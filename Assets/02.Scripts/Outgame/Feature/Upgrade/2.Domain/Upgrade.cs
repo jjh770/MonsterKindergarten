@@ -15,6 +15,11 @@ public class Upgrade
     public int Level { get; private set; }
 
     // 업그레이드 비용 : 기본 비용 * 증가량^레벨 * 구간 배율^구간
+    //
+    // 올림해서 정수로 맞춘다. 획득 포인트는 스펙 값이 모두 정수라 정수로 떨어지는데,
+    // 배율이 1.5나 1.4처럼 소수여서 비용에만 소수가 생긴다. 그대로 차감하면 잔액에
+    // 소수가 남고 저장 데이터에 그대로 쌓인다.
+    // 내림이 아니라 올림인 이유는 플레이어에게 불리해지지 않게 하기 위해서다.
     public Currency Cost
     {
         get
@@ -25,9 +30,10 @@ public class Upgrade
                     SpecData.CostTierMultiplier,
                     Level / SpecData.CostTierSize)
                 : 1;
-            return SpecData.BaseCost *
-                   Math.Pow(SpecData.CostMultiplier, Level) *
-                   tierMultiplier;
+            return Math.Ceiling(
+                SpecData.BaseCost *
+                Math.Pow(SpecData.CostMultiplier, Level) *
+                tierMultiplier);
         }
     }
 
