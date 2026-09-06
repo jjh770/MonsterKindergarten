@@ -156,7 +156,7 @@ A blocked session recovers through `SaveRecoveryUI` on the login screen, verifie
 
 One gap stayed open. Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
 
-The `0.1.08` version bump has no recorded build handoff under `Builds/Release/`; only a local development APK was produced for the checks above.
+`Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there predates this branch and does not contain the save-layer work, which was checked with a development APK instead.
 
 The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
 
