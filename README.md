@@ -51,8 +51,8 @@ Editor에서는 `LocalPlayer` 계정과 로컬 저장소를 사용합니다. Goo
 
 | 용도 | 프로필 | 앱 버전 | Version Code |
 | --- | --- | --- | ---: |
-| Play Console 배포 | `Android_Release` | `0.1.08` | `9` |
-| 개발 및 기기 확인 | `Android™` | `0.1.08` | `9` |
+| Play Console 배포 | `Android_Release` | `0.1.09` | `10` |
+| 개발 및 기기 확인 | `Android™` | `0.1.09` | `10` |
 
 Android 애플리케이션 ID는 `com.skku_say.Monster_Kindergarten`입니다. Release는
 Development Build가 꺼진 AAB, 개발 프로필은 켜진 APK이며 둘 다 `LoginScene` 다음에
@@ -62,7 +62,8 @@ Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때
 프로젝트 전역 버전이 아니라 실제 빌드에 쓰는 프로필 값을 확인해야 합니다.
 
 산출물은 `Builds/Release/<버전>/`에 두며 Git에서 제외됩니다. `build-info.txt`
-핸드오프 기록은 `0.1.06`까지 있고, `0.1.07`과 `0.1.08`은 산출물만 있습니다.
+핸드오프 기록은 `0.1.06`까지와 `0.1.09`에 있고, `0.1.07`과 `0.1.08`은 산출물만
+있습니다.
 
 ## 저장 구조
 
@@ -133,8 +134,9 @@ Android 내부 테스트에서 Google Play Games 로그인, 재로그인, Fireba
 결과를 새 빌드의 검증 완료로 확대하지 않습니다.
 
 - 기기에서의 UpgradeUI / Safe Area와 드래그 합성 대상 표시
-- `Builds/Release/0.1.08/`의 AAB는 2026-08-29 산출물이라 저장 로드 실패 처리가
-  들어 있지 않습니다. 해당 내용을 포함한 릴리스 AAB와 Play Console 업로드는
-  아직 없습니다
+- `0.1.09` 릴리스 AAB에서의 재설치 후 복원. IL2CPP 코드 스트리핑이 Firestore의
+  리플렉션 직렬화를 건드리면 개발 빌드에서는 멀쩡하던 것이 여기서 깨집니다.
+  `Builds/Release/0.1.09/build-info.txt`에 확인 항목을 두었습니다
 
-다음 개발 단계는 Phase 4 가챠권이며, 그 뒤 `0.1.09`를 목표로 합니다.
+`0.1.09`는 `main`의 작업과 마지막 릴리스 빌드 사이의 간격을 좁히려고 Phase 4보다
+먼저 비공개 테스트 트랙에 올렸습니다. 다음 개발 단계는 Phase 4 가챠권입니다.

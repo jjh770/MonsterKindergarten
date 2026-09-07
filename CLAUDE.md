@@ -17,9 +17,9 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
-- Release profile version: `0.1.08` (Android Version Code `9`)
-- Development profile version: `0.1.08` (Android Version Code `9`)
-- Version snapshot: 2026-09-05. Profile-specific Player Settings override the project-wide version.
+- Release profile version: `0.1.09` (Android Version Code `10`)
+- Development profile version: `0.1.09` (Android Version Code `10`)
+- Version snapshot: 2026-09-07. Profile-specific Player Settings override the project-wide version.
 
 The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
 
@@ -172,11 +172,11 @@ The save-layer rules were verified as follows. Editor Play Mode covered every pa
 
 Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
 
-`Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there was built on 2026-08-29 and does not contain the save-layer work, which was checked with a development APK instead.
+`Builds/Release/` carries `build-info.txt` handoffs through `0.1.06` and again from `0.1.09`; `0.1.07` and `0.1.08` have artifacts without one. `0.1.09` (Android Version Code 10, built 2026-09-07) is the first release build to contain the save-layer work, the server-time offline reward, the scene-transition curtain, the tap-to-continue login, the bookmark collection book, and the cloud-save notice. It went to the Play Console closed testing track; its build-info lists what still needs checking there, and the release-build path that matters most is a reinstall-and-restore, because IL2CPP stripping is what would break Firestore's reflection-based serialization.
 
 Phase 3's collection book has been checked on device in both of its forms, most recently the bookmark rework of 2026-09-07 - including the check its entries need and the others do not, that dragging the horizontal `ScrollRect` strip to scroll does not select an entry. Portrait layout was checked across resolutions in the Game view and in the Device Simulator. The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths still have only implementation and static-check evidence plus that layout pass; re-run them on device before treating them as release-verified.
 
-The next milestone is `0.1.09` after Phase 4's gacha ticket. No release AAB contains the save-layer work yet, so that build is the first chance to verify it outside a development build.
+`0.1.09` shipped to closed testing ahead of Phase 4 rather than after it, to close the gap between the work on `main` and the last release build. Phase 4's gacha ticket is the next feature milestone. Sign-in on that track failed for accounts that had never played the game before; the cause was Play Games Services tester registration, not the build - see `Documentation/GOOGLE_PLAY_FIREBASE_INTEGRATION.md` 6.4-1 before suspecting signing, device state, or the client.
 
 ## Working Guidelines
 

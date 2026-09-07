@@ -285,7 +285,72 @@ Play Console UI에서 앱 서명 키와 업로드 키 인증서를 함께 보여
 
 ![Play Games 서비스 내부 테스트 출시 트랙 연결](Images/google-play-firebase/27-play-games-internal-release-track.png)
 
-출시 트랙을 연결한 뒤에는 내부 테스트 참여 계정을 Play Games 서비스의 개별 테스터 목록에 중복 등록하지 않아도 로그인할 수 있었습니다. 문제가 생길 경우에는 Play Games 서비스의 개별 테스터 등록을 임시 진단 수단으로 사용할 수 있습니다.
+출시 트랙을 연결한 뒤에는 내부 테스트 참여 계정을 Play Games 서비스의 개별 테스터 목록에 중복 등록하지 않아도 로그인할 수 있었습니다. 다만 이는 `internal` 트랙에서 당시 관찰한 결과이며, 2026-09-08 비공개 테스트(Alpha) 트랙에서는 같은 방식이 권한을 주지 못했습니다. 6.4-1을 함께 보십시오. 개별 테스터 등록은 임시 진단 수단이 아니라 확실한 수단으로 다루는 편이 안전합니다.
+
+### 6.4-1 출시 트랙 연결이 권한을 주지 않은 사례 (2026-09-08)
+
+0.1.09를 비공개 테스트(Alpha) 트랙에 올린 뒤, 계정에 따라 로그인이 갈렸습니다. 세 계정 중
+하나만 되고 둘은 실패했습니다. 원인을 찾는 데 오래 걸렸으므로 판별 방법까지 남깁니다.
+
+**증상**
+
+- 계정 A: `The supplied auth credential is incorrect, malformed or has expired.`와 함께
+  `games/v1/players/me` 404 `The requested application with ID ...was not found.`
+- 계정 B(신규): 계정 선택 직후 `Google Play 로그인에 실패했습니다. (Canceled)`
+- 계정 C: 정상
+- 같은 기기에서 갈렸고, 개발 APK와 Play 서명 AAB 모두 같은 결과였습니다.
+
+**원인이 아니었던 것**
+
+증상이 계정별로 갈려 다음을 차례로 의심했지만 모두 아니었습니다.
+
+- Play 앱 서명 키 SHA-1 미등록 — 서명이 원인이면 모든 계정이 실패합니다. 등록된 로컬 키로
+  서명한 개발 APK에서도 같은 계정이 실패해 확정적으로 배제됐습니다.
+- 기기의 Play 서비스 캐시 손상 — 같은 기기에서 되는 계정이 있어 배제됐습니다.
+- 앱 트랙 테스터 목록 누락 — 목록에 세 계정이 모두 있었습니다.
+
+**판별에 쓴 로그**
+
+실패 이유는 앱 프로세스가 아니라 `com.google.android.gms`가 남깁니다. Android Logcat의
+패키지 필터를 `No Filter`로 두거나 `adb logcat -d`를 필터 없이 받아야 보입니다.
+
+```
+SignInPerformer: Successfully resolved account          <- 계정 확인 통과
+SignInPerformer: Successfully authorized                <- 인가 통과
+PlayerManager:   Found player ... for account           <- 계정의 플레이어 확인
+PlayerAgentHelper: Unable to load player g0...          <- 게임별 레코드 없음
+PlayerAgentHelper: wgl{code=NOT_FOUND, description=Requested entity was not found.}
+SignInPerformer: Unable to determine the associated player ...
+GamesConnectSignInOp: Returning SIGN_IN_REQUIRED
+```
+
+계정 인증은 모두 통과하고 `GetAssociatedPlayerForThirdParty` 한 단계에서만 막힙니다. 이
+게임에 대한 플레이어 레코드를 새로 만들지 못한다는 뜻입니다. 바깥에 찍히는
+`errorCode=NETWORK_ERROR`는 여러 실패를 뭉뚱그린 값이므로 네트워크 문제로 오인하기 쉽습니다.
+실제 원인은 그 안의 `NOT_FOUND`입니다.
+
+**원인과 조치**
+
+Play Games 서비스 프로젝트가 게시되지 않은 상태에서는 테스터로 인정된 계정만 게임별 플레이어
+레코드를 새로 만들 수 있습니다. 이미 만들어진 레코드를 불러오는 것은 제한되지 않으므로,
+과거에 한 번이라도 로그인한 계정은 계속 통과합니다. 되던 계정과 안 되던 계정의 차이가
+이것이었습니다.
+
+6.4에 적어 둔 출시 트랙 연결은 이번에 권한을 주지 못했습니다. 앱 트랙에 테스터 14명이
+연결되어 있는데도 `Play Games 서비스 -> 테스터 -> 출시 트랙`의 테스터 수가 `alpha`와
+`internal` 모두 `0`으로 남았습니다. `테스터` 탭에 계정을 직접 등록하자 곧바로 해결됐습니다.
+
+**앞으로의 규칙**
+
+- 출시 트랙 연결에 의존하지 말고 `Play Games 서비스 -> 테스터` 탭에 계정을 직접 등록합니다.
+  6.4의 서술은 `internal` 트랙에서 관찰한 것이며 모든 트랙에서 성립하지 않습니다.
+- 그 화면의 테스터 수가 `0`이면 목록에 이름이 보이더라도 권한이 나가지 않습니다. 목록의 내용이
+  아니라 이 숫자를 확인합니다.
+- 테스터가 늘어날 예정이면 Play Games 서비스 구성을 게시하는 것이 근본 해결입니다. 게시에는
+  설명, 게임 카테고리, 아이콘, 그래픽 이미지 네 항목이 필요하며, 앱 트랙 출시와는 별개입니다.
+  게시해도 앱의 공개 범위는 바뀌지 않지만 되돌리기 어려우므로 시점을 택해 진행합니다.
+- 계정마다 결과가 갈리면 서명이나 기기를 의심하기 전에 위 로그부터 확인합니다. 서명 문제는
+  계정을 가리지 않고, 기기 문제는 같은 기기의 모든 계정에서 나타납니다.
 
 ### 6.5 테스터 설치 및 검증 순서
 
