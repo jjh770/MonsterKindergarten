@@ -62,6 +62,7 @@ MonoBehaviour:
   _nextButton: {fileID: 1534}
   _entriesRoot: {fileID: 1241}
   _entryTemplate: {fileID: 1305}
+  _entriesScroll: {fileID: 1254}
   _detailIcon: {fileID: 1403}
   _detailNumberText: {fileID: 1413}
   _detailNameText: {fileID: 1423}

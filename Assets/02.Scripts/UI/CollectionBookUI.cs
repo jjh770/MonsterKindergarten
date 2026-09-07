@@ -29,6 +29,8 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private RectTransform _entriesRoot;
     [Tooltip("런타임 복제 원본입니다. 프리팹에서는 비활성 상태로 둡니다.")]
     [SerializeField] private CollectionBookEntryUI _entryTemplate;
+    [Tooltip("책갈피가 담긴 스크롤 뷰입니다.")]
+    [SerializeField] private ScrollRect _entriesScroll;
 
     [Header("Detail")]
     [SerializeField] private Image _detailIcon;
@@ -43,6 +45,7 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private readonly List<CollectionBookEntryUI> _entries = new();
     private Tween _fadeTween;
+    private Tween _scrollTween;
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
     private bool _wasUpgradeToggleInputEnabled;
@@ -74,6 +77,7 @@ public sealed class CollectionBookUI : MonoBehaviour
     private void OnDestroy()
     {
         _fadeTween?.Kill();
+        _scrollTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
         _previousButton?.onClick.RemoveListener(ShowPrevious);
@@ -111,6 +115,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _nextButton != null &&
                              _entriesRoot != null &&
                              _entryTemplate != null &&
+                             _entriesScroll != null &&
                              _detailIcon != null &&
                              _detailNumberText != null &&
                              _detailNameText != null &&
@@ -282,6 +287,42 @@ public sealed class CollectionBookUI : MonoBehaviour
         _selectedGrade = (ESlimeGrade)(
             (int)ESlimeGrade.Grade1 + targetIndex);
         RefreshEntries();
+        ScrollToSelected();
+    }
+
+    // 이전·다음으로 옮긴 책갈피가 스크롤 밖이면 보이지 않는다. 뷰포트 가운데로 옮긴다.
+    //
+    // 정규화 위치를 인덱스 비율로 잡으면 항목 폭과 뷰포트 폭이 다를 때 어긋나므로,
+    // 콘텐츠 안에서의 실제 좌표로 계산한다. 앵커나 피벗 설정에 기대지 않도록
+    // 월드 좌표를 거쳐 변환한다.
+    //
+    // 책갈피를 직접 누른 경우에는 부르지 않는다. 이미 보이는 것을 누른 것이다.
+    private void ScrollToSelected()
+    {
+        if (!_selectedGrade.HasValue) return;
+
+        int index = (int)_selectedGrade.Value - (int)ESlimeGrade.Grade1;
+        if (index < 0 || index >= _entries.Count) return;
+
+        RectTransform content = _entriesScroll.content;
+        RectTransform viewport = _entriesScroll.viewport;
+        if (content == null || viewport == null) return;
+
+        // 콘텐츠가 뷰포트 안에 다 들어가면 움직일 것이 없다.
+        float scrollable = content.rect.width - viewport.rect.width;
+        if (scrollable <= 0f) return;
+
+        RectTransform entry = _entries[index].RectTransform;
+        Vector3 centerWorld = entry.TransformPoint(entry.rect.center);
+        float centerInContent =
+            content.InverseTransformPoint(centerWorld).x - content.rect.xMin;
+        float target =
+            (centerInContent - viewport.rect.width * 0.5f) / scrollable;
+
+        _scrollTween?.Kill();
+        _scrollTween = _entriesScroll
+            .DOHorizontalNormalizedPos(Mathf.Clamp01(target), _fadeDuration)
+            .OnComplete(() => _scrollTween = null);
     }
 
     private void RefreshNavigationButtons()
