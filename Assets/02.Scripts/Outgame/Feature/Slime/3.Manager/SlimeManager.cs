@@ -355,6 +355,16 @@ public class SlimeManager : MonoBehaviour
         MarkStatsDirty();
     }
 
+    // 지금 장식장에 전시 중인지. 도감 등록 여부와 다르다.
+    //
+    // 등록은 한 번 들어가면 꺼내도 남는 영구 기록이고, 이쪽은 현재 상태다.
+    // 도감이 전시 중인 개체에만 표식을 붙이는 데 쓴다.
+    public bool IsDisplayedInDisplayRoom(ESlimeGrade grade)
+    {
+        return _status != null &&
+               _status.HasDisplayRoomSlime(grade, isSpecial: false);
+    }
+
     public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)
     {
         return _status != null &&

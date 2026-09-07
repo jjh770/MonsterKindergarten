@@ -37,6 +37,8 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _detailNumberText;
     [SerializeField] private TextMeshProUGUI _detailNameText;
     [SerializeField] private TextMeshProUGUI _detailDescriptionText;
+    [Tooltip("장식장에 전시 중일 때만 켜지는 표식입니다. 상세 이미지 위에 둡니다.")]
+    [SerializeField] private GameObject _displayRoomBadge;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -118,6 +120,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailNumberText != null &&
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
+                             _displayRoomBadge != null &&
                              GameManager.Instance != null &&
                              StageManager.Instance != null;
         if (!hasReferences)
@@ -348,6 +351,9 @@ public sealed class CollectionBookUI : MonoBehaviour
         _detailDescriptionText.text = isRegistered
             ? BuildRegisteredDetail(grade, specData)
             : "장식장에 데려오면\n도감에 자동 등록돼요.";
+
+        // 등록 여부가 아니라 지금 전시 중인지를 본다. 꺼내면 등록은 남고 표식만 꺼진다.
+        _displayRoomBadge.SetActive(manager.IsDisplayedInDisplayRoom(grade));
     }
 
     private static string BuildRegisteredDetail(
