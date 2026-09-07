@@ -233,6 +233,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         RestoreUpgradeToggle(animated: false);
         _hudVisibility.Release(this, animated: false);
         _toast.Hide();
+        _previewStage.SetVisible(false);
         RefreshOpenButton();
     }
 

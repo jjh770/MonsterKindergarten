@@ -17,11 +17,13 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
-- Release profile version: `0.1.05` (Android Version Code `6`)
-- Development profile version: `0.1.03` (Android Version Code `4`)
-- Version snapshot: 2026-08-27. Profile-specific Player Settings override the project-wide version.
+- Release profile version: `0.1.08` (Android Version Code `9`)
+- Development profile version: `0.1.08` (Android Version Code `9`)
+- Version snapshot: 2026-09-05. Profile-specific Player Settings override the project-wide version.
 
-The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. The user performs Unity Play Mode and device testing; do not run builds or add test scripts unless requested. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
+The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
+
+The `Android™` profile is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
 
 Generated `.csproj` files are not the source of truth for Unity package compatibility. A standalone `dotnet build` may fail on Firebase framework references even when the Unity project is valid; confirm compilation in the Unity Console.
 
@@ -32,6 +34,7 @@ Generated `.csproj` files are not the source of truth for Unity package compatib
 - Android players use Google Play Games v2 authentication, exchange the server auth code for a Firebase Auth session, and use the Firebase UID as the save owner.
 - Android game data uses `HybridRepository<T>`: PlayerPrefs saves immediately, Firebase writes are debounced by 0.6 seconds, and load resolves local and cloud data by `LastSaveTime`.
 - When timestamps are equal or invalid, Firebase wins and refreshes the local copy. Keep `[FirestoreProperty]` on every cloud-persisted field, including `LastSaveTime`.
+- `HybridRepository` refuses to resolve when either store failed to read, because an unread store may hold progress the first save would overwrite. A corrupt local copy still recovers from a readable cloud document; a local save newer than the app's schema blocks even when the cloud is readable. The mirror write that refreshes the local copy is best-effort and must never abort the load.
 
 Do not change save keys, Firestore document ownership, Firebase UID handling, or serialized save fields without an explicit migration plan. Preserve existing player documents when testing schema changes.
 
@@ -58,7 +61,7 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 
 - `FirebaseInitializer` checks Firebase dependencies.
 - `AccountManager` selects local authentication in the Editor and Google Play/Firebase authentication on Android.
-- `LobbyScene` attempts silent Google Play sign-in first and supports an explicit manual retry.
+- `LoginScene` never signs in on its own. A full-screen button covers the scene and shows the waiting label, so a tap anywhere starts a manual Google Play sign-in. Every other graphic on that screen must have Raycast Target off: a decorative image drawn after the button swallows the tap, because the event bubbles to its own parent and never reaches the button behind it.
 - `SceneManagerEx` keeps scene transitions between LoginScene and GameScene.
 
 **Game data**
@@ -66,27 +69,36 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `CurrencyManager`, `SlimeManager`, and `UpgradeManager` own their domains and repository selection.
 - `GameManager` waits for all three managers, then raises `OnAllDataInitialized` for gameplay systems.
 - Repository interfaces separate local PlayerPrefs storage from Firebase Firestore storage.
-- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 1, SlimeStatus 2, and Upgrade 1. Preserve deterministic legacy migration IDs and future-version rejection in slime repositories.
+- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 1, SlimeStatus 4, and Upgrade 1. Preserve deterministic legacy migration IDs. All six repositories reject a stored version higher than the app supports.
+- `IRepository<T>.Load()` returns `SaveLoadResult<T>`: `Loaded`, `NotFound`, or `Failed` with a reason. Never collapse a read failure into a default value - a session that starts from defaults overwrites the progress it could not read. Repositories decide whether the document was read faithfully; managers decide whether it can become a valid domain state, and report anything unusable the same way.
+- `SaveDataLoadGuard.Report()` locks saving and returns to LoginScene with per-reason guidance; `LoginScene` clears the lock. Managers must not raise `OnDataInitialized` after reporting, and must never leave initialization hanging instead.
+- Values that the writer cannot produce are treated as tampering and block the session: unrestorable or duplicate slime entries, an out-of-range `HighestGrade`, negative/NaN/infinite currency, a currency array of the wrong length, and upgrade entries outside their enum range. Values that a balance change can legitimately produce are absorbed instead: an upgrade level above the spec's `MaxLevel` is clamped, and a saved entry whose upgrade is no longer in the spec table is ignored.
+- The three save documents are created and deleted together, so `GameManager` blocks entry when only some of them exist. Values inside the valid range - a raised `HighestGrade`, an inflated currency total - are indistinguishable from legitimate progress and are out of scope for client-side checks.
+- Firestore leaves absent fields at their C# defaults, so a property initializer hides a missing field. `CurrencySaveData.Currencies` deliberately has none. `UpgradeSaveData.Entries` has one, so its guard checks for an empty list rather than null. That check must exclude the `NotFound` default, whose list is legitimately empty; without the exclusion every new account is blocked.
 - Each manager delays its initialization by one `await UniTask.Yield()` so `OnDataInitialized` fires after every subscriber has wired up in `Start`. Do not remove it.
 
 **Offline reward and tutorial**
 
 - `GameManager` also computes the offline reward from `CurrencyManager.LastSaveTime` and per-slime auto-production, gated by a minimum interval, a maximum accrual window, and an efficiency factor. Gameplay stays inactive until the reward popup is dismissed.
+- Computing the reward and presenting it are separate. While `TutorialManager.IsRunning`, presentation waits for `TutorialManager.Finished`; the spotlight overlay and the popup's blocker each cover the screen, so showing both locks input in every direction. Compute at resume and keep the larger pending reward - play continues while presentation waits, and every currency change refreshes `LastSaveTime`, so recomputing later would shrink it. The count-up start value is re-read at presentation. Entering GameScene never defers, because no sequence has begun yet.
 - `TutorialProgress` stores completion per user ID in PlayerPrefs and treats existing progress as completion of the main tutorial. DisplayRoom remains incomplete until its final dialogue; these local flags are not cloud-synced.
 - `TutorialManager` owns execution and shared presentation; MainTutorialSequence, HigherGradeSpawnTutorialSequence, and DisplayRoomTutorialSequence own their steps. `GameplaySaveGate` blocks progress saves during the main tutorial, not DisplayRoom transfers.
 - DisplayRoom guidance requires both gameplay activation and `SpawnManager.IsInitialized`. `SpawnManager.Initialized` fires after restoration and first spawn. If a stored slime already exists, resume entry/info guidance without requesting another transfer.
 - Higher-grade spawn guidance calls `BottomPanelSwitcher.TryShowSystemUpgradePanel()` before focusing the carousel. Selecting an upgrade does not make a hidden panel visible.
 - Offline reward is not offline play. Android cold start still requires Google Play/Firebase login before GameScene loads; do not describe offline play as supported.
-- Offline elapsed time uses the device's `DateTime.UtcNow`, with a 60-second minimum, an 8-hour cap, and 50% efficiency. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
+- Offline elapsed time comes from `ServerClock.TrustedUtcNow`, not the device clock, with a 60-second minimum, an 8-hour cap, and 50% efficiency. `LoginScene` syncs before entering GameScene and refuses entry when it fails; `GameManager` re-syncs on resume but keeps the previous offset when that fails, so an honest player returning offline still gets paid.
+- `ServerClock` writes its marker to a dedicated `TimeSync/{userId}` document, never to a progress document. Writing to `Currency` creates that document for a brand-new account, which then fails the "three save documents are created together" rule and blocks entry.
+- That marker needs a Firestore rule allowing the owner to create or update only `ServerSyncTime` when it equals `request.time`, while still allowing the owner to delete the marker during reset. Without the write rule, login succeeds and GameScene entry is blocked; without the `request.time` check, a client can write its own timestamp and the whole defence is bypassed.
+- Values inside their valid range still cannot be checked on the client. Revisit server-authoritative settlement before adding rankings, competition, or paid-currency dependencies.
 
 **Spawn and merge loop**
 
 - `SpawnManager` applies saved upgrades, restores individual slimes in both locations, and creates a Grade 1 slime if no MainStage slime remains, even when DisplayRoom contains slimes. Timed spawning uses the unlocked weighted pool.
-- `SlimeSpawner` uses Lean Pool and tracks active slime instances.
+- `SlimeSpawner` uses Lean Pool and tracks active slime instances. `GetActiveTargets()` hands that list out as `IReadOnlyList`, because only `Spawn` and `Despawn` may change it. That does not make iteration safe: spawning or despawning inside a loop over it still throws, so never do either from within one.
 - `Clicker` uses Unity's Input System pointer API for both mouse and touch input.
 - `SlimeController` handles manual clicks, dragging, point rewards, and overlap-based merge requests.
-- `MergeManager` validates same-grade merges and promotes the surviving slime.
-- `AutoClicker` maintains an independent timer for each eligible, non-dragged main-stage slime; DisplayRoom is excluded from manual, automatic, and offline production.
+- `MergeManager` validates same-grade merges and promotes the surviving slime. It moves the save state first and only then raises the highest grade and updates the visuals, because `SlimeManager.MergeSlime()` throws on an entry the save does not have. Ordering the irreversible grade update after that check is what keeps a failure from leaving the save and the screen disagreeing, so no rollback is needed.
+- Auto production is split: each `SlimeController` owns its own timer so the timer's lifetime matches the pooled object, and `AutoClicker` owns the single tick loop, the eligibility rule, and `SetPaused`. Keep the rule there - tutorials pause every slime at once through it, and `GameManager`'s offline reward reproduces the same rule. `OnSpawn` re-scatters the timer's phase, never its period, because the offline reward divides by `AutoClickInterval` as the average. DisplayRoom is excluded from manual, automatic, and offline production.
 
 **Feedback**
 
@@ -96,6 +108,7 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 **Gameplay UI**
 
+- The game is portrait-only. Auto Rotation is on with every orientation but Portrait disallowed, in the project settings and in both Android build profiles. Re-enabling any of them, `PortraitUpsideDown` included, breaks the layout: a 180-degree flip moves the notch without changing screen size, so `SafeAreaFitter` never re-applies and the insets stay on the wrong edge.
 - `UpgradeUI` derives its closed position from the actual panel width and applies `Screen.safeArea` insets. Layout refresh is event-driven through rect-size, focus, and pause callbacks; do not restore a fixed movement distance or per-frame layout polling.
 - `GameExitManager` depends on the public `UpgradeUI.TryClose()` API. Preserve that API and its close-first behavior when changing the upgrade panel.
 - `BottomPanelSwitcher` owns bottom-panel selection and presentation; `StageUI` owns the Ground/Sky button, and `SpaceToggleButtonUI` owns the DisplayRoom/MainStage button label and click event. `DisplayRoomUI` orchestrates transfers and space changes.
@@ -106,13 +119,23 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 - `StageManager.PlayDisplayRoomTransfer()` starts a space transfer and `StageManager.TryRelocateSlime()` finishes it: save location, reposition, refresh presentation, and restore the pre-transfer position on failure. UI owns only the policy around it - toast text, input restore, popup closing. Do not reimplement the completion half in a caller.
 - Never place a `Button` or other `Selectable` under a `Slider`, `Scrollbar`, `ScrollRect`, or any `IDragHandler`. `Slider.OnInitializePotentialDrag` clears the drag threshold, so any finger movement starts a parent drag and cancels the child's click. The spawn gauge keeps its `Slider` on a dedicated `SpawnBar` child for this reason.
 
-**Options, progress reset, and account deletion**
+**Scene transitions and loading**
 
-- `OptionsUI` provides volume sliders plus separate confirmations for progress reset and game-account deletion.
+- `FadeCurtainUI` is one prefab (`LoadingOverlayCanvas`) shared by both scenes. Two components would need their background colour and fade time matched by hand, and one mismatch makes the screen jump at the scene boundary. Put the component on an always-active parent with `_root` as its child; on `_root` itself it cannot cover again after being revealed.
+- The curtain's canvas order belongs to the code, not the prefab: `Awake` sets `overrideSorting` and the `sortingOrder` ceiling. An authored value loses that race - `DialoguePresentation` computes `reference.sortingOrder + 100` at runtime and overtook the curtain's old 20, drawing the tutorial dialogue over it and letting taps through a screen that looked covered. Nothing belongs above the curtain, so it coordinates numbers with nothing; passing it takes a deliberate move to the ceiling.
+- `CoverAsync()` and `RevealAsync()` return only once the screen has reached that state, and a transition in flight yields to a new request by fade generation. Never early-return from an awaited transition without reaching the state: the caller `await`s it and proceeds believing it succeeded, which loaded GameScene over an uncovered screen whenever login beat the fade.
+- `_minimumCoveredSeconds` holds the curtain for a floor duration, because Editor logins and local loads finish in a few frames and it would otherwise flicker past. `LoginScene` carried the mirror of it while sign-in was automatic; once the player has to tap to continue, the screen is necessarily seen and that timer only delayed the response to the tap, so it was removed. Measure such a floor from scene start and it expires before a human reacts - it can only make an answered tap feel slow.
+- `LoginScene` drives the curtain directly. GameScene's `LoadingOverlayRevealer` waits for `SpawnManager.Initialized` rather than `OnAllDataInitialized`, because the latter is the signal telling `SpawnManager` to start restoring and subscriber order can leave an empty field visible for a frame. It reveals immediately when `SpawnManager` is missing, but has no timeout: a load that stalls instead of failing leaves the curtain up with its animation still running and the back button covered. Read failures return to LoginScene, so only a stall reaches this.
+- Canvas order has no single authority. GameScene authors 0 / 5 / 10 / 1000, `DialoguePresentation` computes its own at runtime, and the curtain claims the ceiling. Check an authored value against the runtime ones before changing it; a canvas lowered to sit under something else has twice been overtaken by a number computed elsewhere.
+
+**Options and progress reset**
+
+- `OptionsUI` provides volume sliders and explicit confirmations for progress reset and game-account deletion.
+- `SaveRecoveryUI` is the same reset reached from LoginScene, for a session that `SaveDataLoadGuard` blocked before the options screen was reachable. `LoginScene` opens it only for `Unreadable`: a network failure needs a retry and a future schema version needs an app update, so offering reset there would delete progress that is still intact. The panel owns its presentation; `LoginScene` owns which failure qualifies and the login-then-reset order.
 - `GameDataResetService` deletes only the current UID's Currency, SlimeStatus, and Upgrade documents on Android, plus that user's local progress and tutorial flags. Editor deletes local progress only; authentication accounts and audio preferences remain.
-- `GameAccountDeletionService` runs the same data deletion first, then deletes the Firebase Auth user. It keeps a per-UID pending marker so LobbyScene can resume an interrupted deletion before GameScene entry. Never delete authentication before its Firestore documents.
-- Reset locks gameplay/saves, invalidates old debounced writes by ResetGeneration, waits for pending Firestore writes, then deletes. A local pending marker resumes interrupted resets in LobbyScene before GameScene entry.
-- A reset timeout does not cancel the server operation. Do not resume the old game while the result is uncertain. Return to login without automatic sign-in after reset.
+- `GameAccountDeletionService` runs the same data deletion first, then deletes the Firebase Auth user. It keeps a per-UID pending marker so LoginScene can resume an interrupted deletion before GameScene entry. Never delete authentication before its Firestore documents.
+- Reset locks gameplay/saves, invalidates old debounced writes by ResetGeneration, waits for pending Firestore writes, then deletes. A local pending marker resumes interrupted resets in LoginScene before GameScene entry.
+- A reset timeout does not cancel the server operation. Do not resume the old game while the result is uncertain. Return to login after reset; the login screen never signs in by itself, so nothing re-enters the game unattended.
 - Other devices' local saves are not invalidated and can restore old cloud progress later. Account-wide reset generations are not implemented.
 
 ### Key Patterns
@@ -145,23 +168,25 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 
 The active baseline is the Android version on `main`. Google Play Games login, Firebase UID-based saves, cloud restoration after app-data deletion, and Play Console internal installation have been device-tested. Editor gameplay intentionally bypasses Google Play login and uses local saves.
 
-The offline reward, tutorial, exit popup, and audio systems have since shipped on `main`.
+The offline reward, tutorial, exit popup, audio, Phase 2/2-B DisplayRoom, Phase 3's normal-slime collection book, game-account deletion, the save-layer hardening described above, and the scene-transition curtain have since shipped on `main`. Gacha and special-slime gameplay are not implemented yet.
 
-Current work on `feature/phase-2-display-room` includes Phase 2/2-B DisplayRoom, observation UX, tutorials, options, and follow-up fixes. Next feature phase is Phase 3 (collection book); collection, gacha, and special-slime gameplay are not implemented yet.
+The save-layer rules were verified as follows. Editor Play Mode covered every path reachable without Firestore - corrupt data, future schema versions, partial save sets, the recovery flow from corrupt save through reset and tutorial to the first save that recreates all three documents, and new-account entry after each change. A development APK on device covered the three cloud-only paths: a missing `Currencies` field, a missing `Entries` field, and deferring the reward across a background/resume during the DisplayRoom tutorial.
 
-As of 2026-08-27, a local `0.1.05` AAB, `Builds/Release/0.1.05/build-info.txt`, and `release-notes.txt` exist. The AAB was built from HEAD `6f2b2e7` plus uncommitted release-profile and project-setting changes, so HEAD alone does not identify the full build source. Existing Unity confirmations do not establish this AAB's Android login/save validation or store upload.
+Tampered values that fall inside their valid range remain undetectable on the client; revisit that together with the offline reward's device-clock dependency.
 
-A structural cleanup pass landed before that build: `HudVisibility` took over HUD hiding, `SpaceToggleButtonUI` took the space button out of `DisplayRoomUI`, `StageManager.TryRelocateSlime()` absorbed the duplicated transfer completion, singleton declarations and `Awake` guards were unified, WebGL support was removed, and the spawn gauge `Slider` moved onto a `SpawnBar` child so its sibling buttons stop losing clicks. These have static-check evidence and Editor confirmation of the send/observation/transfer paths only.
+`Builds/Release/` carries `build-info.txt` handoffs only through `0.1.06`; `0.1.07` and `0.1.08` have artifacts without one. The `0.1.08` AAB there was built on 2026-08-29 and does not contain the save-layer work, which was checked with a development APK instead.
 
-The responsive UpgradeUI/Safe Area work and drag-merge target feedback have implementation and static-check evidence, but no recorded multi-resolution Play Mode or Android device validation. Re-run those scenarios before treating them as release-verified.
+Phase 3's collection book has been checked on device. Portrait layout was checked across resolutions in the Game view and in the Device Simulator. The responsive UpgradeUI/Safe Area work, drag-merge target feedback, and the DisplayRoom send/observation/transfer paths still have only implementation and static-check evidence plus that layout pass; re-run them on device before treating them as release-verified.
 
-The `Android™` profile is the development build and is signed with the same custom keystore as the release profile, because Google Play Games sign-in rejects debug-keystore builds.
+The next milestone is `0.1.09` after Phase 4's gacha ticket. No release AAB contains the save-layer work yet, so that build is the first chance to verify it outside a development build.
 
 ## Working Guidelines
 
-- Prefer minimal, incremental edits and preserve existing public APIs and serialized references.
+- Make the smallest edit that resolves the stated request, and preserve existing public APIs and serialized references. One concern per change: do not bundle adjacent refactors, cleanups, or "while I am here" improvements into the same pass, even when they touch the same file. When a fix needs several layers, split it into steps, deliver the first, and wait for the user before starting the next.
+- The user performs all verification. Do not run builds, `dotnet build`, Play Mode, or device tests. When a change is ready, hand over the exact steps to check it — what to open, what to do, what a pass and a failure look like.
 - Check the current branch, working tree, app version, and release profile before starting a version-scoped change. Work directly on `main` only when the user explicitly chooses that flow.
 - Do not modify package, generated resolver, Firebase configuration, or Google Play Games files as incidental cleanup.
+- `firestore.rules` in the repository is the source of truth; deploy it with `firebase deploy --only firestore:rules` from the project root. Never edit the rules in the Firebase console - the repository copy would go stale and the next deploy would silently revert the change. Code that reaches a new collection needs its rule in the same change, or login succeeds and the feature fails with a permission error that is hard to trace from the client.
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
 - Treat Unity Play Mode and Android device results separately from static or `.csproj` checks.
 - Preserve unrelated working-tree changes and inspect the exact Git diff before staging.

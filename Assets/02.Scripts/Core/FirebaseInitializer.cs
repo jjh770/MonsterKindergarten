@@ -2,11 +2,14 @@
 using Cysharp.Threading.Tasks;
 using Firebase;
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class FirebaseInitializer : MonoBehaviour
 {
     public static FirebaseInitializer Instance { get; private set; }
+
+    private Task<bool> _initializationTask;
 
     private void Awake()
     {
@@ -17,33 +20,36 @@ public class FirebaseInitializer : MonoBehaviour
         }
 
         Instance = this;
+        _initializationTask = InitFirebaseAsync();
     }
 
-    private void Start()
+    public UniTask<bool> WaitForInitializationAsync()
     {
-        // 아래쪽에서 실행할 코드가 없기 때문에 await를 붙이지 않아도 됨.
-        // Fire - and - Forget 패턴 : 비동기작업을 시작하기만 하고 결과를 기다리지는 않는다.
-        // Forget() -> 이 비동기 처리를 기다리는 다음 작업이 없다.
-        InitFirebaseAsync().Forget();
+        return _initializationTask.AsUniTask();
     }
 
-    private async UniTask InitFirebaseAsync()
+    private static async Task<bool> InitFirebaseAsync()
     {
-        var dependencyStatus = await Firebase.FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask();
         try
         {
+            DependencyStatus dependencyStatus = await FirebaseApp.CheckAndFixDependenciesAsync();
             if (dependencyStatus != DependencyStatus.Available)
             {
                 Debug.LogError($"Firebase 초기화 실패: {dependencyStatus}");
+                return false;
             }
+
+            return true;
         }
         catch (FirebaseException e)
         {
             Debug.LogError("파이어베이스 초기화 실패" + e.Message);
+            return false;
         }
         catch (Exception e)
         {
             Debug.LogError("초기화 실패" + e.Message);
+            return false;
         }
     }
 }

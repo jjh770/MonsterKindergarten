@@ -25,7 +25,7 @@ public class AccountManager : MonoBehaviour
 
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        _repository = new FirebaseAccountRepository();
+        // Firebase 의존성 확인이 끝난 뒤 TryLogin에서 생성한다.
 #else
         _repository = new LocalAccountRepository();
 #endif
@@ -34,6 +34,34 @@ public class AccountManager : MonoBehaviour
 
     public async UniTask<AccountResult> TryLogin(bool useManualSignIn = false)
     {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (_repository == null)
+        {
+            FirebaseInitializer initializer = FirebaseInitializer.Instance;
+            if (initializer == null || !await initializer.WaitForInitializationAsync())
+            {
+                return new AccountResult
+                {
+                    Success = false,
+                    ErrorMessage = "Firebase를 초기화하지 못했습니다.\n앱을 다시 실행해 주세요.",
+                };
+            }
+
+            try
+            {
+                _repository = new FirebaseAccountRepository();
+            }
+            catch (System.Exception e)
+            {
+                return new AccountResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Firebase를 초기화하지 못했습니다.\n{e.Message}",
+                };
+            }
+        }
+#endif
+
         AccountResult result = await _repository.Login(useManualSignIn);
         if (result.Success)
         {

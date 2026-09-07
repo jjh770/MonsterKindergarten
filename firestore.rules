@@ -35,10 +35,10 @@ service cloud.firestore {
     // request.time 비교가 핵심이다. 없으면 클라이언트가 자기가 만든 시각을 써넣고
     // 되읽어 서버 시각을 받은 척할 수 있고, 그러면 방어가 통째로 무의미해진다.
     match /TimeSync/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId)
-                   && request.resource.data.keys().hasOnly(['ServerSyncTime'])
-                   && request.resource.data.ServerSyncTime == request.time;
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource.data.keys().hasOnly(['ServerSyncTime'])
+                            && request.resource.data.ServerSyncTime == request.time;
     }
 
     // 위에서 명시하지 않은 경로는 기본적으로 접근 거부

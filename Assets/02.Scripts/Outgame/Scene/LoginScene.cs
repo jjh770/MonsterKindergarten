@@ -136,6 +136,7 @@ public class LoginScene : MonoBehaviour
             return;
         }
 
+        GameplaySaveGate.EndReset();
         if (!await TrySyncServerClock(result.UserId))
         {
             _recoveryUI.SetMessage(
@@ -145,7 +146,6 @@ public class LoginScene : MonoBehaviour
             return;
         }
 
-        GameplaySaveGate.EndReset();
         await EnterGameScene();
     }
 
@@ -237,6 +237,8 @@ public class LoginScene : MonoBehaviour
                     ShowLobbyPopup();
                     return;
                 }
+
+                GameplaySaveGate.EndReset();
             }
             if (!await TrySyncServerClock(result.UserId))
             {
@@ -246,7 +248,6 @@ public class LoginScene : MonoBehaviour
                 return;
             }
 
-            GameplaySaveGate.EndReset();
             await EnterGameScene();
             return;
         }
