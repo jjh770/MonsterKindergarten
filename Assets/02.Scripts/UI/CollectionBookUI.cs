@@ -37,8 +37,6 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _detailNumberText;
     [SerializeField] private TextMeshProUGUI _detailNameText;
     [SerializeField] private TextMeshProUGUI _detailDescriptionText;
-    // 선택이 없을 때 상세에 보여주는 기본 그림.
-    [SerializeField] private Sprite _unlockSlimeSprite;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -120,7 +118,6 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailNumberText != null &&
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
-                             _unlockSlimeSprite != null &&
                              GameManager.Instance != null &&
                              StageManager.Instance != null;
         if (!hasReferences)
@@ -232,6 +229,10 @@ public sealed class CollectionBookUI : MonoBehaviour
         SlimeManager manager = SlimeManager.Instance;
         if (manager == null) return;
 
+        // 선택이 없으면 첫 장을 편다. 비워 두면 이전·다음이 둘 다 잠겨,
+        // 도감을 처음 연 사람에게 죽은 버튼만 보인다.
+        _selectedGrade ??= ESlimeGrade.Grade1;
+
         for (int i = 0; i < _entries.Count; i++)
         {
             ESlimeGrade grade = (ESlimeGrade)(
@@ -247,14 +248,7 @@ public sealed class CollectionBookUI : MonoBehaviour
             entry.SetSelected(_selectedGrade == grade);
         }
 
-        if (_selectedGrade.HasValue)
-        {
-            ShowDetail(_selectedGrade.Value);
-        }
-        else
-        {
-            ClearDetail();
-        }
+        ShowDetail(_selectedGrade.Value);
 
         RefreshNavigationButtons();
     }
@@ -327,12 +321,11 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void RefreshNavigationButtons()
     {
-        int selectedIndex = _selectedGrade.HasValue
-            ? (int)_selectedGrade.Value - (int)ESlimeGrade.Grade1
-            : -1;
+        // RefreshEntries가 먼저 선택을 채우므로 여기서는 항상 값이 있다.
+        int selectedIndex =
+            (int)_selectedGrade.Value - (int)ESlimeGrade.Grade1;
         _previousButton.interactable = selectedIndex > 0;
-        _nextButton.interactable = selectedIndex >= 0 &&
-                                   selectedIndex < _entries.Count - 1;
+        _nextButton.interactable = selectedIndex < _entries.Count - 1;
     }
 
     private void ShowDetail(ESlimeGrade grade)
@@ -398,16 +391,6 @@ public sealed class CollectionBookUI : MonoBehaviour
         }
 
         return parsed.ToLocalTime().ToString("yyyy.MM.dd");
-    }
-
-    private void ClearDetail()
-    {
-        _selectedGrade = null;
-        _detailIcon.sprite = _unlockSlimeSprite;
-        _detailIcon.color = Color.white;
-        _detailNumberText.text = "No.???";
-        _detailNameText.text = "슬라임 정보";
-        _detailDescriptionText.text = "위 슬라임을 선택해 주세요.";
     }
 
     private void OnNormalCollectionRegistered(ESlimeGrade grade)
