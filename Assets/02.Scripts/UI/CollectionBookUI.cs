@@ -9,8 +9,6 @@ using UnityEngine.UI;
 
 public sealed class CollectionBookUI : MonoBehaviour
 {
-    private const int PageSize = 2;
-
     [Header("Common")]
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
@@ -25,8 +23,6 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private Button _closeButton;
     [SerializeField] private Button _previousButton;
     [SerializeField] private Button _nextButton;
-    [SerializeField] private TextMeshProUGUI _pageText;
-    [SerializeField] private ToastMessageUI _toast;
 
     [Header("Entries")]
     [Tooltip("항목 복제본이 배치되는 컨테이너입니다. 항상 활성 상태로 둡니다.")]
@@ -39,8 +35,7 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _detailNumberText;
     [SerializeField] private TextMeshProUGUI _detailNameText;
     [SerializeField] private TextMeshProUGUI _detailDescriptionText;
-    [SerializeField] private CollectionPreviewStage _previewStage;
-    // 선택이 없을 때 상세와 미리보기에 함께 쓰는 기본 그림.
+    // 선택이 없을 때 상세에 보여주는 기본 그림.
     [SerializeField] private Sprite _unlockSlimeSprite;
 
     [Header("Animation")]
@@ -48,7 +43,6 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private readonly List<CollectionBookEntryUI> _entries = new();
     private Tween _fadeTween;
-    private int _currentPage;
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
     private bool _wasUpgradeToggleInputEnabled;
@@ -65,11 +59,10 @@ public sealed class CollectionBookUI : MonoBehaviour
 
         CreateEntries();
         _bookRoot.SetActive(false);
-        _toast.Hide();
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
-        _previousButton.onClick.AddListener(ShowPreviousPage);
-        _nextButton.onClick.AddListener(ShowNextPage);
+        _previousButton.onClick.AddListener(ShowPrevious);
+        _nextButton.onClick.AddListener(ShowNext);
         StageManager.Instance.SpaceChanged += OnSpaceChanged;
         GameManager.OnAllDataInitialized += RefreshOpenButton;
         GameManager.Instance.OnGameplayActivated += RefreshOpenButton;
@@ -83,8 +76,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         _fadeTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
-        _previousButton?.onClick.RemoveListener(ShowPreviousPage);
-        _nextButton?.onClick.RemoveListener(ShowNextPage);
+        _previousButton?.onClick.RemoveListener(ShowPrevious);
+        _nextButton?.onClick.RemoveListener(ShowNext);
 
         if (StageManager.Instance != null)
         {
@@ -116,15 +109,12 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _closeButton != null &&
                              _previousButton != null &&
                              _nextButton != null &&
-                             _pageText != null &&
-                             _toast != null &&
                              _entriesRoot != null &&
                              _entryTemplate != null &&
                              _detailIcon != null &&
                              _detailNumberText != null &&
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
-                             _previewStage != null &&
                              _unlockSlimeSprite != null &&
                              GameManager.Instance != null &&
                              StageManager.Instance != null;
@@ -147,7 +137,7 @@ public sealed class CollectionBookUI : MonoBehaviour
     private void CreateEntries()
     {
         _entryTemplate.gameObject.SetActive(false);
-        for (int i = 0; i < PageSize; i++)
+        for (int i = 0; i < SlimeStatusSaveData.NormalCollectionSize; i++)
         {
             CollectionBookEntryUI entry = Instantiate(
                 _entryTemplate,
@@ -178,7 +168,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _hudVisibility.PushHide(this, EHudParts.All);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         RefreshOpenButton();
-        RefreshPage();
+        RefreshEntries();
 
         _fadeTween?.Kill();
         _fadeTween = _bookCanvasGroup
@@ -202,9 +192,6 @@ public sealed class CollectionBookUI : MonoBehaviour
         _clicker.ReleaseMode(this);
         RestoreUpgradeToggle();
         _hudVisibility.Release(this);
-        _toast.Hide();
-        // 도감이 닫히면 미리보기 카메라를 끈다.
-        _previewStage.SetVisible(false);
 
         _fadeTween?.Kill();
         _fadeTween = _bookCanvasGroup
@@ -232,25 +219,18 @@ public sealed class CollectionBookUI : MonoBehaviour
         _clicker.ReleaseMode(this);
         RestoreUpgradeToggle(animated: false);
         _hudVisibility.Release(this, animated: false);
-        _toast.Hide();
-        _previewStage.SetVisible(false);
         RefreshOpenButton();
     }
 
-    private void RefreshPage()
+    private void RefreshEntries()
     {
         SlimeManager manager = SlimeManager.Instance;
         if (manager == null) return;
 
-        int firstIndex = _currentPage * PageSize;
         for (int i = 0; i < _entries.Count; i++)
         {
-            int gradeValue = (int)ESlimeGrade.Grade1 + firstIndex + i;
-            bool isValid = gradeValue < (int)ESlimeGrade.Count;
-            _entries[i].gameObject.SetActive(isValid);
-            if (!isValid) continue;
-
-            ESlimeGrade grade = (ESlimeGrade)gradeValue;
+            ESlimeGrade grade = (ESlimeGrade)(
+                (int)ESlimeGrade.Grade1 + i);
             SlimeSpecData specData = manager.Get(grade)?.SpecData;
             bool isRegistered = manager.IsNormalCollectionRegistered(grade);
             CollectionBookEntryUI entry = _entries[i];
@@ -258,19 +238,11 @@ public sealed class CollectionBookUI : MonoBehaviour
                 grade,
                 specData,
                 isRegistered,
-                canRegister: false,
                 () => OnEntryClicked(grade));
             entry.SetSelected(_selectedGrade == grade);
         }
 
-        int pageCount = Mathf.CeilToInt(
-            SlimeStatusSaveData.NormalCollectionSize / (float)PageSize);
-        _pageText.text = $"{_currentPage + 1} / {pageCount}";
-        _previousButton.interactable = _currentPage > 0;
-        _nextButton.interactable = _currentPage < pageCount - 1;
-
-        if (_selectedGrade.HasValue &&
-            GetPage(_selectedGrade.Value) == _currentPage)
+        if (_selectedGrade.HasValue)
         {
             ShowDetail(_selectedGrade.Value);
         }
@@ -278,21 +250,48 @@ public sealed class CollectionBookUI : MonoBehaviour
         {
             ClearDetail();
         }
+
+        RefreshNavigationButtons();
     }
 
     private void OnEntryClicked(ESlimeGrade grade)
     {
-        SlimeManager manager = SlimeManager.Instance;
-        if (manager == null) return;
-
-        bool isRegistered = manager.IsNormalCollectionRegistered(grade);
         _selectedGrade = grade;
-        RefreshPage();
+        RefreshEntries();
+    }
 
-        if (!isRegistered)
-        {
-            _toast.Show("이 슬라임을 장식장에 데려오면 자동 등록돼요.");
-        }
+    private void ShowPrevious()
+    {
+        SelectRelativeEntry(-1);
+    }
+
+    private void ShowNext()
+    {
+        SelectRelativeEntry(1);
+    }
+
+    private void SelectRelativeEntry(int offset)
+    {
+        if (!_selectedGrade.HasValue) return;
+
+        int selectedIndex = (int)_selectedGrade.Value -
+                            (int)ESlimeGrade.Grade1;
+        int targetIndex = selectedIndex + offset;
+        if (targetIndex < 0 || targetIndex >= _entries.Count) return;
+
+        _selectedGrade = (ESlimeGrade)(
+            (int)ESlimeGrade.Grade1 + targetIndex);
+        RefreshEntries();
+    }
+
+    private void RefreshNavigationButtons()
+    {
+        int selectedIndex = _selectedGrade.HasValue
+            ? (int)_selectedGrade.Value - (int)ESlimeGrade.Grade1
+            : -1;
+        _previousButton.interactable = selectedIndex > 0;
+        _nextButton.interactable = selectedIndex >= 0 &&
+                                   selectedIndex < _entries.Count - 1;
     }
 
     private void ShowDetail(ESlimeGrade grade)
@@ -314,9 +313,7 @@ public sealed class CollectionBookUI : MonoBehaviour
             : "??? 슬라임";
         _detailDescriptionText.text = isRegistered
             ? BuildRegisteredDetail(grade, specData)
-            : "장식장에 데려오면 도감에 자동 등록돼요.";
-        _previewStage.SetVisible(true);
-        _previewStage.Show(specData, isRegistered);
+            : "장식장에 데려오면\n도감에 자동 등록돼요.";
     }
 
     private static string BuildRegisteredDetail(
@@ -370,40 +367,14 @@ public sealed class CollectionBookUI : MonoBehaviour
         _detailNumberText.text = "No.???";
         _detailNameText.text = "슬라임 정보";
         _detailDescriptionText.text = "위 슬라임을 선택해 주세요.";
-        _previewStage.ShowPlaceholder(_unlockSlimeSprite);
-    }
-
-    private void ShowPreviousPage()
-    {
-        if (_currentPage <= 0) return;
-
-        _currentPage--;
-        _selectedGrade = null;
-        RefreshPage();
-    }
-
-    private void ShowNextPage()
-    {
-        int pageCount = Mathf.CeilToInt(
-            SlimeStatusSaveData.NormalCollectionSize / (float)PageSize);
-        if (_currentPage >= pageCount - 1) return;
-
-        _currentPage++;
-        _selectedGrade = null;
-        RefreshPage();
     }
 
     private void OnNormalCollectionRegistered(ESlimeGrade grade)
     {
-        if (_isOpen && GetPage(grade) == _currentPage)
+        if (_isOpen)
         {
-            RefreshPage();
+            RefreshEntries();
         }
-    }
-
-    private static int GetPage(ESlimeGrade grade)
-    {
-        return ((int)grade - (int)ESlimeGrade.Grade1) / PageSize;
     }
 
     private void OnSpaceChanged(EGameplaySpace space)

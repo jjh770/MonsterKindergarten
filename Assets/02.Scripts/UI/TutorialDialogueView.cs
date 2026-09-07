@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,7 +57,7 @@ public sealed class TutorialDialogueView : MonoBehaviour
         Color backgroundColor = _backgroundColor;
         backgroundColor.a = dimBackground ? _backgroundColor.a : 0f;
         _backgroundImage.color = backgroundColor;
-        _dialogueText.text = $"<color=#FFD12E><b>{speaker}</b></color>\n{message}";
+        _dialogueText.text = $"<size=60><color=#875026><b>{speaker}</b></color></size>\n{message}";
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
         _nextButton.Select();
