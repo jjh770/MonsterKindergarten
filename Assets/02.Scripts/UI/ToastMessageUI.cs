@@ -27,6 +27,13 @@ public sealed class ToastMessageUI : MonoBehaviour
 
     public void Show(string message)
     {
+        Show(message, _displayDuration);
+    }
+
+    // 오래 띄워야 하는 안내가 있어 호출부가 시간을 정할 수 있게 열어 둔다.
+    // 인자 없는 기존 호출은 인스펙터 값을 그대로 쓴다.
+    public void Show(string message, float displayDuration)
+    {
         if (_canvasGroup == null || _text == null)
         {
             Debug.LogError("토스트 UI의 필수 참조가 비어 있습니다.", this);
@@ -42,7 +49,7 @@ public sealed class ToastMessageUI : MonoBehaviour
         _canvasGroup.alpha = 0f;
         _sequence = DOTween.Sequence()
             .Append(_canvasGroup.DOFade(1f, _fadeInDuration))
-            .AppendInterval(_displayDuration)
+            .AppendInterval(displayDuration)
             .Append(_canvasGroup.DOFade(0f, _fadeOutDuration))
             .OnComplete(() =>
             {

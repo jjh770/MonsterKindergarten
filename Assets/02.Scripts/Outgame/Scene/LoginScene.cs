@@ -33,6 +33,7 @@ public class LoginScene : MonoBehaviour
         if (_curtain != null) _curtain.RevealAsync().Forget();
         // 게임 세션이 없는 이 화면에서만 저장 데이터 잠금을 푼다.
         SaveDataLoadGuard.Clear();
+        CloudSaveGuard.Clear();
         // 계정이 바뀌면 이전 서버 시각 보정값은 의미가 없다.
         ServerClock.Clear();
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);

@@ -49,6 +49,10 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
                 resetGeneration != GameplaySaveGate.ResetGeneration) return;
             // 모든 분기 통과 시 서버에 저장
             await _firebaseRepository.Save(saveData);
+
+            // 한 번이라도 성공하면 이전 실패는 끝났다. 문서 전체를 덮어쓰므로
+            // 그동안 올라가지 못한 값도 이 저장으로 한꺼번에 맞춰진다.
+            CloudSaveGuard.ReportSuccess();
         }
         catch (OperationCanceledException)
         {
@@ -56,7 +60,10 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"파이어베이스 저장 실패 : {e.Message}");
+            // 여기 오는 예외는 일시적인 연결 문제가 아니다. 그건 SDK가 큐에 담아
+            // 재시도하며 예외를 내보내지 않는다. 남는 것은 규칙 거부처럼 재시도해도
+            // 성공하지 않는 실패뿐이라, 세는 대신 곧바로 신고한다.
+            CloudSaveGuard.Report(typeof(T).Name, e);
         }
     }
 
