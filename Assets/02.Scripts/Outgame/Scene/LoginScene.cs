@@ -6,8 +6,6 @@ using UnityEngine.UI;
 
 public class LoginScene : MonoBehaviour
 {
-    public static bool SkipNextAutomaticLogin { get; set; }
-
     // 로그인을 기다리는 동안 버튼에 띄우는 문구.
     // 버튼은 화면 전체를 덮으므로 "어디를 눌러도 된다"를 문구가 대신 말한다.
     private const string IdleLabel = "눌러서 다음으로";
@@ -40,7 +38,6 @@ public class LoginScene : MonoBehaviour
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = IdleLabel;
         _loginButton.onClick.AddListener(() => Login(true).Forget());
-        SkipNextAutomaticLogin = false;
 
         if (_recoveryUI != null)
         {
@@ -103,7 +100,16 @@ public class LoginScene : MonoBehaviour
     }
 
     // 게임 씬에서 돌아올 때 로그아웃되므로 UID가 없다. 로그인으로 소유자를 확인한 뒤
-    // 초기화한다. 되돌릴 수 없는 동작이라 계정 선택이 보이는 수동 로그인을 쓴다.
+    // 초기화한다.
+    //
+    // useManualSignIn은 콜드 스타트에서만 실제로 창을 띄운다. PGS v2는 프로세스가
+    // 이미 인증돼 있으면 Java 쪽 signIn()을 부르지 않고 바로 성공을 돌려주므로,
+    // 게임 씬을 거쳐 온 세션에서는 계정 선택 화면이 나오지 않는다. Firebase 쪽
+    // 로그아웃은 플러그인의 인증 상태를 건드리지 않는다.
+    //
+    // 그래도 위험하지는 않다. 이 플러그인에는 다른 계정으로 갈아탈 수단이 없어,
+    // 선택 화면이 떠도 고를 수 있는 계정은 하나뿐이다. 되돌릴 수 없는 동작에 대한
+    // 확인은 SaveRecoveryUI 패널이 맡는다.
     private async UniTask Recover()
     {
         if (_isLoggingIn) return;

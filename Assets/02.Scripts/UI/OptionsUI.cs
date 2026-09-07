@@ -290,10 +290,9 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         AudioManager.Instance?.SaveVolumeSettings();
         AccountManager.Instance?.Logout();
         if (SceneManagerEx.Instance != null)
-            SceneManagerEx.Instance.LoadLoginScene(skipAutomaticLogin: true);
+            SceneManagerEx.Instance.LoadLoginScene();
         else
         {
-            LoginScene.SkipNextAutomaticLogin = true;
             UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
         }
     }

@@ -97,11 +97,10 @@ public class GameManager : MonoBehaviour
 
         if (SceneManagerEx.Instance != null)
         {
-            SceneManagerEx.Instance.LoadLoginScene(skipAutomaticLogin: true);
+            SceneManagerEx.Instance.LoadLoginScene();
             return;
         }
 
-        LoginScene.SkipNextAutomaticLogin = true;
         UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
