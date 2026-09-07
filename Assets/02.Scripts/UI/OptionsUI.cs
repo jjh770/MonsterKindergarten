@@ -293,7 +293,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             SceneManagerEx.Instance.LoadLoginScene(skipAutomaticLogin: true);
         else
         {
-            LobbyScene.SkipNextAutomaticLogin = true;
+            LoginScene.SkipNextAutomaticLogin = true;
             UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
         }
     }

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // 저장된 진행도를 읽지 못해 게임에 들어갈 수 없을 때 띄우는 확인 패널.
 //
 // 표시와 입력 상태만 소유한다. 어떤 실패에 이 패널을 열지, 확인 뒤 무엇을 할지,
-// 어떤 문구를 보여줄지는 로그인 흐름을 아는 LobbyScene이 정한다.
+// 어떤 문구를 보여줄지는 로그인 흐름을 아는 LoginScene이 정한다.
 public sealed class SaveRecoveryUI : MonoBehaviour
 {
     [SerializeField] private GameObject _root;

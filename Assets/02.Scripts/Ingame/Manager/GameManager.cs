@@ -91,7 +91,7 @@ public class GameManager : MonoBehaviour
         if (_isReturningToLogin) return;
 
         _isReturningToLogin = true;
-        LobbyScene.PendingLoadFailure = SaveDataLoadGuard.Failure;
+        LoginScene.PendingLoadFailure = SaveDataLoadGuard.Failure;
         AudioManager.Instance?.SaveVolumeSettings();
         AccountManager.Instance?.Logout();
 
@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        LobbyScene.SkipNextAutomaticLogin = true;
+        LoginScene.SkipNextAutomaticLogin = true;
         UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 

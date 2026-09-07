@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyScene : MonoBehaviour
+public class LoginScene : MonoBehaviour
 {
     public static bool SkipNextAutomaticLogin { get; set; }
 
@@ -17,13 +17,30 @@ public class LobbyScene : MonoBehaviour
     [Tooltip("저장 데이터를 읽지 못해 게임에 들어갈 수 없을 때만 여는 확인 패널입니다.")]
     [SerializeField] private SaveRecoveryUI _recoveryUI;
 
+    [Tooltip("씬 전환 때 화면을 덮는 커튼입니다. 비워 두면 즉시 전환합니다.")]
+    [SerializeField] private FadeCurtainUI _curtain;
+
+    // 이 화면을 최소 이만큼은 보여준 뒤에 덮는다.
+    //
+    // 커튼의 _minimumCoveredSeconds와 같은 이유이고 방향만 반대다. 에디터는 로컬
+    // 계정이고 서버 시각 동기화도 즉시 끝나, 자동 로그인이 몇 프레임이면 끝난다.
+    // 그대로 두면 로그인 화면이 뜬 적도 없이 넘어간다.
+    //
+    // 기기 로그인은 Google Play와 Firebase 왕복이 있어 이 시간보다 오래 걸리므로,
+    // 이 대기가 실제로 붙잡는 경우는 없다.
+    [SerializeField, Min(0f)] private float _minimumVisibleSeconds = 1.5f;
+
     private string _popupText;
     private TMP_Text _loginButtonText;
     private bool _isLoggingIn;
+    private float _shownTime;
 
     private void Start()
     {
+        _shownTime = Time.unscaledTime;
         GameplaySaveGate.EndReset();
+        // 덮인 채로 시작해 GameScene에서 돌아올 때의 하드 컷을 가린다.
+        if (_curtain != null) _curtain.RevealAsync().Forget();
         // 게임 세션이 없는 이 화면에서만 저장 데이터 잠금을 푼다.
         SaveDataLoadGuard.Clear();
         // 계정이 바뀌면 이전 서버 시각 보정값은 의미가 없다.
@@ -135,7 +152,7 @@ public class LobbyScene : MonoBehaviour
         }
 
         GameplaySaveGate.EndReset();
-        SceneManagerEx.Instance.LoadGameScene();
+        await EnterGameScene();
     }
 
     // 오프라인 보상이 경과 시간으로 정해지므로, 게임에 들어가기 전에 서버 시각을
@@ -143,6 +160,7 @@ public class LobbyScene : MonoBehaviour
     // 콜드 스타트는 어차피 로그인에 네트워크가 필요해 새 실패 지점이 아니다.
     private async UniTask<bool> TrySyncServerClock(string userId)
     {
+        _loginButtonText.text = "서버 시각 확인 중...";
         if (await ServerClock.TrySync(userId)) return true;
 
         _popupText = "서버 시각을 확인하지 못했어요.\n인터넷 연결을 확인하고\n다시 시도해 주세요.";
@@ -236,7 +254,7 @@ public class LobbyScene : MonoBehaviour
             }
 
             GameplaySaveGate.EndReset();
-            SceneManagerEx.Instance.LoadGameScene();
+            await EnterGameScene();
             return;
         }
 
@@ -249,6 +267,30 @@ public class LobbyScene : MonoBehaviour
             _popupText = result.ErrorMessage;
             ShowLobbyPopup();
         }
+    }
+
+    // 화면을 덮은 뒤 넘어간다. GameScene의 로딩 오버레이가 이미 덮여 있어야
+    // 이음매가 보이지 않으므로 두 배경색을 맞춰 둔다.
+    private async UniTask EnterGameScene()
+    {
+        await WaitForMinimumVisible();
+
+        if (_curtain != null) await _curtain.CoverAsync();
+
+        SceneManagerEx.Instance.LoadGameScene();
+    }
+
+    private async UniTask WaitForMinimumVisible()
+    {
+        float remaining = _minimumVisibleSeconds - (Time.unscaledTime - _shownTime);
+        if (remaining <= 0f) return;
+
+        // 씬이 내려가면 취소된다. 파괴된 오브젝트를 건드리지 않는다.
+        await UniTask.Delay(
+                TimeSpan.FromSeconds(remaining),
+                DelayType.UnscaledDeltaTime,
+                cancellationToken: this.GetCancellationTokenOnDestroy())
+            .SuppressCancellationThrow();
     }
 
     private void ShowLobbyPopup()
