@@ -8,6 +8,10 @@ public class LoginScene : MonoBehaviour
 {
     public static bool SkipNextAutomaticLogin { get; set; }
 
+    // 로그인을 기다리는 동안 버튼에 띄우는 문구.
+    // 버튼은 화면 전체를 덮으므로 "어디를 눌러도 된다"를 문구가 대신 말한다.
+    private const string IdleLabel = "눌러서 다음으로";
+
     // 게임 씬에서 저장 데이터를 읽지 못해 돌아왔을 때 안내할 원인.
     // 문구는 UI 경계인 이곳에서 만든다.
     public static ESaveLoadFailure PendingLoadFailure { get; set; }
@@ -20,24 +24,12 @@ public class LoginScene : MonoBehaviour
     [Tooltip("씬 전환 때 화면을 덮는 커튼입니다. 비워 두면 즉시 전환합니다.")]
     [SerializeField] private FadeCurtainUI _curtain;
 
-    // 이 화면을 최소 이만큼은 보여준 뒤에 덮는다.
-    //
-    // 커튼의 _minimumCoveredSeconds와 같은 이유이고 방향만 반대다. 에디터는 로컬
-    // 계정이고 서버 시각 동기화도 즉시 끝나, 자동 로그인이 몇 프레임이면 끝난다.
-    // 그대로 두면 로그인 화면이 뜬 적도 없이 넘어간다.
-    //
-    // 기기 로그인은 Google Play와 Firebase 왕복이 있어 이 시간보다 오래 걸리므로,
-    // 이 대기가 실제로 붙잡는 경우는 없다.
-    [SerializeField, Min(0f)] private float _minimumVisibleSeconds = 1.5f;
-
     private string _popupText;
     private TMP_Text _loginButtonText;
     private bool _isLoggingIn;
-    private float _shownTime;
 
     private void Start()
     {
-        _shownTime = Time.unscaledTime;
         GameplaySaveGate.EndReset();
         // 덮인 채로 시작해 GameScene에서 돌아올 때의 하드 컷을 가린다.
         if (_curtain != null) _curtain.RevealAsync().Forget();
@@ -46,9 +38,8 @@ public class LoginScene : MonoBehaviour
         // 계정이 바뀌면 이전 서버 시각 보정값은 의미가 없다.
         ServerClock.Clear();
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
-        _loginButtonText.text = "Google Play 로그인";
+        _loginButtonText.text = IdleLabel;
         _loginButton.onClick.AddListener(() => Login(true).Forget());
-        bool skipAutomaticLogin = SkipNextAutomaticLogin;
         SkipNextAutomaticLogin = false;
 
         if (_recoveryUI != null)
@@ -70,7 +61,10 @@ public class LoginScene : MonoBehaviour
             return;
         }
 
-        if (!skipAutomaticLogin) Login(false).Forget();
+        // 자동 로그인은 하지 않는다. 화면을 덮은 버튼을 눌러야 시작한다.
+        //
+        // 로그인 전에는 설정을 열어 계정을 확인할 수 있어야 하는데, 자동으로
+        // 진행하면 그 틈이 없다. 실패 안내와 복구 패널도 눌러 보기 전에 지나간다.
     }
 
     private void OnDestroy()
@@ -160,7 +154,6 @@ public class LoginScene : MonoBehaviour
     // 콜드 스타트는 어차피 로그인에 네트워크가 필요해 새 실패 지점이 아니다.
     private async UniTask<bool> TrySyncServerClock(string userId)
     {
-        _loginButtonText.text = "서버 시각 확인 중...";
         if (await ServerClock.TrySync(userId)) return true;
 
         _popupText = "서버 시각을 확인하지 못했어요.\n인터넷 연결을 확인하고\n다시 시도해 주세요.";
@@ -210,7 +203,7 @@ public class LoginScene : MonoBehaviour
                     GameplaySaveGate.EndReset();
                     _isLoggingIn = false;
                     _loginButton.interactable = true;
-                    _loginButtonText.text = "Google Play 로그인";
+                    _loginButtonText.text = IdleLabel;
                     _popupText = "게임 계정을 삭제했습니다.";
                     ShowLobbyPopup();
                 }
@@ -260,7 +253,7 @@ public class LoginScene : MonoBehaviour
 
         _isLoggingIn = false;
         _loginButton.interactable = true;
-        _loginButtonText.text = "Google Play 로그인";
+        _loginButtonText.text = IdleLabel;
 
         if (useManualSignIn)
         {
@@ -273,24 +266,9 @@ public class LoginScene : MonoBehaviour
     // 이음매가 보이지 않으므로 두 배경색을 맞춰 둔다.
     private async UniTask EnterGameScene()
     {
-        await WaitForMinimumVisible();
-
         if (_curtain != null) await _curtain.CoverAsync();
 
         SceneManagerEx.Instance.LoadGameScene();
-    }
-
-    private async UniTask WaitForMinimumVisible()
-    {
-        float remaining = _minimumVisibleSeconds - (Time.unscaledTime - _shownTime);
-        if (remaining <= 0f) return;
-
-        // 씬이 내려가면 취소된다. 파괴된 오브젝트를 건드리지 않는다.
-        await UniTask.Delay(
-                TimeSpan.FromSeconds(remaining),
-                DelayType.UnscaledDeltaTime,
-                cancellationToken: this.GetCancellationTokenOnDestroy())
-            .SuppressCancellationThrow();
     }
 
     private void ShowLobbyPopup()
