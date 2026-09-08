@@ -11,6 +11,9 @@ using UnityEngine;
 // 두 마리가 한 마리가 될 때 누구의 타이머를 남길지가 규칙이 되어 버린다.
 //
 // 대상 규칙은 자동 생산과 같다. 장식장 슬라임은 드랍하지 않는다.
+//
+// 가챠가 해금되기 전에는 판정 자체를 돌리지 않는다. 해금 전에 떨어진 티켓은 쓸 곳이
+// 없는 채로 화면에 쌓이고, 플레이어는 그것이 무엇인지 알 방법이 없다.
 public class GachaTicketDropper : MonoBehaviour
 {
     [Tooltip("판정 주기(초).")]
@@ -28,6 +31,7 @@ public class GachaTicketDropper : MonoBehaviour
     {
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (SpawnManager.Instance == null) return;
+        if (SlimeManager.Instance == null || !SlimeManager.Instance.IsGachaUnlocked) return;
 
         _timer += Time.deltaTime;
         if (_timer < _judgeInterval) return;

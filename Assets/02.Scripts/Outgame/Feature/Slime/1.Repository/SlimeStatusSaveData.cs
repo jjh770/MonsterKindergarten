@@ -77,6 +77,16 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public int PendingSkyTickets { get; set; }
 
+    // 플레이어가 자연 스폰을 껐는지. 켜짐이 기본값이라 일부러 뒤집어 담는다.
+    //
+    // Firestore도 JSON도 없는 필드를 C# 기본값으로 남긴다. AutoSpawnEnabled로
+    // 두면 v5 이하 문서가 전부 "꺼짐"으로 읽혀 기존 플레이어의 스폰이 멎는다.
+    // 승격 함수에서 true로 채우는 방법도 있지만, 그 함수는 어느 버전에서 왔는지
+    // 모르는 채 실행되므로 나중에 v7이 생기면 플레이어가 꺼 둔 설정을 도로
+    // 켜 버린다. 뒤집어 담으면 그런 자리가 아예 없다.
+    [FirestoreProperty]
+    public bool AutoSpawnDisabled { get; set; }
+
     [FirestoreProperty]
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();

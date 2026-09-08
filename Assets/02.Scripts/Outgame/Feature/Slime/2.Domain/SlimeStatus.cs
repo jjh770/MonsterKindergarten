@@ -17,6 +17,9 @@ public class SlimeStatus
     public int PendingGroundTickets { get; private set; }
     public int PendingSkyTickets { get; private set; }
 
+    // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
+    public bool IsAutoSpawnEnabled { get; private set; }
+
     public SlimeStatus(
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
@@ -24,7 +27,8 @@ public class SlimeStatus
         EGameStage currentStage,
         bool skyIntroCompleted,
         int pendingGroundTickets,
-        int pendingSkyTickets)
+        int pendingSkyTickets,
+        bool isAutoSpawnEnabled)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -47,6 +51,7 @@ public class SlimeStatus
 
         PendingGroundTickets = pendingGroundTickets;
         PendingSkyTickets = pendingSkyTickets;
+        IsAutoSpawnEnabled = isAutoSpawnEnabled;
 
         if (activeSlimes == null)
         {
@@ -159,6 +164,11 @@ public class SlimeStatus
         }
 
         return true;
+    }
+
+    public void SetAutoSpawnEnabled(bool isEnabled)
+    {
+        IsAutoSpawnEnabled = isEnabled;
     }
 
     public void UpdateHighestGrade(ESlimeGrade newGrade)

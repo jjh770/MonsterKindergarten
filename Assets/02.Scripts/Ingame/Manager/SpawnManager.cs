@@ -193,6 +193,17 @@ public class SpawnManager : MonoBehaviour
         HandleEditorSpawnShortcuts();
 #endif
 
+        // 플레이어가 끈 자동 스폰. 튜토리얼의 일시정지와 다른 축이라 따로 본다.
+        // 한 플래그로 합치면 튜토리얼이 끝나면서 SetSpawningPaused(false)를 부를 때
+        // 플레이어가 꺼 둔 설정까지 조용히 켜진다.
+        //
+        // 타이머 누적보다 앞에서 돌아가므로 다시 켜면 멈춘 지점부터 이어간다.
+        if (SlimeManager.Instance != null &&
+            !SlimeManager.Instance.IsAutoSpawnEnabled)
+        {
+            return;
+        }
+
         if (!HasMainStageRoom()) return;
 
         _timer += Time.deltaTime;

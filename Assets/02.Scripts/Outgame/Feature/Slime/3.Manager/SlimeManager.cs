@@ -31,6 +31,11 @@ public class SlimeManager : MonoBehaviour
     public bool IsDisplayRoomUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.DisplayRoom;
+    // 저장을 읽기 전에는 기본값인 켜짐으로 답한다.
+    public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
+    public bool IsGachaUnlocked =>
+        _status != null &&
+        _status.HighestGrade >= UnlockGrades.Gacha;
     public bool IsHigherGradeSpawnUnlocked =>
         _spawnWeightTable != null &&
         _status != null &&
@@ -213,7 +218,8 @@ public class SlimeManager : MonoBehaviour
                 (EGameStage)saveData.CurrentStage,
                 saveData.SkyIntroCompleted,
                 saveData.PendingGroundTickets,
-                saveData.PendingSkyTickets);
+                saveData.PendingSkyTickets,
+                !saveData.AutoSpawnDisabled);
         }
         catch (ArgumentException e)
         {
@@ -305,6 +311,14 @@ public class SlimeManager : MonoBehaviour
     public int GetPendingTicketCount(EGameStage stage)
     {
         return _status?.GetPendingTickets(stage) ?? 0;
+    }
+
+    public void SetAutoSpawnEnabled(bool isEnabled)
+    {
+        if (_status.IsAutoSpawnEnabled == isEnabled) return;
+
+        _status.SetAutoSpawnEnabled(isEnabled);
+        Save();
     }
 
     // 가챠권이 떨어졌을 때 호출한다.
@@ -453,6 +467,7 @@ public class SlimeManager : MonoBehaviour
             SkyIntroCompleted = _status.SkyIntroCompleted,
             PendingGroundTickets = _status.PendingGroundTickets,
             PendingSkyTickets = _status.PendingSkyTickets,
+            AutoSpawnDisabled = !_status.IsAutoSpawnEnabled,
             NormalCollectionRegistered = BuildNormalCollectionSaveData(),
             NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),
