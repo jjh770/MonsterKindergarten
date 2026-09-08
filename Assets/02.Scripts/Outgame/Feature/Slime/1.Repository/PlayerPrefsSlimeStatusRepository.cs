@@ -21,18 +21,15 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
         PlayerPrefs.DeleteKey(GetKey());
     }
 
+    // 쓰기 실패를 삼키지 않는다. 로드 경로와 같은 규율이다.
+    //
+    // 여기서 잡으면 HybridRepository가 로컬 사본이 갱신되지 않은 사실을 알 수 없다.
+    // 무엇을 할지는 두 저장소를 함께 아는 위층이 정한다.
     public UniTask Save(SlimeStatusSaveData saveData)
     {
-        try
-        {
-            string json = JsonConvert.SerializeObject(saveData);
-            PlayerPrefs.SetString(GetKey(), json);
-            PlayerPrefs.Save();
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[PlayerPrefsSlimeStatusRepository] 저장 실패: {e.Message}");
-        }
+        string json = JsonConvert.SerializeObject(saveData);
+        PlayerPrefs.SetString(GetKey(), json);
+        PlayerPrefs.Save();
 
         return UniTask.CompletedTask;
     }

@@ -15,6 +15,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float _maximumOfflineHours = 8f;
     [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
 
+    [Header("Loading")]
+    [Tooltip("이 시간 안에 저장 데이터를 불러오지 못하면 로그인 화면으로 돌려보냅니다.")]
+    [SerializeField, Min(1f)] private float _initializationTimeoutSeconds = 30f;
+
     private bool _isUpgradeInitialized;
     private bool _isSlimeInitialized;
     private bool _isCurrencyInitialized;
@@ -65,6 +69,8 @@ public class GameManager : MonoBehaviour
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
         TutorialManager.Finished += TryPresentOfflineReward;
 
+        WatchInitializationTimeout().Forget();
+
         // 이미 실패가 신고된 경우
         if (SaveDataLoadGuard.HasFailure)
         {
@@ -79,6 +85,32 @@ public class GameManager : MonoBehaviour
         CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
         TutorialManager.Finished -= TryPresentOfflineReward;
+    }
+
+    // 불러오기가 실패가 아니라 멈추면 아무도 신고하지 않는다.
+    //
+    // 각 매니저는 읽기에 실패했을 때만 신고한다. 응답이 아예 오지 않으면 실패도
+    // 아니어서 OnAllDataInitialized가 영영 발화하지 않고, 커튼이 걷히지 않은 채
+    // 남는다. 그 상태에서는 뒤로 가기도 커튼에 가려 강제 종료 말고 나갈 길이 없다.
+    //
+    // 로그인은 이미 네트워크를 통과한 뒤이므로, 여기서 걸리는 것은 연결이 로그인
+    // 직후에 끊긴 경우다. Unreachable로 신고하면 기존 경로가 로그인 화면으로
+    // 돌려보내고 재시도를 안내한다. 초기화 패널은 열리지 않으므로 멀쩡한 진행도를
+    // 지울 위험도 없다.
+    private async UniTaskVoid WatchInitializationTimeout()
+    {
+        await UniTask.Delay(
+                TimeSpan.FromSeconds(_initializationTimeoutSeconds),
+                DelayType.Realtime,
+                cancellationToken: this.GetCancellationTokenOnDestroy())
+            .SuppressCancellationThrow();
+
+        if (this == null || _isAllInitialized) return;
+        if (SaveDataLoadGuard.HasFailure || GameplaySaveGate.IsResetting) return;
+
+        SaveDataLoadGuard.Report(
+            ESaveLoadFailure.Unreachable,
+            $"저장 데이터를 {_initializationTimeoutSeconds:0}초 안에 불러오지 못했습니다.");
     }
 
     // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.

@@ -735,6 +735,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CloudSaveFailureNotifier
   _toast: {fileID: 487418094}
   _displaySeconds: 5
+  _repeatSeconds: 10
 --- !u!4 &135081900
 Transform:
   m_ObjectHideFlags: 0
@@ -2021,8 +2022,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Upgrade
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3f7c05a91d2e48c4b96af71c0e5d2a63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2393,8 +2394,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: <sprite name="01">000M
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: bb9b2a8c12e7f6b4a843b685cea128d8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3432,8 +3433,8 @@ MonoBehaviour:
   m_text: "\uD604\uC7AC \uC790\uC5F0 \uB4F1\uC7A5 \uD655\uB960\n\n\uB20C\uB7EC\uC11C
     \uB2EB\uAE30"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3f7c05a91d2e48c4b96af71c0e5d2a63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5492,8 +5493,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC7A5\uC2DD\uC7A5\uC73C\uB85C \uBCF4\uB0BC \uC2AC\uB77C\uC784\uC744 \uC120\uD0DD\uD558\uC138\uC694."
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 2c841d50e2314e8479b8a8c6cc8de594, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: bb9b2a8c12e7f6b4a843b685cea128d8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -8143,8 +8144,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 10s
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3f7c05a91d2e48c4b96af71c0e5d2a63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -8922,6 +8923,7 @@ MonoBehaviour:
   _minimumOfflineSeconds: 60
   _maximumOfflineHours: 8
   _offlineRewardEfficiency: 0.5
+  _initializationTimeoutSeconds: 30
 --- !u!4 &1237951050
 Transform:
   m_ObjectHideFlags: 0
@@ -9776,8 +9778,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC0C8\uB85C\uC6B4 \uC2AC\uB77C\uC784 \uD574\uAE08!"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3f7c05a91d2e48c4b96af71c0e5d2a63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -11070,8 +11072,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: '[0/10]'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
-  m_sharedMaterial: {fileID: 8523200666550188104, guid: 92d5fc55b4d565247863bb8d7ae71edc, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 74e2351f52cb3d3409ff17ba8cf6cd05, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 3f7c05a91d2e48c4b96af71c0e5d2a63, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -15994,6 +15996,10 @@ PrefabInstance:
     - target: {fileID: 5610970295948341858, guid: 506e6c05478550744ac98064bc588319, type: 3}
       propertyPath: m_Name
       value: LoadingOverlayCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 5610970295948341858, guid: 506e6c05478550744ac98064bc588319, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7344520133805137567, guid: 506e6c05478550744ac98064bc588319, type: 3}
       propertyPath: m_Pivot.x

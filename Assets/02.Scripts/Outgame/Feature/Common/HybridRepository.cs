@@ -31,7 +31,19 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         int resetGeneration = GameplaySaveGate.ResetGeneration;
         // 로컬 저장 - 즉시 수행
         saveData.LastSaveTime = ServerClock.TrustedUtcNow.ToString("O");
-        await _playerprefsRepository.Save(saveData);
+        // 로컬이 실패해도 클라우드 저장은 계속한다.
+        //
+        // 여기서 예외가 새어 나가면 아래 예약까지 건너뛰어 어디에도 남지 않는다.
+        // 클라우드가 더 오래 남는 사본이므로 한쪽이 실패했다고 다른 쪽을 포기하지 않는다.
+        try
+        {
+            await _playerprefsRepository.Save(saveData);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"로컬 저장 실패 : {typeof(T).Name} : {e.Message}");
+        }
+
         if (GameplaySaveGate.IsResetting ||
             resetGeneration != GameplaySaveGate.ResetGeneration) return;
 
