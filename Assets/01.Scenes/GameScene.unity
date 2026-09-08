@@ -9504,6 +9504,69 @@ RectTransform:
   m_AnchoredPosition: {x: 380, y: -357.5}
   m_SizeDelta: {x: 700, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1701297958
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1701297960}
+  - component: {fileID: 1701297959}
+  - component: {fileID: 1701297961}
+  m_Layer: 0
+  m_Name: GachaTicketDropper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1701297959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701297958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4afa27259a52614ab7c70c01b5d9e9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GachaTicketDropper
+  _judgeInterval: 60
+  _dropChancePerSlime: 0.00167
+--- !u!4 &1701297960
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701297958}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1701297961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701297958}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af691aa43d4b8d64cb6f405901dea580, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GachaTicketField
+  _dropper: {fileID: 1701297959}
+  _ticketPrefab: {fileID: 8943949408204698739, guid: 1ed4364af03f67b4a9c942712a322199, type: 3}
+  _dropScatterRadius: 0.4
+  _maxObjectsPerStage: 30
 --- !u!1 &1710713777
 GameObject:
   m_ObjectHideFlags: 0
@@ -16152,3 +16215,4 @@ SceneRoots:
   - {fileID: 1790500177}
   - {fileID: 376498427}
   - {fileID: 135081900}
+  - {fileID: 1701297960}

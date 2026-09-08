@@ -211,7 +211,9 @@ public class SlimeManager : MonoBehaviour
                 activeSlimes,
                 registeredNormalCollection,
                 (EGameStage)saveData.CurrentStage,
-                saveData.SkyIntroCompleted);
+                saveData.SkyIntroCompleted,
+                saveData.PendingGroundTickets,
+                saveData.PendingSkyTickets);
         }
         catch (ArgumentException e)
         {
@@ -297,6 +299,18 @@ public class SlimeManager : MonoBehaviour
         }
 
         _status.UpdateStageProgress(currentStage, skyIntroCompleted);
+        Save();
+    }
+
+    public int GetPendingTicketCount(EGameStage stage)
+    {
+        return _status?.GetPendingTickets(stage) ?? 0;
+    }
+
+    // 가챠권이 떨어졌을 때 호출한다.
+    public void AddPendingTicket(EGameStage stage)
+    {
+        _status.AddPendingTicket(stage);
         Save();
     }
 
@@ -428,6 +442,8 @@ public class SlimeManager : MonoBehaviour
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
+            PendingGroundTickets = _status.PendingGroundTickets,
+            PendingSkyTickets = _status.PendingSkyTickets,
             NormalCollectionRegistered = BuildNormalCollectionSaveData(),
             NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),

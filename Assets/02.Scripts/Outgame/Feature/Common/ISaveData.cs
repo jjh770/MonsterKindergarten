@@ -16,6 +16,7 @@ public static class SaveSchema
     public const int SlimeInstanceVersion = 2;
     // v3: 일반 슬라임 도감 등록 상태를 추가했다.
     // v4: 도감에 표시할 등급별 누적 통계를 추가했다.
-    public const int SlimeCurrentVersion = 4;
+    // v5: 미수령 가챠권 수를 스테이지별로 추가했다.
+    public const int SlimeCurrentVersion = 5;
     public const int UpgradeCurrentVersion = 1;
 }
