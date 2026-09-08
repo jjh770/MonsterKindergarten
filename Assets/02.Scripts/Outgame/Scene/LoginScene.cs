@@ -265,7 +265,16 @@ public class LoginScene : MonoBehaviour
 
         if (useManualSignIn)
         {
-            _popupText = result.ErrorMessage;
+            // 원인을 가려 안내하지 않는다.
+            //
+            // 어느 경우든 플레이어가 할 일은 다시 누르는 것 하나뿐이고, PGS는 사용자가
+            // 취소한 것과 계정이 인가되지 않은 것을 모두 Canceled로 돌려줘 구분도 되지
+            // 않는다. 구체적으로 쓰려다 틀린 안내를 하면 멀쩡한 것을 의심하게 만든다.
+            //
+            // 원문은 로그로 남긴다. 실제로 원인을 파야 할 때 보는 것은 이 문구가 아니라
+            // com.google.android.gms가 남기는 로그다.
+            Debug.LogWarning($"로그인 실패 : {result.ErrorMessage}");
+            _popupText = "로그인하지 못했어요.\n인터넷 연결을 확인하고\n다시 시도해 주세요.";
             ShowLobbyPopup();
         }
     }
