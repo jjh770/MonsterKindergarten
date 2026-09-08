@@ -32,7 +32,7 @@ Generated `.csproj` files are not the source of truth for Unity package compatib
 - Android is the only supported build target. WebGL support was removed on 2026-08-27 along with its Firestore attribute stub and browser focus plugin; do not reintroduce `UNITY_WEBGL` branches.
 - Unity Editor and non-Android players use `LocalAccountRepository` with the fixed user ID `LocalPlayer`. Currency, slime state, and upgrades are stored locally.
 - Android players use Google Play Games v2 authentication, exchange the server auth code for a Firebase Auth session, and use the Firebase UID as the save owner.
-- Android game data uses `HybridRepository<T>`: PlayerPrefs saves immediately, Firebase writes are debounced by 0.6 seconds, and load resolves local and cloud data by `LastSaveTime`.
+- Android game data uses `HybridRepository<T>`: PlayerPrefs saves immediately, Firebase writes are throttled to one every 5 seconds, and load resolves local and cloud data by `LastSaveTime`.
 - When timestamps are equal or invalid, Firebase wins and refreshes the local copy. Keep `[FirestoreProperty]` on every cloud-persisted field, including `LastSaveTime`.
 - `HybridRepository` refuses to resolve when either store failed to read, because an unread store may hold progress the first save would overwrite. A corrupt local copy still recovers from a readable cloud document; a local save newer than the app's schema blocks even when the cloud is readable. The mirror write that refreshes the local copy is best-effort and must never abort the load.
 
@@ -81,6 +81,7 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - `CloudSaveGuard` collects those failures and, unlike `SaveDataLoadGuard`, does not lock the session. A read failure risks overwriting progress the session never saw; a write failure destroys nothing, because the local save still succeeds. Only the cloud copy goes stale, and that surfaces on reinstall or a device change - so tell the player and let them keep playing.
 - The notice must not tell the player to check their network. That is the one cause that never produces it, and sending them to restart a working connection wastes the one thing they can act on: not deleting the app while progress lives on this device alone.
 - `CloudSaveGuard.ReportSuccess()` is what makes the repeating notice stop. Deploying corrected rules or recovering a session resumes saving immediately, and without the success path the alert would keep firing over a problem that is already fixed.
+- The cloud write is throttled, not debounced, and the difference is not interchangeable. A debounce restarts its timer on every save, so it only writes once requests go quiet for the whole interval - and currency changes on every click and every auto-production tick, so with enough slimes that quiet never arrives. Raising a debounce interval does not reduce writes, it stops them. The throttle keeps one scheduled write and swaps the payload under it, so each interval sends the latest state exactly once. Free-plan document writes are capped per project, not per account, so a handful of testers can exhaust a day's quota.
 
 **Offline reward and tutorial**
 

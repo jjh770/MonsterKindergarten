@@ -1,20 +1,28 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
-using System.Threading;
 using UnityEngine;
 
 public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
 {
     private readonly IRepository<T> _playerprefsRepository;
     private readonly IRepository<T> _firebaseRepository;
-    private const float FIREBASE_INTERVAL = 0.6f;
+    // 클라우드 쓰기를 이 간격에 한 번으로 제한한다.
+    //
+    // 재화는 클릭과 자동 생산마다 바뀌어 저장 요청이 초당 몇 번씩 들어온다.
+    // 그대로 내보내면 무료 플랜의 하루 문서 쓰기 한도에 금방 닿는다. 한도는
+    // 계정이 아니라 프로젝트 전체 기준이라 테스터가 몇 명만 붙어도 넘는다.
+    //
+    // 로컬 저장은 즉시라서 이 지연이 화면에 보이지 않는다. 뒤처지는 것은
+    // 클라우드 사본뿐이고, 그 차이는 재설치나 기기 변경 때만 드러난다.
+    private const float FIREBASE_INTERVAL = 5f;
     public HybridRepository(IRepository<T> playerprefs, IRepository<T> firebase)
     {
         _playerprefsRepository = playerprefs;
         _firebaseRepository = firebase;
     }
 
-    private CancellationTokenSource _firebaseSaveToken;
+    private T _pendingSaveData;
+    private bool _isFirebaseSaveScheduled;
 
     public async UniTask Save(T saveData)
     {
@@ -26,37 +34,38 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         if (GameplaySaveGate.IsResetting ||
             resetGeneration != GameplaySaveGate.ResetGeneration) return;
 
-        // 서버 저장 - 이전 0.6초간 대기 작업이 있다면 취소 요청
-        if (_firebaseSaveToken != null)
-        {
-            _firebaseSaveToken.Cancel();
-            _firebaseSaveToken.Dispose();
-        }
-        // 새로운 취소 토큰 생성
-        _firebaseSaveToken = new CancellationTokenSource();
-        // 서버 저장 실행
-        SaveToFirebase(saveData, _firebaseSaveToken.Token, resetGeneration).Forget();
+        // 예약이 이미 있으면 실을 내용만 최신으로 바꾼다.
+        //
+        // 예전에는 저장할 때마다 대기 중이던 쓰기를 취소하고 타이머를 처음부터 다시
+        // 돌렸다. 그러면 "요청이 간격만큼 끊긴 순간"에만 올라가는데, 슬라임이 늘어
+        // 재화가 쉼 없이 오르면 그런 순간이 오지 않는다. 간격을 늘릴수록 쓰기가 주는
+        // 것이 아니라 아예 멈춘다. 그래서 간격마다 한 번은 내보내는 방식으로 바꿨다.
+        _pendingSaveData = saveData;
+        if (_isFirebaseSaveScheduled) return;
+
+        _isFirebaseSaveScheduled = true;
+        SaveToFirebase(resetGeneration).Forget();
     }
 
-    private async UniTaskVoid SaveToFirebase(T saveData, CancellationToken token, int resetGeneration)
+    // 예약해 둔 쓰기를 간격이 지난 뒤 한 번 내보낸다.
+    //
+    // 그 사이 들어온 저장은 _pendingSaveData만 갈아치우므로 마지막 상태가 올라간다.
+    // 문서 전체를 덮어쓰는 방식이라 중간 값을 건너뛰어도 잃는 것이 없다.
+    private async UniTaskVoid SaveToFirebase(int resetGeneration)
     {
         try
         {
-            // 0.6초간 대기 실행
-            await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL), cancellationToken: token);
-            // 취소 요청이 떨어지지 않았다면 넘어가기
-            if (token.IsCancellationRequested || GameplaySaveGate.IsResetting ||
+            await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL));
+
+            // 기다리는 동안 초기화가 시작됐으면 이 쓰기는 폐기한다.
+            if (GameplaySaveGate.IsResetting ||
                 resetGeneration != GameplaySaveGate.ResetGeneration) return;
-            // 모든 분기 통과 시 서버에 저장
-            await _firebaseRepository.Save(saveData);
+
+            await _firebaseRepository.Save(_pendingSaveData);
 
             // 한 번이라도 성공하면 이전 실패는 끝났다. 문서 전체를 덮어쓰므로
             // 그동안 올라가지 못한 값도 이 저장으로 한꺼번에 맞춰진다.
             CloudSaveGuard.ReportSuccess();
-        }
-        catch (OperationCanceledException)
-        {
-            // _firebaseSaveToken.Cancel()이 실행되면 여기로 들어옴 (이전 요청 폐기)
         }
         catch (Exception e)
         {
@@ -64,6 +73,11 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
             // 재시도하며 예외를 내보내지 않는다. 남는 것은 규칙 거부처럼 재시도해도
             // 성공하지 않는 실패뿐이라, 세는 대신 곧바로 신고한다.
             CloudSaveGuard.Report(typeof(T).Name, e);
+        }
+        finally
+        {
+            // 실패했더라도 예약을 풀어야 다음 저장이 다시 예약할 수 있다.
+            _isFirebaseSaveScheduled = false;
         }
     }
 
