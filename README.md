@@ -49,21 +49,22 @@ Editor에서는 `LocalPlayer` 계정과 로컬 저장소를 사용합니다. Goo
 
 ## 빌드 프로필
 
-| 용도 | 프로필 | 앱 버전 | Version Code |
-| --- | --- | --- | ---: |
-| Play Console 배포 | `Android_Release` | `0.1.09` | `10` |
-| 개발 및 기기 확인 | `Android™` | `0.1.09` | `10` |
+| 용도 | 프로필 |
+| --- | --- |
+| Play Console 배포 | `Android_Release` |
+| 개발 및 기기 확인 | `Android™` |
 
 Android 애플리케이션 ID는 `com.skku_say.Monster_Kindergarten`입니다. Release는
 Development Build가 꺼진 AAB, 개발 프로필은 켜진 APK이며 둘 다 `LoginScene` 다음에
 `GameScene`을 포함합니다. 개발 프로필도 릴리스와 같은 커스텀 키스토어로 서명합니다.
 Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때문입니다.
 
-프로젝트 전역 버전이 아니라 실제 빌드에 쓰는 프로필 값을 확인해야 합니다.
+앱 버전과 Version Code는 프로필의 Player Settings 오버라이드에 있습니다. 프로젝트
+전역 버전이 아니라 이 값이 실제 빌드에 쓰입니다. 현재 값은 [CLAUDE.md](CLAUDE.md)에
+적어 둡니다.
 
-산출물은 `Builds/Release/<버전>/`에 두며 Git에서 제외됩니다. `build-info.txt`
-핸드오프 기록은 `0.1.06`까지와 `0.1.09`에 있고, `0.1.07`과 `0.1.08`은 산출물만
-있습니다.
+산출물은 `Builds/Release/<버전>/`에 두며 Git에서 제외됩니다. 각 빌드의 구성과
+검증 결과는 그 폴더의 `build-info.txt`에 남깁니다.
 
 ## 저장 구조
 
@@ -120,23 +121,14 @@ Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때
 Phase 1·1.5 자연 스폰과 개체 저장, Phase 2 장식장, Phase 2-B 관찰 UX, Phase 3 일반
 슬라임 도감까지 구현했습니다. 특별 슬라임과 가챠는 Phase 4 이후 범위입니다.
 
-Android 내부 테스트에서 Google Play Games 로그인, 재로그인, Firebase 클라우드 저장,
-앱 데이터 삭제 후 복구, 오프라인 보상 수령을 확인했습니다.
+검증은 세 층으로 쌓습니다. Unity Editor에서 Firestore 없이 닿는 경로를, 개발
+APK에서 클라우드가 필요한 경로를, 릴리스 AAB에서 코드 스트리핑까지 걸린 실제
+구성을 확인합니다. 앞 단계의 결과를 다음 빌드의 검증 완료로 확대하지 않으며,
+실행 테스트는 사람이 직접 수행합니다.
 
-저장 로드 실패 처리는 Unity Editor에서 손상·상위 버전·결손·복구 경로를, 개발 APK
-기기 테스트에서 Firestore 필드 결손과 튜토리얼 중 보상 보류를 확인했습니다. 도감은
-기기에서, 세로 화면 레이아웃은 여러 해상도와 Device Simulator에서 확인했습니다.
+빌드별 검증 항목과 결과는 `Builds/Release/<버전>/build-info.txt`에, 현재 무엇이
+확인됐고 무엇이 남았는지는 [CLAUDE.md](CLAUDE.md)에 있습니다.
 
 게임은 세로 전용입니다. 프로젝트 설정과 두 Android 빌드 프로필 모두 Portrait 외의
 방향을 허용하지 않습니다.
 
-아직 검증하지 않은 항목은 다음과 같습니다. 실행 테스트는 사용자가 수행하며 기존
-결과를 새 빌드의 검증 완료로 확대하지 않습니다.
-
-- 기기에서의 UpgradeUI / Safe Area와 드래그 합성 대상 표시
-- `0.1.09` 릴리스 AAB에서의 재설치 후 복원. IL2CPP 코드 스트리핑이 Firestore의
-  리플렉션 직렬화를 건드리면 개발 빌드에서는 멀쩡하던 것이 여기서 깨집니다.
-  `Builds/Release/0.1.09/build-info.txt`에 확인 항목을 두었습니다
-
-`0.1.09`는 `main`의 작업과 마지막 릴리스 빌드 사이의 간격을 좁히려고 Phase 4보다
-먼저 비공개 테스트 트랙에 올렸습니다. 다음 개발 단계는 Phase 4 가챠권입니다.
