@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 58ef37103ed6155408bbcd8f776fafba
+guid: 385ceb603da62cb41949982c375651d0
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5534697602189466112
-    second: AutoSpawnOn_0
+      213: -8796352808123473458
+    second: GachaButtonUI_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: AutoSpawnOn_0
+      name: GachaButtonUI_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1254
-        height: 1254
+        x: 98
+        y: 129
+        width: 1156
+        height: 1125
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0066a4adaddc033b0800000000000000
-      internalID: -5534697602189466112
+      spriteID: ec16ac0e9b31de580800000000000000
+      internalID: -8796352808123473458
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      AutoSpawnOn_0: -5534697602189466112
+      GachaButtonUI_0: -8796352808123473458
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
