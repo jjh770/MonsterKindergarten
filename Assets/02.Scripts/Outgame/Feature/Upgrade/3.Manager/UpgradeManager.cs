@@ -193,6 +193,12 @@ public class UpgradeManager : MonoBehaviour
         SaveCurrentAsync().Forget();
     }
 
+    // 앱이 내려갈 때 미뤄 둔 클라우드 쓰기를 지금 내보낸다.
+    public void FlushPendingSave()
+    {
+        _repository?.FlushPendingSave();
+    }
+
     public UniTask SaveCurrentAsync()
     {
         if (!GameplaySaveGate.IsSavingEnabled)

@@ -113,6 +113,11 @@ public class SlimeManager : MonoBehaviour
         {
             Save();
         }
+
+        if (pauseStatus)
+        {
+            FlushPendingSave();
+        }
     }
 
     private void OnApplicationQuit()
@@ -121,6 +126,8 @@ public class SlimeManager : MonoBehaviour
         {
             Save();
         }
+
+        FlushPendingSave();
     }
 
     private async UniTaskVoid InitAsync()
@@ -386,6 +393,12 @@ public class SlimeManager : MonoBehaviour
     private void Save()
     {
         SaveCurrentAsync().Forget();
+    }
+
+    // 앱이 내려갈 때 미뤄 둔 클라우드 쓰기를 지금 내보낸다.
+    public void FlushPendingSave()
+    {
+        _statusRepository?.FlushPendingSave();
     }
 
     public UniTask SaveCurrentAsync()

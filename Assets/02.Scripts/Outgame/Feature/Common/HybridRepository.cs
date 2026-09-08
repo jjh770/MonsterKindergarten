@@ -23,6 +23,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
 
     private T _pendingSaveData;
     private bool _isFirebaseSaveScheduled;
+    private int _scheduleGeneration;
 
     public async UniTask Save(T saveData)
     {
@@ -44,20 +45,46 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
         if (_isFirebaseSaveScheduled) return;
 
         _isFirebaseSaveScheduled = true;
-        SaveToFirebase(resetGeneration).Forget();
+        SaveToFirebase(resetGeneration, ++_scheduleGeneration).Forget();
     }
 
-    // 예약해 둔 쓰기를 간격이 지난 뒤 한 번 내보낸다.
+    // 앱이 내려가기 전에 미뤄 둔 쓰기를 지금 내보낸다.
+    //
+    // 네트워크 왕복을 기다리지 않는다. Firestore SDK가 변경을 로컬 큐에 적어 두고
+    // 다음 실행이나 연결 복구 때 올리므로, 발사만 해 두면 프로세스가 죽어도 남는다.
+    //
+    // 로컬 저장은 이미 즉시 끝나 있으므로 같은 기기에서는 이것이 없어도 잃지 않는다.
+    // 차이가 나는 것은 재설치나 기기 변경 때뿐이다.
+    public void FlushPendingSave()
+    {
+        if (!_isFirebaseSaveScheduled) return;
+
+        // 대기 중인 예약을 무효로 만들어 같은 내용이 두 번 올라가지 않게 한다.
+        _scheduleGeneration++;
+        _isFirebaseSaveScheduled = false;
+        SendPendingSave(GameplaySaveGate.ResetGeneration).Forget();
+    }
+
+    // 예약해 둔 쓰기를 간격이 지난 뒤 내보낸다.
     //
     // 그 사이 들어온 저장은 _pendingSaveData만 갈아치우므로 마지막 상태가 올라간다.
     // 문서 전체를 덮어쓰는 방식이라 중간 값을 건너뛰어도 잃는 것이 없다.
-    private async UniTaskVoid SaveToFirebase(int resetGeneration)
+    private async UniTaskVoid SaveToFirebase(int resetGeneration, int scheduleGeneration)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL));
+
+        // 기다리는 동안 FlushPendingSave가 먼저 보냈으면 여기서 물러난다.
+        if (scheduleGeneration != _scheduleGeneration) return;
+
+        _isFirebaseSaveScheduled = false;
+        await SendPendingSave(resetGeneration);
+    }
+
+    private async UniTask SendPendingSave(int resetGeneration)
     {
         try
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL));
-
-            // 기다리는 동안 초기화가 시작됐으면 이 쓰기는 폐기한다.
+            // 초기화가 시작됐으면 이 쓰기는 폐기한다.
             if (GameplaySaveGate.IsResetting ||
                 resetGeneration != GameplaySaveGate.ResetGeneration) return;
 
@@ -73,11 +100,6 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
             // 재시도하며 예외를 내보내지 않는다. 남는 것은 규칙 거부처럼 재시도해도
             // 성공하지 않는 실패뿐이라, 세는 대신 곧바로 신고한다.
             CloudSaveGuard.Report(typeof(T).Name, e);
-        }
-        finally
-        {
-            // 실패했더라도 예약을 풀어야 다음 저장이 다시 예약할 수 있다.
-            _isFirebaseSaveScheduled = false;
         }
     }
 

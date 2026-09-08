@@ -24,6 +24,11 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
         await _db.Collection(UPGRADE_COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
     }
 
+    // 즉시 저장하므로 미뤄 둔 쓰기가 없다.
+    public void FlushPendingSave()
+    {
+    }
+
     public async UniTask<SaveLoadResult<UpgradeSaveData>> Load()
     {
         try

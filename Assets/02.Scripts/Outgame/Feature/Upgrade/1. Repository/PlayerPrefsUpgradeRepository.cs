@@ -37,6 +37,11 @@ public class PlayerPrefsUpgradeRepository : IUpgradeRepository
         return UniTask.CompletedTask;
     }
 
+    // 즉시 저장하므로 미뤄 둔 쓰기가 없다.
+    public void FlushPendingSave()
+    {
+    }
+
     public UniTask<SaveLoadResult<UpgradeSaveData>> Load()
     {
         try

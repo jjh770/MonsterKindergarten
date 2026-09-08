@@ -218,6 +218,9 @@ public class GameManager : MonoBehaviour
             if (!_pendingOfflineReward.HasValue)
             {
                 CurrencyManager.Instance.SaveCurrent();
+                // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
+                CurrencyManager.Instance.FlushPendingSave();
+                UpgradeManager.Instance?.FlushPendingSave();
             }
         }
         else if (!_pendingOfflineReward.HasValue || !_isOfflineRewardClaimed)
@@ -243,6 +246,9 @@ public class GameManager : MonoBehaviour
         if (_isAllInitialized && !_pendingOfflineReward.HasValue)
         {
             CurrencyManager.Instance.SaveCurrent();
+            // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
+            CurrencyManager.Instance.FlushPendingSave();
+            UpgradeManager.Instance?.FlushPendingSave();
         }
     }
 

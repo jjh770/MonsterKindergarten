@@ -55,6 +55,11 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
         PlayerPrefs.DeleteKey($"{_userId}_{SCHEMA_VERSION_KEY}");
     }
 
+    // 즉시 저장하므로 미뤄 둔 쓰기가 없다.
+    public void FlushPendingSave()
+    {
+    }
+
     public UniTask<SaveLoadResult<CurrencySaveData>> Load()
     {
         try
