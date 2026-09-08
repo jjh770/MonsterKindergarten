@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,6 +20,12 @@ public sealed class GachaButtonUI : MonoBehaviour
     [SerializeField] private Button _button;
     [SerializeField] private TMP_Text _countLabel;
     [SerializeField] private ToastMessageUI _toast;
+
+    // 스포트라이트가 버튼을 가리킬 때 필요하다.
+    public RectTransform ButtonTarget => _button != null
+        ? _button.transform as RectTransform
+        : null;
+    public event Action<SlimeController> PullSucceeded;
 
     private void Awake()
     {
@@ -58,8 +65,13 @@ public sealed class GachaButtonUI : MonoBehaviour
 
     private void OnButtonClicked()
     {
-        EGachaFailure failure = GachaService.TryPull(out _);
+        EGachaFailure failure = GachaService.TryPull(out SlimeController spawned);
         Refresh();
+
+        if (failure == EGachaFailure.None && spawned != null)
+        {
+            PullSucceeded?.Invoke(spawned);
+        }
 
         switch (failure)
         {

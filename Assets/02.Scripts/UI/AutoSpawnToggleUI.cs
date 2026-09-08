@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +19,11 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
     [SerializeField] private Image _icon;
     [SerializeField] private Sprite _onSprite;
     [SerializeField] private Sprite _offSprite;
+
+    public RectTransform ButtonTarget => _button != null
+        ? _button.transform as RectTransform
+        : null;
+    public event Action<bool> StateChanged;
 
     private void Awake()
     {
@@ -48,9 +54,10 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
     {
         if (SlimeManager.Instance == null) return;
 
-        SlimeManager.Instance.SetAutoSpawnEnabled(
-            !SlimeManager.Instance.IsAutoSpawnEnabled);
+        bool isEnabled = !SlimeManager.Instance.IsAutoSpawnEnabled;
+        SlimeManager.Instance.SetAutoSpawnEnabled(isEnabled);
         Refresh();
+        StateChanged?.Invoke(isEnabled);
     }
 
     private void Refresh()

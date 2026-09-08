@@ -19,6 +19,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     }
 
     [Header("Guide UI")]
+    [SerializeField] private SpawnSliderUI _spawnSliderUI;
     [SerializeField] private RectTransform _pointTarget;
     [SerializeField] private RectTransform _spawnGaugeTarget;
     [SerializeField] private SystemUpgradePanel _systemUpgradePanel;
@@ -121,9 +122,16 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         SpawnManager.Instance.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
         _upgradeUI?.SetToggleInputEnabled(false);
+        RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
+        if (scholarSlimeTarget != null)
+        {
+            Spotlight.ShowUiFocus(scholarSlimeTarget, useRectangularHole: true);
+        }
+
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.Introduction),
-            ShowClickStep);
+            ShowClickStep,
+            keepGuideVisible: scholarSlimeTarget != null);
     }
 
     private void ShowStepDialogue(

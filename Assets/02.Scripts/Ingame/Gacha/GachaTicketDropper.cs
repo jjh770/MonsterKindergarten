@@ -12,8 +12,8 @@ using UnityEngine;
 //
 // 대상 규칙은 자동 생산과 같다. 장식장 슬라임은 드랍하지 않는다.
 //
-// 가챠가 해금되기 전에는 판정 자체를 돌리지 않는다. 해금 전에 떨어진 티켓은 쓸 곳이
-// 없는 채로 화면에 쌓이고, 플레이어는 그것이 무엇인지 알 방법이 없다.
+// 가챠가 해금되고 소개 튜토리얼까지 끝난 뒤에만 판정한다. 튜토리얼 중에는 체험용
+// 한 장만 보여 줘야, 설명을 듣기도 전에 정체 모를 티켓이 필드에 생기지 않는다.
 public class GachaTicketDropper : MonoBehaviour
 {
     [Tooltip("판정 주기(초).")]
@@ -32,6 +32,7 @@ public class GachaTicketDropper : MonoBehaviour
         if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
         if (SpawnManager.Instance == null) return;
         if (SlimeManager.Instance == null || !SlimeManager.Instance.IsGachaUnlocked) return;
+        if (!TutorialProgress.IsCompleted(TutorialIds.Gacha) || TutorialManager.IsRunning) return;
 
         _timer += Time.deltaTime;
         if (_timer < _judgeInterval) return;
