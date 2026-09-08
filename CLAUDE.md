@@ -188,6 +188,7 @@ Phase 3's collection book has been checked on device in both of its forms, most 
 - Keep platform behavior explicit; Editor-local behavior must not silently replace Android cloud behavior.
 - Treat Unity Play Mode and Android device results separately from static or `.csproj` checks.
 - Preserve unrelated working-tree changes and inspect the exact Git diff before staging.
+- Some source files mix CRLF and LF within the same file. A multi-line string replacement that assumes one line terminator silently matches nothing, so edit by lines and keep each line's own ending.
 - Record release handoffs under `Builds/Release/<version>/build-info.txt`; the `Builds/` directory is intentionally ignored by Git.
 - Use `Feat :`, `Fix :`, `Chore :`, or `Docs :` commit subjects with concise Korean bullets when a body is useful.
 - Follow `Documentation/CODING_CONVENTION.md`. Its Law of Demeter section lists explicit exceptions for data structures and Unity framework APIs.
