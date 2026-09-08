@@ -136,6 +136,31 @@ public class SlimeStatus
         }
     }
 
+    // 한 장 줍는다. 남은 장수가 없으면 아무것도 하지 않고 false를 준다.
+    //
+    // 화면의 오브젝트 수와 저장된 장수는 어긋날 수 있다. 표시 상한을 넘은 몫은
+    // 저장에만 남기 때문이다. 그래서 오브젝트가 아니라 저장이 판정 근거다.
+    public bool TryConsumePendingTicket(EGameStage stage)
+    {
+        if (!GameStageRules.IsValid(stage))
+        {
+            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {stage}");
+        }
+
+        if (GetPendingTickets(stage) <= 0) return false;
+
+        if (stage == EGameStage.Sky)
+        {
+            PendingSkyTickets--;
+        }
+        else
+        {
+            PendingGroundTickets--;
+        }
+
+        return true;
+    }
+
     public void UpdateHighestGrade(ESlimeGrade newGrade)
     {
         ValidateGrade(newGrade);

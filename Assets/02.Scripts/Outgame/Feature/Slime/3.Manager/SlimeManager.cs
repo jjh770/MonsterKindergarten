@@ -314,6 +314,15 @@ public class SlimeManager : MonoBehaviour
         Save();
     }
 
+    // 가챠권을 한 장 주웠을 때 호출한다. 저장에 남은 장수가 없으면 false다.
+    public bool TryConsumePendingTicket(EGameStage stage)
+    {
+        if (!_status.TryConsumePendingTicket(stage)) return false;
+
+        Save();
+        return true;
+    }
+
     // 슬라임 스폰 시 호출
     public void AddSlime(SlimeInstance instance)
     {

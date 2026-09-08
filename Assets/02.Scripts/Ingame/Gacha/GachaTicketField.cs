@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 // 떨어진 가챠권을 필드의 상태로 만들고 화면에 유지한다. 판정은 GachaTicketDropper가
 // 하고 여기서는 그 결과를 저장에 반영한 뒤 오브젝트를 놓는다.
@@ -10,6 +11,13 @@ using UnityEngine;
 // 티켓이 속한 스테이지는 떨어뜨린 슬라임의 등급으로 드랍 시점에 정하고 그대로 굳힌다.
 // 그 슬라임이 나중에 합성되어 하늘로 올라가도 이미 떨어진 티켓은 따라가지 않는다.
 //
+// 티켓은 월드 콜라이더가 아니라 UI 버튼으로 줍는다. 필드에 콜라이더를 두면
+// Clicker의 Physics2D.Raycast가 그것을 먼저 맞고 슬라임 선택이 통째로 사라진다.
+// 슬라임 터치는 초당 여러 번 일어나는 핵심 조작이라 한 자리도 내주면 안 된다.
+// UI는 물리 경로와 따로 판정되므로, 티켓이 슬라임 위에 겹쳐도 슬라임은 그대로
+// 눌린다. 겹친 자리를 누르면 티켓도 줍고 슬라임도 눌리며, 둘 다 이득이라 문제가
+// 되지 않는다.
+//
 // 좌표는 저장하지 않는다. 슬라임도 좌표를 저장하지 않고 복원할 때 다시 흩뿌리므로,
 // 티켓만 남길 이유가 없다. 떨어지는 순간에만 슬라임 주변에 놓이고, 재접속 뒤에는
 // 필드 아무 곳에나 놓인다.
@@ -17,6 +25,9 @@ public class GachaTicketField : MonoBehaviour
 {
     [SerializeField] private GachaTicketDropper _dropper;
     [SerializeField] private GameObject _ticketPrefab;
+
+    [Tooltip("티켓을 담을 월드 스페이스 캔버스입니다.")]
+    [SerializeField] private Transform _ticketRoot;
 
     [Tooltip("떨어뜨린 슬라임에서 이 반경 안에 흩어 놓습니다.")]
     [SerializeField, Min(0f)] private float _dropScatterRadius = 0.4f;
@@ -29,7 +40,7 @@ public class GachaTicketField : MonoBehaviour
 
     private void Awake()
     {
-        if (_dropper == null || _ticketPrefab == null)
+        if (_dropper == null || _ticketPrefab == null || _ticketRoot == null)
         {
             Debug.LogError("가챠권 필드에 필요한 참조가 비어 있습니다.", this);
             enabled = false;
@@ -117,11 +128,37 @@ public class GachaTicketField : MonoBehaviour
         List<GameObject> tickets = GetTickets(stage);
         if (tickets.Count >= _maxObjectsPerStage) return;
 
-        tickets.Add(Instantiate(
-            _ticketPrefab,
-            position,
-            Quaternion.identity,
-            transform));
+        GameObject ticket = Instantiate(_ticketPrefab, _ticketRoot);
+        ticket.transform.position = position;
+
+        Button button = ticket.GetComponentInChildren<Button>();
+        if (button == null)
+        {
+            Debug.LogError("가챠권 프리팹에 버튼이 없습니다.", ticket);
+        }
+        else
+        {
+            button.onClick.AddListener(() => Collect(stage, ticket));
+        }
+
+        tickets.Add(ticket);
+    }
+
+    // 한 장씩 줍는다. 저장을 먼저 줄이고 그 결과로만 재화를 올린다. 순서를 뒤집으면
+    // 남은 장수가 없을 때 재화만 늘어난다.
+    private void Collect(EGameStage stage, GameObject ticket)
+    {
+        if (SlimeManager.Instance == null || CurrencyManager.Instance == null) return;
+        if (!SlimeManager.Instance.TryConsumePendingTicket(stage)) return;
+
+        CurrencyManager.Instance.Add(ECurrencyType.GachaTicket, 1d);
+
+        GetTickets(stage).Remove(ticket);
+        Destroy(ticket);
+
+        // 표시 상한에 걸려 못 만든 몫이 남아 있으면 빈 자리를 채운다.
+        Restore(stage);
+        ApplyVisibility();
     }
 
     private static Vector2 GetRestorePosition()
