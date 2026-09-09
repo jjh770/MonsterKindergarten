@@ -24,6 +24,10 @@ SlimeController.OnClick()          수동 클릭 + 자동 클릭 공통
 
 `HybridRepository`는 Firebase 쓰기에 0.6초 디바운스를 적용하지만 로컬 쓰기에는 적용하지 않습니다. 설계 의도와 실제 비용 분포가 어긋나 보인다는 점이 가설의 출발점이었습니다.
 
+> 2026-09-08 이후 이 디바운스는 **5초 스로틀**로 바뀌었습니다. 아래 측정과 결론은
+> 로컬 쓰기 비용에 대한 것이라 그대로 유효하지만, 클라우드 쪽 설명을 현재 코드로
+> 읽지 마십시오. 바꾼 이유는 `CLAUDE.md`의 저장 절에 있습니다.
+
 **이 가설은 측정 없이 제기되었습니다.** 검증을 위해 실기기 계측을 수행했습니다.
 
 ## 2. 측정 환경
@@ -48,7 +52,10 @@ SlimeController.OnClick()          수동 클릭 + 자동 클릭 공통
 
 ### 2.2 빌드 전 준비 (중요)
 
-`Android™` 프로필은 기본적으로 `androidUseCustomKeystore: 0`이라 디버그 키스토어로 서명됩니다. Firebase와 Play Games에 등록된 SHA-1은 직접 설치용 키스토어와 Play 앱 서명 키뿐이므로, **디버그 키로 서명하면 Google Play Games 로그인이 실패하여 GameScene에 진입할 수 없습니다.**
+측정 당시 `Android™` 프로필은 `androidUseCustomKeystore: 0`이라 디버그 키스토어로 서명됐습니다. Firebase와 Play Games에 등록된 SHA-1은 직접 설치용 키스토어와 Play 앱 서명 키뿐이므로, **디버그 키로 서명하면 Google Play Games 로그인이 실패하여 GameScene에 진입할 수 없습니다.**
+
+> 지금은 두 프로필 모두 `androidUseCustomKeystore: 1`로 같은 커스텀 키스토어를
+> 씁니다. 아래 준비 절차는 이미 반영돼 있어 다시 할 필요가 없습니다.
 
 측정 전에 `Android™` 프로필의 Publishing Settings에서 릴리스와 동일한 커스텀 키스토어를 지정해야 합니다. Development Build 플래그와 서명 키는 서로 독립적이므로 둘 다 설정할 수 있습니다.
 

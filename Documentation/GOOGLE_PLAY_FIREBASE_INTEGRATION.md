@@ -472,8 +472,13 @@ Phase 2가 포함된 Android 빌드의 Firestore 복원, 기기 간 충돌과 �
 ### 저장 로드 실패 처리 (2026-09-05 구현·검증 기록)
 
 위 `2026-08-25` 절의 "슬라임 저장 스키마는 v2"는 그 시점 기록입니다. 이후 도감
-관련 필드가 더해져 **현재 SlimeStatus 스키마는 v4**입니다. Currency와 Upgrade는
+관련 필드가 더해져 **현재 SlimeStatus 스키마는 v6**입니다. Currency는 **v2**, Upgrade는
 v1 그대로입니다.
+
+v4 뒤로 두 번 더 올랐습니다. v5는 미수령 가챠권 수를 스테이지별로, v6은 자동 스폰
+설정을 더했습니다. Currency v2는 `ECurrencyType`에 가챠권이 생겨 재화 배열이
+길어진 것입니다. 셋 다 새 Firestore 컬렉션을 만들지 않았으므로 `firestore.rules`는
+그대로이고, 보안 규칙을 함께 배포할 필요가 없습니다.
 
 읽기 계약이 바뀌었습니다. `IRepository<T>.Load()`가 `SaveLoadResult<T>`로
 `Loaded` / `NotFound` / `Failed` 세 상태를 반환합니다. 이전에는 읽기 실패를
