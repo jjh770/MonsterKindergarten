@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -17,6 +17,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
 
     [Header("Carousel")]
     [SerializeField, Range(0.2f, 0.5f)] private float _sideOffsetRatio = 0.42f;
+    [SerializeField, Range(0.5f, 1f)] private float _centerScale = 0.9f;
     [SerializeField, Range(0.5f, 1f)] private float _sideScale = 0.72f;
     [SerializeField, Range(0f, 1f)] private float _sideAlpha = 0.35f;
     // 중앙에서 멀어질수록 아래로 내려 뒤에서 올라오는 원근을 만든다.
@@ -299,10 +300,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
             float basePosition = (slotIndex - CenterSlotIndex) * sideOffset;
             float positionX = basePosition + _dragOffset;
             float normalizedDistance = Mathf.Abs(positionX) / sideOffset;
-            float scale = Mathf.Lerp(
-                1f,
-                _sideScale,
-                Mathf.Clamp01(normalizedDistance));
+            float scale = GetScale(normalizedDistance);
             float alpha = normalizedDistance <= 1f
                 ? Mathf.Lerp(1f, _sideAlpha, normalizedDistance)
                 : Mathf.Lerp(_sideAlpha, 0f, Mathf.Clamp01(normalizedDistance - 1f));
@@ -500,7 +498,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
 
     private float GetScale(float normalizedDistance)
     {
-        return Mathf.Lerp(1f, _sideScale, Mathf.Clamp01(normalizedDistance));
+        return Mathf.Lerp(
+            _centerScale,
+            _sideScale,
+            Mathf.Clamp01(normalizedDistance));
     }
 
     // 축소·투명도와 같은 거리 값을 쓰므로 드래그 중에도 자연스럽게 이어진다.
@@ -596,16 +597,16 @@ public sealed class SystemUpgradePanel : MonoBehaviour,
         return upgrade.SpecData.Type switch
         {
             EUpgradeType.SpawnTimeSub =>
-                $"{icon}{SpawnManager.Instance.SpawnInterval:F1} -> " +
+                $"{icon}{SpawnManager.Instance.SpawnInterval:F1} → " +
                 $"{Mathf.Max(SpawnManager.Instance.MinSpawnInterval, SpawnManager.Instance.SpawnInterval - (float)modifierIncrease):F1}",
             EUpgradeType.MaxCountAdd =>
-                $"{icon}{SpawnManager.Instance.MaxActiveCount} -> " +
+                $"{icon}{SpawnManager.Instance.MaxActiveCount} → " +
                 $"{SpawnManager.Instance.MaxActiveCount + Mathf.RoundToInt((float)modifierIncrease)}",
             EUpgradeType.HigherGradeSpawnWeightAdd =>
                 IsNextSpawnGradeUnlock(upgrade.Level)
                     ? $"{icon}상위 슬라임 추가!"
-                    : $"{icon}Lv.{upgrade.Level} -> Lv.{upgrade.Level + 1}",
-            _ => $"{icon}{upgrade.Point:N0} -> {upgrade.NextPoint:N0}",
+                    : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
+            _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
     }
 

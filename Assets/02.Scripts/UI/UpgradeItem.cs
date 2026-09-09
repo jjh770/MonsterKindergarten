@@ -16,9 +16,11 @@ public class UpgradeItem : MonoBehaviour
 
     private Upgrade _upgrade;
     private Sprite _unlockedSprite;
+    private Color _defaultCostTextColor;
 
     private void Awake()
     {
+        _defaultCostTextColor = _costTextUI.color;
         _upgradeButton.onClick.AddListener(LevelUp);
     }
 
@@ -43,22 +45,27 @@ public class UpgradeItem : MonoBehaviour
             _nameTextUI.text = SlimeManager.Instance.GetName(upgrade.SpecData.SlimeGrade);
             _descriptionTextUI.text = GetDescription(upgrade.SpecData.Type);
             _levelTextUI.text = $"Lv.{upgrade.Level.ToString("N0")}";
-            _costTextUI.text = $"Cost:{upgrade.Cost.ToString()}";
+            _costTextUI.text = upgrade.IsMaxLevel 
+                ? $"Cost : -"
+                : $"Cost : {upgrade.Cost.ToString()}";
             _statTextUI.text = upgrade.IsMaxLevel
-                ? $"{upgrade.Point.ToFormattedString()}(MAX)"
-                : $"{upgrade.Point.ToFormattedString()}→{upgrade.NextPoint.ToFormattedString()}";
+                ? $"{upgrade.Point.ToFormattedString()} (MAX)"
+                : $"{upgrade.Point.ToFormattedString()} → {upgrade.NextPoint.ToFormattedString()}";
 
             if (_slimeImage != null && _unlockedSprite != null)
                 _slimeImage.sprite = _unlockedSprite;
 
             // 외부에서는 Get함수만 접근 가능하게 Interface
             bool canLevelUp = UpgradeManager.Instance.CanLevelUp(upgrade.SpecData);
-            _costTextUI.color = canLevelUp ? Color.black : Color.red;
+            bool isInsufficientCost = !upgrade.IsMaxLevel && !canLevelUp;
+            _costTextUI.color = isInsufficientCost
+                ? Color.red
+                : _defaultCostTextColor;
             _upgradeButton.interactable = canLevelUp;
         }
         else
         {
-            _nameTextUI.text = "??";
+            _nameTextUI.text = "?? 슬라임";
             _descriptionTextUI.text = "???";
             _levelTextUI.text = "";
             _costTextUI.text = "";

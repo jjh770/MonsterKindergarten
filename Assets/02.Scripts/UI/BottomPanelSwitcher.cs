@@ -13,6 +13,8 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
     [SerializeField] private Button _switchButton;
+    [SerializeField] private RectTransform _autoSpawnToggle;
+    [SerializeField] private RectTransform _gachaButton;
     [SerializeField] private RectTransform _systemUpgradePanel;
     [SerializeField] private RectTransform _movePanel;
     [SerializeField] private CanvasGroup _movePanelGroup;
@@ -33,6 +35,7 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     public RectTransform SwitchButtonTarget => _switchButton != null
         ? _switchButton.transform as RectTransform
         : null;
+    public bool IsAreaVisible => _isAreaVisible;
     public bool IsMovePanelOpen => _movePanel != null &&
                                    _movePanel.gameObject.activeSelf;
 
@@ -83,6 +86,8 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     {
         bool hasReferences = _canvas != null &&
                              _switchButton != null &&
+                             _autoSpawnToggle != null &&
+                             _gachaButton != null &&
                              _systemUpgradePanel != null &&
                              _movePanel != null &&
                              _movePanelGroup != null;
@@ -138,9 +143,19 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         float panelTop = _systemUpgradeStartPosition.y +
                          _systemUpgradePanel.rect.height *
                          (1f - _systemUpgradePanel.pivot.y);
+        float buttonY = panelTop + _buttonMargin;
         switchRect.anchoredPosition = new Vector2(
             insets.Left + _buttonMargin,
-            panelTop + _buttonMargin);
+            buttonY);
+        SetAnchoredPositionY(_autoSpawnToggle, buttonY);
+        SetAnchoredPositionY(_gachaButton, buttonY);
+    }
+
+    private static void SetAnchoredPositionY(RectTransform target, float y)
+    {
+        Vector2 position = target.anchoredPosition;
+        position.y = y;
+        target.anchoredPosition = position;
     }
 
     private void Toggle()

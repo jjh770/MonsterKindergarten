@@ -7,8 +7,8 @@ using UnityEngine;
 // 가챠 결과가 메인 스테이지에 태어나기 때문이다. 보이지 않는 곳에 슬라임을 만들고
 // 티켓만 줄어드는 것처럼 보인다.
 //
-// 전송 모드는 여기서 보지 않는다. HudVisibility가 BottomHudRoot를 통째로 치우므로
-// 그 자식인 버튼들도 함께 사라진다.
+// 전송 모드에서는 BottomPanelSwitcher가 하단 패널 영역을 숨긴다. 두 버튼도 같은
+// 표시 상태를 따라야 메뉴 전환 버튼만 사라지고 양옆 버튼이 남는 일이 없다.
 //
 // 버튼이 스스로 숨지 않고 여기서 대신 끈다. 꺼진 오브젝트는 Update가 돌지 않아
 // 스스로 다시 켜질 수 없어서, 자기를 끄는 컴포넌트는 한 번 꺼지면 영영 못 돌아온다.
@@ -18,6 +18,8 @@ using UnityEngine;
 // 쪽 이벤트가 없어서, 구독으로 맞추면 빠뜨린 경로가 곧 사라지지 않는 버튼이 된다.
 public sealed class GachaHudVisibility : MonoBehaviour
 {
+    [SerializeField] private BottomPanelSwitcher _panelSwitcher;
+
     [Tooltip("가챠 해금과 함께 나타날 오브젝트들입니다.")]
     [SerializeField] private GameObject[] _roots;
 
@@ -25,7 +27,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
 
     private void Awake()
     {
-        if (_roots == null || _roots.Length == 0)
+        if (_panelSwitcher == null || _roots == null || _roots.Length == 0)
         {
             Debug.LogError("가챠 UI 노출 대상이 비어 있습니다.", this);
             enabled = false;
@@ -41,7 +43,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
         Apply(IsAvailable());
     }
 
-    private static bool IsAvailable()
+    private bool IsAvailable()
     {
         GameManager gameManager = GameManager.Instance;
         StageManager stageManager = StageManager.Instance;
@@ -50,6 +52,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
         return gameManager != null &&
                gameManager.IsAllDataInitialized &&
                gameManager.IsGameplayActive &&
+               _panelSwitcher.IsAreaVisible &&
                stageManager != null &&
                stageManager.IsMainStageActive &&
                slimeManager != null &&

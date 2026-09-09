@@ -9,6 +9,9 @@ using UnityEngine.UI;
 //
 // 티켓이 없어도 버튼을 흐리게 두지 않는다. 흐린 버튼은 왜 못 쓰는지 알려주지 않고,
 // 가챠권이라는 것이 있다는 사실 자체가 아직 낯선 시점이라 안내가 필요하다.
+//
+// PullSucceeded는 뽑은 순간이 아니라 연출이 끝난 뒤에 발화한다. 튜토리얼이 이 신호를
+// 받아 결과 슬라임을 가리키는데, 연출 도중에는 그 슬라임이 숨겨져 있기 때문이다.
 public sealed class GachaButtonUI : MonoBehaviour
 {
     private const string NoTicketMessage =
@@ -20,6 +23,9 @@ public sealed class GachaButtonUI : MonoBehaviour
     [SerializeField] private Button _button;
     [SerializeField] private TMP_Text _countLabel;
     [SerializeField] private ToastMessageUI _toast;
+
+    [Tooltip("비워 두면 연출 없이 결과가 바로 필드에 나타납니다.")]
+    [SerializeField] private GachaResultDirector _resultDirector;
 
     // 스포트라이트가 버튼을 가리킬 때 필요하다.
     public RectTransform ButtonTarget => _button != null
@@ -70,7 +76,14 @@ public sealed class GachaButtonUI : MonoBehaviour
 
         if (failure == EGachaFailure.None && spawned != null)
         {
-            PullSucceeded?.Invoke(spawned);
+            if (_resultDirector != null)
+            {
+                _resultDirector.Play(spawned, () => PullSucceeded?.Invoke(spawned));
+            }
+            else
+            {
+                PullSucceeded?.Invoke(spawned);
+            }
         }
 
         switch (failure)
