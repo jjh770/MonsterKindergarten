@@ -6,7 +6,6 @@ using UnityEngine.UI;
 public sealed class DisplayRoomUI : MonoBehaviour
 {
     [Header("Common")]
-    [SerializeField] private Canvas _canvas;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private SpaceToggleButtonUI _spaceToggleButton;
     [SerializeField] private Button _sendButton;
@@ -18,7 +17,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [Header("Send Mode")]
     [SerializeField] private GameObject _sendModeRoot;
     [SerializeField] private CanvasGroup _sendModeCanvasGroup;
-    [SerializeField] private RectTransform _sendModePrompt;
     [SerializeField] private Button _cancelButton;
     [SerializeField] private ToastMessageUI _toast;
     // 하단은 요청하지 않는다. 시스템 업그레이드 패널은 BottomPanelSwitcher가,
@@ -63,7 +61,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
         GameManager.Instance.OnGameplayActivated += Refresh;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
 
-        RefreshLayout();
         bool isDisplayRoom =
             StageManager.Instance.CurrentSpace == EGameplaySpace.DisplayRoom;
         _panelSwitcher.ResetSelection(isDisplayRoom);
@@ -112,8 +109,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private bool HasRequiredReferences()
     {
-        bool hasReferences = _canvas != null &&
-                             _panelSwitcher != null &&
+        bool hasReferences = _panelSwitcher != null &&
                              _spaceToggleButton != null &&
                              _sendButton != null &&
                              _stageUI != null &&
@@ -122,7 +118,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _upgradeUI != null &&
                              _sendModeRoot != null &&
                              _sendModeCanvasGroup != null &&
-                             _sendModePrompt != null &&
                              _hudVisibility != null &&
                              _cancelButton != null &&
                              _toast != null &&
@@ -134,14 +129,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         return hasReferences;
-    }
-
-    private void OnRectTransformDimensionsChange()
-    {
-        if (_canvas != null)
-        {
-            RefreshLayout();
-        }
     }
 
     private void OnSpaceButtonClicked()
@@ -292,7 +279,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
         bool isDisplayRoom = space == EGameplaySpace.DisplayRoom;
         _panelSwitcher.ResetSelection(selectMovePanel: true);
         ApplySpacePresentation(isDisplayRoom, animated: true);
-        RefreshLayout();
 
         RefreshBackHandler();
 
@@ -402,24 +388,6 @@ public sealed class DisplayRoomUI : MonoBehaviour
                     _sendModeRoot.SetActive(false);
                 }
             });
-    }
-
-    private void RefreshLayout()
-    {
-        RectTransform canvasRect = _canvas.transform as RectTransform;
-        if (canvasRect == null) return;
-
-        SafeAreaInsets insets = SafeAreaUtility.GetInsets(canvasRect);
-        Vector2 promptPosition = _sendModePrompt.anchoredPosition;
-        promptPosition.y = -insets.Top - 80f;
-        _sendModePrompt.anchoredPosition = promptPosition;
-
-        if (_cancelButton.transform is RectTransform cancelRect)
-        {
-            Vector2 cancelPosition = cancelRect.anchoredPosition;
-            cancelPosition.y = insets.Bottom + 90f;
-            cancelRect.anchoredPosition = cancelPosition;
-        }
     }
 
 }
