@@ -53,7 +53,7 @@ public class SlimeController : MonoBehaviour, IClickable
         }
     }
 
-    public void SetSlime(Slime slime)
+    private void SetSlime(Slime slime)
     {
         _slime = slime;
 
@@ -84,7 +84,7 @@ public class SlimeController : MonoBehaviour, IClickable
     // 전부 같은 순간에 터지기 때문이다. 주기 자체는 건드리지 않는다.
     // 오프라인 보상이 AutoClickInterval을 평균 주기로 나눠 쓰므로 평균이 달라지면
     // 그 계산과 어긋난다.
-    public void ResetAutoProductionPhase()
+    private void ResetAutoProductionPhase()
     {
         float interval = AutoClickInterval;
         _autoProductionTimer = interval > 0f

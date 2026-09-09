@@ -63,7 +63,7 @@ public class SpawnWeightTable : ScriptableObject
 
     // 최고 해금 등급에 해당하는 자연 스폰 상한을 구한다.
     // 배열 순서에 의존하지 않도록 조건을 만족하는 항목 중 가장 높은 상한을 고른다.
-    public ESlimeGrade GetSpawnCap(ESlimeGrade highestGrade)
+    private ESlimeGrade GetSpawnCap(ESlimeGrade highestGrade)
     {
         ESlimeGrade cap = ESlimeGrade.Grade1;
 
@@ -79,7 +79,7 @@ public class SpawnWeightTable : ScriptableObject
         return cap;
     }
 
-    public ESlimeGrade GetSpawnCap(
+    private ESlimeGrade GetSpawnCap(
         ESlimeGrade highestGrade,
         int upgradeLevel)
     {
@@ -104,7 +104,7 @@ public class SpawnWeightTable : ScriptableObject
             GetUpgradeSpawnCap(currentUpgradeLevel + 1));
     }
 
-    public ESlimeGrade GetRequiredHighestGrade(ESlimeGrade requiredSpawnCap)
+    private ESlimeGrade GetRequiredHighestGrade(ESlimeGrade requiredSpawnCap)
     {
         ESlimeGrade requiredHighestGrade = ESlimeGrade.Grade1;
         bool found = false;

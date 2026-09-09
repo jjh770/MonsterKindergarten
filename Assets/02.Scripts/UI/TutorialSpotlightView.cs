@@ -172,26 +172,6 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         Activate();
     }
 
-    public void ShowUiFocusTargets(
-        RectTransform firstTarget,
-        RectTransform secondTarget,
-        bool useRectangularHoles = false)
-    {
-        SetCompactMessage(false);
-        _worldTarget = null;
-        _secondaryWorldTarget = null;
-        _uiTarget = firstTarget;
-        _secondaryUiTarget = secondTarget;
-        _hasSecondHole = true;
-        _interactionMode = SpotlightInteractionMode.BlockAll;
-        _centerCalloutBetweenTargets = false;
-        _useRectangularHole = useRectangularHoles;
-        _useRectangularSecondHole = useRectangularHoles;
-        _messageRect.gameObject.SetActive(false);
-        _arrowRect.gameObject.SetActive(false);
-        Activate();
-    }
-
     public void ShowUiTargets(
         string message,
         RectTransform primaryTarget,

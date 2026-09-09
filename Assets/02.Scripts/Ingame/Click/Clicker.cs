@@ -200,11 +200,6 @@ public class Clicker : MonoBehaviour
         ApplyEffectiveMode();
     }
 
-    public bool HasMode(object owner)
-    {
-        return owner != null && FindRequestIndex(owner) >= 0;
-    }
-
     private bool RemoveRequest(object owner)
     {
         int index = FindRequestIndex(owner);

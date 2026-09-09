@@ -49,7 +49,7 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
 
     public bool IsReady => _slots.Count == RequiredSlotCount;
     public int SelectedIndex => _selectedIndex;
-    public bool IsBusy => _rotationTween != null || _isDragging;
+    private bool IsBusy => _rotationTween != null || _isDragging;
 
     // 가운데 슬롯을 눌렀다. 항목 인덱스를 준다.
     public event Action<int> CenterPressed;
@@ -115,7 +115,7 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
         _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _dataCount - 1));
     }
 
-    public int GetDataIndex(int slotIndex)
+    private int GetDataIndex(int slotIndex)
     {
         return WrapIndex(_selectedIndex + slotIndex - CenterSlotIndex);
     }

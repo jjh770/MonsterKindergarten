@@ -163,7 +163,7 @@ public sealed class HudVisibility : MonoBehaviour
     private readonly struct HideRequest
     {
         public object Owner { get; }
-        public EHudParts Parts { get; }
+        private EHudParts Parts { get; }
 
         public HideRequest(object owner, EHudParts parts)
         {

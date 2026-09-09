@@ -28,7 +28,7 @@ public static class ServerClock
 
     // 동기화 전에는 보상을 계산하지 않는다. 확인하지 못한 시각으로 지급하면
     // 기기 시계를 돌린 만큼 그대로 준다.
-    public static bool IsSynced { get; private set; }
+    private static bool IsSynced { get; set; }
 
     public static DateTime TrustedUtcNow => DateTime.UtcNow + _offset;
 

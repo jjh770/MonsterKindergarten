@@ -90,7 +90,7 @@ public class UpgradeItem : MonoBehaviour
         };
     }
 
-    public void LevelUp()
+    private void LevelUp()
     {
         if (_upgrade == null) return;
 
