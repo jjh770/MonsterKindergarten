@@ -254,22 +254,18 @@ public sealed class StageManager : MonoBehaviour
         _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
         StageChanged?.Invoke(_currentStage);
         ApplyAllSlimeVisibility();
-        _stageUI.SetButtonVisible(false);
+        RefreshStageButton();
         SetInteractionEnabled(false);
 
         await WaitForGameplayActiveAsync(token);
 
         SetInteractionEnabled(true);
 
-        if (!SlimeManager.Instance.IsSkyUnlocked)
-        {
-            _stageUI.SetButtonVisible(false);
-        }
-        else if (SlimeManager.Instance.SkyIntroCompleted)
-        {
-            _stageUI.SetButtonVisible(true);
-        }
-        else
+        // 하늘 안내를 아직 못 본 계정만 여기서 인트로를 띄운다. 버튼 노출은
+        // 규칙 하나가 정하므로 분기마다 따로 켜고 끄지 않는다.
+        RefreshStageButton();
+        if (SlimeManager.Instance.IsSkyUnlocked &&
+            !SlimeManager.Instance.SkyIntroCompleted)
         {
             SlimeController skyTarget = FindFirstSkySlime();
             if (skyTarget != null)
@@ -282,7 +278,7 @@ public sealed class StageManager : MonoBehaviour
                 SlimeManager.Instance.UpdateStageProgress(
                     EGameStage.Ground,
                     skyIntroCompleted: true);
-                _stageUI.SetButtonVisible(true);
+                RefreshStageButton();
             }
         }
     }
@@ -485,7 +481,9 @@ public sealed class StageManager : MonoBehaviour
         }
     }
 
-    public void RefreshSlimePresentation(SlimeController target)
+    // 표시 규칙은 이 클래스 안에서만 쓴다. 밖에서 부르면 스테이지·공간 상태와
+    // 어긋난 시점에 적용될 수 있어 공개하지 않는다.
+    private void RefreshSlimePresentation(SlimeController target)
     {
         if (target == null) return;
 
@@ -502,9 +500,7 @@ public sealed class StageManager : MonoBehaviour
 
         _currentSpace = space;
         ApplyAllSlimeVisibility();
-        _stageUI.SetButtonVisible(IsMainStageActive &&
-            SlimeManager.Instance != null &&
-            SlimeManager.Instance.IsSkyUnlocked);
+        RefreshStageButton();
         SpaceChanged?.Invoke(_currentSpace);
     }
 
@@ -546,6 +542,25 @@ public sealed class StageManager : MonoBehaviour
 
     // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
     // 평상시 공간 기본값은 갱신 순서와 무관하게 선택 모드·튜토리얼보다 낮다.
+    // 하늘 버튼을 열어도 되는지 판정하는 한 곳. 초기화 직후, 하늘 인트로가
+    // 끝날 때, 공간을 오갈 때가 모두 같은 규칙을 쓴다.
+    //
+    // 나뉘어 있을 때는 공간 전환만 인트로 완료를 보지 않는 등 조건이 서로
+    // 달랐고, 하늘 인트로 쪽은 조건 없이 켜기만 했다. 규칙이 늘어날 때
+    // 빠뜨리는 자리가 생긴다.
+    //
+    // 메뉴 안에서 실제로 보일지는 StageUI의 다른 축이 정한다. 여기서는
+    // 버튼을 열어도 되는 상태인지만 답한다.
+    public void RefreshStageButton()
+    {
+        _stageUI.SetButtonVisible(
+            _isInitialized &&
+            IsMainStageActive &&
+            SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsSkyUnlocked &&
+            SlimeManager.Instance.SkyIntroCompleted);
+    }
+
     public void RefreshInteraction()
     {
         SetInteractionEnabled(GameplayGate.IsActive);
