@@ -273,7 +273,9 @@ public class SpawnManager : MonoBehaviour
             GetSpawnWeightUpgradeLevel());
     }
 
-    private static int GetSpawnWeightUpgradeLevel()
+    // 확률 계산에 쓰는 값이자 자연 등장 확률 팝업이 함께 보여 주는 값이다.
+    // 업그레이드 종류와 등급 짝을 아는 곳을 여기 하나로 둔다.
+    public static int GetSpawnWeightUpgradeLevel()
     {
         Upgrade upgrade = UpgradeManager.Instance?.Get(
             EUpgradeType.HigherGradeSpawnWeightAdd,

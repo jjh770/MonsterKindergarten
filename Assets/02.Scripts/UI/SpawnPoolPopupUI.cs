@@ -38,7 +38,11 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
         _closeButton?.onClick.RemoveListener(Close);
     }
 
-    public void Show(IReadOnlyList<SpawnProbability> probabilities)
+    // higherGradeSpawnLevel이 음수면 아직 해금되지 않은 업그레이드라 줄을 넣지
+    // 않는다. 해금 전에는 레벨을 보여 줘도 무엇을 올린 값인지 알 수 없다.
+    public void Show(
+        IReadOnlyList<SpawnProbability> probabilities,
+        int higherGradeSpawnLevel)
     {
         if (probabilities == null || _panel == null || _probabilityText == null)
         {
@@ -46,6 +50,15 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
         }
 
         var builder = new StringBuilder("현재 자연 등장 확률\n");
+
+        // 확률이 왜 이 값인지는 이 업그레이드 레벨과 함께 봐야 읽힌다.
+        if (higherGradeSpawnLevel >= 0)
+        {
+            builder.Append("상위 슬라임 등장 확률 Lv.")
+                .Append(higherGradeSpawnLevel)
+                .Append("\n\n");
+        }
+
         foreach (SpawnProbability probability in probabilities)
         {
             builder.Append("<sprite name=\"")

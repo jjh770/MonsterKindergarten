@@ -144,18 +144,44 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
                          _systemUpgradePanel.rect.height *
                          (1f - _systemUpgradePanel.pivot.y);
         float buttonY = panelTop + _buttonMargin;
-        switchRect.anchoredPosition = new Vector2(
-            insets.Left + _buttonMargin,
-            buttonY);
-        SetAnchoredPositionY(_autoSpawnToggle, buttonY);
-        SetAnchoredPositionY(_gachaButton, buttonY);
+        // 아래 세 호출은 버튼의 좌하단이 어디에 놓일지를 넘긴다. 피벗 보정은
+        // 받는 쪽이 한다.
+        SetBottomLeft(
+            switchRect,
+            new Vector2(insets.Left + _buttonMargin, buttonY));
+        SetBottomY(_autoSpawnToggle, buttonY);
+        SetBottomY(_gachaButton, buttonY);
     }
 
-    private static void SetAnchoredPositionY(RectTransform target, float y)
+    // anchoredPosition은 피벗 지점의 위치다. 위 계산은 버튼의 좌하단을 기준으로
+    // 하므로 피벗이 옮겨 간 만큼 되돌려 준다.
+    //
+    // 이 보정이 없으면 인스펙터에서 피벗만 바꿔도 버튼이 크기의 절반만큼 아래로,
+    // 좌우로 밀린다. 씬에 적어 둔 위치는 런타임에 여기서 덮어쓰므로 그쪽을 고쳐
+    // 맞추면 해상도나 세이프 에어리어가 달라질 때 다시 어긋난다.
+    private static void SetBottomLeft(RectTransform target, Vector2 bottomLeft)
     {
+        if (target == null) return;
+
+        target.anchoredPosition = bottomLeft + GetPivotOffset(target);
+    }
+
+    // X는 씬에 배치한 값을 그대로 두고 세로 줄만 맞춘다.
+    private static void SetBottomY(RectTransform target, float bottomY)
+    {
+        if (target == null) return;
+
         Vector2 position = target.anchoredPosition;
-        position.y = y;
+        position.y = bottomY + GetPivotOffset(target).y;
         target.anchoredPosition = position;
+    }
+
+    private static Vector2 GetPivotOffset(RectTransform target)
+    {
+        Rect rect = target.rect;
+        return new Vector2(
+            rect.width * target.pivot.x,
+            rect.height * target.pivot.y);
     }
 
     private void Toggle()
