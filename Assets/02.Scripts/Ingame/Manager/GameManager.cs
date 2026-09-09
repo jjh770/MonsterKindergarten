@@ -7,13 +7,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public static event Action OnAllDataInitialized;
-    public event Action OnOfflineRewardReady;
     public event Action OnGameplayActivated;
-
-    [Header("Offline Reward")]
-    [SerializeField] private float _minimumOfflineSeconds = 60f;
-    [SerializeField] private float _maximumOfflineHours = 8f;
-    [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
 
     [Header("Loading")]
     [Tooltip("이 시간 안에 저장 데이터를 불러오지 못하면 로그인 화면으로 돌려보냅니다.")]
@@ -23,9 +17,6 @@ public class GameManager : MonoBehaviour
     private bool _isSlimeInitialized;
     private bool _isCurrencyInitialized;
     private bool _isAllInitialized;
-    private OfflineRewardResult? _pendingOfflineReward;
-    private bool _isOfflineRewardConsumed;
-    private bool _isOfflineRewardClaimed;
     private bool _isReturningToLogin;
 
     // TODO : 데이터 초기화 고려사항
@@ -67,7 +58,17 @@ public class GameManager : MonoBehaviour
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
-        TutorialManager.Finished += TryPresentOfflineReward;
+        // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
+        // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
+        if (OfflineRewardManager.Instance == null)
+        {
+            Debug.LogError("오프라인 보상 매니저가 씬에 없습니다.", this);
+        }
+        else
+        {
+            OfflineRewardManager.Instance.PresentationBlockChanged +=
+                OnOfflineRewardBlockChanged;
+        }
 
         WatchInitializationTimeout().Forget();
 
@@ -84,7 +85,11 @@ public class GameManager : MonoBehaviour
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
         CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
-        TutorialManager.Finished -= TryPresentOfflineReward;
+        if (OfflineRewardManager.Instance != null)
+        {
+            OfflineRewardManager.Instance.PresentationBlockChanged -=
+                OnOfflineRewardBlockChanged;
+        }
     }
 
     // 불러오기가 실패가 아니라 멈추면 아무도 신고하지 않는다.
@@ -164,7 +169,7 @@ public class GameManager : MonoBehaviour
 
             _isAllInitialized = true;
             InitializeTutorialProgress();
-            GrantOfflineReward();
+            OfflineRewardManager.Instance?.Grant();
             OnAllDataInitialized?.Invoke();
         }
     }
@@ -253,7 +258,7 @@ public class GameManager : MonoBehaviour
         if (pauseStatus)
         {
             // 받지 않은 보상이 있으면 마지막 저장 시간을 유지해 다음 실행에서 누적한다.
-            if (!_pendingOfflineReward.HasValue)
+            if (!HasPendingOfflineReward)
             {
                 CurrencyManager.Instance.SaveCurrent();
                 // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
@@ -261,211 +266,21 @@ public class GameManager : MonoBehaviour
                 UpgradeManager.Instance?.FlushPendingSave();
             }
         }
-        else if (!_pendingOfflineReward.HasValue || !_isOfflineRewardClaimed)
-        {
-            ResyncThenGrantOfflineReward().Forget();
-        }
-    }
-
-    // 보정값은 기기 시계와의 차이라, 실행 중에 시계가 바뀌면 함께 어긋난다.
-    // 복귀할 때마다 다시 맞춘다. 실패해도 기존 보정값으로 지급한다. 버리면 오프라인
-    // 상태로 돌아온 정직한 플레이어가 쌓인 보상을 잃는다.
-    private async UniTaskVoid ResyncThenGrantOfflineReward()
-    {
-        await ServerClock.TrySync(AccountManager.Instance?.UserId, force: true);
-
-        if (this == null || !_isAllInitialized || GameplaySaveGate.IsResetting) return;
-
-        GrantOfflineReward();
-    }
-
-    private void OnApplicationQuit()
-    {
-        if (_isAllInitialized && !_pendingOfflineReward.HasValue)
-        {
-            CurrencyManager.Instance.SaveCurrent();
-            // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
-            CurrencyManager.Instance.FlushPendingSave();
-            UpgradeManager.Instance?.FlushPendingSave();
-        }
-    }
-
-    private void GrantOfflineReward()
-    {
-        DateTime lastSaveTime = CurrencyManager.Instance.LastSaveTime;
-        DateTime currentTime = ServerClock.TrustedUtcNow;
-
-        if (lastSaveTime == DateTime.MinValue || currentTime <= lastSaveTime)
-        {
-            CurrencyManager.Instance.SaveCurrent();
-            ActivateGameplayIfNoPendingReward();
-            return;
-        }
-
-        double elapsedSeconds = (currentTime - lastSaveTime).TotalSeconds;
-        if (elapsedSeconds < _minimumOfflineSeconds)
-        {
-            CurrencyManager.Instance.SaveCurrent();
-            ActivateGameplayIfNoPendingReward();
-            return;
-        }
-
-        double maximumSeconds = Math.Max(0f, _maximumOfflineHours) * 60d * 60d;
-        elapsedSeconds = Math.Min(elapsedSeconds, maximumSeconds);
-
-        double pointPerSecond = CalculateAutoPointPerSecond();
-        double reward = Math.Floor(pointPerSecond * elapsedSeconds * _offlineRewardEfficiency);
-
-        if (reward > 0d)
-        {
-            // 발표를 미룬 사이에도 플레이는 이어지므로 클릭마다 LastSaveTime이 갱신된다.
-            // 그 뒤 다시 계산하면 경과 시간이 짧아지므로, 아직 받지 않은 보상이 더
-            // 크면 그대로 둔다. 팝업이 떠 있는 동안의 누적은 그대로 동작한다.
-            bool keepPendingReward =
-                _pendingOfflineReward.HasValue &&
-                !_isOfflineRewardClaimed &&
-                _pendingOfflineReward.Value.Reward >= (Currency)reward;
-
-            if (!keepPendingReward)
-            {
-                _isOfflineRewardConsumed = false;
-                _isOfflineRewardClaimed = false;
-                _pendingOfflineReward = new OfflineRewardResult(
-                    TimeSpan.FromSeconds(elapsedSeconds),
-                    reward,
-                    CurrencyManager.Instance.Point,
-                    CurrencyManager.Instance.Point + (Currency)reward);
-            }
-
-            TryPresentOfflineReward();
-        }
         else
         {
-            CurrencyManager.Instance.SaveCurrent();
-            ActivateGameplayIfNoPendingReward();
+            OfflineRewardManager.Instance?.GrantAfterResync().Forget();
         }
     }
 
-    // 계산과 발표를 나눈다. 튜토리얼이 도는 동안 팝업을 띄우면 서로의 입력을 막아
-    // 어느 쪽도 진행할 수 없으므로, 보상은 계산해 두고 튜토리얼이 끝난 뒤 띄운다.
-    private void TryPresentOfflineReward()
+    private static bool HasPendingOfflineReward =>
+        OfflineRewardManager.Instance != null &&
+        OfflineRewardManager.Instance.HasPending;
+
+    // 보상 팝업이 화면을 잡는 동안에는 플레이를 멈춘다. 판단은 보상 쪽이 하고
+    // 실제로 끄고 켜는 것은 여기서 한다. IsGameplayActive는 초기화·진행도
+    // 리셋과도 얽혀 있어 주인이 하나여야 한다.
+    private void OnOfflineRewardBlockChanged(bool isBlocked)
     {
-        if (!_pendingOfflineReward.HasValue || _isOfflineRewardClaimed) return;
-        if (TutorialManager.IsRunning) return;
-
-        // 미뤄 둔 사이 포인트가 늘었을 수 있다. 카운트업 시작값은 발표 시점에 잡는다.
-        OfflineRewardResult pendingReward = _pendingOfflineReward.Value;
-        Currency pointBeforeReward = CurrencyManager.Instance.Point;
-        _pendingOfflineReward = new OfflineRewardResult(
-            pendingReward.ElapsedTime,
-            pendingReward.Reward,
-            pointBeforeReward,
-            pointBeforeReward + pendingReward.Reward);
-
-        IsGameplayActive = false;
-        _isOfflineRewardConsumed = false;
-        OnOfflineRewardReady?.Invoke();
-    }
-
-    private static double CalculateAutoPointPerSecond()
-    {
-        double total = 0d;
-
-        foreach (SlimeInstance instance in SlimeManager.Instance.Status.ActiveSlimes)
-        {
-            if (instance.Location != ESlimeLocation.MainStage)
-            {
-                continue;
-            }
-
-            ESlimeGrade grade = instance.Grade;
-            Slime slime = SlimeManager.Instance.Get(grade);
-            if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
-
-            double point = PointCalculator.Calculate(
-                slime.SpecData.Point,
-                grade,
-                EClickType.Auto);
-
-            total += point / slime.SpecData.AutoClickInterval;
-        }
-
-        return total;
-    }
-
-    public bool TryConsumeOfflineReward(out OfflineRewardResult result)
-    {
-        if (!_pendingOfflineReward.HasValue || _isOfflineRewardConsumed)
-        {
-            result = default;
-            return false;
-        }
-
-        result = _pendingOfflineReward.Value;
-        _isOfflineRewardConsumed = true;
-        return true;
-    }
-
-    public bool TryGetCurrentOfflineReward(out OfflineRewardResult result)
-    {
-        if (!_pendingOfflineReward.HasValue)
-        {
-            result = default;
-            return false;
-        }
-
-        result = _pendingOfflineReward.Value;
-        return true;
-    }
-
-    public void CompleteOfflineRewardPresentation()
-    {
-        if (!_isOfflineRewardClaimed) return;
-
-        _pendingOfflineReward = null;
-        _isOfflineRewardConsumed = false;
-        _isOfflineRewardClaimed = false;
-        IsGameplayActive = true;
-    }
-
-    public bool TryClaimOfflineReward()
-    {
-        if (!_pendingOfflineReward.HasValue || _isOfflineRewardClaimed)
-        {
-            return false;
-        }
-
-        OfflineRewardResult result = _pendingOfflineReward.Value;
-        CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
-        _isOfflineRewardClaimed = true;
-        return true;
-    }
-
-    private void ActivateGameplayIfNoPendingReward()
-    {
-        if (!_pendingOfflineReward.HasValue)
-        {
-            IsGameplayActive = true;
-        }
-    }
-}
-
-public readonly struct OfflineRewardResult
-{
-    public TimeSpan ElapsedTime { get; }
-    public Currency Reward { get; }
-    public Currency PointBeforeReward { get; }
-    public Currency PointAfterReward { get; }
-
-    public OfflineRewardResult(
-        TimeSpan elapsedTime,
-        Currency reward,
-        Currency pointBeforeReward,
-        Currency pointAfterReward)
-    {
-        ElapsedTime = elapsedTime;
-        Reward = reward;
-        PointBeforeReward = pointBeforeReward;
-        PointAfterReward = pointAfterReward;
+        IsGameplayActive = !isBlocked;
     }
 }
