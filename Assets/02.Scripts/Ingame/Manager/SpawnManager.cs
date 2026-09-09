@@ -186,7 +186,7 @@ public class SpawnManager : MonoBehaviour
     private void Update()
     {
         if (!_isInitialized) return;
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
+        if (!GameplayGate.IsActive) return;
         if (_isSpawningPaused) return;
 
 #if UNITY_EDITOR

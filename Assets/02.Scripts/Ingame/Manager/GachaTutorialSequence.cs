@@ -114,8 +114,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void TryStart()
     {
         if (_step != Step.None ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.IsGameplayActive ||
+            !GameplayGate.IsActive ||
             SpawnManager.Instance == null ||
             !SpawnManager.Instance.IsInitialized ||
             TutorialProgress.ShouldRun(TutorialIds.Main) ||

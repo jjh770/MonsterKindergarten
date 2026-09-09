@@ -119,8 +119,7 @@ public sealed class StageManager : MonoBehaviour
         if (!_isInitialized ||
             !IsMainStageActive ||
             _transitionPlayer.IsTransitioning ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.IsGameplayActive ||
+            !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsDisplayRoomUnlocked ||
             (SlimeManager.Instance.IsSkyUnlocked &&
@@ -373,8 +372,7 @@ public sealed class StageManager : MonoBehaviour
         if (!_isInitialized ||
             !IsMainStageActive ||
             _transitionPlayer.IsTransitioning ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.IsGameplayActive ||
+            !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsSkyUnlocked)
         {
@@ -550,8 +548,6 @@ public sealed class StageManager : MonoBehaviour
     // 평상시 공간 기본값은 갱신 순서와 무관하게 선택 모드·튜토리얼보다 낮다.
     public void RefreshInteraction()
     {
-        SetInteractionEnabled(
-            GameManager.Instance != null &&
-            GameManager.Instance.IsGameplayActive);
+        SetInteractionEnabled(GameplayGate.IsActive);
     }
 }

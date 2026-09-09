@@ -345,11 +345,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private bool IsDisplayRoomUnlocked()
     {
-        return GameManager.Instance != null &&
-               GameManager.Instance.IsAllDataInitialized &&
-               GameManager.Instance.IsGameplayActive &&
-               SlimeManager.Instance != null &&
-               SlimeManager.Instance.IsDisplayRoomUnlocked;
+        return GameplayGate.IsDisplayRoomAvailable;
     }
 
     // 이동 패널 안에 있는 버튼 중 이 컴포넌트가 소유한 것만 처리한다.

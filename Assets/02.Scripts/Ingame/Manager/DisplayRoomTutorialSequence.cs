@@ -136,8 +136,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     private void TryStart()
     {
         if ((_step != Step.None && _step != Step.Complete) ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.IsGameplayActive ||
+            !GameplayGate.IsActive ||
             SpawnManager.Instance == null ||
             !SpawnManager.Instance.IsInitialized ||
             TutorialProgress.ShouldRun(TutorialIds.Main) ||

@@ -24,16 +24,16 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
             return;
         }
 
-        if (GameManager.Instance == null)
+        if (OfflineRewardManager.Instance == null)
         {
-            Debug.LogError("GameManager가 없어 오프라인 보상 팝업을 초기화할 수 없습니다.", this);
+            Debug.LogError("보상 매니저가 없어 오프라인 보상 팝업을 초기화할 수 없습니다.", this);
             enabled = false;
             return;
         }
 
         _view.ConfirmRequested += OnConfirmRequested;
         _view.PresentationCompleted += OnPresentationCompleted;
-        GameManager.Instance.OnOfflineRewardReady += ShowPendingReward;
+        OfflineRewardManager.Instance.Ready += ShowPendingReward;
         ShowPendingReward();
     }
 
@@ -45,17 +45,17 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
             _view.PresentationCompleted -= OnPresentationCompleted;
         }
 
-        if (GameManager.Instance != null)
+        if (OfflineRewardManager.Instance != null)
         {
-            GameManager.Instance.OnOfflineRewardReady -= ShowPendingReward;
+            OfflineRewardManager.Instance.Ready -= ShowPendingReward;
         }
     }
 
     private void ShowPendingReward()
     {
         if (_displayedReward.HasValue ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.TryConsumeOfflineReward(out OfflineRewardResult result))
+            OfflineRewardManager.Instance == null ||
+            !OfflineRewardManager.Instance.TryConsume(out OfflineRewardResult result))
         {
             return;
         }
@@ -67,8 +67,8 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
     private void OnConfirmRequested()
     {
         if (!_displayedReward.HasValue ||
-            GameManager.Instance == null ||
-            !GameManager.Instance.TryClaimOfflineReward())
+            OfflineRewardManager.Instance == null ||
+            !OfflineRewardManager.Instance.TryClaim())
         {
             return;
         }
@@ -86,7 +86,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
     {
         if (!_displayedReward.HasValue) return;
 
-        GameManager.Instance?.CompleteOfflineRewardPresentation();
+        OfflineRewardManager.Instance?.CompletePresentation();
         _displayedReward = null;
     }
 }

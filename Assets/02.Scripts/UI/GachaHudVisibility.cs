@@ -45,16 +45,10 @@ public sealed class GachaHudVisibility : MonoBehaviour
 
     private bool IsAvailable()
     {
-        GameManager gameManager = GameManager.Instance;
-        StageManager stageManager = StageManager.Instance;
         SlimeManager slimeManager = SlimeManager.Instance;
 
-        return gameManager != null &&
-               gameManager.IsAllDataInitialized &&
-               gameManager.IsGameplayActive &&
+        return GameplayGate.IsMainStageReady &&
                _panelSwitcher.IsAreaVisible &&
-               stageManager != null &&
-               stageManager.IsMainStageActive &&
                slimeManager != null &&
                slimeManager.IsGachaUnlocked;
     }

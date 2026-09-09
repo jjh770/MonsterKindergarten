@@ -29,7 +29,7 @@ public class GachaTicketDropper : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
+        if (!GameplayGate.IsActive) return;
         if (SpawnManager.Instance == null) return;
         if (SlimeManager.Instance == null || !SlimeManager.Instance.IsGachaUnlocked) return;
         if (!TutorialProgress.IsCompleted(TutorialIds.Gacha) || TutorialManager.IsRunning) return;
