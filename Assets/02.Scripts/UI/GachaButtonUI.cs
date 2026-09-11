@@ -43,7 +43,7 @@ public sealed class GachaButtonUI : MonoBehaviour
         }
 
         _button.onClick.AddListener(OnButtonClicked);
-        SlimeManager.OnDataInitialized += Refresh;
+        GameManager.OnAllDataInitialized += Refresh;
         Refresh();
     }
 
@@ -54,7 +54,7 @@ public sealed class GachaButtonUI : MonoBehaviour
             _button.onClick.RemoveListener(OnButtonClicked);
         }
 
-        SlimeManager.OnDataInitialized -= Refresh;
+        GameManager.OnAllDataInitialized -= Refresh;
 
         if (CurrencyManager.Instance != null)
         {
