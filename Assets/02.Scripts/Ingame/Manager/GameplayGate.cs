@@ -36,5 +36,7 @@ public static class GameplayGate
     public static bool IsDisplayRoomAvailable =>
         IsReady &&
         SlimeManager.Instance != null &&
-        SlimeManager.Instance.IsDisplayRoomUnlocked;
+        SlimeManager.Instance.IsDisplayRoomUnlocked &&
+        (TutorialProgress.IsCompleted(TutorialIds.DisplayRoom) ||
+         TutorialManager.IsActive(TutorialIds.DisplayRoom));
 }

@@ -41,6 +41,10 @@ public class SlimeManager : MonoBehaviour
         _status != null &&
         _status.HighestGrade >=
         _spawnWeightTable.GetRequiredHighestGradeForTier(0);
+    public ESlimeGrade HigherGradeSpawnUnlockGrade =>
+        _spawnWeightTable != null
+            ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
+            : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }

@@ -13,8 +13,8 @@ public static class TutorialIds
     public static readonly (string Id, int Version)[] All =
     {
         (Main, 1),
-        (HigherGradeSpawn, 1),
         (DisplayRoom, 1),
+        (HigherGradeSpawn, 1),
         (Gacha, 1),
     };
 }
@@ -25,6 +25,7 @@ public static class TutorialProgress
     {
         public string CompletionKey;
         public bool IsCompleted;
+        public int Order;
     }
 
     private static readonly Dictionary<string, TutorialState> s_stateById =
@@ -43,6 +44,7 @@ public static class TutorialProgress
 
     public static void Register(
         string tutorialId,
+        int order,
         bool completeByDefault,
         bool completeStoredIncomplete = true)
     {
@@ -63,6 +65,7 @@ public static class TutorialProgress
             {
                 CompletionKey = completionKey,
                 IsCompleted = isCompleted,
+                Order = order,
             };
 
             if (!wasCompleted && isCompleted)
@@ -77,6 +80,7 @@ public static class TutorialProgress
         {
             CompletionKey = completionKey,
             IsCompleted = completeByDefault,
+            Order = order,
         };
         SaveCompletionFlag(completionKey, completeByDefault);
     }
@@ -94,6 +98,28 @@ public static class TutorialProgress
     public static bool ShouldRun(string tutorialId)
     {
         return IsRegistered(tutorialId) && !s_stateById[tutorialId].IsCompleted;
+    }
+
+    // 같은 세션에서 여러 튜토리얼이 동시에 해금돼도 낮은 해금 레벨부터 시작한다.
+    // 아직 해금되지 않은 앞 순서는 뒤 순서보다 먼저 도달해야 하므로 별도 해금
+    // 조건을 여기서 다시 알 필요가 없다.
+    public static bool CanStart(string tutorialId)
+    {
+        if (!s_stateById.TryGetValue(tutorialId, out TutorialState target) ||
+            target.IsCompleted)
+        {
+            return false;
+        }
+
+        foreach (TutorialState state in s_stateById.Values)
+        {
+            if (!state.IsCompleted && state.Order < target.Order)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static void MarkCompleted(string tutorialId)

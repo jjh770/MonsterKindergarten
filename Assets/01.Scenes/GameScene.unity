@@ -10421,7 +10421,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GachaTicketDropper
   _judgeInterval: 60
-  _dropChancePerSlime: 0.0167
+  _dropChancePerSlime: 0.00167
 --- !u!4 &1701297960
 Transform:
   m_ObjectHideFlags: 0

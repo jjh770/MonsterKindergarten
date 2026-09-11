@@ -3,6 +3,8 @@ using UnityEngine;
 
 public sealed class MainTutorialSequence : TutorialSequenceBase
 {
+    public override string TutorialId => TutorialIds.Main;
+
     private enum Step
     {
         None,

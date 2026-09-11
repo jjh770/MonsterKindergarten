@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(TutorialManager))]
 public abstract class TutorialSequenceBase : MonoBehaviour
 {
+    public abstract string TutorialId { get; }
+
     protected TutorialManager TutorialManager { get; private set; }
     protected TutorialContent Content => TutorialManager.Content;
     protected DialoguePresentation Presentation => TutorialManager.Presentation;

@@ -2,6 +2,8 @@ using UnityEngine;
 
 public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 {
+    public override string TutorialId => TutorialIds.DisplayRoom;
+
     private enum Step
     {
         None,
@@ -34,6 +36,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        TutorialManager.Finished += TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
@@ -79,6 +83,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void OnDestroy()
     {
+        TutorialManager.Finished -= TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
@@ -139,8 +145,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             !GameplayGate.IsActive ||
             SpawnManager.Instance == null ||
             !SpawnManager.Instance.IsInitialized ||
-            TutorialProgress.ShouldRun(TutorialIds.Main) ||
-            !TutorialProgress.ShouldRun(TutorialIds.DisplayRoom) ||
+            !TutorialProgress.CanStart(TutorialIds.DisplayRoom) ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsDisplayRoomUnlocked ||
             StageManager.Instance == null ||

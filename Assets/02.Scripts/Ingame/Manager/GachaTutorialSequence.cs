@@ -7,6 +7,8 @@ using UnityEngine;
 // GachaTicketDropper에서 시작한다.
 public sealed class GachaTutorialSequence : TutorialSequenceBase
 {
+    public override string TutorialId => TutorialIds.Gacha;
+
     private enum Step
     {
         None,
@@ -33,6 +35,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        TutorialManager.Finished += TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
@@ -63,6 +67,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void OnDestroy()
     {
+        TutorialManager.Finished -= TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
@@ -117,8 +123,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             !GameplayGate.IsActive ||
             SpawnManager.Instance == null ||
             !SpawnManager.Instance.IsInitialized ||
-            TutorialProgress.ShouldRun(TutorialIds.Main) ||
-            !TutorialProgress.ShouldRun(TutorialIds.Gacha) ||
+            !TutorialProgress.CanStart(TutorialIds.Gacha) ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsGachaUnlocked ||
             CurrencyManager.Instance == null ||
@@ -140,6 +145,11 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         }
 
         if (!TryBeginTutorial()) return;
+
+        // 해금 직후 같은 프레임에는 상시 노출 관리자의 Update가 아직 돌지 않았을 수
+        // 있다. 안내가 시작되는 순간 두 버튼을 먼저 보여 준다.
+        _autoSpawnToggle.gameObject.SetActive(true);
+        _gachaButton.gameObject.SetActive(true);
 
         _step = Step.Dialogue;
         SpawnManager.Instance.SetSpawningPaused(true);

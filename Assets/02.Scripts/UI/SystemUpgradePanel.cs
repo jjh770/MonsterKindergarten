@@ -53,6 +53,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         UpgradeManager.OnDataChanged += Refresh;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+        TutorialManager.Started += OnTutorialAvailabilityChanged;
+        TutorialManager.Finished += OnTutorialAvailabilityChanged;
 
         if (SpawnManager.Instance != null)
         {
@@ -78,6 +80,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         UpgradeManager.OnDataChanged -= Refresh;
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+        TutorialManager.Started -= OnTutorialAvailabilityChanged;
+        TutorialManager.Finished -= OnTutorialAvailabilityChanged;
 
         if (SpawnManager.Instance != null)
         {
@@ -106,7 +110,9 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             EUpgradeType type = upgrade.SpecData.Type;
             if (type == EUpgradeType.HigherGradeSpawnWeightAdd &&
                 (SlimeManager.Instance == null ||
-                 !SlimeManager.Instance.IsHigherGradeSpawnUnlocked))
+                 !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
+                 (!TutorialProgress.IsCompleted(TutorialIds.HigherGradeSpawn) &&
+                  !TutorialManager.IsActive(TutorialIds.HigherGradeSpawn))))
             {
                 continue;
             }
@@ -168,6 +174,14 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void OnHighestGradeChanged(ESlimeGrade grade)
     {
         _highestGrade = grade;
+        CacheSystemUpgrades();
+        Refresh();
+    }
+
+    private void OnTutorialAvailabilityChanged()
+    {
+        if (!_isInitialized) return;
+
         CacheSystemUpgrades();
         Refresh();
     }

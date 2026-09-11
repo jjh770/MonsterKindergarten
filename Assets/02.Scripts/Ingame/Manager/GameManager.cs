@@ -212,19 +212,23 @@ public class GameManager : MonoBehaviour
         TutorialProgress.Initialize(AccountManager.Instance.UserId);
         TutorialProgress.Register(
             TutorialIds.Main,
-            hasExistingProgress);
-        TutorialProgress.Register(
-            TutorialIds.HigherGradeSpawn,
-            SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
-            completeStoredIncomplete: false);
+            order: 0,
+            completeByDefault: hasExistingProgress);
         TutorialProgress.Register(
             TutorialIds.DisplayRoom,
+            order: (int)UnlockGrades.DisplayRoom,
             completeByDefault: false,
+            completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.HigherGradeSpawn,
+            order: (int)SlimeManager.Instance.HigherGradeSpawnUnlockGrade,
+            completeByDefault: SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
             completeStoredIncomplete: false);
         // 가챠는 이번에 추가된 기능이라 이미 Lv.7을 넘긴 플레이어도 안내를 받아야
         // 한다. 해금 여부로 완료 처리하면 지금 플레이 중인 사람 전원이 건너뛴다.
         TutorialProgress.Register(
             TutorialIds.Gacha,
+            order: (int)UnlockGrades.Gacha,
             completeByDefault: false,
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(

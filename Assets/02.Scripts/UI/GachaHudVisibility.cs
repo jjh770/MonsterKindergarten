@@ -50,7 +50,9 @@ public sealed class GachaHudVisibility : MonoBehaviour
         return GameplayGate.IsMainStageReady &&
                _panelSwitcher.IsAreaVisible &&
                slimeManager != null &&
-               slimeManager.IsGachaUnlocked;
+               slimeManager.IsGachaUnlocked &&
+               (TutorialProgress.IsCompleted(TutorialIds.Gacha) ||
+                TutorialManager.IsActive(TutorialIds.Gacha));
     }
 
     private void Apply(bool isVisible)

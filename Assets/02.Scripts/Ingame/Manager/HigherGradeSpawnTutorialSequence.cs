@@ -2,6 +2,8 @@ using UnityEngine;
 
 public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 {
+    public override string TutorialId => TutorialIds.HigherGradeSpawn;
+
     private enum Step
     {
         None,
@@ -22,6 +24,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        TutorialManager.Finished += TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
@@ -31,10 +35,24 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         {
             _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
         }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameplayActivated += TryStart;
+        }
+
+        if (SpawnManager.Instance != null)
+        {
+            SpawnManager.Instance.Initialized += TryStart;
+        }
+
+        TryStart();
     }
 
     private void OnDestroy()
     {
+        TutorialManager.Finished -= TryStart;
+
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
@@ -43,6 +61,16 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         if (_spawnSliderUI != null)
         {
             _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameplayActivated -= TryStart;
+        }
+
+        if (SpawnManager.Instance != null)
+        {
+            SpawnManager.Instance.Initialized -= TryStart;
         }
 
         if (_systemUpgradePanel != null)
@@ -60,10 +88,22 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
+        TryStart();
+    }
+
+    private void TryStart()
+    {
         if (_step != Step.None ||
+            !GameplayGate.IsActive ||
+            SpawnManager.Instance == null ||
+            !SpawnManager.Instance.IsInitialized ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
-            !TutorialProgress.ShouldRun(TutorialIds.HigherGradeSpawn))
+            !TutorialProgress.CanStart(TutorialIds.HigherGradeSpawn) ||
+            StageManager.Instance == null ||
+            !StageManager.Instance.IsMainStageActive ||
+            StageManager.Instance.IsTransitioning ||
+            (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
         }

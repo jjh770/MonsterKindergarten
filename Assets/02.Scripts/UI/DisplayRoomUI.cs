@@ -60,6 +60,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
         GameManager.OnAllDataInitialized += Refresh;
         GameManager.Instance.OnGameplayActivated += Refresh;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+        TutorialManager.Started += Refresh;
+        TutorialManager.Finished += Refresh;
 
         bool isDisplayRoom =
             StageManager.Instance.CurrentSpace == EGameplaySpace.DisplayRoom;
@@ -104,6 +106,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+        TutorialManager.Started -= Refresh;
+        TutorialManager.Finished -= Refresh;
         _gameExitManager?.UnregisterBackHandler(this);
     }
 
