@@ -267,8 +267,11 @@ public class GameManager : MonoBehaviour
                 CurrencyManager.Instance.SaveCurrent();
                 // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
                 CurrencyManager.Instance.FlushPendingSave();
-                UpgradeManager.Instance?.FlushPendingSave();
             }
+
+            // 위 조건은 재화의 마지막 저장 시각을 지키는 규칙이라 업그레이드와는 무관하다.
+            // 보상이 미뤄진 튜토리얼 중에도 업그레이드는 구매되므로 따로 내보낸다.
+            UpgradeManager.Instance?.FlushPendingSave();
         }
         else
         {
