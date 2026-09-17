@@ -14,5 +14,5 @@
 public static class CurrencyIcon
 {
     public const string Point =
-        "<size=60%><voffset=0.12em><sprite name=\"PointIcon\"></voffset></size><space=0.15em>";
+        "<size=50%><voffset=0.2em><sprite name=\"PointIcon\"></voffset></size><space=0.15em>";
 }

@@ -27,7 +27,11 @@ public class GachaTicketField : MonoBehaviour
 {
     [SerializeField] private GachaTicketDropper _dropper;
     [SerializeField] private GameObject _ticketPrefab;
-    [SerializeField] private GachaButtonUI _gachaButton;
+
+    // 주운 티켓이 날아가 앉을 자리. 보유 장수를 보여 주는 상단 바의 티켓 아이콘이다.
+    // 뽑기 버튼이 아니라 개수가 있는 곳으로 보내야 날아간 티켓이 어디에 더해졌는지 보인다.
+    [Tooltip("주운 티켓이 날아갈 상단 바의 티켓 아이콘입니다.")]
+    [SerializeField] private RectTransform _collectTarget;
 
     [Tooltip("티켓을 담을 월드 스페이스 캔버스입니다.")]
     [SerializeField] private Transform _ticketRoot;
@@ -55,7 +59,7 @@ public class GachaTicketField : MonoBehaviour
     private void Awake()
     {
         if (_dropper == null || _ticketPrefab == null || _ticketRoot == null ||
-            _gachaButton == null)
+            _collectTarget == null)
         {
             Debug.LogError("가챠권 필드에 필요한 참조가 비어 있습니다.", this);
             enabled = false;
@@ -205,7 +209,7 @@ public class GachaTicketField : MonoBehaviour
             button.enabled = false;
         }
 
-        RectTransform target = _gachaButton.ButtonTarget;
+        RectTransform target = _collectTarget;
         Camera mainCamera = Camera.main;
         if (target == null || mainCamera == null)
         {

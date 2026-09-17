@@ -100,7 +100,7 @@ public class SpawnSliderUI : MonoBehaviour
                 _displayedRemainingTenths = remainingTenths;
                 // 간격이 아니라 다음 생성까지 남은 시간이다. 숫자만으로는 둘을 구분할 수 없다.
                 _spawnIntervalText.text =
-                    $"<size=45%>다음 생성</size>\n{remainingTenths * 0.1f:F1}";
+                    $"다음 생성 {remainingTenths * 0.1f:F1}초";
             }
         }
 
@@ -133,7 +133,15 @@ public class SpawnSliderUI : MonoBehaviour
         if (state == _displayedState) return;
 
         _displayedState = state;
-        _spawnStateText.gameObject.SetActive(state != SpawnGaugeState.Running);
+        // 남은 시간과 멈춤 사유는 게이지 안의 같은 자리를 쓴다. 멈춰 있으면 줄지 않는
+        // 시간은 의미가 없으므로 사유만 보인다.
+        bool isRunning = state == SpawnGaugeState.Running;
+        _spawnStateText.gameObject.SetActive(!isRunning);
+        if (_spawnIntervalText != null)
+        {
+            _spawnIntervalText.gameObject.SetActive(isRunning);
+        }
+
         _spawnStateText.text = state switch
         {
             SpawnGaugeState.AutoSpawnOff => AutoSpawnOffMessage,

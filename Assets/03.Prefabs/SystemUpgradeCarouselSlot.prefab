@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <size=60%><voffset=0.12em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
+  m_text: <size=50%><voffset=0.2em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: e6cc4aec329d4c4f8bd7c175602bc551, type: 2}
@@ -593,7 +593,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <size=60%><voffset=0.12em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
+  m_text: <size=50%><voffset=0.2em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: e6cc4aec329d4c4f8bd7c175602bc551, type: 2}

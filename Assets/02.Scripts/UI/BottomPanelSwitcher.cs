@@ -150,7 +150,11 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
             switchRect,
             new Vector2(insets.Left + _buttonMargin, buttonY));
         SetBottomY(_autoSpawnToggle, buttonY);
-        SetBottomY(_gachaButton, buttonY);
+        // 메뉴 버튼과 좌우 대칭으로 오른쪽 끝에 붙인다. 가챠 버튼은 캔버스 오른쪽 아래에
+        // 앵커를 둔다.
+        SetBottomRight(
+            _gachaButton,
+            new Vector2(-(insets.Right + _buttonMargin), buttonY));
     }
 
     // anchoredPosition은 피벗 지점의 위치다. 위 계산은 버튼의 좌하단을 기준으로
@@ -164,6 +168,17 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         if (target == null) return;
 
         target.anchoredPosition = bottomLeft + GetPivotOffset(target);
+    }
+
+    // 오른쪽 아래 앵커 기준으로 버튼의 우하단이 놓일 자리를 받는다.
+    private static void SetBottomRight(RectTransform target, Vector2 bottomRight)
+    {
+        if (target == null) return;
+
+        Rect rect = target.rect;
+        target.anchoredPosition = bottomRight + new Vector2(
+            -rect.width * (1f - target.pivot.x),
+            rect.height * target.pivot.y);
     }
 
     // X는 씬에 배치한 값을 그대로 두고 세로 줄만 맞춘다.
