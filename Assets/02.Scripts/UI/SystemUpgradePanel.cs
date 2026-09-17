@@ -17,7 +17,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
     private readonly Dictionary<EUpgradeType, Upgrade> _upgrades = new();
     private readonly List<EUpgradeType> _orderedTypes = new();
-    private ESlimeGrade _highestGrade;
     private bool _isInitialized;
 
     public RectTransform TutorialTarget => transform as RectTransform;
@@ -95,7 +94,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         if (UpgradeManager.Instance == null || SlimeManager.Instance == null) return;
 
         _isInitialized = true;
-        _highestGrade = SlimeManager.Instance.HighestGrade;
         CacheSystemUpgrades();
         Refresh();
     }
@@ -173,7 +171,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
     private void OnHighestGradeChanged(ESlimeGrade grade)
     {
-        _highestGrade = grade;
         CacheSystemUpgrades();
         Refresh();
     }
@@ -253,7 +250,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                SlimeManager.Instance.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
-    private string BuildCostText(
+    private static string BuildCostText(
         Upgrade upgrade,
         bool isMax,
         bool isLocked)
@@ -274,10 +271,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         if (isMax)
         {
-            return $"<sprite name=\"{(int)_highestGrade:00}\">MAX";
+            return $"{CurrencyIcon.Point}MAX";
         }
 
         double cost = (double)upgrade.Cost;
-        return $"<sprite name=\"{(int)_highestGrade:00}\">{cost.ToFormattedString()}";
+        return $"{CurrencyIcon.Point}{cost.ToFormattedString()}";
     }
 }

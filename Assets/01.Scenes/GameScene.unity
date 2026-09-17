@@ -2215,16 +2215,7 @@ MonoBehaviour:
   _confirmButton: {fileID: 888259154}
   _rewardFlyVisual: {fileID: 1185664564}
   _rewardFlySprites:
-  - {fileID: 21300000, guid: 2b153a5f3cc3ee846a5725b61d2b865d, type: 3}
-  - {fileID: 21300000, guid: 5ce8d1bb62b42d04492bcdc3ced21459, type: 3}
-  - {fileID: 21300000, guid: b222af5c33ef5b9419651d2ed4eab1b6, type: 3}
-  - {fileID: 21300000, guid: f133a359f93e3cd42a59f4e153c5faa2, type: 3}
-  - {fileID: 21300000, guid: 5e12c4b1d9e1dbb4d9a648801498583f, type: 3}
-  - {fileID: 21300000, guid: 770663566eef1004f9cfb809696558d5, type: 3}
-  - {fileID: 21300000, guid: c691518a846b8a64cb1c8eb4e96fff80, type: 3}
-  - {fileID: 21300000, guid: 93afa2d1c366aba49b137e8d5100d4a3, type: 3}
-  - {fileID: 21300000, guid: 8b4b9f505a142ca4db8851313279c47e, type: 3}
-  - {fileID: 21300000, guid: 7f01564d896891940bcc5235a76bc440, type: 3}
+  - {fileID: 21300000, guid: 11685467b0d45124e8f27d7bbace5964, type: 3}
   _pointTarget: {fileID: 734613838}
   _flySpawnInterval: 0.04
   _scatterDuration: 0.18
@@ -2885,7 +2876,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite name="01">000M
+  m_text: <size=60%><voffset=0.12em><sprite name="PointIcon"></voffset></size><space=0.15em>000M
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 6a7c423aacd44a39a66f006e76cfc129, type: 2}
@@ -9837,9 +9828,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2b153a5f3cc3ee846a5725b61d2b865d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 11685467b0d45124e8f27d7bbace5964, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -12090,7 +12081,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<sprite name=\"01\">\uBCF4\uC0C1\uD68D\uB4DD"
+  m_text: "<size=60%><voffset=0.12em><sprite name=\"PointIcon\"></voffset></size><space=0.15em>\uBCF4\uC0C1\uD68D\uB4DD"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 07e055bfe405356418f005a6125e1c79, type: 2}
   m_sharedMaterial: {fileID: 9137035265859411347, guid: 07e055bfe405356418f005a6125e1c79, type: 2}

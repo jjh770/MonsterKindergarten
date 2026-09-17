@@ -68,7 +68,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_rewardText != null)
         {
-            _rewardText.text = $"{reward} Point";
+            _rewardText.text = $"{CurrencyIcon.Point}{reward}";
         }
 
         _currentSequence?.Kill();

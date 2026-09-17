@@ -16,7 +16,6 @@ public class PointFloater : MonoBehaviour
     [SerializeField] private Ease _fadeEase;
 
     private LeanGameObjectPool _pool;
-    private int _gradeIndex;
     public void SetPool(LeanGameObjectPool pool)
     {
         _pool = pool;
@@ -24,8 +23,7 @@ public class PointFloater : MonoBehaviour
 
     public void Play(ClickInfo clickInfo)
     {
-        _gradeIndex = (int)clickInfo.Grade;
-        _text.text = $"<sprite name=\"{_gradeIndex:00}\">+{clickInfo.Point}";
+        _text.text = $"{CurrencyIcon.Point}+{clickInfo.Point}";
         _text.alpha = 1f;
 
         float startY = clickInfo.Position.y + _startOffsetY;
