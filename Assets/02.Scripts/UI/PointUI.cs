@@ -39,7 +39,8 @@ public class PointUI : MonoBehaviour
         _isInitialized = true;
         _highestGrade = SlimeManager.Instance.HighestGrade;
 
-        if (GameManager.Instance.TryGetCurrentOfflineReward(out OfflineRewardResult result))
+        if (OfflineRewardManager.Instance != null &&
+            OfflineRewardManager.Instance.TryGetCurrent(out OfflineRewardResult result))
         {
             UpdateUI((double)result.PointBeforeReward);
         }
@@ -58,7 +59,8 @@ public class PointUI : MonoBehaviour
     private void OnPointChanged(ECurrencyType type, Currency point)
     {
         if (!_isInitialized || _isCountUpPlaying) return;
-        if (GameManager.Instance.TryGetCurrentOfflineReward(out _)) return;
+        if (OfflineRewardManager.Instance != null &&
+            OfflineRewardManager.Instance.TryGetCurrent(out _)) return;
         UpdateUI();
     }
 

@@ -119,7 +119,8 @@ Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때
 ## 현재 상태
 
 Phase 1·1.5 자연 스폰과 개체 저장, Phase 2 장식장, Phase 2-B 관찰 UX, Phase 3 일반
-슬라임 도감까지 구현했습니다. 특별 슬라임과 가챠는 Phase 4 이후 범위입니다.
+슬라임 도감, Phase 4 가챠권까지 구현했습니다. Phase 4는 `feature/phase-4-gacha-ticket`에
+있고 아직 `main`에 병합되지 않았습니다. 특별 슬라임은 Phase 5 범위입니다.
 
 검증은 세 층으로 쌓습니다. Unity Editor에서 Firestore 없이 닿는 경로를, 개발
 APK에서 클라우드가 필요한 경로를, 릴리스 AAB에서 코드 스트리핑까지 걸린 실제

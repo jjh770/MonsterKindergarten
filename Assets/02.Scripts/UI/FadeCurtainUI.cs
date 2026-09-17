@@ -47,7 +47,7 @@ public sealed class FadeCurtainUI : MonoBehaviour
     private int _fadeGeneration;
 
     public bool IsReady => _root != null && _canvasGroup != null;
-    public bool IsCovered { get; private set; }
+    private bool IsCovered { get; set; }
 
     private void Awake()
     {

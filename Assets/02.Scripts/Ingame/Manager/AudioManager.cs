@@ -131,7 +131,7 @@ public class AudioManager : MonoBehaviour
 
     #region BGM
 
-    public void PlayBGM(AudioClip clip)
+    private void PlayBGM(AudioClip clip)
     {
         if (clip == null) return;
 
@@ -153,25 +153,6 @@ public class AudioManager : MonoBehaviour
         _bgmFadeCoroutine = StartCoroutine(CrossFadeBgmRoutine(
             clip,
             Mathf.Max(0f, duration)));
-    }
-
-    public void StopBGM()
-    {
-        StopBgmFade();
-        _bgmSource.Stop();
-        _secondaryBgmSource.Stop();
-    }
-
-    public void PauseBGM()
-    {
-        _bgmSource.Pause();
-        _secondaryBgmSource.Pause();
-    }
-
-    public void ResumeBGM()
-    {
-        _bgmSource.UnPause();
-        _secondaryBgmSource.UnPause();
     }
 
     private IEnumerator CrossFadeBgmRoutine(AudioClip clip, float duration)
@@ -295,12 +276,6 @@ public class AudioManager : MonoBehaviour
     #endregion
 
     #region Volume Control
-
-    public void SetMasterVolume(float volume)
-    {
-        MasterVolume = Mathf.Clamp01(volume);
-        ApplyVolumes();
-    }
 
     public void SetBGMVolume(float volume)
     {

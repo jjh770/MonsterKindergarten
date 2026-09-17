@@ -19,6 +19,8 @@ public enum DialogueId
     HigherGradeSpawnPool = 12,
     SkyArrived = 13,
     SkyFinal = 14,
+    Gacha = 15,
+    GachaResult = 16,
 }
 
 [Serializable]
@@ -62,6 +64,9 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _upgradePanelMessage;
     [SerializeField] private string _systemUpgradeCarouselMessage;
     [SerializeField] private string _spawnPoolButtonMessage;
+    [SerializeField] private string _autoSpawnToggleMessage;
+    [SerializeField] private string _gachaMakeRoomMessage;
+    [SerializeField] private string _gachaButtonMessage;
     [SerializeField] private string _displayRoomButtonMessage;
     [SerializeField] private string _displayRoomSendButtonMessage;
     [SerializeField] private string _displayRoomSelectSlimeMessage;
@@ -87,6 +92,9 @@ public sealed class TutorialContent : ScriptableObject
     public string UpgradePanelMessage => _upgradePanelMessage;
     public string SystemUpgradeCarouselMessage => _systemUpgradeCarouselMessage;
     public string SpawnPoolButtonMessage => _spawnPoolButtonMessage;
+    public string AutoSpawnToggleMessage => _autoSpawnToggleMessage;
+    public string GachaMakeRoomMessage => _gachaMakeRoomMessage;
+    public string GachaButtonMessage => _gachaButtonMessage;
     public string DisplayRoomButtonMessage => _displayRoomButtonMessage;
     public string DisplayRoomSendButtonMessage => _displayRoomSendButtonMessage;
     public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;

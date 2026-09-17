@@ -434,11 +434,7 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private bool CanOpen()
     {
-        return GameManager.Instance != null &&
-               GameManager.Instance.IsAllDataInitialized &&
-               GameManager.Instance.IsGameplayActive &&
-               SlimeManager.Instance != null &&
-               SlimeManager.Instance.IsDisplayRoomUnlocked;
+        return GameplayGate.IsDisplayRoomAvailable;
     }
 
     private void RefreshLayout()

@@ -80,12 +80,15 @@ public class CurrencyManager : MonoBehaviour
         CurrencySaveData saveData = loadResult.IsLoaded
             ? loadResult.Data
             : CurrencySaveData.Default;
-        // 저장은 항상 ECurrencyType.Count 길이의 배열을 쓴다. 길이가 다르거나
-        // 배열이 없는 문서는 해석할 수 없다. 그대로 두면 초기화가 중단돼
-        // 안내 없이 화면이 멈추고, 0으로 채우면 재화가 조용히 사라진다.
-        // 재화 종류를 늘릴 때는 스키마 버전을 올리고 승격 로직을 함께 넣는다.
+        // 저장된 배열이 현재보다 짧은 것은 재화 종류를 늘리기 전에 저장된 문서다.
+        // 정상적으로 만들어질 수 있는 값이므로 차단하지 않고 흡수한다. 없는 자리는
+        // 아래에서 0으로 채운다.
+        //
+        // 반대로 현재보다 긴 배열은 이 앱이 모르는 재화가 들어 있다는 뜻이다. 상위
+        // 스키마 버전은 저장소가 이미 막으므로, 버전은 맞는데 길이만 긴 문서는 변조로
+        // 본다. 배열이 아예 없는 것도 해석할 수 없다. 0으로 채우면 재화가 조용히 사라진다.
         double[] currencyValues = saveData.Currencies;
-        if (currencyValues == null || currencyValues.Length != _currencies.Length)
+        if (currencyValues == null || currencyValues.Length > _currencies.Length)
         {
             SaveDataLoadGuard.Report(
                 ESaveLoadFailure.Unreadable,
@@ -110,7 +113,10 @@ public class CurrencyManager : MonoBehaviour
         LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
         for (int i = 0; i < _currencies.Length; i++)
         {
-            _currencies[i] = currencyValues[i];
+            // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
+            _currencies[i] = i < currencyValues.Length
+                ? currencyValues[i]
+                : 0d;
         }
 
         OnDataInitialized?.Invoke();

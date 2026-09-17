@@ -20,20 +20,32 @@ public sealed class TutorialManager : MonoBehaviour
     // 팝업이 각자 전체 화면 입력을 막아 어느 쪽도 진행할 수 없게 된다.
     // 씬 밖에서도 봐야 하므로 정적으로 노출한다.
     public static bool IsRunning { get; private set; }
+    public static string ActiveTutorialId { get; private set; }
+    public static event Action Started;
     public static event Action Finished;
+
+    public static bool IsActive(string tutorialId)
+    {
+        return IsRunning && ActiveTutorialId == tutorialId;
+    }
 
     public bool TryBegin(TutorialSequenceBase sequence)
     {
-        if (sequence == null ||
-            (_activeSequence != null && _activeSequence != sequence))
+        if (sequence == null)
         {
             return false;
         }
 
+        if (_activeSequence == sequence) return true;
+        if (_activeSequence != null ||
+            !TutorialProgress.CanStart(sequence.TutorialId)) return false;
+
         if (!EnsurePresentation()) return false;
 
         _activeSequence = sequence;
+        ActiveTutorialId = sequence.TutorialId;
         IsRunning = true;
+        Started?.Invoke();
         return true;
     }
 
@@ -43,6 +55,7 @@ public sealed class TutorialManager : MonoBehaviour
 
         _presentation?.Spotlight.Hide();
         _activeSequence = null;
+        ActiveTutorialId = null;
         IsRunning = false;
         Finished?.Invoke();
     }
@@ -77,5 +90,6 @@ public sealed class TutorialManager : MonoBehaviour
         // 구독자도 함께 파괴되는 시점이므로 완료 알림은 보내지 않는다.
         if (_activeSequence != null) IsRunning = false;
         _activeSequence = null;
+        ActiveTutorialId = null;
     }
 }

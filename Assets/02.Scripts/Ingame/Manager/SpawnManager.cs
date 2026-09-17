@@ -186,12 +186,23 @@ public class SpawnManager : MonoBehaviour
     private void Update()
     {
         if (!_isInitialized) return;
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
+        if (!GameplayGate.IsActive) return;
         if (_isSpawningPaused) return;
 
 #if UNITY_EDITOR
         HandleEditorSpawnShortcuts();
 #endif
+
+        // 플레이어가 끈 자동 스폰. 튜토리얼의 일시정지와 다른 축이라 따로 본다.
+        // 한 플래그로 합치면 튜토리얼이 끝나면서 SetSpawningPaused(false)를 부를 때
+        // 플레이어가 꺼 둔 설정까지 조용히 켜진다.
+        //
+        // 타이머 누적보다 앞에서 돌아가므로 다시 켜면 멈춘 지점부터 이어간다.
+        if (SlimeManager.Instance != null &&
+            !SlimeManager.Instance.IsAutoSpawnEnabled)
+        {
+            return;
+        }
 
         if (!HasMainStageRoom()) return;
 
@@ -262,7 +273,9 @@ public class SpawnManager : MonoBehaviour
             GetSpawnWeightUpgradeLevel());
     }
 
-    private static int GetSpawnWeightUpgradeLevel()
+    // 확률 계산에 쓰는 값이자 자연 등장 확률 팝업이 함께 보여 주는 값이다.
+    // 업그레이드 종류와 등급 짝을 아는 곳을 여기 하나로 둔다.
+    public static int GetSpawnWeightUpgradeLevel()
     {
         Upgrade upgrade = UpgradeManager.Instance?.Get(
             EUpgradeType.HigherGradeSpawnWeightAdd,

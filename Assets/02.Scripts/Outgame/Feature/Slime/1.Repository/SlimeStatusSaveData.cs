@@ -61,6 +61,32 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public bool SkyIntroCompleted { get; set; }
 
+    // 아직 줍지 않은 가챠권 수. 스테이지별로 따로 센다. 티켓이 속한 스테이지는
+    // 드랍시킨 슬라임의 등급으로 드랍 시점에 정해져 그대로 고정되기 때문이다.
+    //
+    // 개수만 저장한다. 슬라임도 좌표를 저장하지 않고 복원할 때 다시 흩뿌리므로,
+    // 티켓만 좌표를 남길 이유가 없다. 여러 장을 낱개 오브젝트로 보여주는 것은
+    // 화면의 규칙이라 복원할 때 개수만큼 만들면 된다.
+    //
+    // 초기화를 두지 않는다. v4 이하 문서에는 이 필드가 없고 Firestore는 없는 필드를
+    // C# 기본값으로 남기는데, 여기서는 그 0이 정확히 맞는 값이라 결손과 구분할
+    // 필요가 없다. 같은 이유로 Default와 레거시 승격에도 적지 않는다.
+    [FirestoreProperty]
+    public int PendingGroundTickets { get; set; }
+
+    [FirestoreProperty]
+    public int PendingSkyTickets { get; set; }
+
+    // 플레이어가 자연 스폰을 껐는지. 켜짐이 기본값이라 일부러 뒤집어 담는다.
+    //
+    // Firestore도 JSON도 없는 필드를 C# 기본값으로 남긴다. AutoSpawnEnabled로
+    // 두면 v5 이하 문서가 전부 "꺼짐"으로 읽혀 기존 플레이어의 스폰이 멎는다.
+    // 승격 함수에서 true로 채우는 방법도 있지만, 그 함수는 어느 버전에서 왔는지
+    // 모르는 채 실행되므로 나중에 v7이 생기면 플레이어가 꺼 둔 설정을 도로
+    // 켜 버린다. 뒤집어 담으면 그런 자리가 아예 없다.
+    [FirestoreProperty]
+    public bool AutoSpawnDisabled { get; set; }
+
     [FirestoreProperty]
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();

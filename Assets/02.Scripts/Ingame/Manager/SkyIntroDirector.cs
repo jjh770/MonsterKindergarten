@@ -129,7 +129,10 @@ public sealed class SkyIntroDirector : MonoBehaviour
             skyIntroCompleted: true);
         _pendingTarget = null;
         _isStarted = false;
-        _stageUI.SetButtonVisible(true);
+
+        // 버튼을 직접 켜지 않는다. 인트로 완료를 저장한 뒤 규칙에 다시 묻는다.
+        // 여기서 켜 두면 그 조건이 늘어날 때 이 자리만 규칙을 모른 채 남는다.
+        StageManager.Instance?.RefreshStageButton();
 
         if (_presentation == null)
         {
@@ -195,7 +198,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
         SlimeManager.Instance?.UpdateStageProgress(
             EGameStage.Ground,
             skyIntroCompleted: true);
-        _stageUI.SetButtonVisible(true);
+        StageManager.Instance?.RefreshStageButton();
         Complete();
     }
 }

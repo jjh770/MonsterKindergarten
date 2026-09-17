@@ -13,7 +13,7 @@ public class AutoClicker : MonoBehaviour
     private void Update()
     {
         if (_isPaused) return;
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive) return;
+        if (!GameplayGate.IsActive) return;
         if (SpawnManager.Instance == null) return;
 
         // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 예외가 난다.

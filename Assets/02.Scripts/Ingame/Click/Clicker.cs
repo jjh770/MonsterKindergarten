@@ -40,7 +40,7 @@ public class Clicker : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsGameplayActive)
+        if (!GameplayGate.IsActive)
         {
             CancelSelection();
             return;
@@ -198,11 +198,6 @@ public class Clicker : MonoBehaviour
         if (owner == null || !RemoveRequest(owner)) return;
 
         ApplyEffectiveMode();
-    }
-
-    public bool HasMode(object owner)
-    {
-        return owner != null && FindRequestIndex(owner) >= 0;
     }
 
     private bool RemoveRequest(object owner)

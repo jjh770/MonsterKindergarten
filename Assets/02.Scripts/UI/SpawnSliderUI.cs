@@ -139,7 +139,12 @@ public class SpawnSliderUI : MonoBehaviour
     {
         if (_spawnPoolPopup == null || SpawnManager.Instance == null) return;
 
+        // 해금 전에는 레벨을 보여 줘도 뜻이 통하지 않는다. 음수로 넘겨 줄을 뺀다.
+        bool isUnlocked = SlimeManager.Instance != null &&
+                          SlimeManager.Instance.IsHigherGradeSpawnUnlocked;
+
         _spawnPoolPopup.Show(
-            SpawnManager.Instance.GetCurrentSpawnProbabilities());
+            SpawnManager.Instance.GetCurrentSpawnProbabilities(),
+            isUnlocked ? SpawnManager.GetSpawnWeightUpgradeLevel() : -1);
     }
 }

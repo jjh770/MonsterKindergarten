@@ -31,11 +31,20 @@ public class SlimeManager : MonoBehaviour
     public bool IsDisplayRoomUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.DisplayRoom;
+    // 저장을 읽기 전에는 기본값인 켜짐으로 답한다.
+    public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
+    public bool IsGachaUnlocked =>
+        _status != null &&
+        _status.HighestGrade >= UnlockGrades.Gacha;
     public bool IsHigherGradeSpawnUnlocked =>
         _spawnWeightTable != null &&
         _status != null &&
         _status.HighestGrade >=
         _spawnWeightTable.GetRequiredHighestGradeForTier(0);
+    public ESlimeGrade HigherGradeSpawnUnlockGrade =>
+        _spawnWeightTable != null
+            ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
+            : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }
@@ -211,7 +220,10 @@ public class SlimeManager : MonoBehaviour
                 activeSlimes,
                 registeredNormalCollection,
                 (EGameStage)saveData.CurrentStage,
-                saveData.SkyIntroCompleted);
+                saveData.SkyIntroCompleted,
+                saveData.PendingGroundTickets,
+                saveData.PendingSkyTickets,
+                !saveData.AutoSpawnDisabled);
         }
         catch (ArgumentException e)
         {
@@ -298,6 +310,35 @@ public class SlimeManager : MonoBehaviour
 
         _status.UpdateStageProgress(currentStage, skyIntroCompleted);
         Save();
+    }
+
+    public int GetPendingTicketCount(EGameStage stage)
+    {
+        return _status?.GetPendingTickets(stage) ?? 0;
+    }
+
+    public void SetAutoSpawnEnabled(bool isEnabled)
+    {
+        if (_status.IsAutoSpawnEnabled == isEnabled) return;
+
+        _status.SetAutoSpawnEnabled(isEnabled);
+        Save();
+    }
+
+    // 가챠권이 떨어졌을 때 호출한다.
+    public void AddPendingTicket(EGameStage stage)
+    {
+        _status.AddPendingTicket(stage);
+        Save();
+    }
+
+    // 가챠권을 한 장 주웠을 때 호출한다. 저장에 남은 장수가 없으면 false다.
+    public bool TryConsumePendingTicket(EGameStage stage)
+    {
+        if (!_status.TryConsumePendingTicket(stage)) return false;
+
+        Save();
+        return true;
     }
 
     // 슬라임 스폰 시 호출
@@ -428,6 +469,9 @@ public class SlimeManager : MonoBehaviour
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             CurrentStage = (int)_status.CurrentStage,
             SkyIntroCompleted = _status.SkyIntroCompleted,
+            PendingGroundTickets = _status.PendingGroundTickets,
+            PendingSkyTickets = _status.PendingSkyTickets,
+            AutoSpawnDisabled = !_status.IsAutoSpawnEnabled,
             NormalCollectionRegistered = BuildNormalCollectionSaveData(),
             NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),

@@ -95,13 +95,13 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
 
     private void RefreshAvailability()
     {
-        _openButton.interactable = GameManager.Instance != null && GameManager.Instance.IsGameplayActive;
+        _openButton.interactable = GameplayGate.IsActive;
     }
 
     private void Open()
     {
         if (_isOpen || _isClosing || AudioManager.Instance == null ||
-            GameManager.Instance == null || !GameManager.Instance.IsGameplayActive ||
+            !GameplayGate.IsActive ||
             (StageManager.Instance != null && StageManager.Instance.IsTransitioning)) return;
 
         _isOpen = true;
