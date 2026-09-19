@@ -49,6 +49,7 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
 
     public bool IsReady => _slots.Count == RequiredSlotCount;
     public int SelectedIndex => _selectedIndex;
+    public int DataCount => _dataCount;
     private bool IsBusy => _rotationTween != null || _isDragging;
 
     // 가운데 슬롯을 눌렀다. 항목 인덱스를 준다.
@@ -58,6 +59,9 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
     public event Action<SystemUpgradeItemUI, int> SlotBinding;
 
     public event Action RotationCompleted;
+
+    // 선택 위치나 항목 수가 바뀌었다. 페이지 표시처럼 둘을 함께 그리는 쪽이 받는다.
+    public event Action SelectionChanged;
 
     private void Awake()
     {
@@ -113,6 +117,7 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
     {
         _dataCount = Mathf.Max(0, count);
         _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _dataCount - 1));
+        SelectionChanged?.Invoke();
     }
 
     private int GetDataIndex(int slotIndex)
@@ -376,6 +381,7 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
         _rotationTween = null;
         Rebuild();
         SetSlotRaycasts(true);
+        SelectionChanged?.Invoke();
         RotationCompleted?.Invoke();
     }
 

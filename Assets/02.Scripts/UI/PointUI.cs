@@ -6,7 +6,6 @@ public class PointUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _pointText;
 
-    private ESlimeGrade _highestGrade = ESlimeGrade.Grade1;
     private bool _isInitialized;
     private bool _isCountUpPlaying;
     private Tween _countUpTween;
@@ -15,7 +14,6 @@ public class PointUI : MonoBehaviour
     {
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         CurrencyManager.Instance.OnDataChanged += OnPointChanged;
-        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
         PointCountUpEvents.OnRequested += PlayPointCountUp;
 
         // 이미 초기화가 완료된 경우
@@ -29,7 +27,6 @@ public class PointUI : MonoBehaviour
     {
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
         PointCountUpEvents.OnRequested -= PlayPointCountUp;
         _countUpTween?.Kill();
     }
@@ -37,7 +34,6 @@ public class PointUI : MonoBehaviour
     private void OnAllDataInitialized()
     {
         _isInitialized = true;
-        _highestGrade = SlimeManager.Instance.HighestGrade;
 
         if (OfflineRewardManager.Instance != null &&
             OfflineRewardManager.Instance.TryGetCurrent(out OfflineRewardResult result))
@@ -48,12 +44,6 @@ public class PointUI : MonoBehaviour
         {
             UpdateUI();
         }
-    }
-
-    private void OnHighestGradeChanged(ESlimeGrade grade)
-    {
-        _highestGrade = grade;
-        UpdateUI();
     }
 
     private void OnPointChanged(ECurrencyType type, Currency point)
@@ -77,7 +67,7 @@ public class PointUI : MonoBehaviour
 
         if (_pointText != null)
         {
-            _pointText.text = $"<sprite name=\"{(int)_highestGrade:00}\">{(Currency)point}";
+            _pointText.text = $"{CurrencyIcon.Point}{(Currency)point}";
         }
     }
 

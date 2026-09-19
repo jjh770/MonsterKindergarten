@@ -16,7 +16,11 @@ public class SlimeController : MonoBehaviour, IClickable
     private RigidbodyInterpolation2D _defaultInterpolation;
     private bool _hasLanded = false;
 
+    [Tooltip("드래그 중에 정렬 순서를 얼마나 올릴지입니다. 합성 후보 이펙트보다 커야 합니다.")]
+    [SerializeField] private int _dragSortingOrderOffset = 10;
+
     private bool _isDragging = false;
+    private int _defaultSortingOrder;
     private float _autoProductionTimer;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
@@ -45,6 +49,11 @@ public class SlimeController : MonoBehaviour, IClickable
         _feedbacks = GetComponentsInChildren<IFeedback>();
         _slimeMove = GetComponent<SlimeMove>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        if (_spriteRenderer != null)
+        {
+            _defaultSortingOrder = _spriteRenderer.sortingOrder;
+        }
+
         _colliders = GetComponents<Collider2D>();
         _rigidbody = GetComponent<Rigidbody2D>();
         if (_rigidbody != null)
@@ -74,7 +83,7 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void OnSpawn()
     {
-        _isDragging = false;
+        SetDragging(false);
         _hasLanded = false;
         ResetAutoProductionPhase();
         OnSpawned?.Invoke();
@@ -108,7 +117,7 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void OnDespawn()
     {
-        _isDragging = false;
+        SetDragging(false);
         Instance = null;
     }
 
@@ -206,7 +215,7 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void StartDrag()
     {
-        _isDragging = true;
+        SetDragging(true);
         var rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -221,14 +230,28 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void EndDrag(SlimeController preferredTarget)
     {
-        _isDragging = false;
+        SetDragging(false);
         OnInteracted?.Invoke();
         TryMerge(preferredTarget);
     }
 
     public void CancelDrag()
     {
-        _isDragging = false;
+        SetDragging(false);
+    }
+
+    // 슬라임은 모두 같은 정렬 순서와 같은 z에 있어 겹쳤을 때 누가 앞에 그려질지
+    // 정해져 있지 않다. 잡고 있는 슬라임이 다른 슬라임 뒤로 숨지 않도록 드래그 동안만
+    // 앞으로 올린다. 풀에서 재사용되므로 스폰과 디스폰에서도 되돌린다.
+    private void SetDragging(bool isDragging)
+    {
+        _isDragging = isDragging;
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.sortingOrder = isDragging
+                ? _defaultSortingOrder + _dragSortingOrderOffset
+                : _defaultSortingOrder;
+        }
     }
 
     public bool CanMergeWith(SlimeController other)

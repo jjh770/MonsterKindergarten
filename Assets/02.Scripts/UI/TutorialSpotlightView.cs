@@ -35,6 +35,9 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     [SerializeField, Min(0f)] private float _messageScreenMargin = 30f;
     [SerializeField, Min(0f)] private float _compactMessageWidth = 240f;
 
+    [Tooltip("안내창 안에서 글자 둘레에 두는 여백의 합(가로, 세로)입니다.")]
+    [SerializeField] private Vector2 _messagePadding = new Vector2(64f, 36f);
+
     private RectTransform _rootRect;
     private Canvas _canvas;
     private Camera _worldCamera;
@@ -53,6 +56,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     private bool _useRectangularHole;
     private bool _useRectangularSecondHole;
     private Vector2 _defaultMessageSize;
+    private float _messageMaxWidth;
 
     public event Action AdvanceRequested;
 
@@ -73,6 +77,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _runtimeMaterial = Instantiate(_overlayImage.material);
         _overlayImage.material = _runtimeMaterial;
         _defaultMessageSize = _messageRect.sizeDelta;
+        _messageMaxWidth = _defaultMessageSize.x;
         gameObject.SetActive(false);
     }
 
@@ -194,21 +199,28 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         Show(message);
     }
 
+    // 안내창의 최대 폭만 정한다. 실제 크기는 문구가 정해진 뒤 FitMessageBox가 맞춘다.
     private void SetCompactMessage(bool isCompact)
     {
-        Vector2 messageSize = _defaultMessageSize;
-        if (isCompact)
-        {
-            messageSize.x = _compactMessageWidth;
-        }
+        _messageMaxWidth = isCompact ? _compactMessageWidth : _defaultMessageSize.x;
+    }
 
-        _messageRect.sizeDelta = messageSize;
+    // 행동 안내는 대화창과 다른 창에 담는다. 고정 폭이면 짧은 문구에도 긴 띠가 되므로
+    // 글자 크기에 여백을 더해 창을 맞추고, 최대 폭을 넘으면 줄을 바꾼다.
+    private void FitMessageBox(string message)
+    {
+        float maxTextWidth = Mathf.Max(0f, _messageMaxWidth - _messagePadding.x);
+        Vector2 preferred = _messageText.GetPreferredValues(message, maxTextWidth, 0f);
+        _messageRect.sizeDelta = new Vector2(
+            Mathf.Min(preferred.x, maxTextWidth) + _messagePadding.x,
+            preferred.y + _messagePadding.y);
     }
 
     private void Show(string message)
     {
         _messageRect.gameObject.SetActive(true);
         _messageText.text = message;
+        FitMessageBox(message);
         Activate();
     }
 

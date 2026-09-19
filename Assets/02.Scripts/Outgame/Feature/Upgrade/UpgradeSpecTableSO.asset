@@ -23,7 +23,7 @@ MonoBehaviour:
     CostTierMultiplier: 1.5
     PointMultiplier: 0.1
     PointFormula: 0
-    SystemIconIndex: 8
+    SystemIconIndex: -1
     Name: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
     Description: "\uC2A4\uD3F0 \uC2DC\uAC04\uC774 \uB2E8\uCD95\uB429\uB2C8\uB2E4."
   - Type: 5
@@ -36,7 +36,7 @@ MonoBehaviour:
     CostTierMultiplier: 1.05
     PointMultiplier: 1
     PointFormula: 0
-    SystemIconIndex: 9
+    SystemIconIndex: -1
     Name: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218"
     Description: "\uCD5C\uB300 \uC2AC\uB77C\uC784 \uAC1C\uC218 \uC99D\uAC00"
   - Type: 6

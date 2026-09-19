@@ -65,17 +65,17 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite name="01">Point
+  m_text: <size=50%><voffset=0.2em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: e6cc4aec329d4c4f8bd7c175602bc551, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 6a7c423aacd44a39a66f006e76cfc129, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4280367708
+  m_fontColor: {r: 0.36078432, g: 0.22745098, b: 0.12941177, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -205,14 +205,14 @@ MonoBehaviour:
   m_text: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: e6cc4aec329d4c4f8bd7c175602bc551, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 6a7c423aacd44a39a66f006e76cfc129, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4280367708
+  m_fontColor: {r: 0.36078432, g: 0.22745098, b: 0.12941177, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -444,6 +444,7 @@ MonoBehaviour:
   _nameText: {fileID: 214733487}
   _valueText: {fileID: 182474399}
   _costText: {fileID: 2024321986}
+  _unaffordableCostAlpha: 0.4
 --- !u!95 &561333964
 Animator:
   serializedVersion: 7
@@ -593,17 +594,17 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <sprite name="01">Point
+  m_text: <size=50%><voffset=0.2em><sprite name="PointIcon"></voffset></size><space=0.15em>Point
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: e6cc4aec329d4c4f8bd7c175602bc551, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 6a7c423aacd44a39a66f006e76cfc129, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4280367708
+  m_fontColor: {r: 0.36078432, g: 0.22745098, b: 0.12941177, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
