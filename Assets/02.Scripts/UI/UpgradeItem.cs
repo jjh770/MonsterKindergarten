@@ -14,6 +14,9 @@ public class UpgradeItem : MonoBehaviour
     [SerializeField] private Sprite _lockedSprite;
     [SerializeField] private Button _upgradeButton;
 
+    [Tooltip("포인트가 모자랄 때 가격 줄의 불투명도입니다. 강화 카드와 같게 맞춥니다.")]
+    [SerializeField, Range(0f, 1f)] private float _unaffordableCostAlpha = 0.4f;
+
     private Upgrade _upgrade;
     private Sprite _unlockedSprite;
     private Color _defaultCostTextColor;
@@ -45,9 +48,10 @@ public class UpgradeItem : MonoBehaviour
             _nameTextUI.text = SlimeManager.Instance.GetName(upgrade.SpecData.SlimeGrade);
             _descriptionTextUI.text = GetDescription(upgrade.SpecData.Type);
             _levelTextUI.text = $"Lv.{upgrade.Level.ToString("N0")}";
-            _costTextUI.text = upgrade.IsMaxLevel 
-                ? $"Cost : -"
-                : $"Cost : {upgrade.Cost.ToString()}";
+            // 강화 카드와 같은 표기를 쓴다. 영어 라벨 대신 재화 아이콘이 가격임을 알린다.
+            _costTextUI.text = upgrade.IsMaxLevel
+                ? $"{CurrencyIcon.Point}MAX"
+                : $"{CurrencyIcon.Point}{((double)upgrade.Cost).ToFormattedString()}";
             _statTextUI.text = upgrade.IsMaxLevel
                 ? $"{upgrade.Point.ToFormattedString()} (MAX)"
                 : $"{upgrade.Point.ToFormattedString()} → {upgrade.NextPoint.ToFormattedString()}";
@@ -58,9 +62,9 @@ public class UpgradeItem : MonoBehaviour
             // 외부에서는 Get함수만 접근 가능하게 Interface
             bool canLevelUp = UpgradeManager.Instance.CanLevelUp(upgrade.SpecData);
             bool isInsufficientCost = !upgrade.IsMaxLevel && !canLevelUp;
-            _costTextUI.color = isInsufficientCost
-                ? Color.red
-                : _defaultCostTextColor;
+            // 빨간색 대신 강화 카드처럼 흐리게 한다. 버튼은 아래에서 따로 막는다.
+            _costTextUI.color = _defaultCostTextColor;
+            _costTextUI.alpha = isInsufficientCost ? _unaffordableCostAlpha : 1f;
             _upgradeButton.interactable = canLevelUp;
         }
         else
