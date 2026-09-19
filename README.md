@@ -17,6 +17,8 @@
   포인트를 생산하지 않고 수용량도 차지하지 않습니다.
 - 슬라임 터치와 자동 생산으로 포인트를 얻어, 등급별 생산량과 공용 스폰 간격·최대
   수용량·상위 슬라임 등장 확률을 강화합니다.
+- 최고 등급 7부터 필드에 가챠권이 떨어집니다. 주운 가챠권으로 최고 등급보다 1–4
+  낮은 슬라임을 뽑을 수 있고, 자동 스폰을 끄고 켤 수 있습니다.
 - 접속하지 않은 시간만큼 오프라인 자동 생산 보상을 받습니다.
 - 신규 플레이어와 새로 열리는 기능마다 튜토리얼이 안내합니다.
 
@@ -109,7 +111,7 @@ Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때
 
 ## 문서
 
-- [프로젝트 작업 지침](CLAUDE.md)
+- [프로젝트 작업 지침](CLAUDE.md) - [AGENTS.md](AGENTS.md)는 제목만 다른 같은 내용입니다.
 - [게임 기획 및 Phase 구현 스펙](Documentation/MonsterKindergarten_GAME_DESIGN_IMPLEMENTATION_SPEC.md)
 - [Google Play Games 및 Firebase 연동 기록](Documentation/GOOGLE_PLAY_FIREBASE_INTEGRATION.md)
 - [C# 코딩 컨벤션](Documentation/CODING_CONVENTION.md)
@@ -119,8 +121,10 @@ Google Play Games 로그인이 디버그 키스토어 빌드를 거부하기 때
 ## 현재 상태
 
 Phase 1·1.5 자연 스폰과 개체 저장, Phase 2 장식장, Phase 2-B 관찰 UX, Phase 3 일반
-슬라임 도감, Phase 4 가챠권까지 구현했습니다. Phase 4는 `feature/phase-4-gacha-ticket`에
-있고 아직 `main`에 병합되지 않았습니다. 특별 슬라임은 Phase 5 범위입니다.
+슬라임 도감, Phase 4 가챠권까지 구현해 `main`에 병합했습니다. 그 뒤 상단 바에 재화와
+생성 게이지를 모으고 강화 서랍과 튜토리얼 안내를 정리한 HUD 개편도 병합했습니다.
+남은 Phase는 7(자동 수집, 오프라인 가챠권, 엔딩), 6, 8, 5(특별 슬라임) 순서로
+진행합니다.
 
 검증은 세 층으로 쌓습니다. Unity Editor에서 Firestore 없이 닿는 경로를, 개발
 APK에서 클라우드가 필요한 경로를, 릴리스 AAB에서 코드 스트리핑까지 걸린 실제
