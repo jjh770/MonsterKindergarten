@@ -142,10 +142,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         bool isLocked = UpgradeManager.Instance.IsLockedByProgress(upgrade);
         bool isMax = IsMax(upgrade);
+        bool isDisabled = isMax || isLocked;
         item.Refresh(
             BuildValueText(upgrade, isMax, isLocked),
             BuildCostText(upgrade, isMax, isLocked),
-            isMax || isLocked);
+            isDisabled,
+            isDisabled ? (Currency?)null : upgrade.Cost);
     }
 
     private void OnCenterPressed(int dataIndex)
