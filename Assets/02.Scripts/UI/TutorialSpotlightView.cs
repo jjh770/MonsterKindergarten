@@ -55,6 +55,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     private bool _centerCalloutBetweenTargets;
     private bool _useRectangularHole;
     private bool _useRectangularSecondHole;
+    private Color _defaultOverlayColor;
     private Vector2 _defaultMessageSize;
     private float _messageMaxWidth;
 
@@ -76,6 +77,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
 
         _runtimeMaterial = Instantiate(_overlayImage.material);
         _overlayImage.material = _runtimeMaterial;
+        _defaultOverlayColor = _overlayImage.color;
         _defaultMessageSize = _messageRect.sizeDelta;
         _messageMaxWidth = _defaultMessageSize.x;
         gameObject.SetActive(false);
@@ -101,6 +103,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
+        SetBackgroundDim(1f);
         _arrowRect.gameObject.SetActive(true);
         Show(message);
     }
@@ -117,6 +120,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
+        SetBackgroundDim(1f);
         _messageRect.gameObject.SetActive(false);
         _arrowRect.gameObject.SetActive(false);
         Activate();
@@ -134,6 +138,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _centerCalloutBetweenTargets = true;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
+        SetBackgroundDim(1f);
         _arrowRect.gameObject.SetActive(false);
         Show(message);
     }
@@ -142,7 +147,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         string message,
         RectTransform target,
         SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll,
-        bool useRectangularHole = false)
+        float backgroundDimStrength = 1f)
     {
         SetCompactMessage(false);
         _worldTarget = null;
@@ -152,15 +157,14 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _hasSecondHole = false;
         _interactionMode = interactionMode;
         _centerCalloutBetweenTargets = false;
-        _useRectangularHole = useRectangularHole;
-        _useRectangularSecondHole = false;
+        _useRectangularHole = true;
+        _useRectangularSecondHole = true;
+        SetBackgroundDim(backgroundDimStrength);
         _arrowRect.gameObject.SetActive(true);
         Show(message);
     }
 
-    public void ShowUiFocus(
-        RectTransform target,
-        bool useRectangularHole = false)
+    public void ShowUiFocus(RectTransform target, float backgroundDimStrength = 1f)
     {
         SetCompactMessage(false);
         _worldTarget = null;
@@ -170,8 +174,9 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _hasSecondHole = false;
         _interactionMode = SpotlightInteractionMode.BlockAll;
         _centerCalloutBetweenTargets = false;
-        _useRectangularHole = useRectangularHole;
-        _useRectangularSecondHole = false;
+        _useRectangularHole = true;
+        _useRectangularSecondHole = true;
+        SetBackgroundDim(backgroundDimStrength);
         _messageRect.gameObject.SetActive(false);
         _arrowRect.gameObject.SetActive(false);
         Activate();
@@ -182,8 +187,8 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         RectTransform primaryTarget,
         RectTransform secondaryTarget,
         SpotlightInteractionMode interactionMode = SpotlightInteractionMode.BlockAll,
-        bool useRectangularSecondaryHole = false,
-        bool useCompactMessage = false)
+        bool useCompactMessage = false,
+        float backgroundDimStrength = 1f)
     {
         SetCompactMessage(useCompactMessage);
         _worldTarget = null;
@@ -193,8 +198,9 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _hasSecondHole = true;
         _interactionMode = interactionMode;
         _centerCalloutBetweenTargets = false;
-        _useRectangularHole = false;
-        _useRectangularSecondHole = useRectangularSecondaryHole;
+        _useRectangularHole = true;
+        _useRectangularSecondHole = true;
+        SetBackgroundDim(backgroundDimStrength);
         _arrowRect.gameObject.SetActive(true);
         Show(message);
     }
@@ -242,6 +248,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _centerCalloutBetweenTargets = false;
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
+        SetBackgroundDim(1f);
         gameObject.SetActive(false);
     }
 
@@ -385,6 +392,13 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         }
 
         UpdateCalloutPosition(calloutCenter);
+    }
+
+    private void SetBackgroundDim(float strength)
+    {
+        Color color = _defaultOverlayColor;
+        color.a = _defaultOverlayColor.a * Mathf.Clamp01(strength);
+        _overlayImage.color = color;
     }
 
     private bool TryGetWorldTargetCenter(Transform target, out Vector2 localPosition)

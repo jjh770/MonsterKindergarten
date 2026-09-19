@@ -217,8 +217,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomButtonMessage,
             target,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnGuideAdvanceRequested()
@@ -267,8 +266,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomSendButtonMessage,
             target,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnSendModeStarted()
@@ -328,8 +326,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomEnterMessage,
             target,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnSpaceChanged(EGameplaySpace space)
@@ -413,8 +410,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomInfoSummaryMessage,
             target,
-            SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void ShowObserveButtonStep()
@@ -430,8 +426,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomObserveMessage,
             target,
-            SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void ShowTakeOutButtonStep()
@@ -447,8 +442,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomTakeOutMessage,
             target,
-            SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void ShowCloseButtonStep()
@@ -464,8 +458,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.DisplayRoomCloseMessage,
             target,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     // 닫기 버튼뿐 아니라 뒤로가기로 닫아도 안내가 멈추지 않게 한다.

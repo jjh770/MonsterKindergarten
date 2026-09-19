@@ -127,7 +127,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
         if (scholarSlimeTarget != null)
         {
-            Spotlight.ShowUiFocus(scholarSlimeTarget, useRectangularHole: true);
+            Spotlight.ShowUiFocus(scholarSlimeTarget);
         }
 
         ShowStepDialogue(
@@ -325,8 +325,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             closeTarget,
             panelTarget,
             interactionMode: SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularSecondaryHole: true,
-            useCompactMessage: true);
+            useCompactMessage: true,
+            backgroundDimStrength: 0.3f);
     }
 
     private void OnUpgradeClosed()
@@ -347,7 +347,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        Spotlight.ShowUiFocus(carouselTarget, useRectangularHole: true);
+        Spotlight.ShowUiFocus(carouselTarget);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.SpawnUpgrade),
             ShowSystemUpgradeCarouselStep,
@@ -370,8 +370,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.SystemUpgradeCarouselMessage,
             carouselTarget,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnSystemUpgradeRotationCompleted()
@@ -391,7 +390,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        Spotlight.ShowUiFocus(_spawnGaugeTarget, useRectangularHole: true);
+        Spotlight.ShowUiFocus(_spawnGaugeTarget);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.SpawnGauge),
             ShowFinalDialogue,

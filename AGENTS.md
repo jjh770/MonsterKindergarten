@@ -40,6 +40,8 @@ Do not change save keys, Firestore document ownership, Firebase UID handling, or
 
 ## Architecture
 
+Use the official `unity:*` skills for generic Unity workflows such as live Editor/CLI control, uGUI hierarchy and RectTransform work, TextMeshPro optimization, audio routing, sprite atlases, and UPM package operations. The guidance below records Monster Kindergarten's project-specific ownership, compatibility constraints, and verified failure cases; it takes precedence over a skill's generic defaults.
+
 ### Folder Structure
 
 Assets use numbered prefixes for project-owned content:
@@ -121,7 +123,6 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 - The player's auto-spawn setting and the tutorials' spawn pause are separate axes. Tutorials own `SetSpawningPaused`, and three of them call `SetSpawningPaused(false)` when they end; sharing one flag would let a tutorial silently switch a player's setting back on. `SpawnManager` reads `SlimeManager.IsAutoSpawnEnabled` directly rather than caching it, so the two cannot drift. The check sits after the editor spawn shortcuts and before the timer, so manual spawning still works and the gauge resumes where it stopped.
 - That setting is stored inverted, as `AutoSpawnDisabled`. Both Firestore and JSON leave an absent field at the C# default, so an `AutoSpawnEnabled` field would read as "off" for every pre-v6 document and stop their spawning. Filling it in the migration function is not a fix either: that function does not know which version it came from, so a later v7 would switch a player's deliberate "off" back on.
 - `SlimeSpawner` uses Lean Pool and tracks active slime instances. `GetActiveTargets()` hands that list out as `IReadOnlyList`, because only `Spawn` and `Despawn` may change it. That does not make iteration safe: spawning or despawning inside a loop over it still throws, so never do either from within one.
-- `Clicker` uses Unity's Input System pointer API for both mouse and touch input.
 - `SlimeController` handles manual clicks, dragging, point rewards, and overlap-based merge requests. Every slime shares one sorting order and z, so which of two overlapping slimes draws on top is undefined; `SetDragging` raises the dragged slime's order by `_dragSortingOrderOffset` and restores it on end, cancel, spawn and despawn. Keep the offset above `MergeCandidateVfxController`'s `+1`, or the held slime sinks under the candidate effect.
 - `MergeManager` validates same-grade merges and promotes the surviving slime. It moves the save state first and only then raises the highest grade and updates the visuals, because `SlimeManager.MergeSlime()` throws on an entry the save does not have. Ordering the irreversible grade update after that check is what keeps a failure from leaving the save and the screen disagreeing, so no rollback is needed.
 - Auto production is split: each `SlimeController` owns its own timer so the timer's lifetime matches the pooled object, and `AutoClicker` owns the single tick loop, the eligibility rule, and `SetPaused`. Keep the rule there - tutorials pause every slime at once through it, and `GameManager`'s offline reward reproduces the same rule. `OnSpawn` re-scatters the timer's phase, never its period, because the offline reward divides by `AutoClickInterval` as the average. DisplayRoom is excluded from manual, automatic, and offline production.
@@ -144,8 +145,8 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 - Keep static UI, audio sources, and references authored in scenes/prefabs rather than constructing their hierarchy at runtime.
 - `Clicker.PushMode(owner, mode, priority)` / `ReleaseMode(owner)` arbitrate world input: Space < Selection < Tutorial < Modal. Same-owner updates keep their position; release only the owner's request on completion or teardown.
 - `StageManager.PlayDisplayRoomTransfer()` starts a space transfer and `StageManager.TryRelocateSlime()` finishes it: save location, reposition, refresh presentation, and restore the pre-transfer position on failure. UI owns only the policy around it - toast text, input restore, popup closing. Do not reimplement the completion half in a caller.
-- Never place a `Button` or other `Selectable` under a `Slider`, `Scrollbar`, `ScrollRect`, or any `IDragHandler`. `Slider.OnInitializePotentialDrag` clears the drag threshold, so any finger movement starts a parent drag and cancels the child's click. The spawn gauge keeps its `Slider` on a dedicated `SpawnBar` child for this reason.
-- Text outlines and similar variants are material properties, so make them as material presets on the one font asset rather than baking the font again. A font since removed from the project was once baked three times for two outline looks, and each copy carried its own 4096 atlas, 35 MB apiece. The current fonts follow the preset pattern: `Maplestory Light SDF` and `Cafe24Ssurround-v2` each keep `_Outline` and `_Outline_MK2` presets of about 3 KB that reference the shared atlas. A preset appears in a `TMP_Text`'s Material Preset dropdown only while it sits beside the font asset and points at that atlas, and both the Font Asset and the Material Preset fields have to be set - changing the font alone silently reverts to the plain material.
+- Keep the spawn gauge's `Slider` on its dedicated `SpawnBar` child; do not nest a `Selectable` under it or another drag handler, because parent dragging cancels the child click.
+- Keep TMP outline variants as material presets beside the shared font asset. `Maplestory Light SDF` and `Cafe24Ssurround-v2` each use `_Outline` and `_Outline_MK2`; assign both the Font Asset and Material Preset fields so the text does not fall back to the plain material.
 
 **Scene transitions and loading**
 
@@ -167,15 +168,9 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 - A reset timeout does not cancel the server operation. Do not resume the old game while the result is uncertain. Return to login after reset; the login screen never signs in by itself, so nothing re-enters the game unattended.
 - Other devices' local saves are not invalidated and can restore old cloud progress later. Account-wide reset generations are not implemented.
 
-### Key Patterns
+### Project Conventions
 
 - Scene-level singleton managers. Declare as `public static T Instance { get; private set; }` and guard `Awake` with `if (Instance != null && Instance != this) { Destroy(gameObject); return; }` before assigning. The `Instance != this` check keeps a re-entered `Awake` from destroying the already registered instance.
-- Repository interfaces with platform-specific implementations
-- Domain data separated from manager orchestration
-- ScriptableObject balance tables
-- Event-driven initialization and UI refresh
-- Component-composed feedback
-- Object pooling for runtime slimes and floaters
 
 ### Physics and Input
 

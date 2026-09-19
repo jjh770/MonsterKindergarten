@@ -140,8 +140,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.SpawnPoolButtonMessage,
             buttonTarget,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void OnSpawnPoolPopupOpened()
@@ -151,7 +150,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         RectTransform popupTarget = _spawnSliderUI.SpawnPoolPopupTarget;
         if (popupTarget != null)
         {
-            Spotlight.ShowUiFocus(popupTarget, useRectangularHole: true);
+            Spotlight.ShowUiFocus(popupTarget);
         }
 
         _step = Step.Dialogue;
@@ -179,7 +178,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         }
 
         _step = Step.Carousel;
-        Spotlight.ShowUiFocus(carouselTarget, useRectangularHole: true);
+        Spotlight.ShowUiFocus(carouselTarget);
         _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
         _systemUpgradePanel.RotationCompleted += OnUpgradeFocused;
 

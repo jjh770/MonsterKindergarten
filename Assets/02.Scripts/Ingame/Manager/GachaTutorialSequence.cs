@@ -183,8 +183,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             target,
             isEnabled
                 ? SpotlightInteractionMode.PassThroughPrimary
-                : SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
+                : SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void OnAutoSpawnStateChanged(bool isEnabled)
@@ -271,8 +270,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.GachaButtonMessage,
             target,
-            SpotlightInteractionMode.PassThroughPrimary,
-            useRectangularHole: true);
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     // 자리가 없는 채로 끝내는 경로. ShowGachaButtonStep은 자리가 없으면
@@ -296,8 +294,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiTarget(
             Content.GachaButtonMessage,
             target,
-            SpotlightInteractionMode.AdvanceOnPrimaryTap,
-            useRectangularHole: true);
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void OnGachaPullSucceeded(SlimeController spawned)
