@@ -14,6 +14,7 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     [SerializeField] private Canvas _canvas;
     [SerializeField] private Button _switchButton;
     [SerializeField] private RectTransform _autoSpawnToggle;
+    [SerializeField] private RectTransform _autoMergeToggle;
     [SerializeField] private RectTransform _gachaButton;
     [SerializeField] private RectTransform _systemUpgradePanel;
     [SerializeField] private RectTransform _movePanel;
@@ -87,6 +88,7 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         bool hasReferences = _canvas != null &&
                              _switchButton != null &&
                              _autoSpawnToggle != null &&
+                             _autoMergeToggle != null &&
                              _gachaButton != null &&
                              _systemUpgradePanel != null &&
                              _movePanel != null &&
@@ -149,7 +151,15 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         SetBottomLeft(
             switchRect,
             new Vector2(insets.Left + _buttonMargin, buttonY));
-        SetBottomY(_autoSpawnToggle, buttonY);
+        float nextButtonX = insets.Left + _buttonMargin +
+                            switchRect.rect.width;
+        SetBottomLeft(
+            _autoSpawnToggle,
+            new Vector2(nextButtonX, buttonY));
+        nextButtonX += _autoSpawnToggle.rect.width;
+        SetBottomLeft(
+            _autoMergeToggle,
+            new Vector2(nextButtonX, buttonY));
         // 메뉴 버튼과 좌우 대칭으로 오른쪽 끝에 붙인다. 가챠 버튼은 캔버스 오른쪽 아래에
         // 앵커를 둔다.
         SetBottomRight(
@@ -179,16 +189,6 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         target.anchoredPosition = bottomRight + new Vector2(
             -rect.width * (1f - target.pivot.x),
             rect.height * target.pivot.y);
-    }
-
-    // X는 씬에 배치한 값을 그대로 두고 세로 줄만 맞춘다.
-    private static void SetBottomY(RectTransform target, float bottomY)
-    {
-        if (target == null) return;
-
-        Vector2 position = target.anchoredPosition;
-        position.y = bottomY + GetPivotOffset(target).y;
-        target.anchoredPosition = position;
     }
 
     private static Vector2 GetPivotOffset(RectTransform target)

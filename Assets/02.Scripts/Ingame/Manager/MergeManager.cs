@@ -3,6 +3,18 @@ using UnityEngine;
 
 public class MergeManager : MonoBehaviour
 {
+    public readonly struct MergeTargetPair
+    {
+        public SlimeController Keeper { get; }
+        public SlimeController Removed { get; }
+
+        public MergeTargetPair(SlimeController keeper, SlimeController removed)
+        {
+            Keeper = keeper;
+            Removed = removed;
+        }
+    }
+
     public static MergeManager Instance { get; private set; }
     public static event System.Action<SlimeController, ESlimeGrade, ESlimeGrade> Merged;
 
@@ -26,32 +38,59 @@ public class MergeManager : MonoBehaviour
     // StageManager.TryRelocateSlime()과 같은 처리 방식이다.
     public void Merge(SlimeController keeper, SlimeController removed)
     {
-        if (!SlimeManager.Instance.CanMerge(keeper.Slime, removed.Slime)) return;
+        MergeBatch(new[] { new MergeTargetPair(keeper, removed) });
+    }
 
-        ESlimeGrade fromGrade = keeper.Grade;
-        ESlimeGrade toGrade = fromGrade + 1;
+    // 실제로 합성한 쌍이 있으면 true. 자동 합성은 이 결과로 다음 등급을 시도할지
+    // 정하므로, 저장이 거절한 쌍 하나가 뒤의 멀쩡한 쌍까지 막지 않는다.
+    public bool MergeBatch(
+        System.Collections.Generic.IReadOnlyList<MergeTargetPair> pairs)
+    {
+        if (pairs == null || pairs.Count == 0 || SlimeManager.Instance == null) return false;
 
-        Slime nextSlime = SlimeManager.Instance.Get(toGrade);
-        if (nextSlime == null) return;
+        var validPairs = new System.Collections.Generic.List<MergeTargetPair>(pairs.Count);
+        var requests = new System.Collections.Generic.List<SlimeMergeRequest>(pairs.Count);
+        foreach (MergeTargetPair pair in pairs)
+        {
+            if (pair.Keeper == null || pair.Removed == null ||
+                !SlimeManager.Instance.CanMerge(pair.Keeper.Slime, pair.Removed.Slime))
+            {
+                continue;
+            }
+
+            ESlimeGrade toGrade = pair.Keeper.Grade + 1;
+            if (SlimeManager.Instance.Get(toGrade) == null) continue;
+
+            validPairs.Add(pair);
+            requests.Add(new SlimeMergeRequest(
+                pair.Keeper.InstanceId,
+                pair.Removed.InstanceId,
+                toGrade));
+        }
+
+        if (requests.Count == 0) return false;
 
         try
         {
-            SlimeManager.Instance.MergeSlime(
-                keeper.InstanceId,
-                removed.InstanceId,
-                toGrade);
+            SlimeManager.Instance.MergeSlimesBatch(requests);
         }
         catch (Exception e) when (e is InvalidOperationException ||
                                   e is ArgumentException)
         {
             Debug.LogWarning($"슬라임을 합성할 수 없습니다: {e.Message}");
-            return;
+            return false;
         }
 
-        SlimeManager.Instance.TryUpdateHighestLevel(toGrade);
-        keeper.PromoteTo(nextSlime);
+        foreach (MergeTargetPair pair in validPairs)
+        {
+            ESlimeGrade fromGrade = pair.Keeper.Grade;
+            ESlimeGrade toGrade = fromGrade + 1;
+            Slime nextSlime = SlimeManager.Instance.Get(toGrade);
+            pair.Keeper.PromoteTo(nextSlime);
+            SpawnManager.Instance.Despawn(pair.Removed);
+            Merged?.Invoke(pair.Keeper, fromGrade, toGrade);
+        }
 
-        SpawnManager.Instance.Despawn(removed);
-        Merged?.Invoke(keeper, fromGrade, toGrade);
+        return true;
     }
 }

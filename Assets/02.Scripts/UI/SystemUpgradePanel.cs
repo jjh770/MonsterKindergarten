@@ -52,6 +52,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         UpgradeManager.OnDataChanged += Refresh;
         SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+        SlimeManager.OnNormalCollectionCountChanged += OnNormalCollectionCountChanged;
         TutorialManager.Started += OnTutorialAvailabilityChanged;
         TutorialManager.Finished += OnTutorialAvailabilityChanged;
 
@@ -59,6 +60,11 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         {
             SpawnManager.Instance.OnSpawnIntervalChanged += OnSpawnIntervalChanged;
             SpawnManager.Instance.OnSpawnMaxChanged += OnSpawnMaxChanged;
+        }
+
+        if (AutoMergeManager.Instance != null)
+        {
+            AutoMergeManager.Instance.IntervalChanged += OnAutoMergeIntervalChanged;
         }
 
         if (GameManager.Instance != null && GameManager.Instance.IsAllDataInitialized)
@@ -79,6 +85,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         UpgradeManager.OnDataChanged -= Refresh;
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+        SlimeManager.OnNormalCollectionCountChanged -= OnNormalCollectionCountChanged;
         TutorialManager.Started -= OnTutorialAvailabilityChanged;
         TutorialManager.Finished -= OnTutorialAvailabilityChanged;
 
@@ -86,6 +93,11 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         {
             SpawnManager.Instance.OnSpawnIntervalChanged -= OnSpawnIntervalChanged;
             SpawnManager.Instance.OnSpawnMaxChanged -= OnSpawnMaxChanged;
+        }
+
+        if (AutoMergeManager.Instance != null)
+        {
+            AutoMergeManager.Instance.IntervalChanged -= OnAutoMergeIntervalChanged;
         }
     }
 
@@ -111,6 +123,14 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                  !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
                  (!TutorialProgress.IsCompleted(TutorialIds.HigherGradeSpawn) &&
                   !TutorialManager.IsActive(TutorialIds.HigherGradeSpawn))))
+            {
+                continue;
+            }
+
+
+            if (type == EUpgradeType.AutoMergeTimeSub &&
+                (SlimeManager.Instance == null ||
+                 !SlimeManager.Instance.IsAutoMergeUnlocked))
             {
                 continue;
             }
@@ -177,6 +197,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         Refresh();
     }
 
+    private void OnNormalCollectionCountChanged(int count)
+    {
+        CacheSystemUpgrades();
+        Refresh();
+    }
+
     private void OnTutorialAvailabilityChanged()
     {
         if (!_isInitialized) return;
@@ -195,12 +221,20 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         Refresh();
     }
 
+    private void OnAutoMergeIntervalChanged(float interval)
+    {
+        Refresh();
+    }
+
     private static bool IsMax(Upgrade upgrade)
     {
         if (upgrade.IsMaxLevel) return true;
 
         return upgrade.SpecData.Type == EUpgradeType.SpawnTimeSub &&
-               SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval;
+               SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval ||
+               upgrade.SpecData.Type == EUpgradeType.AutoMergeTimeSub &&
+               AutoMergeManager.Instance != null &&
+               AutoMergeManager.Instance.Interval <= AutoMergeManager.MinimumInterval;
     }
 
     private static string BuildValueText(
@@ -242,8 +276,23 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 IsNextSpawnGradeUnlock(upgrade.Level)
                     ? $"{icon}상위 슬라임 추가!"
                     : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
+            EUpgradeType.AutoMergeTimeSub =>
+                BuildAutoMergeValueText(icon, modifierIncrease),
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
+    }
+
+    private static string BuildAutoMergeValueText(
+        string icon,
+        double modifierIncrease)
+    {
+        float current = AutoMergeManager.Instance != null
+            ? AutoMergeManager.Instance.Interval
+            : AutoMergeManager.BaseInterval;
+        float next = Mathf.Max(
+            AutoMergeManager.MinimumInterval,
+            current - (float)modifierIncrease);
+        return $"{icon}{current:F1}초 → {next:F1}초";
     }
 
     private static bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)

@@ -171,6 +171,13 @@ public class UpgradeManager : MonoBehaviour
     public bool IsLockedByProgress(Upgrade upgrade)
     {
         if (upgrade != null &&
+            upgrade.SpecData.Type == EUpgradeType.AutoMergeTimeSub)
+        {
+            return SlimeManager.Instance == null ||
+                   !SlimeManager.Instance.IsAutoMergeUnlocked;
+        }
+
+        if (upgrade != null &&
             upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd)
         {
             return SlimeManager.Instance == null ||
