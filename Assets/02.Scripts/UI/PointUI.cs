@@ -26,7 +26,11 @@ public class PointUI : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
+        }
+
         PointCountUpEvents.OnRequested -= PlayPointCountUp;
         _countUpTween?.Kill();
     }

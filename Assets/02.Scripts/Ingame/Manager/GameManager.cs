@@ -83,7 +83,12 @@ public class GameManager : MonoBehaviour
     {
         UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
-        CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
+        // 매니저가 먼저 파괴된 뒤에도 이 정리가 돈다. 다른 구독 해제와 같게 막는다.
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
+        }
+
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
         if (OfflineRewardManager.Instance != null)
         {

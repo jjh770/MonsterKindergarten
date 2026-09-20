@@ -26,7 +26,11 @@ public class UpgradePanel : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
+        if (CurrencyManager.Instance != null)
+        {
+            CurrencyManager.Instance.OnDataChanged -= RefreshCurrency;
+        }
+
         UpgradeManager.OnDataChanged -= Refresh;
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
     }
