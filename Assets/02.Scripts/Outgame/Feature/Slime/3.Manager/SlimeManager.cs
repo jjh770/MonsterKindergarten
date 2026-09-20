@@ -33,6 +33,9 @@ public class SlimeManager : MonoBehaviour
         _status.HighestGrade >= UnlockGrades.DisplayRoom;
     // 저장을 읽기 전에는 기본값인 켜짐으로 답한다.
     public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
+    public bool IsAutoMergeUnlocked =>
+        NormalCollectionCount >= NormalCollectionRules.AutoMergeCount;
+    public bool IsAutoMergeEnabled => _status?.IsAutoMergeEnabled ?? false;
     public bool IsGachaUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.Gacha;
@@ -46,6 +49,15 @@ public class SlimeManager : MonoBehaviour
             ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
             : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
+    public bool IsTicketAutoCollectUnlocked =>
+        NormalCollectionCount >= NormalCollectionRules.AutoTicketCollectCount;
+    public bool IsOfflineTicketRewardUnlocked =>
+        NormalCollectionCount >= NormalCollectionRules.OfflineTicketRewardCount;
+    public bool IsHiddenFeverUnlocked =>
+        NormalCollectionCount >= NormalCollectionRules.HiddenFeverCount;
+    public bool IsMainEndingSeen => _status?.MainEndingSeen ?? false;
+    public float SpecialGachaChance => SpecialGachaFever.GetChance(
+        _status?.SpecialGachaMissCount ?? 0);
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }
 
@@ -223,7 +235,10 @@ public class SlimeManager : MonoBehaviour
                 saveData.SkyIntroCompleted,
                 saveData.PendingGroundTickets,
                 saveData.PendingSkyTickets,
-                !saveData.AutoSpawnDisabled);
+                !saveData.AutoSpawnDisabled,
+                saveData.AutoMergeEnabled,
+                saveData.MainEndingSeen,
+                saveData.SpecialGachaMissCount);
         }
         catch (ArgumentException e)
         {
@@ -376,6 +391,33 @@ public class SlimeManager : MonoBehaviour
                _status.IsNormalCollectionRegistered(grade);
     }
 
+    public bool TryMarkMainEndingSeen()
+    {
+        if (_status == null || !_status.TryMarkMainEndingSeen()) return false;
+
+        Save();
+        return true;
+    }
+
+    // Phase 5의 스페셜 결과 판정 지점에서 호출한다. 해금 전에는 상태를 만들지 않고,
+    // 스페셜 성공 시 3%로 초기화하며 일반 결과면 최대 10%까지 0.5%p씩 올린다.
+    public void RecordSpecialGachaResult(bool wasSpecial)
+    {
+        if (_status == null || !_status.RecordSpecialGachaResult(wasSpecial)) return;
+
+        Save();
+    }
+
+    public bool SetAutoMergeEnabled(bool isEnabled)
+    {
+        if (_status == null) return false;
+        if (_status.IsAutoMergeEnabled == isEnabled) return true;
+        if (!_status.SetAutoMergeEnabled(isEnabled)) return false;
+
+        Save();
+        return true;
+    }
+
     public NormalSlimeCollectionStatsSnapshot GetNormalCollectionStats(
         ESlimeGrade grade)
     {
@@ -431,6 +473,37 @@ public class SlimeManager : MonoBehaviour
         Save();
     }
 
+    // 한 발동의 합성, 통계, 최고 등급을 모두 반영한 뒤 저장은 한 번만 한다.
+    public void MergeSlimesBatch(IReadOnlyList<SlimeMergeRequest> requests)
+    {
+        if (requests == null || requests.Count == 0) return;
+
+        _status.MergeSlimesBatch(requests);
+
+        ESlimeGrade highestCreated = _status.HighestGrade;
+        foreach (SlimeMergeRequest request in requests)
+        {
+            _collectionStats?.RecordMergeCreated(request.ToGrade);
+            if (request.ToGrade > highestCreated)
+            {
+                highestCreated = request.ToGrade;
+            }
+        }
+
+        MarkStatsDirty();
+        bool highestChanged = highestCreated > _status.HighestGrade;
+        if (highestChanged)
+        {
+            _status.UpdateHighestGrade(highestCreated);
+        }
+
+        Save();
+        if (highestChanged)
+        {
+            OnHighestGradeChanged?.Invoke(highestCreated);
+        }
+    }
+
     private void Save()
     {
         SaveCurrentAsync().Forget();
@@ -472,6 +545,9 @@ public class SlimeManager : MonoBehaviour
             PendingGroundTickets = _status.PendingGroundTickets,
             PendingSkyTickets = _status.PendingSkyTickets,
             AutoSpawnDisabled = !_status.IsAutoSpawnEnabled,
+            AutoMergeEnabled = _status.IsAutoMergeEnabled,
+            MainEndingSeen = _status.MainEndingSeen,
+            SpecialGachaMissCount = _status.SpecialGachaMissCount,
             NormalCollectionRegistered = BuildNormalCollectionSaveData(),
             NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),

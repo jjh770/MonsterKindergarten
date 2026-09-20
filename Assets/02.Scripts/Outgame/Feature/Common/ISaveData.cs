@@ -18,6 +18,7 @@ public static class SaveSchema
     // v4: 도감에 표시할 등급별 누적 통계를 추가했다.
     // v5: 미수령 가챠권 수를 스테이지별로 추가했다.
     // v6: 자동 스폰 설정을 추가했다.
-    public const int SlimeCurrentVersion = 6;
+    // v7: 메인 엔딩 확인 여부와 스페셜 가챠 피버 실패 횟수를 추가했다.
+    public const int SlimeCurrentVersion = 7;
     public const int UpgradeCurrentVersion = 1;
 }

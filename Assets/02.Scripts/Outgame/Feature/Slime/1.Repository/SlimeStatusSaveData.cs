@@ -87,6 +87,20 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public bool AutoSpawnDisabled { get; set; }
 
+    // 없는 필드의 기본값 false가 기존 세이브에서 의도한 OFF와 같다.
+    [FirestoreProperty]
+    public bool AutoMergeEnabled { get; set; }
+
+    // 일반 도감 20종 완성 후 메인 엔딩을 이미 본 적이 있는지.
+    // 이전 문서의 기본값 false가 정확한 미확인 상태라 별도 승격값이 필요 없다.
+    [FirestoreProperty]
+    public bool MainEndingSeen { get; set; }
+
+    // 스페셜 가챠에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
+    // 이전 문서의 기본값 0은 기본 확률 3%를 뜻한다.
+    [FirestoreProperty]
+    public int SpecialGachaMissCount { get; set; }
+
     [FirestoreProperty]
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();

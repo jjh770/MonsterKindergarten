@@ -19,6 +19,9 @@ public class SlimeStatus
 
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
     public bool IsAutoSpawnEnabled { get; private set; }
+    public bool IsAutoMergeEnabled { get; private set; }
+    public bool MainEndingSeen { get; private set; }
+    public int SpecialGachaMissCount { get; private set; }
 
     public SlimeStatus(
         ESlimeGrade highestGrade,
@@ -28,7 +31,10 @@ public class SlimeStatus
         bool skyIntroCompleted,
         int pendingGroundTickets,
         int pendingSkyTickets,
-        bool isAutoSpawnEnabled)
+        bool isAutoSpawnEnabled,
+        bool isAutoMergeEnabled,
+        bool mainEndingSeen,
+        int specialGachaMissCount)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -52,6 +58,17 @@ public class SlimeStatus
         PendingGroundTickets = pendingGroundTickets;
         PendingSkyTickets = pendingSkyTickets;
         IsAutoSpawnEnabled = isAutoSpawnEnabled;
+        IsAutoMergeEnabled = isAutoMergeEnabled;
+        MainEndingSeen = mainEndingSeen;
+
+        if (specialGachaMissCount < 0 ||
+            specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
+        {
+            throw new ArgumentException(
+                $"스페셜 가챠 실패 횟수가 올바르지 않습니다. : {specialGachaMissCount}");
+        }
+
+        SpecialGachaMissCount = specialGachaMissCount;
 
         if (activeSlimes == null)
         {
@@ -89,6 +106,24 @@ public class SlimeStatus
             {
                 _registeredNormalCollection.Add(instance.Grade);
             }
+        }
+
+        if (MainEndingSeen &&
+            NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        {
+            throw new ArgumentException("도감 완성 전에 메인 엔딩이 완료된 저장입니다.");
+        }
+
+        if (SpecialGachaMissCount > 0 &&
+            NormalCollectionCount < NormalCollectionRules.HiddenFeverCount)
+        {
+            throw new ArgumentException("피버 해금 전에 실패 횟수가 저장되어 있습니다.");
+        }
+
+        if (IsAutoMergeEnabled &&
+            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
+        {
+            throw new ArgumentException("자동 합성 해금 전에 켜진 저장입니다.");
         }
     }
 
@@ -169,6 +204,45 @@ public class SlimeStatus
     public void SetAutoSpawnEnabled(bool isEnabled)
     {
         IsAutoSpawnEnabled = isEnabled;
+    }
+
+    public bool SetAutoMergeEnabled(bool isEnabled)
+    {
+        if (isEnabled &&
+            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
+        {
+            return false;
+        }
+
+        IsAutoMergeEnabled = isEnabled;
+        return true;
+    }
+
+    public bool TryMarkMainEndingSeen()
+    {
+        if (MainEndingSeen || NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        {
+            return false;
+        }
+
+        MainEndingSeen = true;
+        return true;
+    }
+
+    public bool RecordSpecialGachaResult(bool wasSpecial)
+    {
+        if (NormalCollectionCount < NormalCollectionRules.HiddenFeverCount)
+        {
+            return false;
+        }
+
+        int nextMissCount = wasSpecial
+            ? 0
+            : Math.Min(SpecialGachaMissCount + 1, SpecialGachaFever.MaximumMissCount);
+        if (nextMissCount == SpecialGachaMissCount) return false;
+
+        SpecialGachaMissCount = nextMissCount;
+        return true;
     }
 
     public void UpdateHighestGrade(ESlimeGrade newGrade)
@@ -287,6 +361,54 @@ public class SlimeStatus
         keeper.PromoteTo(toGrade);
         // 활성 개체 제거는 현재 합성으로 소모되는 경우에만 허용한다.
         _activeSlimes.Remove(removed);
+    }
+
+    // 모든 대상을 먼저 검증한 뒤 반영해 중간 실패와 같은 Tick 연쇄 합성을 막는다.
+    public void MergeSlimesBatch(IReadOnlyList<SlimeMergeRequest> requests)
+    {
+        if (requests == null)
+        {
+            throw new ArgumentNullException(nameof(requests));
+        }
+
+        var usedIds = new HashSet<string>();
+        var validated = new List<(SlimeInstance Keeper, SlimeInstance Removed, ESlimeGrade ToGrade)>(requests.Count);
+        foreach (SlimeMergeRequest request in requests)
+        {
+            if (string.IsNullOrWhiteSpace(request.KeeperId) ||
+                string.IsNullOrWhiteSpace(request.RemovedId) ||
+                request.KeeperId == request.RemovedId ||
+                !usedIds.Add(request.KeeperId) ||
+                !usedIds.Add(request.RemovedId))
+            {
+                throw new ArgumentException("한 발동의 합성 대상이 중복되거나 올바르지 않습니다.");
+            }
+
+            SlimeInstance keeper = _activeSlimes.Find(
+                instance => instance.InstanceId == request.KeeperId);
+            SlimeInstance removed = _activeSlimes.Find(
+                instance => instance.InstanceId == request.RemovedId);
+            if (keeper == null || removed == null)
+            {
+                throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
+            }
+
+            if (keeper.Grade != removed.Grade ||
+                keeper.Location != removed.Location ||
+                request.ToGrade != keeper.Grade + 1)
+            {
+                throw new InvalidOperationException("같은 위치의 동일 등급만 합성할 수 있습니다.");
+            }
+
+            ValidateGrade(request.ToGrade);
+            validated.Add((keeper, removed, request.ToGrade));
+        }
+
+        foreach (var merge in validated)
+        {
+            merge.Keeper.PromoteTo(merge.ToGrade);
+            _activeSlimes.Remove(merge.Removed);
+        }
     }
 
     private static void ValidateInstance(SlimeInstance instance)
