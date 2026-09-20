@@ -57,7 +57,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         ClearFlyingVisuals();
     }
 
-    public void Show(TimeSpan elapsedTime, Currency reward)
+    public void Show(TimeSpan elapsedTime, Currency reward, int ticketReward)
     {
         if (_popupPanel == null || _canvasGroup == null) return;
 
@@ -68,7 +68,10 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_rewardText != null)
         {
-            _rewardText.text = $"{CurrencyIcon.Point}{reward}";
+            string pointLine = $"{CurrencyIcon.Point}{reward}";
+            _rewardText.text = ticketReward > 0
+                ? $"{pointLine}\n가챠권 +{ticketReward}"
+                : pointLine;
         }
 
         _currentSequence?.Kill();

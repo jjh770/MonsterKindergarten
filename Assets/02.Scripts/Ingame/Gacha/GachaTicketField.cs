@@ -74,6 +74,7 @@ public class GachaTicketField : MonoBehaviour
         if (!enabled) return;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
+        SlimeManager.OnNormalCollectionCountChanged += OnNormalCollectionCountChanged;
         if (StageManager.Instance != null)
         {
             StageManager.Instance.StageChanged += OnStageChanged;
@@ -96,6 +97,7 @@ public class GachaTicketField : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
+        SlimeManager.OnNormalCollectionCountChanged -= OnNormalCollectionCountChanged;
         if (StageManager.Instance != null)
         {
             StageManager.Instance.StageChanged -= OnStageChanged;
@@ -108,6 +110,7 @@ public class GachaTicketField : MonoBehaviour
         Restore(EGameStage.Ground);
         Restore(EGameStage.Sky);
         ApplyVisibility();
+        TryAutoCollectAll();
     }
 
     private void OnStageChanged(EGameStage stage) => ApplyVisibility();
@@ -161,6 +164,45 @@ public class GachaTicketField : MonoBehaviour
         }
 
         tickets.Add(ticket);
+
+        if (SlimeManager.Instance != null &&
+            SlimeManager.Instance.IsTicketAutoCollectUnlocked)
+        {
+            Collect(stage, ticket);
+        }
+    }
+
+    private void OnNormalCollectionCountChanged(int count)
+    {
+        if (count < NormalCollectionRules.AutoTicketCollectCount) return;
+
+        TryAutoCollectAll();
+    }
+
+    private void TryAutoCollectAll()
+    {
+        if (SlimeManager.Instance == null ||
+            !SlimeManager.Instance.IsTicketAutoCollectUnlocked)
+        {
+            return;
+        }
+
+        TryAutoCollect(EGameStage.Ground);
+        TryAutoCollect(EGameStage.Sky);
+    }
+
+    private void TryAutoCollect(EGameStage stage)
+    {
+        // 완료 콜백이 목록을 바꾸므로 복사본을 순회한다.
+        foreach (GameObject ticket in GetTickets(stage).ToArray())
+        {
+            if (ticket == null) continue;
+
+            Button button = ticket.GetComponentInChildren<Button>();
+            if (button != null && !button.enabled) continue;
+
+            Collect(stage, ticket);
+        }
     }
 
     // 한 장씩 줍는다. 저장을 줄이는 것도 재화를 올리는 것도 연출이 끝나는 순간에

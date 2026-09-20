@@ -17,6 +17,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
     [SerializeField] private float _minimumOfflineSeconds = 60f;
     [SerializeField] private float _maximumOfflineHours = 8f;
     [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
+    [SerializeField, Min(0)] private int _maximumOfflineTickets = 5;
 
     private OfflineRewardResult? _pendingReward;
     private bool _isConsumed;
@@ -98,8 +99,9 @@ public sealed class OfflineRewardManager : MonoBehaviour
         double pointPerSecond = CalculateAutoPointPerSecond();
         double reward = Math.Floor(
             pointPerSecond * elapsedSeconds * _offlineRewardEfficiency);
+        int ticketReward = CalculateOfflineTickets(elapsedSeconds, maximumSeconds);
 
-        if (reward <= 0d)
+        if (reward <= 0d && ticketReward <= 0)
         {
             SettleWithoutReward();
             return;
@@ -111,7 +113,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         bool keepPendingReward =
             _pendingReward.HasValue &&
             !_isClaimed &&
-            _pendingReward.Value.Reward >= (Currency)reward;
+            _pendingReward.Value.ElapsedTime.TotalSeconds >= elapsedSeconds;
 
         if (!keepPendingReward)
         {
@@ -120,6 +122,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
             _pendingReward = new OfflineRewardResult(
                 TimeSpan.FromSeconds(elapsedSeconds),
                 reward,
+                ticketReward,
                 CurrencyManager.Instance.Point,
                 CurrencyManager.Instance.Point + (Currency)reward);
         }
@@ -140,6 +143,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         _pendingReward = new OfflineRewardResult(
             pendingReward.ElapsedTime,
             pendingReward.Reward,
+            pendingReward.TicketReward,
             pointBeforeReward,
             pointBeforeReward + pendingReward.Reward);
 
@@ -184,6 +188,24 @@ public sealed class OfflineRewardManager : MonoBehaviour
         return total;
     }
 
+    private int CalculateOfflineTickets(double elapsedSeconds, double maximumSeconds)
+    {
+        if (SlimeManager.Instance == null ||
+            !SlimeManager.Instance.IsOfflineTicketRewardUnlocked ||
+            maximumSeconds <= 0d ||
+            _maximumOfflineTickets <= 0)
+        {
+            return 0;
+        }
+
+        // 8시간에 최대 5장인 선형 규칙. 소수 티켓을 별도 저장하지 않고 버림해
+        // 짧은 이탈을 온라인 드랍보다 유리하게 만들지 않는다.
+        return Math.Min(
+            _maximumOfflineTickets,
+            (int)Math.Floor(
+                elapsedSeconds / maximumSeconds * _maximumOfflineTickets));
+    }
+
     public bool TryConsume(out OfflineRewardResult result)
     {
         if (!_pendingReward.HasValue || _isConsumed)
@@ -217,7 +239,17 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         OfflineRewardResult result = _pendingReward.Value;
-        CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
+        if ((double)result.Reward > 0d)
+        {
+            CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
+        }
+
+        if (result.TicketReward > 0)
+        {
+            CurrencyManager.Instance.Add(
+                ECurrencyType.GachaTicket,
+                result.TicketReward);
+        }
         _isClaimed = true;
         return true;
     }
@@ -237,17 +269,20 @@ public readonly struct OfflineRewardResult
 {
     public TimeSpan ElapsedTime { get; }
     public Currency Reward { get; }
+    public int TicketReward { get; }
     public Currency PointBeforeReward { get; }
     public Currency PointAfterReward { get; }
 
     public OfflineRewardResult(
         TimeSpan elapsedTime,
         Currency reward,
+        int ticketReward,
         Currency pointBeforeReward,
         Currency pointAfterReward)
     {
         ElapsedTime = elapsedTime;
         Reward = reward;
+        TicketReward = ticketReward;
         PointBeforeReward = pointBeforeReward;
         PointAfterReward = pointAfterReward;
     }
