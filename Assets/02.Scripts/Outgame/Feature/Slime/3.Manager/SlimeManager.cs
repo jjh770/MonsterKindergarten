@@ -179,96 +179,24 @@ public class SlimeManager : MonoBehaviour
             ? loadResult.Data
             : SlimeStatusSaveData.Default;
 
-        // 개체 ID는 Guid로만 만들어지고, 중복 등록은 도메인이 막고,
-        // 레거시 승격도 등급별 순번으로 고유한 ID를 만든다. 그러므로 복원할 수 없는
-        // 항목이 있다는 것은 저장 데이터가 변질됐다는 뜻이다.
-        // 일부만 버리고 진행하면 다음 저장이 그 손실을 확정하므로 세션을 차단한다.
-        var activeSlimes = new List<SlimeInstance>();
-        var restoredIds = new HashSet<string>();
-        foreach (SlimeInstanceSaveData instanceData in saveData.ActiveSlimes)
+        // 문서 단위의 검증과 변환은 SlimeStatusSaveMapper가 맡는다.
+        // 복원할 수 없으면 세션을 차단하는 것까지는 기존과 같다.
+        if (!SlimeStatusSaveMapper.TryRestore(
+                saveData,
+                DateTime.UtcNow,
+                out SlimeStatus restoredStatus,
+                out NormalSlimeCollectionStats restoredStats,
+                out bool needsMigrationSave,
+                out string failureMessage))
         {
-            if (instanceData == null)
-            {
-                SaveDataLoadGuard.Report(
-                    ESaveLoadFailure.Unreadable,
-                    "SlimeStatus : 비어 있는 슬라임 저장 항목이 있습니다.");
-                return;
-            }
-
-            SlimeInstance instance;
-            try
-            {
-                instance = instanceData.ToDomain();
-            }
-            catch (ArgumentException e)
-            {
-                SaveDataLoadGuard.Report(
-                    ESaveLoadFailure.Unreadable,
-                    $"SlimeStatus : 복원할 수 없는 슬라임 개체가 있습니다. : {e.Message}");
-                return;
-            }
-
-            if (!restoredIds.Add(instance.InstanceId))
-            {
-                SaveDataLoadGuard.Report(
-                    ESaveLoadFailure.Unreadable,
-                    $"SlimeStatus : 중복된 슬라임 개체 ID가 있습니다. : {instance.InstanceId}");
-                return;
-            }
-
-            activeSlimes.Add(instance);
-        }
-
-        var registeredNormalCollection = new List<ESlimeGrade>(
-            GetRegisteredNormalCollection(saveData.NormalCollectionRegistered));
-        var registeredBeforeRestore = new HashSet<ESlimeGrade>(
-            registeredNormalCollection);
-        _collectionStats = new NormalSlimeCollectionStats(saveData);
-
-        // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
-        // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
-        // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
-        try
-        {
-            _status = new SlimeStatus(
-                saveData.GetHighestGrade(),
-                activeSlimes,
-                registeredNormalCollection,
-                (EGameStage)saveData.CurrentStage,
-                saveData.SkyIntroCompleted,
-                saveData.PendingGroundTickets,
-                saveData.PendingSkyTickets,
-                !saveData.AutoSpawnDisabled,
-                saveData.AutoMergeEnabled,
-                saveData.MainEndingSeen,
-                saveData.SpecialGachaMissCount);
-        }
-        catch (ArgumentException e)
-        {
-            SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
-                $"SlimeStatus : 슬라임 진행 상태를 복원할 수 없습니다. : {e.Message}");
+            SaveDataLoadGuard.Report(ESaveLoadFailure.Unreadable, failureMessage);
             return;
         }
 
-        bool restoredRegistrationStats = false;
-        DateTime restoredAt = DateTime.UtcNow;
-        for (int gradeValue = (int)ESlimeGrade.Grade1;
-             gradeValue < (int)ESlimeGrade.Count;
-             gradeValue++)
-        {
-            ESlimeGrade grade = (ESlimeGrade)gradeValue;
-            if (_status.IsNormalCollectionRegistered(grade) &&
-                !registeredBeforeRestore.Contains(grade))
-            {
-                restoredRegistrationStats |=
-                    _collectionStats.RecordRegistration(grade, restoredAt);
-            }
-        }
+        _status = restoredStatus;
+        _collectionStats = restoredStats;
 
-        if (saveData.WasMigrated ||
-            _status.NormalCollectionCount > registeredNormalCollection.Count ||
-            restoredRegistrationStats)
+        if (needsMigrationSave)
         {
             await SaveMigratedAsync();
         }
@@ -520,69 +448,7 @@ public class SlimeManager : MonoBehaviour
 
     private SlimeStatusSaveData BuildSaveData()
     {
-        var saveData = new SlimeStatusSaveData
-        {
-            SchemaVersion = SaveSchema.SlimeCurrentVersion,
-            HighestGrade = (int)_status.HighestGrade,
-            ActiveSlimes = new List<SlimeInstanceSaveData>(),
-            CurrentStage = (int)_status.CurrentStage,
-            SkyIntroCompleted = _status.SkyIntroCompleted,
-            PendingGroundTickets = _status.PendingGroundTickets,
-            PendingSkyTickets = _status.PendingSkyTickets,
-            AutoSpawnDisabled = !_status.IsAutoSpawnEnabled,
-            AutoMergeEnabled = _status.IsAutoMergeEnabled,
-            MainEndingSeen = _status.MainEndingSeen,
-            SpecialGachaMissCount = _status.SpecialGachaMissCount,
-            NormalCollectionRegistered = BuildNormalCollectionSaveData(),
-            NormalFirstRegisteredAt = _collectionStats.BuildFirstRegisteredAt(),
-            NormalNaturalSpawnCounts = _collectionStats.BuildNaturalSpawnCounts(),
-            NormalMergeCreatedCounts = _collectionStats.BuildMergeCreatedCounts(),
-            NormalManualTouchCounts = _collectionStats.BuildManualTouchCounts(),
-            NormalProducedPointTotals = _collectionStats.BuildProducedPointTotals(),
-        };
-
-        foreach (SlimeInstance instance in _status.ActiveSlimes)
-        {
-            saveData.ActiveSlimes.Add(
-                SlimeInstanceSaveData.FromDomain(instance));
-        }
-
-        return saveData;
-    }
-
-    private static IEnumerable<ESlimeGrade> GetRegisteredNormalCollection(
-        IReadOnlyList<bool> registered)
-    {
-        if (registered == null)
-        {
-            yield break;
-        }
-
-        int count = Math.Min(
-            registered.Count,
-            SlimeStatusSaveData.NormalCollectionSize);
-        for (int i = 0; i < count; i++)
-        {
-            if (registered[i])
-            {
-                yield return (ESlimeGrade)(
-                    (int)ESlimeGrade.Grade1 + i);
-            }
-        }
-    }
-
-    private List<bool> BuildNormalCollectionSaveData()
-    {
-        List<bool> registered =
-            SlimeStatusSaveData.CreateEmptyNormalCollection();
-        for (int i = 0; i < registered.Count; i++)
-        {
-            ESlimeGrade grade = (ESlimeGrade)(
-                (int)ESlimeGrade.Grade1 + i);
-            registered[i] = _status.IsNormalCollectionRegistered(grade);
-        }
-
-        return registered;
+        return SlimeStatusSaveMapper.Build(_status, _collectionStats);
     }
 
     private void MarkStatsDirty()
