@@ -19,8 +19,9 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [SerializeField] private Image _sourceImage;
     [SerializeField] private Image _scholarImage;
     [SerializeField] private RectTransform _scholarDestination;
+    [SerializeField] private CanvasGroup _portraitBackgroundGroup;
     [SerializeField] private CanvasGroup _dialogueGroup;
-    [SerializeField, Min(0f)] private float _moveDuration = 0.4f;
+    [SerializeField, Min(0f)] private float _moveDuration = 0.6f;
     [SerializeField, Min(1f)] private float _centerScale = 1.5f;
 
     [Header("Menu")]
@@ -42,6 +43,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
     private Vector2 _sourceSize;
     private bool _isOpen;
     private bool _isTransitioning;
+    private bool _presentationRestored;
     private bool _previousToggleVisible = true;
 
     public static bool IsAnyOpen { get; private set; }
@@ -57,7 +59,8 @@ public sealed class ScholarGuideUI : MonoBehaviour
     private void Awake()
     {
         if (_root == null || _sourceImage == null || _scholarImage == null ||
-            _scholarDestination == null || _dialogueGroup == null ||
+            _scholarDestination == null || _portraitBackgroundGroup == null ||
+            _dialogueGroup == null ||
             _menuRoot == null || _probabilityButton == null ||
             _upgradeStatusButton == null || _closeButton == null ||
             _detailRoot == null || _detailPanel == null || _detailTitle == null ||
@@ -92,6 +95,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _isOpen = true;
         IsAnyOpen = true;
         _isTransitioning = true;
+        _presentationRestored = false;
         _previousToggleVisible = _upgradeUI == null || _upgradeUI.IsToggleVisible;
         _upgradeUI?.TryClose();
         _upgradeUI?.SetToggleVisible(false);
@@ -104,6 +108,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _root.SetAsLastSibling();
         _menuRoot.SetActive(true);
         _detailRoot.SetActive(false);
+        _portraitBackgroundGroup.alpha = 1f;
         _dialogueGroup.alpha = 0f;
         _dialogueGroup.interactable = false;
         _dialogueGroup.blocksRaycasts = false;
@@ -131,8 +136,11 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _isTransitioning = true;
         _dialogueGroup.interactable = false;
         _dialogueGroup.blocksRaycasts = false;
+        RestorePresentation(animated: true);
         _dialogueTween?.Kill();
-        _dialogueTween = _dialogueGroup.DOFade(0f, 0.15f);
+        _dialogueTween = DOTween.Sequence()
+            .Join(_dialogueGroup.DOFade(0f, 0.2f))
+            .Join(_portraitBackgroundGroup.DOFade(0f, 0.2f));
         _scholarTween?.Kill();
         _scholarTween = DOTween.Sequence()
             .Join(_scholarImage.rectTransform.DOAnchorPos(_sourcePosition, _moveDuration))
@@ -235,12 +243,20 @@ public sealed class ScholarGuideUI : MonoBehaviour
         if (_root != null) _root.gameObject.SetActive(false);
         _gameExitManager?.UnregisterBackHandler(this);
         _clicker?.ReleaseMode(this);
+        RestorePresentation(animated);
+
+        if (notify) Closed?.Invoke();
+    }
+
+    private void RestorePresentation(bool animated)
+    {
+        if (_presentationRestored) return;
+
+        _presentationRestored = true;
         _hudVisibility?.Release(this, animated);
         if (_previousToggleVisible)
         {
             _upgradeUI?.SetToggleVisible(true, animated);
         }
-
-        if (notify) Closed?.Invoke();
     }
 }

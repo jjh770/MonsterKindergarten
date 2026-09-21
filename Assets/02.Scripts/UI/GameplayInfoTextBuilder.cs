@@ -61,21 +61,28 @@ public static class GameplayInfoTextBuilder
         upgrades.Sort((left, right) =>
             ((int)left.SpecData.Type).CompareTo((int)right.SpecData.Type));
 
+        bool hasVisibleUpgrade = false;
         foreach (Upgrade upgrade in upgrades)
         {
             EUpgradeType type = upgrade.SpecData.Type;
             if (!SystemUpgradeVisibility.IsShown(type)) continue;
 
-            builder.Append('\n')
-                .Append(SystemUpgradeNames.Get(type))
+            if (hasVisibleUpgrade)
+            {
+                builder.Append("\n\n");
+            }
+
+            builder.Append(SystemUpgradeNames.Get(type))
                 .Append("  ")
                 .Append(upgrade.IsMaxLevel
                     ? "MAX"
                     : $"Lv.{upgrade.Level}/{upgrade.SpecData.MaxLevel}")
                 .Append('\n')
-                .Append("<size=85%>")
+                .Append("<size=92%>")
                 .Append(BuildEffect(type, upgrade))
                 .Append("</size>");
+
+            hasVisibleUpgrade = true;
         }
 
         if (includeCloseHint)
