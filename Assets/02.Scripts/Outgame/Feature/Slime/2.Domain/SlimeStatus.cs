@@ -330,39 +330,6 @@ public class SlimeStatus
             instance.IsSpecial == isSpecial);
     }
 
-    public void MergeSlimes(
-        string keeperId,
-        string removedId,
-        ESlimeGrade toGrade)
-    {
-        if (string.IsNullOrWhiteSpace(keeperId) ||
-            string.IsNullOrWhiteSpace(removedId) ||
-            keeperId == removedId)
-        {
-            throw new ArgumentException("합성할 슬라임 개체가 올바르지 않습니다.");
-        }
-
-        SlimeInstance keeper = _activeSlimes.Find(
-            instance => instance.InstanceId == keeperId);
-        SlimeInstance removed = _activeSlimes.Find(
-            instance => instance.InstanceId == removedId);
-        if (keeper == null || removed == null)
-        {
-            throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
-        }
-
-        ESlimeGrade fromGrade = keeper.Grade;
-        if (fromGrade != removed.Grade || toGrade != fromGrade + 1)
-        {
-            throw new InvalidOperationException("동일 등급의 다음 단계로만 합성할 수 있습니다.");
-        }
-
-        ValidateGrade(toGrade);
-        keeper.PromoteTo(toGrade);
-        // 활성 개체 제거는 현재 합성으로 소모되는 경우에만 허용한다.
-        _activeSlimes.Remove(removed);
-    }
-
     // 모든 대상을 먼저 검증한 뒤 반영해 중간 실패와 같은 Tick 연쇄 합성을 막는다.
     public void MergeSlimesBatch(IReadOnlyList<SlimeMergeRequest> requests)
     {

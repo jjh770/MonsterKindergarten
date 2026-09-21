@@ -12,8 +12,6 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
     [SerializeField] private Image _icon;
     [SerializeField] private Sprite _onSprite;
     [SerializeField] private Sprite _offSprite;
-    [SerializeField] private GameObject _progressTrack;
-    [SerializeField] private Image _progressFill;
     [SerializeField] private TextMeshProUGUI _stateLabel;
     [SerializeField] private Color _onColor = Color.white;
     [SerializeField] private Color _offColor = new(1f, 1f, 1f, 0.55f);

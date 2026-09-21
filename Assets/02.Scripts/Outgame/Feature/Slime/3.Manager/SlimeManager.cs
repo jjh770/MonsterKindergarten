@@ -461,18 +461,6 @@ public class SlimeManager : MonoBehaviour
                !_status.HasDisplayRoomSlime(grade, isSpecial);
     }
 
-    // keeper의 ID는 유지하고 removed 개체만 저장 상태에서 제거한다.
-    public void MergeSlime(
-        string keeperId,
-        string removedId,
-        ESlimeGrade toGrade)
-    {
-        _status.MergeSlimes(keeperId, removedId, toGrade);
-        _collectionStats?.RecordMergeCreated(toGrade);
-        MarkStatsDirty();
-        Save();
-    }
-
     // 한 발동의 합성, 통계, 최고 등급을 모두 반영한 뒤 저장은 한 번만 한다.
     public void MergeSlimesBatch(IReadOnlyList<SlimeMergeRequest> requests)
     {

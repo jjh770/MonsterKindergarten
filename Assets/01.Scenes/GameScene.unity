@@ -4136,8 +4136,6 @@ MonoBehaviour:
   _icon: {fileID: 1380768086}
   _onSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
   _offSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
-  _progressTrack: {fileID: 1737828948}
-  _progressFill: {fileID: 773239101}
   _stateLabel: {fileID: 2000780535}
   _onColor: {r: 1, g: 1, b: 1, a: 1}
   _offColor: {r: 1, g: 1, b: 1, a: 0.55}
