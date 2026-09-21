@@ -33,28 +33,8 @@ public sealed class GachaHudVisibility : MonoBehaviour
 
     private void Awake()
     {
-        if (_panelSwitcher == null || !HasRoot(_gachaRoots) || !HasRoot(_autoMergeRoots))
-        {
-            if (!HasRoot(_gachaRoots))
-            {
-                AutoSpawnToggleUI autoSpawn = FindFirstObjectByType<AutoSpawnToggleUI>(FindObjectsInactive.Include);
-                GachaButtonUI gachaButton = FindFirstObjectByType<GachaButtonUI>(FindObjectsInactive.Include);
-                GameObject ticketGroup = GameObject.Find("TicketGroup");
-                _gachaRoots = new[]
-                {
-                    autoSpawn != null ? autoSpawn.gameObject : null,
-                    gachaButton != null ? gachaButton.gameObject : null,
-                    ticketGroup
-                };
-            }
-
-            AutoMergeToggleUI autoMerge = FindFirstObjectByType<AutoMergeToggleUI>(FindObjectsInactive.Include);
-            if (autoMerge != null)
-            {
-                _autoMergeRoots = new[] { autoMerge.gameObject };
-            }
-        }
-
+        // 대상은 씬에서 연결한다. 비어 있을 때 이름이나 타입으로 찾아 메우면 연결이
+        // 빠진 것을 아무도 모른 채 넘어가므로, 에러로 드러내고 멈춘다.
         if (_panelSwitcher == null || !HasRoot(_gachaRoots) || !HasRoot(_autoMergeRoots))
         {
             Debug.LogError("하단 기능 UI 노출 대상이 비어 있습니다.", this);

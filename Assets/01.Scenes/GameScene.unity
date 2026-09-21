@@ -14883,7 +14883,8 @@ MonoBehaviour:
   - {fileID: 1163591911}
   - {fileID: 1977863039}
   - {fileID: 1796090642}
-  _autoMergeRoots: []
+  _autoMergeRoots:
+  - {fileID: 558640587}
 --- !u!1 &1228513111
 GameObject:
   m_ObjectHideFlags: 0
