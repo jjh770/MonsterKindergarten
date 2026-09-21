@@ -156,9 +156,7 @@ public class SpawnManager : MonoBehaviour
 
     private void InitSlimeSpawns()
     {
-        SlimeStatus status = SlimeManager.Instance.Status;
-
-        foreach (SlimeInstance instance in status.ActiveSlimes)
+        foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
         {
             SlimeController target = SlimeSpawner.Instance.Restore(
                 instance,

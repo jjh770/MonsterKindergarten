@@ -17,7 +17,10 @@ public class SlimeManager : MonoBehaviour
     private NormalSlimeCollectionStats _collectionStats;
     private bool _statsDirty;
     private float _statsSaveTimer;
-    public SlimeStatus Status => _status;
+    // 도메인 객체를 통째로 내주면 저장을 거치지 않고 상태를 바꿀 수 있다.
+    // 밖에서는 개체 목록을 읽기만 하므로 그것만 공개한다.
+    public IReadOnlyList<SlimeInstance> ActiveSlimes =>
+        _status != null ? _status.ActiveSlimes : Array.Empty<SlimeInstance>();
     // 호출부가 SlimeStatus 내부 구조를 거치지 않도록 최고 등급은 매니저가 직접 노출한다.
     public ESlimeGrade HighestGrade => _status.HighestGrade;
     public EGameStage CurrentStage => _status.CurrentStage;
@@ -305,12 +308,6 @@ public class SlimeManager : MonoBehaviour
         OnHighestGradeChanged?.Invoke(newGrade);
         Save();
         return true;
-    }
-
-    public bool IsMaxLevelUnlocked()
-    {
-        ESlimeGrade maxGrade = _slimes[^1].SpecData.Grade;
-        return _status.HighestGrade >= maxGrade;
     }
 
     public void UpdateStageProgress(

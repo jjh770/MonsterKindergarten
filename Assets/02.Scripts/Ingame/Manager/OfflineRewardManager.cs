@@ -166,7 +166,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
     {
         double total = 0d;
 
-        foreach (SlimeInstance instance in SlimeManager.Instance.Status.ActiveSlimes)
+        foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
         {
             if (instance.Location != ESlimeLocation.MainStage)
             {
