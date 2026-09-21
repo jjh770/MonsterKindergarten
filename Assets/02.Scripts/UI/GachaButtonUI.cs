@@ -44,6 +44,7 @@ public sealed class GachaButtonUI : MonoBehaviour
 
         _button.onClick.AddListener(OnButtonClicked);
         GameManager.OnAllDataInitialized += Refresh;
+        CurrencyManager.OnDataChanged += OnCurrencyChanged;
         Refresh();
     }
 
@@ -55,11 +56,7 @@ public sealed class GachaButtonUI : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= Refresh;
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
     }
 
     private void OnCurrencyChanged(ECurrencyType type, Currency amount)
@@ -110,22 +107,9 @@ public sealed class GachaButtonUI : MonoBehaviour
 
     private void Refresh()
     {
-        TrySubscribeCurrency();
-
         if (CurrencyManager.Instance == null) return;
 
         double count = (double)CurrencyManager.Instance.Get(ECurrencyType.GachaTicket);
         _countLabel.text = count.ToString("0");
-    }
-
-    // 재화 이벤트는 인스턴스 이벤트라 매니저가 준비된 뒤에야 붙일 수 있다.
-    // 중복 구독을 막기 위해 붙이기 전에 뗀다. 같은 대상이어도 여러 번 붙고
-    // 그만큼 여러 번 불린다.
-    private void TrySubscribeCurrency()
-    {
-        if (CurrencyManager.Instance == null) return;
-
-        CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        CurrencyManager.Instance.OnDataChanged += OnCurrencyChanged;
     }
 }

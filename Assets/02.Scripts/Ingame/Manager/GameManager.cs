@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
     {
         UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
-        CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
+        CurrencyManager.OnDataInitialized += OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
         // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
         // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
@@ -83,11 +83,7 @@ public class GameManager : MonoBehaviour
     {
         UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
-        // 매니저가 먼저 파괴된 뒤에도 이 정리가 돈다. 다른 구독 해제와 같게 막는다.
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
-        }
+        CurrencyManager.OnDataInitialized -= OnCurrencyDataInitialized;
 
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
         if (OfflineRewardManager.Instance != null)

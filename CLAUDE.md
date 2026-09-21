@@ -179,7 +179,8 @@ Feedback components implement `IFeedback` and are discovered from a slime's chil
 ### Key Patterns
 
 - Scene-level singleton managers. Declare as `public static T Instance { get; private set; }` and guard `Awake` with `if (Instance != null && Instance != this) { Destroy(gameObject); return; }` before assigning. The `Instance != this` check keeps a re-entered `Awake` from destroying the already registered instance.
-- `OnDestroy` must null-check a manager singleton before unsubscribing from it. Teardown order is not guaranteed, so `CurrencyManager.Instance` can already be gone when a UI object cleans up, and the unguarded call throws on every Play Mode exit.
+- Manager-wide notifications are static events on the three data managers (`CurrencyManager`, `SlimeManager`, `UpgradeManager`), so subscribers attach in `Awake`/`Start` without waiting for the instance and detach in `OnDestroy` without a null check. Every `+=` needs its `-=`: a static event outlives the scene, and a subscriber that skips the unsubscribe is called again after GameScene reloads.
+- `OnDestroy` must null-check a manager singleton before unsubscribing from one of its instance events (for example `StageManager.StageChanged` or `AutoMergeManager.IntervalChanged`). Teardown order is not guaranteed, so the manager can already be gone when a UI object cleans up, and the unguarded call throws on every Play Mode exit.
 - Repository interfaces with platform-specific implementations
 - Domain data separated from manager orchestration
 - ScriptableObject balance tables

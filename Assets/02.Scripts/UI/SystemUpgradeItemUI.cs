@@ -28,10 +28,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
 
     private void Start()
     {
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged += OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged += OnCurrencyChanged;
 
         RefreshAffordability();
     }
@@ -39,10 +36,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
     private void OnDestroy()
     {
         _button?.onClick.RemoveListener(OnClickUpgrade);
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
     }
 
     public void Bind(EUpgradeType upgradeType)

@@ -13,7 +13,7 @@ public class PointUI : MonoBehaviour
     private void Start()
     {
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        CurrencyManager.Instance.OnDataChanged += OnPointChanged;
+        CurrencyManager.OnDataChanged += OnPointChanged;
         PointCountUpEvents.OnRequested += PlayPointCountUp;
 
         // 이미 초기화가 완료된 경우
@@ -26,10 +26,7 @@ public class PointUI : MonoBehaviour
     private void OnDestroy()
     {
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnPointChanged;
-        }
+        CurrencyManager.OnDataChanged -= OnPointChanged;
 
         PointCountUpEvents.OnRequested -= PlayPointCountUp;
         _countUpTween?.Kill();
