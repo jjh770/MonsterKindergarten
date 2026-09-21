@@ -51,7 +51,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
 
         if (_nameText != null)
         {
-            _nameText.text = GetName(upgradeType);
+            _nameText.text = SystemUpgradeNames.Get(upgradeType);
         }
     }
 
@@ -125,18 +125,5 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
         {
             _button.interactable = _isCentered && _canPurchase;
         }
-    }
-
-    // 카드와 학자 안내의 업그레이드 현황이 같은 이름을 쓰도록 공개한다.
-    public static string GetName(EUpgradeType upgradeType)
-    {
-        return upgradeType switch
-        {
-            EUpgradeType.SpawnTimeSub => "스폰 시간 단축",
-            EUpgradeType.MaxCountAdd => "최대 슬라임 수",
-            EUpgradeType.HigherGradeSpawnWeightAdd => "상위 슬라임 등장 확률",
-            EUpgradeType.AutoMergeTimeSub => "자동 합성 시간 단축",
-            _ => upgradeType.ToString(),
-        };
     }
 }

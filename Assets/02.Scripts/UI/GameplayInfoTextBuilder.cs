@@ -67,7 +67,7 @@ public static class GameplayInfoTextBuilder
             if (!SystemUpgradeVisibility.IsShown(type)) continue;
 
             builder.Append('\n')
-                .Append(SystemUpgradeItemUI.GetName(type))
+                .Append(SystemUpgradeNames.Get(type))
                 .Append("  ")
                 .Append(upgrade.IsMaxLevel
                     ? "MAX"
