@@ -127,7 +127,8 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
         }
     }
 
-    private static string GetName(EUpgradeType upgradeType)
+    // 카드와 현황 팝업이 같은 이름을 쓰도록 공개한다.
+    public static string GetName(EUpgradeType upgradeType)
     {
         return upgradeType switch
         {

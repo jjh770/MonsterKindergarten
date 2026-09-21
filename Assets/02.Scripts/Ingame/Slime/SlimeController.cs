@@ -137,24 +137,30 @@ public class SlimeController : MonoBehaviour, IClickable
             CancelDrag();
         }
 
+        // 풀 때는 스테이지가 정해 둔 표시 상태를 따른다. 그림이 꺼진 슬라임은 다른 스테이지에
+        // 숨어 있는 것이라, 콜라이더와 물리만 되살아나면 보이지 않는 채로 터치를 가로채고
+        // 보이는 슬라임을 밀어낸다. 스테이지 전환 중 판정은 흔들리므로 그림 상태를 기준으로 삼는다.
+        bool isInteractive = !isLocked &&
+                             (_spriteRenderer == null || _spriteRenderer.enabled);
+
         foreach (Collider2D targetCollider in _colliders)
         {
             if (targetCollider != null)
             {
-                targetCollider.enabled = !isLocked;
+                targetCollider.enabled = isInteractive;
             }
         }
 
-        _slimeMove?.SetMovementLocked(isLocked);
+        _slimeMove?.SetMovementLocked(!isInteractive);
 
         if (_rigidbody != null)
         {
-            if (isLocked)
+            if (!isInteractive)
             {
                 _rigidbody.linearVelocity = Vector2.zero;
             }
 
-            _rigidbody.simulated = !isLocked;
+            _rigidbody.simulated = isInteractive;
         }
     }
 

@@ -13,6 +13,7 @@ public class SpawnSliderUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _spawnStateText;
     [SerializeField] private Button _spawnPoolButton;
     [SerializeField] private SpawnPoolPopupUI _spawnPoolPopup;
+    [SerializeField] private ScholarGuideUI _scholarGuide;
 
     private const string AutoSpawnOffMessage = "자동 스폰 꺼짐";
     private const string FieldFullMessage = "공간 가득 참";
@@ -35,7 +36,11 @@ public class SpawnSliderUI : MonoBehaviour
             ? _spawnPoolButton.transform as RectTransform
             : null;
     public RectTransform SpawnPoolPopupTarget =>
-        _spawnPoolPopup != null ? _spawnPoolPopup.TutorialTarget : null;
+        _scholarGuide != null
+            ? _scholarGuide.DetailTarget
+            : _spawnPoolPopup != null ? _spawnPoolPopup.TutorialTarget : null;
+    public RectTransform SpawnPoolChoiceTarget => _scholarGuide?.ProbabilityButtonTarget;
+    public event Action ScholarGuideMenuOpened;
     public event Action SpawnPoolPopupOpened;
     public event Action SpawnPoolPopupClosed;
 
@@ -47,7 +52,14 @@ public class SpawnSliderUI : MonoBehaviour
             _spawnPoolPopup.Closed += OnSpawnPoolPopupClosed;
         }
 
-        _spawnPoolButton?.onClick.AddListener(OpenSpawnPoolPopup);
+        if (_scholarGuide != null)
+        {
+            _scholarGuide.MenuOpened += OnScholarGuideMenuOpened;
+            _scholarGuide.ProbabilityOpened += OnScholarProbabilityOpened;
+            _scholarGuide.Closed += OnSpawnPoolPopupClosed;
+        }
+
+        _spawnPoolButton?.onClick.AddListener(OpenScholarGuide);
     }
 
     private void Start()
@@ -71,10 +83,17 @@ public class SpawnSliderUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        _spawnPoolButton?.onClick.RemoveListener(OpenSpawnPoolPopup);
+        _spawnPoolButton?.onClick.RemoveListener(OpenScholarGuide);
         if (_spawnPoolPopup != null)
         {
             _spawnPoolPopup.Closed -= OnSpawnPoolPopupClosed;
+        }
+
+        if (_scholarGuide != null)
+        {
+            _scholarGuide.MenuOpened -= OnScholarGuideMenuOpened;
+            _scholarGuide.ProbabilityOpened -= OnScholarProbabilityOpened;
+            _scholarGuide.Closed -= OnSpawnPoolPopupClosed;
         }
 
         SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
@@ -162,17 +181,39 @@ public class SpawnSliderUI : MonoBehaviour
             : SpawnGaugeState.FieldFull;
     }
 
-    private void OpenSpawnPoolPopup()
+    private void OpenScholarGuide()
     {
-        if (_spawnPoolPopup == null || SpawnManager.Instance == null) return;
+        if (_scholarGuide != null)
+        {
+            _scholarGuide.Open();
+            return;
+        }
 
+        // 이전 씬 배선도 계속 동작하게 두되 새 씬에서는 학자 안내가 이 경로를 대신한다.
+        if (_spawnPoolPopup == null || SpawnManager.Instance == null) return;
         RefreshSpawnPoolPopup();
         SpawnPoolPopupOpened?.Invoke();
     }
 
     public void CloseSpawnPoolPopup()
     {
+        if (_scholarGuide != null && _scholarGuide.IsOpen)
+        {
+            _scholarGuide.Close();
+            return;
+        }
+
         _spawnPoolPopup?.Close();
+    }
+
+    private void OnScholarGuideMenuOpened()
+    {
+        ScholarGuideMenuOpened?.Invoke();
+    }
+
+    private void OnScholarProbabilityOpened()
+    {
+        SpawnPoolPopupOpened?.Invoke();
     }
 
     private void OnSpawnPoolPopupClosed()

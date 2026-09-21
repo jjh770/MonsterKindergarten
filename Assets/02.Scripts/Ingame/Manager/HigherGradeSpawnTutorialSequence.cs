@@ -9,6 +9,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         None,
         Dialogue,
         PoolButton,
+        ScholarMenu,
         Carousel,
         Complete,
     }
@@ -33,6 +34,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
         if (_spawnSliderUI != null)
         {
+            _spawnSliderUI.ScholarGuideMenuOpened += OnScholarGuideMenuOpened;
             _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
         }
 
@@ -60,6 +62,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
         if (_spawnSliderUI != null)
         {
+            _spawnSliderUI.ScholarGuideMenuOpened -= OnScholarGuideMenuOpened;
             _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
         }
 
@@ -145,7 +148,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void OnSpawnPoolPopupOpened()
     {
-        if (_step != Step.PoolButton) return;
+        if (_step != Step.ScholarMenu) return;
 
         RectTransform popupTarget = _spawnSliderUI.SpawnPoolPopupTarget;
         if (popupTarget != null)
@@ -158,6 +161,24 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             Content.GetDialogue(DialogueId.HigherGradeSpawnPool),
             ClosePoolPopupAndShowUpgrade,
             keepGuideVisible: popupTarget != null);
+    }
+
+    private void OnScholarGuideMenuOpened()
+    {
+        if (_step != Step.PoolButton) return;
+
+        RectTransform choiceTarget = _spawnSliderUI.SpawnPoolChoiceTarget;
+        if (choiceTarget == null)
+        {
+            ClosePoolPopupAndShowUpgrade();
+            return;
+        }
+
+        _step = Step.ScholarMenu;
+        Spotlight.ShowUiTarget(
+            Content.SpawnPoolButtonMessage,
+            choiceTarget,
+            SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void ClosePoolPopupAndShowUpgrade()

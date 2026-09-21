@@ -50,6 +50,8 @@ public sealed class AutoMergeManager : MonoBehaviour
         public SlimeController Removed { get; }
         public ESlimeGrade FromGrade { get; }
         public Vector3 Center { get; }
+        // 지금 보고 있는 스테이지의 쌍인지. 아니면 연출 없이 합성만 한다.
+        public bool IsPresented { get; }
 
         public PresentationPair(SlimeController keeper, SlimeController removed)
         {
@@ -57,6 +59,7 @@ public sealed class AutoMergeManager : MonoBehaviour
             Removed = removed;
             FromGrade = keeper.Grade;
             Center = (keeper.transform.position + removed.transform.position) * 0.5f;
+            IsPresented = keeper.IsCurrentStageActive && removed.IsCurrentStageActive;
         }
     }
 
@@ -191,6 +194,10 @@ public sealed class AutoMergeManager : MonoBehaviour
 
     // 각 쌍이 서로 모여 합쳐지는 것처럼 동시에 보여준다. 모으는 동안에는 선택된
     // 슬라임만 잠가 터치와 드래그가 닿지 않게 하고, 모두 모인 순간 한 번에 저장한다.
+    //
+    // 땅과 하늘은 같은 월드 좌표를 쓰고 보지 않는 쪽을 숨길 뿐이다. 숨은 쪽 쌍에
+    // 연출을 붙이면 이펙트만 지금 화면에 나타나므로, 그 쌍은 잠그지도 움직이지도 않고
+    // 같은 저장에 묶어 합성만 한다.
     private void BeginPresentation(IReadOnlyList<MergeManager.MergeTargetPair> pairs)
     {
         _isPresenting = true;
@@ -198,10 +205,14 @@ public sealed class AutoMergeManager : MonoBehaviour
 
         _presentation?.Kill();
         _presentation = DOTween.Sequence();
+        bool hasPresentedPair = false;
         foreach (MergeManager.MergeTargetPair pair in pairs)
         {
             var presentationPair = new PresentationPair(pair.Keeper, pair.Removed);
             _presentationPairs.Add(presentationPair);
+            if (!presentationPair.IsPresented) continue;
+
+            hasPresentedPair = true;
             pair.Keeper.SetPresentationLocked(true);
             pair.Removed.SetPresentationLocked(true);
             _presentation
@@ -211,6 +222,13 @@ public sealed class AutoMergeManager : MonoBehaviour
                 .Join(pair.Removed.transform
                     .DOMove(presentationPair.Center, _gatherDuration)
                     .SetEase(Ease.InQuad));
+        }
+
+        if (!hasPresentedPair)
+        {
+            _presentation.Kill();
+            CompletePresentation();
+            return;
         }
 
         _presentation.OnComplete(CompletePresentation);
@@ -241,17 +259,20 @@ public sealed class AutoMergeManager : MonoBehaviour
                               pair.Keeper.Grade == pair.FromGrade + 1 &&
                               pair.Removed != null &&
                               !pair.Removed.gameObject.activeInHierarchy;
-            if (pairMerged)
+            // 모이는 동안 스테이지를 바꿨으면 그 쌍도 이펙트를 띄우지 않는다.
+            if (pairMerged && pair.IsPresented && pair.Keeper.IsCurrentStageActive)
             {
                 PlayMergeEffect(
                     pair.Center,
                     pair.Keeper.GetComponent<SpriteRenderer>());
             }
-            else if (pair.Keeper != null && pair.Removed != null)
+            else if (!pairMerged && pair.Keeper != null && pair.Removed != null)
             {
                 _rejectedIds.Add(pair.Keeper.InstanceId);
                 _rejectedIds.Add(pair.Removed.InstanceId);
             }
+
+            if (!pair.IsPresented) continue;
 
             // 사라진 쪽도 풀로 돌아가 다시 쓰이므로 잠금을 되돌린다.
             pair.Keeper?.SetPresentationLocked(false);
