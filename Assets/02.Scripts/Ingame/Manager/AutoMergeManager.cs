@@ -252,6 +252,17 @@ public sealed class AutoMergeManager : MonoBehaviour
         bool merged = MergeManager.Instance != null &&
                       MergeManager.Instance.MergeBatch(activePairs);
 
+        // 묶음 저장은 한 쌍이라도 거절되면 전부 되돌린다. 그대로 두면 멀쩡한 쌍까지
+        // 거절 목록에 들어가 다시는 자동 합성되지 않으므로, 한 쌍씩 다시 시도해
+        // 저장이 실제로 거절한 쌍만 가려낸다. 드문 경로라 저장이 쌍마다 나가도 된다.
+        if (!merged && activePairs.Count > 1 && MergeManager.Instance != null)
+        {
+            foreach (MergeManager.MergeTargetPair pair in activePairs)
+            {
+                merged |= MergeManager.Instance.MergeBatch(new[] { pair });
+            }
+        }
+
         foreach (PresentationPair pair in _presentationPairs)
         {
             bool pairMerged = pair.Keeper != null &&
