@@ -33,6 +33,9 @@ public class GachaTicketField : MonoBehaviour
     [Tooltip("주운 티켓이 날아갈 상단 바의 티켓 아이콘입니다.")]
     [SerializeField] private RectTransform _collectTarget;
 
+    [Tooltip("수집 중인 티켓과 이펙트를 HUD보다 앞에 그리는 오버레이 루트입니다.")]
+    [SerializeField] private RectTransform _collectOverlayRoot;
+
     [Tooltip("티켓을 담을 월드 스페이스 캔버스입니다.")]
     [SerializeField] private Transform _ticketRoot;
 
@@ -53,13 +56,19 @@ public class GachaTicketField : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] private float _collectEndScale = 0.35f;
     [SerializeField, Min(0f)] private float _targetPunchScale = 0.15f;
 
+    [Header("Collect Burst")]
+    [SerializeField, Range(4, 16)] private int _collectBurstParticleCount = 8;
+    [SerializeField, Min(0.05f)] private float _collectBurstDuration = 0.3f;
+    [SerializeField, Min(0f)] private float _collectBurstLeadTime = 0.12f;
+    [SerializeField, Min(0.1f)] private float _collectBurstDistanceScale = 0.85f;
+
     private readonly List<GameObject> _groundTickets = new();
     private readonly List<GameObject> _skyTickets = new();
 
     private void Awake()
     {
         if (_dropper == null || _ticketPrefab == null || _ticketRoot == null ||
-            _collectTarget == null)
+            _collectTarget == null || _collectOverlayRoot == null)
         {
             Debug.LogError("가챠권 필드에 필요한 참조가 비어 있습니다.", this);
             enabled = false;
@@ -243,6 +252,15 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
+        // 다른 스테이지에서 자동 회수되는 티켓은 보이지 않는 상태다. 그 티켓을 갑자기
+        // 현재 화면에 꺼내 날리지 않고 기존처럼 보상만 안전하게 완료한다.
+        if (!ticket.activeInHierarchy)
+        {
+            Destroy(ticket);
+            onArrived?.Invoke();
+            return;
+        }
+
         Button button = ticket.GetComponentInChildren<Button>();
         if (button != null)
         {
@@ -251,18 +269,21 @@ public class GachaTicketField : MonoBehaviour
             button.enabled = false;
         }
 
+        RectTransform ticketRect = ticket.transform as RectTransform;
+        UnityEngine.UI.Image ticketImage = ticket.GetComponentInChildren<UnityEngine.UI.Image>();
         RectTransform target = _collectTarget;
         Camera mainCamera = Camera.main;
-        if (target == null || mainCamera == null)
+        if (target == null || mainCamera == null || ticketRect == null ||
+            _collectOverlayRoot == null)
         {
             Destroy(ticket);
             onArrived?.Invoke();
             return;
         }
 
-        // 곡선은 화면 좌표에서만 계산한다. 시작점은 월드 스페이스 캔버스의 티켓이고
-        // 도착점은 오버레이 캔버스의 버튼이라 두 좌표계가 애초에 다르다. 화면에서
-        // 한 번 합쳐 두고 매 프레임 월드로 되돌리는 편이 둘을 섞어 쓰는 것보다 안전하다.
+        // 시작점은 월드 스페이스 캔버스, 도착점은 Screen Space Overlay다. 먼저 화면
+        // 좌표에서 시작 위치와 크기를 측정한 뒤 수집 오버레이로 옮겨야, HUD보다 앞에
+        // 그리면서도 순간이동하거나 크기가 튀지 않는다.
         Vector2 startScreenPosition = RectTransformUtility.WorldToScreenPoint(
             mainCamera,
             ticket.transform.position);
@@ -270,10 +291,25 @@ public class GachaTicketField : MonoBehaviour
             null,
             target.position);
 
-        // 월드로 되돌릴 때 쓸 값. 티켓은 깊이를 바꾸지 않으므로 처음 것을 그대로 쓴다.
-        float ticketZ = ticket.transform.position.z;
-        float cameraDistance = Mathf.Abs(
-            ticketZ - mainCamera.transform.position.z);
+        Vector2 overlaySize = GetOverlaySize(ticketRect, mainCamera);
+        if (!TryGetOverlayPosition(startScreenPosition, out Vector2 startOverlayPosition) ||
+            !TryGetOverlayPosition(targetScreenPosition, out Vector2 targetOverlayPosition))
+        {
+            Destroy(ticket);
+            onArrived?.Invoke();
+            return;
+        }
+
+        ticketRect.SetParent(_collectOverlayRoot, false);
+        ticketRect.anchorMin = new Vector2(0.5f, 0.5f);
+        ticketRect.anchorMax = new Vector2(0.5f, 0.5f);
+        ticketRect.pivot = new Vector2(0.5f, 0.5f);
+        ticketRect.anchoredPosition = startOverlayPosition;
+        ticketRect.sizeDelta = overlaySize;
+        ticketRect.localRotation = Quaternion.identity;
+        ticketRect.localScale = Vector3.one;
+        ticketRect.SetAsLastSibling();
+        if (ticketImage != null) ticketImage.raycastTarget = false;
 
         GetArcControlPoints(
             startScreenPosition,
@@ -281,10 +317,12 @@ public class GachaTicketField : MonoBehaviour
             out Vector2 firstControlPoint,
             out Vector2 secondControlPoint);
 
-        Vector3 startScale = ticket.transform.localScale;
+        Sprite burstSprite = ticketImage != null ? ticketImage.sprite : null;
+        PlayCollectBurst(burstSprite, startOverlayPosition, overlaySize, 1f);
+        ticketRect.SetAsLastSibling();
 
-        ticket.transform.SetAsLastSibling();
         Sequence sequence = DOTween.Sequence();
+        sequence.AppendInterval(_collectBurstLeadTime);
         sequence.Append(
             DOVirtual.Float(0f, 1f, _collectFlyDuration, progress =>
             {
@@ -294,23 +332,26 @@ public class GachaTicketField : MonoBehaviour
                     secondControlPoint,
                     targetScreenPosition,
                     progress);
-                Vector3 worldPosition = mainCamera.ScreenToWorldPoint(
-                    new Vector3(
-                        screenPosition.x,
-                        screenPosition.y,
-                        cameraDistance));
-                worldPosition.z = ticketZ;
-                ticket.transform.position = worldPosition;
+                if (TryGetOverlayPosition(screenPosition, out Vector2 overlayPosition))
+                {
+                    ticketRect.anchoredPosition = overlayPosition;
+                }
             })
                 .SetEase(Ease.InOutQuad));
         sequence.Join(
-            ticket.transform.DOScale(
-                startScale * _collectEndScale,
+            ticketRect.DOScale(
+                Vector3.one * _collectEndScale,
                 _collectFlyDuration)
                 .SetEase(Ease.InQuad));
         sequence.SetLink(ticket, LinkBehaviour.KillOnDestroy);
         sequence.OnComplete(() =>
         {
+            PlayCollectBurst(
+                burstSprite,
+                targetOverlayPosition,
+                overlaySize * _collectEndScale,
+                0.65f);
+
             if (target != null)
             {
                 target.DOPunchScale(
@@ -323,6 +364,134 @@ public class GachaTicketField : MonoBehaviour
             onArrived?.Invoke();
             Destroy(ticket);
         });
+    }
+
+    private Vector2 GetOverlaySize(RectTransform ticketRect, Camera mainCamera)
+    {
+        var corners = new Vector3[4];
+        ticketRect.GetWorldCorners(corners);
+
+        Vector2 bottomLeftScreen = RectTransformUtility.WorldToScreenPoint(
+            mainCamera,
+            corners[0]);
+        Vector2 topRightScreen = RectTransformUtility.WorldToScreenPoint(
+            mainCamera,
+            corners[2]);
+
+        if (!TryGetOverlayPosition(bottomLeftScreen, out Vector2 bottomLeft) ||
+            !TryGetOverlayPosition(topRightScreen, out Vector2 topRight))
+        {
+            return new Vector2(80f, 80f);
+        }
+
+        return new Vector2(
+            Mathf.Max(1f, Mathf.Abs(topRight.x - bottomLeft.x)),
+            Mathf.Max(1f, Mathf.Abs(topRight.y - bottomLeft.y)));
+    }
+
+    private bool TryGetOverlayPosition(Vector2 screenPosition, out Vector2 localPosition)
+    {
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            _collectOverlayRoot,
+            screenPosition,
+            null,
+            out localPosition);
+    }
+
+    // 별도 텍스처를 늘리지 않고 티켓 이미지를 작은 반짝이 조각으로 재사용한다.
+    // 시작점에서는 터치 반응, 도착점에서는 보유 UI로 흡수됐다는 반응을 만든다.
+    private void PlayCollectBurst(
+        Sprite sprite,
+        Vector2 position,
+        Vector2 ticketSize,
+        float intensity)
+    {
+        if (_collectOverlayRoot == null || sprite == null) return;
+
+        GameObject rootObject = new GameObject(
+            "TicketCollectBurst",
+            typeof(RectTransform));
+        RectTransform root = rootObject.GetComponent<RectTransform>();
+        root.SetParent(_collectOverlayRoot, false);
+        root.anchorMin = new Vector2(0.5f, 0.5f);
+        root.anchorMax = new Vector2(0.5f, 0.5f);
+        root.pivot = new Vector2(0.5f, 0.5f);
+        root.anchoredPosition = position;
+        root.sizeDelta = Vector2.zero;
+        root.SetAsLastSibling();
+
+        int count = Mathf.Max(1, _collectBurstParticleCount);
+        float baseSize = Mathf.Max(20f, Mathf.Min(ticketSize.x, ticketSize.y) * 0.38f);
+        float distance = Mathf.Max(ticketSize.x, ticketSize.y) *
+                         _collectBurstDistanceScale * intensity;
+
+        Sequence burst = DOTween.Sequence();
+
+        // 티켓 중심에서 한 번 크게 번지는 잔상을 먼저 보여 줘 작은 조각만 흩어질 때보다
+        // 터치와 도착 순간을 또렷하게 읽을 수 있게 한다.
+        GameObject flashObject = new GameObject(
+            "Flash",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(UnityEngine.UI.Image));
+        RectTransform flash = flashObject.GetComponent<RectTransform>();
+        flash.SetParent(root, false);
+        flash.anchorMin = new Vector2(0.5f, 0.5f);
+        flash.anchorMax = new Vector2(0.5f, 0.5f);
+        flash.pivot = new Vector2(0.5f, 0.5f);
+        flash.sizeDelta = ticketSize * (1.35f * Mathf.Max(0.8f, intensity));
+        flash.localScale = Vector3.one * 0.55f;
+
+        UnityEngine.UI.Image flashImage = flashObject.GetComponent<UnityEngine.UI.Image>();
+        flashImage.sprite = sprite;
+        flashImage.preserveAspect = true;
+        flashImage.raycastTarget = false;
+        flashImage.color = new Color(1f, 0.84f, 0.2f, 0.85f);
+
+        float flashDuration = _collectBurstDuration * 0.75f;
+        burst.Join(flash.DOScale(1.7f, flashDuration).SetEase(Ease.OutCubic));
+        burst.Join(flashImage.DOFade(0f, flashDuration).SetEase(Ease.InQuad));
+
+        for (int i = 0; i < count; ++i)
+        {
+            float angle = 360f * i / count + UnityEngine.Random.Range(-12f, 12f);
+            Vector2 direction = Quaternion.Euler(0f, 0f, angle) * Vector2.up;
+
+            GameObject particleObject = new GameObject(
+                $"Spark{i + 1}",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(UnityEngine.UI.Image));
+            RectTransform particle = particleObject.GetComponent<RectTransform>();
+            particle.SetParent(root, false);
+            particle.anchorMin = new Vector2(0.5f, 0.5f);
+            particle.anchorMax = new Vector2(0.5f, 0.5f);
+            particle.pivot = new Vector2(0.5f, 0.5f);
+            particle.sizeDelta = Vector2.one * baseSize;
+            particle.localScale = Vector3.one * 0.65f;
+
+            UnityEngine.UI.Image image = particleObject.GetComponent<UnityEngine.UI.Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.color = new Color(1f, 0.88f, 0.25f, 1f);
+
+            float particleDistance = distance * UnityEngine.Random.Range(0.75f, 1.15f);
+            burst.Join(
+                particle.DOAnchorPos(
+                        direction * particleDistance,
+                        _collectBurstDuration)
+                    .SetEase(Ease.OutCubic));
+            burst.Join(
+                particle.DOScale(
+                        UnityEngine.Random.Range(1.15f, 1.55f),
+                        _collectBurstDuration)
+                    .SetEase(Ease.OutBack));
+            burst.Join(image.DOFade(0f, _collectBurstDuration));
+        }
+
+        burst.SetLink(rootObject, LinkBehaviour.KillOnDestroy);
+        burst.OnComplete(() => Destroy(rootObject));
     }
 
     // 위로 한 번 띄웠다가 버튼으로 내려앉게 만든다. 경로에 수직인 방향으로 휘면
