@@ -11,18 +11,13 @@ using UnityEngine.UI;
 public sealed class BottomPanelSwitcher : MonoBehaviour
 {
     [Header("Scene References")]
-    [SerializeField] private Canvas _canvas;
     [SerializeField] private Button _switchButton;
-    [SerializeField] private RectTransform _autoSpawnToggle;
-    [SerializeField] private RectTransform _autoMergeToggle;
-    [SerializeField] private RectTransform _gachaButton;
     [SerializeField] private RectTransform _systemUpgradePanel;
     [SerializeField] private RectTransform _movePanel;
     [SerializeField] private CanvasGroup _movePanelGroup;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _animationDuration = 0.25f;
-    [SerializeField, Min(0f)] private float _buttonMargin = 20f;
 
     private Sequence _sequence;
     private Vector2 _systemUpgradeStartPosition;
@@ -66,7 +61,6 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         if (!_isInitialized) return;
 
         _switchButton.onClick.AddListener(Toggle);
-        RefreshLayout();
     }
 
     private void OnDestroy()
@@ -75,21 +69,9 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         _switchButton?.onClick.RemoveListener(Toggle);
     }
 
-    private void OnRectTransformDimensionsChange()
-    {
-        if (_isInitialized)
-        {
-            RefreshLayout();
-        }
-    }
-
     private bool HasRequiredReferences()
     {
-        bool hasReferences = _canvas != null &&
-                             _switchButton != null &&
-                             _autoSpawnToggle != null &&
-                             _autoMergeToggle != null &&
-                             _gachaButton != null &&
+        bool hasReferences = _switchButton != null &&
                              _systemUpgradePanel != null &&
                              _movePanel != null &&
                              _movePanelGroup != null;
@@ -133,70 +115,6 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         _isMovePanelSelected = false;
         ApplyState();
         return _systemUpgradePanel.gameObject.activeInHierarchy;
-    }
-
-    public void RefreshLayout()
-    {
-        RectTransform canvasRect = _canvas.transform as RectTransform;
-        RectTransform switchRect = _switchButton.transform as RectTransform;
-        if (canvasRect == null || switchRect == null) return;
-
-        SafeAreaInsets insets = SafeAreaUtility.GetInsets(canvasRect);
-        float panelTop = _systemUpgradeStartPosition.y +
-                         _systemUpgradePanel.rect.height *
-                         (1f - _systemUpgradePanel.pivot.y);
-        float buttonY = panelTop + _buttonMargin;
-        // 아래 세 호출은 버튼의 좌하단이 어디에 놓일지를 넘긴다. 피벗 보정은
-        // 받는 쪽이 한다.
-        SetBottomLeft(
-            switchRect,
-            new Vector2(insets.Left + _buttonMargin, buttonY));
-        float nextButtonX = insets.Left + _buttonMargin +
-                            switchRect.rect.width;
-        SetBottomLeft(
-            _autoSpawnToggle,
-            new Vector2(nextButtonX, buttonY));
-        nextButtonX += _autoSpawnToggle.rect.width;
-        SetBottomLeft(
-            _autoMergeToggle,
-            new Vector2(nextButtonX, buttonY));
-        // 메뉴 버튼과 좌우 대칭으로 오른쪽 끝에 붙인다. 가챠 버튼은 캔버스 오른쪽 아래에
-        // 앵커를 둔다.
-        SetBottomRight(
-            _gachaButton,
-            new Vector2(-(insets.Right + _buttonMargin), buttonY));
-    }
-
-    // anchoredPosition은 피벗 지점의 위치다. 위 계산은 버튼의 좌하단을 기준으로
-    // 하므로 피벗이 옮겨 간 만큼 되돌려 준다.
-    //
-    // 이 보정이 없으면 인스펙터에서 피벗만 바꿔도 버튼이 크기의 절반만큼 아래로,
-    // 좌우로 밀린다. 씬에 적어 둔 위치는 런타임에 여기서 덮어쓰므로 그쪽을 고쳐
-    // 맞추면 해상도나 세이프 에어리어가 달라질 때 다시 어긋난다.
-    private static void SetBottomLeft(RectTransform target, Vector2 bottomLeft)
-    {
-        if (target == null) return;
-
-        target.anchoredPosition = bottomLeft + GetPivotOffset(target);
-    }
-
-    // 오른쪽 아래 앵커 기준으로 버튼의 우하단이 놓일 자리를 받는다.
-    private static void SetBottomRight(RectTransform target, Vector2 bottomRight)
-    {
-        if (target == null) return;
-
-        Rect rect = target.rect;
-        target.anchoredPosition = bottomRight + new Vector2(
-            -rect.width * (1f - target.pivot.x),
-            rect.height * target.pivot.y);
-    }
-
-    private static Vector2 GetPivotOffset(RectTransform target)
-    {
-        Rect rect = target.rect;
-        return new Vector2(
-            rect.width * target.pivot.x,
-            rect.height * target.pivot.y);
     }
 
     private void Toggle()

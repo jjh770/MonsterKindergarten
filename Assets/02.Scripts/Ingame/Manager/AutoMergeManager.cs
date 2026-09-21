@@ -42,8 +42,23 @@ public sealed class AutoMergeManager : MonoBehaviour
     // 두 슬라임이 모이는 연출 중. 다음 주기는 연출이 끝나고 다시 시작한다.
     private bool _isPresenting;
     private Sequence _presentation;
-    private SlimeController _keeper;
-    private SlimeController _removed;
+    private readonly List<PresentationPair> _presentationPairs = new();
+
+    private sealed class PresentationPair
+    {
+        public SlimeController Keeper { get; }
+        public SlimeController Removed { get; }
+        public ESlimeGrade FromGrade { get; }
+        public Vector3 Center { get; }
+
+        public PresentationPair(SlimeController keeper, SlimeController removed)
+        {
+            Keeper = keeper;
+            Removed = removed;
+            FromGrade = keeper.Grade;
+            Center = (keeper.transform.position + removed.transform.position) * 0.5f;
+        }
+    }
 
     public float Interval => _interval;
     public float Progress01 => _interval > 0f
@@ -123,8 +138,8 @@ public sealed class AutoMergeManager : MonoBehaviour
                (_gachaResultDirector == null || !_gachaResultDirector.IsPlaying);
     }
 
-    // 낮은 등급부터 훑어 처음으로 실제 합성에 성공한 쌍 하나만 처리하고 끝낸다.
-    // 저장에 없는 슬라임처럼 합성이 거절되는 쌍이 있어도 그 등급만 건너뛴다.
+    // 낮은 등급부터 훑어 현재 업그레이드 레벨이 허용하는 수만큼 쌍을 고른다.
+    // 한 슬라임은 한 번만 고르므로 이번 결과가 같은 Tick에서 다시 합성되지 않는다.
     private bool ExecuteTick()
     {
         if (SpawnManager.Instance == null || MergeManager.Instance == null) return false;
@@ -151,6 +166,8 @@ public sealed class AutoMergeManager : MonoBehaviour
             targets.Add(target);
         }
 
+        int pairLimit = GetPairCountForLevel(GetUpgradeLevel());
+        var pairs = new List<MergeManager.MergeTargetPair>(pairLimit);
         foreach (List<SlimeController> targets in byGrade.Values)
         {
             if (targets.Count < 2) continue;
@@ -158,68 +175,113 @@ public sealed class AutoMergeManager : MonoBehaviour
             targets.Sort((left, right) => string.CompareOrdinal(
                 left.InstanceId,
                 right.InstanceId));
-            BeginPresentation(targets[0], targets[1]);
-            return true;
+            for (int i = 0; i + 1 < targets.Count && pairs.Count < pairLimit; i += 2)
+            {
+                pairs.Add(new MergeManager.MergeTargetPair(targets[i], targets[i + 1]));
+            }
+
+            if (pairs.Count >= pairLimit) break;
         }
 
-        return false;
+        if (pairs.Count == 0) return false;
+
+        BeginPresentation(pairs);
+        return true;
     }
 
-    // 두 슬라임이 스스로 모여 합쳐지는 것처럼 보이게 한다. 모으는 동안에는 두 마리만
-    // 잠가 터치와 드래그가 닿지 않게 하고, 합성은 둘이 만난 순간에 한다.
-    private void BeginPresentation(SlimeController keeper, SlimeController removed)
+    // 각 쌍이 서로 모여 합쳐지는 것처럼 동시에 보여준다. 모으는 동안에는 선택된
+    // 슬라임만 잠가 터치와 드래그가 닿지 않게 하고, 모두 모인 순간 한 번에 저장한다.
+    private void BeginPresentation(IReadOnlyList<MergeManager.MergeTargetPair> pairs)
     {
         _isPresenting = true;
-        _keeper = keeper;
-        _removed = removed;
-        keeper.SetPresentationLocked(true);
-        removed.SetPresentationLocked(true);
-
-        Vector3 center =
-            (keeper.transform.position + removed.transform.position) * 0.5f;
+        _presentationPairs.Clear();
 
         _presentation?.Kill();
-        _presentation = DOTween.Sequence()
-            .Join(keeper.transform.DOMove(center, _gatherDuration).SetEase(Ease.InQuad))
-            .Join(removed.transform.DOMove(center, _gatherDuration).SetEase(Ease.InQuad))
-            .OnComplete(() => CompletePresentation(center));
+        _presentation = DOTween.Sequence();
+        foreach (MergeManager.MergeTargetPair pair in pairs)
+        {
+            var presentationPair = new PresentationPair(pair.Keeper, pair.Removed);
+            _presentationPairs.Add(presentationPair);
+            pair.Keeper.SetPresentationLocked(true);
+            pair.Removed.SetPresentationLocked(true);
+            _presentation
+                .Join(pair.Keeper.transform
+                    .DOMove(presentationPair.Center, _gatherDuration)
+                    .SetEase(Ease.InQuad))
+                .Join(pair.Removed.transform
+                    .DOMove(presentationPair.Center, _gatherDuration)
+                    .SetEase(Ease.InQuad));
+        }
+
+        _presentation.OnComplete(CompletePresentation);
     }
 
-    private void CompletePresentation(Vector3 center)
+    private void CompletePresentation()
     {
         _presentation = null;
 
-        bool merged = _keeper != null &&
-                      _removed != null &&
-                      _keeper.gameObject.activeInHierarchy &&
-                      _removed.gameObject.activeInHierarchy &&
-                      MergeManager.Instance != null &&
-                      MergeManager.Instance.MergeBatch(new[]
-                      {
-                          new MergeManager.MergeTargetPair(_keeper, _removed),
-                      });
-
-        if (merged)
+        var activePairs = new List<MergeManager.MergeTargetPair>(_presentationPairs.Count);
+        foreach (PresentationPair pair in _presentationPairs)
         {
-            PlayMergeEffect(center, _keeper.GetComponent<SpriteRenderer>());
-        }
-        else if (_keeper != null && _removed != null)
-        {
-            _rejectedIds.Add(_keeper.InstanceId);
-            _rejectedIds.Add(_removed.InstanceId);
+            if (pair.Keeper != null && pair.Removed != null &&
+                pair.Keeper.gameObject.activeInHierarchy &&
+                pair.Removed.gameObject.activeInHierarchy)
+            {
+                activePairs.Add(new MergeManager.MergeTargetPair(pair.Keeper, pair.Removed));
+            }
         }
 
-        // 사라진 쪽도 풀로 돌아가 다시 쓰이므로 잠금을 되돌린다.
-        _keeper?.SetPresentationLocked(false);
-        _removed?.SetPresentationLocked(false);
-        _keeper = null;
-        _removed = null;
+        bool merged = MergeManager.Instance != null &&
+                      MergeManager.Instance.MergeBatch(activePairs);
+
+        foreach (PresentationPair pair in _presentationPairs)
+        {
+            bool pairMerged = pair.Keeper != null &&
+                              pair.Keeper.gameObject.activeInHierarchy &&
+                              pair.Keeper.Grade == pair.FromGrade + 1 &&
+                              pair.Removed != null &&
+                              !pair.Removed.gameObject.activeInHierarchy;
+            if (pairMerged)
+            {
+                PlayMergeEffect(
+                    pair.Center,
+                    pair.Keeper.GetComponent<SpriteRenderer>());
+            }
+            else if (pair.Keeper != null && pair.Removed != null)
+            {
+                _rejectedIds.Add(pair.Keeper.InstanceId);
+                _rejectedIds.Add(pair.Removed.InstanceId);
+            }
+
+            // 사라진 쪽도 풀로 돌아가 다시 쓰이므로 잠금을 되돌린다.
+            pair.Keeper?.SetPresentationLocked(false);
+            pair.Removed?.SetPresentationLocked(false);
+        }
+
+        _presentationPairs.Clear();
         _isPresenting = false;
 
         // 다음 주기는 합쳐진 슬라임이 나온 뒤부터 센다.
         _elapsed = merged ? 0f : _interval;
         _isPending = !merged;
         _pendingRetryTimer = 0f;
+    }
+
+    public static int GetPairCountForLevel(int level)
+    {
+        int pairCount = 1;
+        if (level >= 20) pairCount++;
+        if (level >= 40) pairCount++;
+        if (level >= 50) pairCount++;
+        return pairCount;
+    }
+
+    private static int GetUpgradeLevel()
+    {
+        Upgrade upgrade = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.Get(EUpgradeType.AutoMergeTimeSub, ESlimeGrade.None)
+            : null;
+        return upgrade?.Level ?? 0;
     }
 
     // 이펙트 프리팹은 평면이라 눕히지 않으면 옆에서 보여 화면에 아무것도 나오지 않는다.

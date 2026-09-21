@@ -75,7 +75,9 @@ public sealed class GachaButtonUI : MonoBehaviour
         // 티켓 소비만 발생하고 연출은 거절된다. 서비스 호출 전에 막는다.
         if (_resultDirector != null && _resultDirector.IsPlaying) return;
 
-        EGachaFailure failure = GachaService.TryPull(out SlimeController spawned);
+        EGachaFailure failure = GachaService.TryPull(
+            out SlimeController spawned,
+            out EGachaRarity rarity);
         Refresh();
 
         if (failure == EGachaFailure.None && spawned != null)
@@ -83,7 +85,7 @@ public sealed class GachaButtonUI : MonoBehaviour
             if (_resultDirector != null)
             {
                 _button.interactable = false;
-                _resultDirector.Play(spawned, () =>
+                _resultDirector.Play(spawned, rarity, () =>
                 {
                     if (_button != null) _button.interactable = true;
                     PullSucceeded?.Invoke(spawned);

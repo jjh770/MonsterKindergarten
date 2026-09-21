@@ -277,15 +277,23 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                     ? $"{icon}상위 슬라임 추가!"
                     : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
             EUpgradeType.AutoMergeTimeSub =>
-                BuildAutoMergeValueText(icon, modifierIncrease),
+                BuildAutoMergeValueText(icon, modifierIncrease, upgrade.Level),
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
     }
 
     private static string BuildAutoMergeValueText(
         string icon,
-        double modifierIncrease)
+        double modifierIncrease,
+        int currentLevel)
     {
+        int currentPairCount = AutoMergeManager.GetPairCountForLevel(currentLevel);
+        int nextPairCount = AutoMergeManager.GetPairCountForLevel(currentLevel + 1);
+        if (currentPairCount != nextPairCount)
+        {
+            return $"{icon}합성 {currentPairCount}쌍 → {nextPairCount}쌍";
+        }
+
         float current = AutoMergeManager.Instance != null
             ? AutoMergeManager.Instance.Interval
             : AutoMergeManager.BaseInterval;

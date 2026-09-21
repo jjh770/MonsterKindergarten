@@ -1,6 +1,7 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
-// 가챠 해금과 함께 열리는 버튼들의 노출을 한곳에서 정한다.
+// 하단 기능 버튼들의 해금 및 노출을 한곳에서 정한다.
 //
 // 조건은 하단 메뉴 전환 버튼과 같다. 데이터가 다 올라오고, 게임플레이가 살아 있고,
 // 메인 스테이지를 보고 있고, 가챠가 해금됐을 때만 보인다. 장식장에서 숨기는 이유는
@@ -20,51 +21,95 @@ public sealed class GachaHudVisibility : MonoBehaviour
 {
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
 
+    [FormerlySerializedAs("_roots")]
     [Tooltip("가챠 해금과 함께 나타날 오브젝트들입니다.")]
-    [SerializeField] private GameObject[] _roots;
+    [SerializeField] private GameObject[] _gachaRoots;
 
-    private bool _isVisible = true;
+    [Tooltip("자동 합성 해금과 함께 나타날 오브젝트들입니다.")]
+    [SerializeField] private GameObject[] _autoMergeRoots;
+
+    private bool _areGachaRootsVisible = true;
+    private bool _areAutoMergeRootsVisible = true;
 
     private void Awake()
     {
-        if (_panelSwitcher == null || _roots == null || _roots.Length == 0)
+        if (_panelSwitcher == null || !HasRoot(_gachaRoots) || !HasRoot(_autoMergeRoots))
         {
-            Debug.LogError("가챠 UI 노출 대상이 비어 있습니다.", this);
+            if (!HasRoot(_gachaRoots))
+            {
+                AutoSpawnToggleUI autoSpawn = FindFirstObjectByType<AutoSpawnToggleUI>(FindObjectsInactive.Include);
+                GachaButtonUI gachaButton = FindFirstObjectByType<GachaButtonUI>(FindObjectsInactive.Include);
+                GameObject ticketGroup = GameObject.Find("TicketGroup");
+                _gachaRoots = new[]
+                {
+                    autoSpawn != null ? autoSpawn.gameObject : null,
+                    gachaButton != null ? gachaButton.gameObject : null,
+                    ticketGroup
+                };
+            }
+
+            AutoMergeToggleUI autoMerge = FindFirstObjectByType<AutoMergeToggleUI>(FindObjectsInactive.Include);
+            if (autoMerge != null)
+            {
+                _autoMergeRoots = new[] { autoMerge.gameObject };
+            }
+        }
+
+        if (_panelSwitcher == null || !HasRoot(_gachaRoots) || !HasRoot(_autoMergeRoots))
+        {
+            Debug.LogError("하단 기능 UI 노출 대상이 비어 있습니다.", this);
             enabled = false;
             return;
         }
 
         // 판단할 근거가 아직 없다. 켜 두었다가 감추면 깜빡인다.
-        Apply(false);
+        Apply(_gachaRoots, false, ref _areGachaRootsVisible);
+        Apply(_autoMergeRoots, false, ref _areAutoMergeRootsVisible);
     }
 
     private void Update()
     {
-        Apply(IsAvailable());
-    }
-
-    private bool IsAvailable()
-    {
         SlimeManager slimeManager = SlimeManager.Instance;
+        bool isBaseAvailable = GameplayGate.IsMainStageReady &&
+                               _panelSwitcher.IsAreaVisible &&
+                               slimeManager != null;
 
-        return GameplayGate.IsMainStageReady &&
-               _panelSwitcher.IsAreaVisible &&
-               slimeManager != null &&
-               slimeManager.IsGachaUnlocked &&
-               (TutorialProgress.IsCompleted(TutorialIds.Gacha) ||
-                TutorialManager.IsActive(TutorialIds.Gacha));
+        bool isGachaAvailable = isBaseAvailable &&
+                                slimeManager.IsGachaUnlocked &&
+                                (TutorialProgress.IsCompleted(TutorialIds.Gacha) ||
+                                 TutorialManager.IsActive(TutorialIds.Gacha));
+        bool isAutoMergeAvailable = isBaseAvailable &&
+                                    slimeManager.IsAutoMergeUnlocked;
+
+        Apply(_gachaRoots, isGachaAvailable, ref _areGachaRootsVisible);
+        Apply(_autoMergeRoots, isAutoMergeAvailable, ref _areAutoMergeRootsVisible);
     }
 
-    private void Apply(bool isVisible)
+    private static void Apply(
+        GameObject[] roots,
+        bool isVisible,
+        ref bool currentVisibility)
     {
-        if (isVisible == _isVisible) return;
+        if (isVisible == currentVisibility) return;
 
-        _isVisible = isVisible;
-        foreach (GameObject root in _roots)
+        currentVisibility = isVisible;
+        foreach (GameObject root in roots)
         {
             if (root == null) continue;
 
             root.SetActive(isVisible);
         }
+    }
+
+    private static bool HasRoot(GameObject[] roots)
+    {
+        if (roots == null) return false;
+
+        foreach (GameObject root in roots)
+        {
+            if (root != null) return true;
+        }
+
+        return false;
     }
 }

@@ -6,14 +6,16 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // 이미 생성되고 저장된 가챠 결과를 포털로 공개한 뒤 필드로 넘긴다.
-// 포털 색은 뽑힌 등급의 가중치 구간을 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
+// 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
     private const string SkyMessage = "새 친구가 하늘로 올라갔어요!";
     private const string GroundMessage = "새 친구가 땅으로 내려갔어요!";
     private const string PortalTapMessage = "포탈을 터치하세요";
 
-    private static readonly Color NeutralColor = new(0.53f, 0.76f, 1f, 1f);
+    // 흰색은 UI Image에서 스프라이트 원본 RGB를 그대로 보여준다.
+    // 결과 색은 포탈을 누른 뒤 Charge 단계부터 적용한다.
+    private static readonly Color InitialColor = Color.white;
     private static readonly Color CommonColor = new(0.35f, 1f, 0.72f, 1f);
     private static readonly Color UncommonColor = new(0.32f, 0.78f, 1f, 1f);
     private static readonly Color RareColor = new(0.67f, 0.42f, 1f, 1f);
@@ -103,7 +105,10 @@ public sealed class GachaResultDirector : MonoBehaviour
         _clicker?.ReleaseMode(this);
     }
 
-    public void Play(SlimeController target, Action onCompleted)
+    public void Play(
+        SlimeController target,
+        EGachaRarity rarity,
+        Action onCompleted)
     {
         if (!_isReady || _isPlaying || target == null)
         {
@@ -111,10 +116,13 @@ public sealed class GachaResultDirector : MonoBehaviour
             return;
         }
 
-        PlayAsync(target, onCompleted).Forget();
+        PlayAsync(target, rarity, onCompleted).Forget();
     }
 
-    private async UniTaskVoid PlayAsync(SlimeController target, Action onCompleted)
+    private async UniTaskVoid PlayAsync(
+        SlimeController target,
+        EGachaRarity rarity,
+        Action onCompleted)
     {
         _isPlaying = true;
         CancellationToken token = this.GetCancellationTokenOnDestroy();
@@ -124,7 +132,12 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         target.SetStagePresentationActive(false);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
-        bool isCancelled = await Present(target, isSameStage, resultStage, token);
+        bool isCancelled = await Present(
+            target,
+            rarity,
+            isSameStage,
+            resultStage,
+            token);
         _clicker?.ReleaseMode(this);
         _isPlaying = false;
 
@@ -136,6 +149,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private async UniTask<bool> Present(
         SlimeController target,
+        EGachaRarity rarity,
         bool isSameStage,
         EGameStage resultStage,
         CancellationToken token)
@@ -147,7 +161,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (await Fade(0f, 1f, _fadeDuration, token)) return true;
         if (await WaitForTap(token)) return true;
 
-        Color resultColor = GetPortalColor(target.Grade);
+        Color resultColor = GetPortalColor(rarity);
         if (await Charge(resultColor, token)) return true;
         if (await Collapse(resultColor, token)) return true;
         if (await Burst(resultColor, token)) return true;
@@ -198,7 +212,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         SetImageAlpha(_arrivalShockwave, 0f);
         HideArrivalSparks();
 
-        SetPortalColor(NeutralColor, 1f);
+        SetPortalColor(InitialColor, 1f);
         SetImageAlpha(_shockwave, 0f);
         _shockwave.rectTransform.localScale = Vector3.one * 0.35f;
         SetImageAlpha(_flashImage, 0f);
@@ -225,10 +239,10 @@ public sealed class GachaResultDirector : MonoBehaviour
         _portalRoot.localScale = Vector3.one *
                                  (1f + Mathf.Sin(elapsed * 2.4f) * 0.035f);
         RotateRings(elapsed * 26f);
-        SetImageColor(_portalCore, NeutralColor,
+        SetImageColor(_portalCore, InitialColor,
             0.55f + Mathf.Sin(elapsed * 3.2f) * 0.12f);
         _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
-        AnimateOrbit(elapsed, NeutralColor, 1f);
+        AnimateOrbit(elapsed, InitialColor, 1f);
     }
 
     private async UniTask<bool> Charge(Color color, CancellationToken token)
@@ -239,7 +253,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             if (await NextFrame(token)) return true;
             elapsed += Time.unscaledDeltaTime;
             float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _chargeDuration));
-            Color current = Color.Lerp(NeutralColor, color, ratio);
+            Color current = Color.Lerp(InitialColor, color, ratio);
             SetPortalColor(current, 1f);
             RotateRings(elapsed * Mathf.Lerp(90f, 360f, ratio));
             AnimateOrbit(elapsed * 2.2f, current, Mathf.Lerp(1f, 1.45f, ratio));
@@ -486,16 +500,13 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (_isPlaying) _portalTapped = true;
     }
 
-    private static Color GetPortalColor(ESlimeGrade grade)
+    private static Color GetPortalColor(EGachaRarity rarity)
     {
-        SlimeManager manager = SlimeManager.Instance;
-        if (manager == null) return CommonColor;
-        int distance = (int)manager.HighestGrade - (int)grade;
-        return distance switch
+        return rarity switch
         {
-            1 => JackpotColor,
-            2 => RareColor,
-            3 => UncommonColor,
+            EGachaRarity.Jackpot => JackpotColor,
+            EGachaRarity.Rare => RareColor,
+            EGachaRarity.Uncommon => UncommonColor,
             _ => CommonColor
         };
     }

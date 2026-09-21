@@ -19,9 +19,12 @@ public enum EGachaFailure
 // 먼저 확인하지 않고 티켓부터 쓰면, 실패한 가챠가 티켓만 먹는다.
 public static class GachaService
 {
-    public static EGachaFailure TryPull(out SlimeController spawned)
+    public static EGachaFailure TryPull(
+        out SlimeController spawned,
+        out EGachaRarity rarity)
     {
         spawned = null;
+        rarity = EGachaRarity.Common;
 
         SlimeManager slimeManager = SlimeManager.Instance;
         SpawnManager spawnManager = SpawnManager.Instance;
@@ -42,7 +45,9 @@ public static class GachaService
         // 실제로 태어나므로, 자리가 없으면 놓을 곳이 없다.
         if (!spawnManager.HasMainStageRoom()) return EGachaFailure.NoRoom;
 
-        if (!NormalGachaPool.TryPick(slimeManager.HighestGrade, out ESlimeGrade grade))
+        if (!NormalGachaPool.TryPick(
+                slimeManager.HighestGrade,
+                out NormalGachaResult result))
         {
             return EGachaFailure.NoCandidate;
         }
@@ -52,12 +57,16 @@ public static class GachaService
             return EGachaFailure.NoTicket;
         }
 
-        spawned = spawnManager.Spawn(grade);
-        if (spawned != null) return EGachaFailure.None;
+        spawned = spawnManager.Spawn(result.Grade);
+        if (spawned != null)
+        {
+            rarity = result.Rarity;
+            return EGachaFailure.None;
+        }
 
         // 티켓만 사라지는 것이 가장 나쁘다. 되돌린다.
         currencyManager.Add(ECurrencyType.GachaTicket, 1d);
-        Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {grade}");
+        Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {result.Grade}");
         return EGachaFailure.SpawnFailed;
     }
 }
