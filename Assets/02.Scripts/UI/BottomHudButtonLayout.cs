@@ -10,6 +10,9 @@ public sealed class BottomHudButtonLayout : MonoBehaviour
     [SerializeField] private RectTransform[] _leftButtons;
     [SerializeField] private RectTransform _rightButton;
     [SerializeField, Min(0f)] private float _buttonMargin = 20f;
+
+    [Tooltip("왼쪽 버튼끼리의 간격입니다. 버튼 아래 이름표가 버튼보다 넓어 서로 닿지 않을 만큼 둡니다.")]
+    [SerializeField, Min(0f)] private float _buttonSpacing = 36f;
     [SerializeField] private Vector2 _labelSize = new(160f, 40f);
     [SerializeField, Min(1f)] private float _labelFontSize = 32f;
 
@@ -61,7 +64,7 @@ public sealed class BottomHudButtonLayout : MonoBehaviour
 
             SetBottomLeft(button, new Vector2(nextButtonX, buttonY));
             NormalizeLabels(button);
-            nextButtonX += button.rect.width;
+            nextButtonX += button.rect.width + _buttonSpacing;
         }
 
         SetBottomRight(
