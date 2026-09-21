@@ -118,22 +118,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         foreach (Upgrade upgrade in UpgradeManager.Instance.GetSystemUpgrades())
         {
             EUpgradeType type = upgrade.SpecData.Type;
-            if (type == EUpgradeType.HigherGradeSpawnWeightAdd &&
-                (SlimeManager.Instance == null ||
-                 !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
-                 (!TutorialProgress.IsCompleted(TutorialIds.HigherGradeSpawn) &&
-                  !TutorialManager.IsActive(TutorialIds.HigherGradeSpawn))))
-            {
-                continue;
-            }
-
-
-            if (type == EUpgradeType.AutoMergeTimeSub &&
-                (SlimeManager.Instance == null ||
-                 !SlimeManager.Instance.IsAutoMergeUnlocked))
-            {
-                continue;
-            }
+            if (!SystemUpgradeVisibility.IsShown(type)) continue;
 
             _upgrades[type] = upgrade;
             _orderedTypes.Add(type);

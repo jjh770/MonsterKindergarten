@@ -64,7 +64,7 @@ public static class GameplayInfoTextBuilder
         foreach (Upgrade upgrade in upgrades)
         {
             EUpgradeType type = upgrade.SpecData.Type;
-            if (!IsShown(type)) continue;
+            if (!SystemUpgradeVisibility.IsShown(type)) continue;
 
             builder.Append('\n')
                 .Append(SystemUpgradeItemUI.GetName(type))
@@ -84,19 +84,6 @@ public static class GameplayInfoTextBuilder
         }
 
         return builder.ToString();
-    }
-
-    private static bool IsShown(EUpgradeType type)
-    {
-        SlimeManager slimeManager = SlimeManager.Instance;
-        return type switch
-        {
-            EUpgradeType.HigherGradeSpawnWeightAdd =>
-                slimeManager != null && slimeManager.IsHigherGradeSpawnUnlocked,
-            EUpgradeType.AutoMergeTimeSub =>
-                slimeManager != null && slimeManager.IsAutoMergeUnlocked,
-            _ => true,
-        };
     }
 
     private static string BuildEffect(EUpgradeType type, Upgrade upgrade)
