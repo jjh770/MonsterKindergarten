@@ -105,6 +105,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            saveData.CompletedTutorials ??= new System.Collections.Generic.List<string>();
             saveData.NormalCollectionRegistered =
                 SlimeStatusSaveData.NormalizeNormalCollection(
                     saveData.NormalCollectionRegistered);

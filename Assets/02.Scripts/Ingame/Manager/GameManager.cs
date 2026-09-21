@@ -234,6 +234,10 @@ public class GameManager : MonoBehaviour
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
+
+        // 계정 문서에 기록하기 전에 이 기기에서 마친 튜토리얼을 옮긴다.
+        // 이미 올라가 있으면 저장하지 않으므로 매 진입마다 불러도 된다.
+        TutorialProgress.UploadCompletedToCloud();
     }
 
     public async UniTask CompleteTutorialAsync()

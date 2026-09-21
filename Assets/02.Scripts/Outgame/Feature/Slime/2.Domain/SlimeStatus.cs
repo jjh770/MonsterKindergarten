@@ -23,6 +23,11 @@ public class SlimeStatus
     public bool MainEndingSeen { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
 
+    // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
+    // 계정 문서에도 남긴다. 값은 튜토리얼 쪽이 정하는 식별자이고 여기서는 해석하지 않는다.
+    private readonly List<string> _completedTutorials = new();
+    public IReadOnlyList<string> CompletedTutorials => _completedTutorials;
+
     public SlimeStatus(
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
@@ -34,7 +39,8 @@ public class SlimeStatus
         bool isAutoSpawnEnabled,
         bool isAutoMergeEnabled,
         bool mainEndingSeen,
-        int specialGachaMissCount)
+        int specialGachaMissCount,
+        IEnumerable<string> completedTutorials = null)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -69,6 +75,24 @@ public class SlimeStatus
         }
 
         SpecialGachaMissCount = specialGachaMissCount;
+
+        if (completedTutorials != null)
+        {
+            // 빈 식별자는 쓰는 쪽에서 나올 수 없다. 다른 손상과 같은 경로로 보낸다.
+            // 같은 식별자가 두 번 있으면 한 번만 남긴다.
+            foreach (string tutorialId in completedTutorials)
+            {
+                if (string.IsNullOrWhiteSpace(tutorialId))
+                {
+                    throw new ArgumentException("완료한 튜토리얼 식별자가 비어 있습니다.");
+                }
+
+                if (!_completedTutorials.Contains(tutorialId))
+                {
+                    _completedTutorials.Add(tutorialId);
+                }
+            }
+        }
 
         if (activeSlimes == null)
         {
@@ -215,6 +239,26 @@ public class SlimeStatus
         }
 
         IsAutoMergeEnabled = isEnabled;
+        return true;
+    }
+
+    public bool IsTutorialCompleted(string tutorialId)
+    {
+        return !string.IsNullOrWhiteSpace(tutorialId) &&
+               _completedTutorials.Contains(tutorialId);
+    }
+
+    // 새로 기록했으면 true. 이미 있으면 저장할 필요가 없다.
+    public bool TryMarkTutorialCompleted(string tutorialId)
+    {
+        if (string.IsNullOrWhiteSpace(tutorialId))
+        {
+            throw new ArgumentException("튜토리얼 식별자가 비어 있습니다.", nameof(tutorialId));
+        }
+
+        if (_completedTutorials.Contains(tutorialId)) return false;
+
+        _completedTutorials.Add(tutorialId);
         return true;
     }
 

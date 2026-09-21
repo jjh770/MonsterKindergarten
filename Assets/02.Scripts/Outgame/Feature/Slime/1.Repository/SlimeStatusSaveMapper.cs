@@ -82,7 +82,8 @@ public static class SlimeStatusSaveMapper
                 !saveData.AutoSpawnDisabled,
                 saveData.AutoMergeEnabled,
                 saveData.MainEndingSeen,
-                saveData.SpecialGachaMissCount);
+                saveData.SpecialGachaMissCount,
+                saveData.CompletedTutorials);
         }
         catch (ArgumentException e)
         {
@@ -131,6 +132,7 @@ public static class SlimeStatusSaveMapper
             AutoMergeEnabled = status.IsAutoMergeEnabled,
             MainEndingSeen = status.MainEndingSeen,
             SpecialGachaMissCount = status.SpecialGachaMissCount,
+            CompletedTutorials = new List<string>(status.CompletedTutorials),
             NormalCollectionRegistered = BuildNormalCollectionSaveData(status),
             NormalFirstRegisteredAt = collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = collectionStats.BuildNaturalSpawnCounts(),

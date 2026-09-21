@@ -316,6 +316,29 @@ public class SlimeManager : MonoBehaviour
                _status.IsNormalCollectionRegistered(grade);
     }
 
+    public bool IsTutorialCompleted(string tutorialId)
+    {
+        return _status != null && _status.IsTutorialCompleted(tutorialId);
+    }
+
+    // 여러 개를 한꺼번에 기록해도 저장은 한 번만 한다. 새로 기록한 것이 없으면
+    // 저장하지 않는다.
+    public void RecordTutorialsCompleted(IEnumerable<string> tutorialIds)
+    {
+        if (_status == null || tutorialIds == null) return;
+
+        bool isChanged = false;
+        foreach (string tutorialId in tutorialIds)
+        {
+            isChanged |= _status.TryMarkTutorialCompleted(tutorialId);
+        }
+
+        if (isChanged)
+        {
+            Save();
+        }
+    }
+
     public bool TryMarkMainEndingSeen()
     {
         if (_status == null || !_status.TryMarkMainEndingSeen()) return false;
