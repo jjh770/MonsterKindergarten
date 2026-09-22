@@ -28,10 +28,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
 
     private void Start()
     {
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged += OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged += OnCurrencyChanged;
 
         RefreshAffordability();
     }
@@ -39,10 +36,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
     private void OnDestroy()
     {
         _button?.onClick.RemoveListener(OnClickUpgrade);
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
     }
 
     public void Bind(EUpgradeType upgradeType)
@@ -51,7 +45,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
 
         if (_nameText != null)
         {
-            _nameText.text = GetName(upgradeType);
+            _nameText.text = SystemUpgradeNames.Get(upgradeType);
         }
     }
 
@@ -125,16 +119,5 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
         {
             _button.interactable = _isCentered && _canPurchase;
         }
-    }
-
-    private static string GetName(EUpgradeType upgradeType)
-    {
-        return upgradeType switch
-        {
-            EUpgradeType.SpawnTimeSub => "스폰 시간 단축",
-            EUpgradeType.MaxCountAdd => "최대 슬라임 수",
-            EUpgradeType.HigherGradeSpawnWeightAdd => "상위 슬라임 등장 확률",
-            _ => upgradeType.ToString(),
-        };
     }
 }

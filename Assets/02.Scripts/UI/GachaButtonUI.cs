@@ -44,6 +44,7 @@ public sealed class GachaButtonUI : MonoBehaviour
 
         _button.onClick.AddListener(OnButtonClicked);
         GameManager.OnAllDataInitialized += Refresh;
+        CurrencyManager.OnDataChanged += OnCurrencyChanged;
         Refresh();
     }
 
@@ -55,11 +56,7 @@ public sealed class GachaButtonUI : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= Refresh;
-
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        }
+        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
     }
 
     private void OnCurrencyChanged(ECurrencyType type, Currency amount)
@@ -71,14 +68,25 @@ public sealed class GachaButtonUI : MonoBehaviour
 
     private void OnButtonClicked()
     {
-        EGachaFailure failure = GachaService.TryPull(out SlimeController spawned);
+        // 결과 연출이 필드를 가리고 있는 동안 두 번째 요청이 들어오면 새 슬라임과
+        // 티켓 소비만 발생하고 연출은 거절된다. 서비스 호출 전에 막는다.
+        if (_resultDirector != null && _resultDirector.IsPlaying) return;
+
+        EGachaFailure failure = GachaService.TryPull(
+            out SlimeController spawned,
+            out EGachaRarity rarity);
         Refresh();
 
         if (failure == EGachaFailure.None && spawned != null)
         {
             if (_resultDirector != null)
             {
-                _resultDirector.Play(spawned, () => PullSucceeded?.Invoke(spawned));
+                _button.interactable = false;
+                _resultDirector.Play(spawned, rarity, () =>
+                {
+                    if (_button != null) _button.interactable = true;
+                    PullSucceeded?.Invoke(spawned);
+                });
             }
             else
             {
@@ -99,22 +107,9 @@ public sealed class GachaButtonUI : MonoBehaviour
 
     private void Refresh()
     {
-        TrySubscribeCurrency();
-
         if (CurrencyManager.Instance == null) return;
 
         double count = (double)CurrencyManager.Instance.Get(ECurrencyType.GachaTicket);
         _countLabel.text = count.ToString("0");
-    }
-
-    // 재화 이벤트는 인스턴스 이벤트라 매니저가 준비된 뒤에야 붙일 수 있다.
-    // 중복 구독을 막기 위해 붙이기 전에 뗀다. 같은 대상이어도 여러 번 붙고
-    // 그만큼 여러 번 불린다.
-    private void TrySubscribeCurrency()
-    {
-        if (CurrencyManager.Instance == null) return;
-
-        CurrencyManager.Instance.OnDataChanged -= OnCurrencyChanged;
-        CurrencyManager.Instance.OnDataChanged += OnCurrencyChanged;
     }
 }

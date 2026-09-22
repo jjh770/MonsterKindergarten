@@ -1,5 +1,25 @@
 using UnityEngine;
 
+public enum EGachaRarity
+{
+    Common,
+    Uncommon,
+    Rare,
+    Jackpot,
+}
+
+public readonly struct NormalGachaResult
+{
+    public ESlimeGrade Grade { get; }
+    public EGachaRarity Rarity { get; }
+
+    public NormalGachaResult(ESlimeGrade grade, EGachaRarity rarity)
+    {
+        Grade = grade;
+        Rarity = rarity;
+    }
+}
+
 // 기획서 §14 - 일반 가챠 결과의 후보와 가중치.
 //
 // 최고 해금 등급 자신은 후보에 없다. 합성으로 새 등급을 처음 만나는 경험을 가챠가
@@ -16,9 +36,9 @@ public static class NormalGachaPool
     // 후보가 Grade1 아래로 내려가면 그 자리는 빼고 남은 것끼리 다시 정규화한다.
     // 가챠는 Lv.7에서 열리므로 정상 경로에서는 넷이 모두 있지만, 해금 등급을
     // 낮추는 밸런스 변경이 곧바로 예외가 되지 않도록 열어 둔다.
-    public static bool TryPick(ESlimeGrade highestGrade, out ESlimeGrade result)
+    public static bool TryPick(ESlimeGrade highestGrade, out NormalGachaResult result)
     {
-        result = ESlimeGrade.None;
+        result = default;
 
         int totalWeight = 0;
         for (int i = 0; i < Offsets.Length; i++)
@@ -39,11 +59,40 @@ public static class NormalGachaPool
             roll -= Weights[i];
             if (roll >= 0) continue;
 
-            result = candidate;
+            result = new NormalGachaResult(
+                candidate,
+                GetRarity(highestGrade, i));
             return true;
         }
 
         return false;
+    }
+
+    // 실제 후보 가중치의 상대 순위로 희귀도를 정한다. 가중치가 작을수록 드물며,
+    // 같은 가중치에는 같은 희귀도를 준다. 따라서 Weights를 바꾸면 포탈 색도
+    // 별도 수정 없이 함께 바뀐다.
+    private static EGachaRarity GetRarity(ESlimeGrade highestGrade, int selectedIndex)
+    {
+        int moreCommonCandidateCount = 0;
+        int selectedWeight = Weights[selectedIndex];
+        for (int i = 0; i < Weights.Length; i++)
+        {
+            if (GetCandidate(highestGrade, i) == ESlimeGrade.None ||
+                Weights[i] <= selectedWeight)
+            {
+                continue;
+            }
+
+            moreCommonCandidateCount++;
+        }
+
+        return moreCommonCandidateCount switch
+        {
+            >= 3 => EGachaRarity.Jackpot,
+            2 => EGachaRarity.Rare,
+            1 => EGachaRarity.Uncommon,
+            _ => EGachaRarity.Common,
+        };
     }
 
     private static ESlimeGrade GetCandidate(ESlimeGrade highestGrade, int index)

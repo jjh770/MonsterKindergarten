@@ -35,6 +35,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     public RectTransform SendButtonTarget => _sendButton != null
         ? _sendButton.transform as RectTransform
         : null;
+    public bool IsSendMode => _isSendMode;
     public event Action SendModeStarted;
     public event Action SendModeEnded;
     public event Action<SlimeController> SlimeTransferred;

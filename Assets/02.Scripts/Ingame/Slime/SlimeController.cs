@@ -30,6 +30,8 @@ public class SlimeController : MonoBehaviour, IClickable
         ? Instance.Location
         : ESlimeLocation.MainStage;
     public bool IsDragging => _isDragging;
+    // 스폰 직후 떨어지는 동안에는 합성 대상으로 삼지 않는다.
+    public bool HasLanded => _hasLanded;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
     public bool IsCurrentStageActive =>
@@ -124,6 +126,42 @@ public class SlimeController : MonoBehaviour, IClickable
     public void SetMovementLocked(bool isLocked)
     {
         _slimeMove?.SetMovementLocked(isLocked);
+    }
+
+    // 자동 합성처럼 연출이 개체를 직접 움직이는 동안 쓴다. 콜라이더를 끄므로 터치도
+    // 드래그도 닿지 않고, 물리가 연출 위치를 밀어내지도 않는다. 화면에는 계속 보인다.
+    public void SetPresentationLocked(bool isLocked)
+    {
+        if (isLocked)
+        {
+            CancelDrag();
+        }
+
+        // 풀 때는 스테이지가 정해 둔 표시 상태를 따른다. 그림이 꺼진 슬라임은 다른 스테이지에
+        // 숨어 있는 것이라, 콜라이더와 물리만 되살아나면 보이지 않는 채로 터치를 가로채고
+        // 보이는 슬라임을 밀어낸다. 스테이지 전환 중 판정은 흔들리므로 그림 상태를 기준으로 삼는다.
+        bool isInteractive = !isLocked &&
+                             (_spriteRenderer == null || _spriteRenderer.enabled);
+
+        foreach (Collider2D targetCollider in _colliders)
+        {
+            if (targetCollider != null)
+            {
+                targetCollider.enabled = isInteractive;
+            }
+        }
+
+        _slimeMove?.SetMovementLocked(!isInteractive);
+
+        if (_rigidbody != null)
+        {
+            if (!isInteractive)
+            {
+                _rigidbody.linearVelocity = Vector2.zero;
+            }
+
+            _rigidbody.simulated = isInteractive;
+        }
     }
 
     public void SetDisplayRoomCameraFocus(bool isFocused)

@@ -7,6 +7,7 @@
     SpawnTimeSub,
     MaxCountAdd,
     HigherGradeSpawnWeightAdd,
+    AutoMergeTimeSub,
 
     Count,
 }

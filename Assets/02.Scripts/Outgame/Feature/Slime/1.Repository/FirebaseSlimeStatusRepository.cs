@@ -81,6 +81,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
             }
 
             data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            data.CompletedTutorials ??= new System.Collections.Generic.List<string>();
             data.NormalCollectionRegistered =
                 SlimeStatusSaveData.NormalizeNormalCollection(
                     data.NormalCollectionRegistered);

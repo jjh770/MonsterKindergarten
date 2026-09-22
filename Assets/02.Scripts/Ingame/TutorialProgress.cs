@@ -24,6 +24,9 @@ public static class TutorialProgress
     private struct TutorialState
     {
         public string CompletionKey;
+        // 계정 문서(SlimeStatus)에 남기는 식별자. 버전 접미사까지 로컬 키와 같은
+        // 규칙을 써서, 버전을 올려 다시 보여 주는 방법이 클라우드에도 그대로 통한다.
+        public string CloudId;
         public bool IsCompleted;
         public int Order;
     }
@@ -56,14 +59,24 @@ public static class TutorialProgress
         }
 
         string completionKey = BuildCompletionKey(tutorialId, version);
+        string cloudId = BuildCloudId(tutorialId, version);
+
+        // 로컬 표시는 기기에만 있어 앱 데이터를 지우거나 기기를 바꾸면 사라진다.
+        // 계정 문서에 완료가 있으면 로컬 표시와 관계없이 완료로 본다. 로컬에
+        // 미완료로 남은 기기(다른 기기에서 마친 경우)도 여기서 완료로 바뀐다.
+        bool isCompletedInCloud = SlimeManager.Instance != null &&
+                                  SlimeManager.Instance.IsTutorialCompleted(cloudId);
+
         if (PlayerPrefs.HasKey(completionKey))
         {
             bool wasCompleted = PlayerPrefs.GetInt(completionKey, 0) == 1;
             bool isCompleted = wasCompleted ||
+                               isCompletedInCloud ||
                                (completeStoredIncomplete && completeByDefault);
             s_stateById[tutorialId] = new TutorialState
             {
                 CompletionKey = completionKey,
+                CloudId = cloudId,
                 IsCompleted = isCompleted,
                 Order = order,
             };
@@ -76,13 +89,34 @@ public static class TutorialProgress
             return;
         }
 
+        bool isCompletedByDefault = completeByDefault || isCompletedInCloud;
         s_stateById[tutorialId] = new TutorialState
         {
             CompletionKey = completionKey,
-            IsCompleted = completeByDefault,
+            CloudId = cloudId,
+            IsCompleted = isCompletedByDefault,
             Order = order,
         };
-        SaveCompletionFlag(completionKey, completeByDefault);
+        SaveCompletionFlag(completionKey, isCompletedByDefault);
+    }
+
+    // 이 기기에서 완료한 튜토리얼을 계정 문서에 올린다. 클라우드 기록을 도입하기
+    // 전에 마친 튜토리얼은 로컬에만 있으므로, 등록을 마친 뒤 한 번 호출해 옮긴다.
+    // 이미 올라간 것만 있으면 저장하지 않는다.
+    public static void UploadCompletedToCloud()
+    {
+        if (!IsInitialized || SlimeManager.Instance == null) return;
+
+        var completedIds = new List<string>();
+        foreach (TutorialState state in s_stateById.Values)
+        {
+            if (state.IsCompleted)
+            {
+                completedIds.Add(state.CloudId);
+            }
+        }
+
+        SlimeManager.Instance.RecordTutorialsCompleted(completedIds);
     }
 
     public static bool IsRegistered(string tutorialId)
@@ -137,6 +171,8 @@ public static class TutorialProgress
         SaveCompletionFlag(
             tutorialState.CompletionKey,
             isCompleted: true);
+        SlimeManager.Instance?.RecordTutorialsCompleted(
+            new[] { tutorialState.CloudId });
     }
 
     public static void DeleteForUser(string userId)
@@ -171,6 +207,11 @@ public static class TutorialProgress
     {
         string versionSuffix = version > 1 ? $"_v{version}" : string.Empty;
         return $"{userId}_{tutorialId}Completed{versionSuffix}";
+    }
+
+    private static string BuildCloudId(string tutorialId, int version)
+    {
+        return version > 1 ? $"{tutorialId}_v{version}" : tutorialId;
     }
 
     private static int GetVersion(string tutorialId)

@@ -44,8 +44,10 @@ public class CurrencyManager : MonoBehaviour
     }
 
     //public Currency Point { get; private set; }
-    public event Action<ECurrencyType, Currency> OnDataChanged;
-    public event Action OnDataInitialized;
+    // 다른 두 매니저와 같이 static으로 둔다. 인스턴스 이벤트는 매니저가 생긴 뒤에만
+    // 붙일 수 있고, 먼저 파괴되면 구독 해제마다 null 검사가 필요했다.
+    public static event Action<ECurrencyType, Currency> OnDataChanged;
+    public static event Action OnDataInitialized;
 
 
     private async void Awake()

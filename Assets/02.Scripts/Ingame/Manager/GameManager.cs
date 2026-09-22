@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
     {
         UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
-        CurrencyManager.Instance.OnDataInitialized += OnCurrencyDataInitialized;
+        CurrencyManager.OnDataInitialized += OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
         // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
         // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
@@ -83,7 +83,8 @@ public class GameManager : MonoBehaviour
     {
         UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
         SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
-        CurrencyManager.Instance.OnDataInitialized -= OnCurrencyDataInitialized;
+        CurrencyManager.OnDataInitialized -= OnCurrencyDataInitialized;
+
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
         if (OfflineRewardManager.Instance != null)
         {
@@ -233,6 +234,10 @@ public class GameManager : MonoBehaviour
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
+
+        // 계정 문서에 기록하기 전에 이 기기에서 마친 튜토리얼을 옮긴다.
+        // 이미 올라가 있으면 저장하지 않으므로 매 진입마다 불러도 된다.
+        TutorialProgress.UploadCompletedToCloud();
     }
 
     public async UniTask CompleteTutorialAsync()

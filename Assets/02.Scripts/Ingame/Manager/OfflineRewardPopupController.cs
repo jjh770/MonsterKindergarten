@@ -61,7 +61,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
         }
 
         _displayedReward = result;
-        _view.Show(result.ElapsedTime, result.Reward);
+        _view.Show(result.ElapsedTime, result.Reward, result.TicketReward);
     }
 
     private void OnConfirmRequested()
@@ -76,10 +76,13 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
         OfflineRewardResult result = _displayedReward.Value;
         float duration = _view.PlayCollect(result.ElapsedTime);
 
-        PointCountUpEvents.Request(new PointCountUpRequest(
-            result.PointBeforeReward,
-            result.PointAfterReward,
-            duration));
+        if ((double)result.Reward > 0d)
+        {
+            PointCountUpEvents.Request(new PointCountUpRequest(
+                result.PointBeforeReward,
+                result.PointAfterReward,
+                duration));
+        }
     }
 
     private void OnPresentationCompleted()

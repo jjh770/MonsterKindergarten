@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -49,30 +48,10 @@ public sealed class SpawnPoolPopupUI : MonoBehaviour
             return;
         }
 
-        var builder = new StringBuilder("현재 자연 등장 확률\n");
-
-        // 확률이 왜 이 값인지는 이 업그레이드 레벨과 함께 봐야 읽힌다.
-        if (higherGradeSpawnLevel >= 0)
-        {
-            builder.Append("상위 슬라임 등장 확률 Lv.")
-                .Append(higherGradeSpawnLevel)
-                .Append("\n\n");
-        }
-
-        foreach (SpawnProbability probability in probabilities)
-        {
-            builder.Append("<sprite name=\"")
-                .Append(((int)probability.Grade).ToString("00"))
-                .Append("\"> Lv.")
-                .Append((int)probability.Grade)
-                .Append("   ")
-                .Append((probability.Probability * 100f).ToString("F1"))
-                .Append("%\n");
-        }
-
-        builder.Append("\n눌러서 닫기");
-
-        _probabilityText.text = builder.ToString();
+        _probabilityText.text = GameplayInfoTextBuilder.BuildSpawnProbabilityText(
+            probabilities,
+            higherGradeSpawnLevel,
+            includeCloseHint: true);
 
         // Awake가 첫 활성화까지 밀리므로 크기를 재기 전에 켠다.
         gameObject.SetActive(true);

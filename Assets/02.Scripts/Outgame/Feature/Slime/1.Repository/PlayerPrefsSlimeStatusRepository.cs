@@ -9,6 +9,15 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
     private readonly string _userId;
     private const string KEY_SUFFIX = "_SlimeStatus";
 
+    // 저장 데이터의 도감 목록은 빈 20칸을 기본값으로 갖는다. Newtonsoft는 기본 설정에서
+    // 그런 리스트를 새로 만들지 않고 읽은 값을 뒤에 이어 붙여 40칸을 만들고, 이어지는
+    // 정규화가 앞 20칸만 남겨 읽을 때마다 도감 등록과 통계가 기본값으로 지워졌다.
+    // 리스트를 교체하게 해 저장된 값이 그대로 남게 한다.
+    private static readonly JsonSerializerSettings LoadSettings = new()
+    {
+        ObjectCreationHandling = ObjectCreationHandling.Replace,
+    };
+
     public PlayerPrefsSlimeStatusRepository(string userId)
     {
         _userId = userId;
@@ -70,12 +79,16 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             if (schemaVersion < SaveSchema.SlimeInstanceVersion)
             {
                 LegacySlimeStatusSaveData legacyData =
-                    JsonConvert.DeserializeObject<LegacySlimeStatusSaveData>(json);
+                    JsonConvert.DeserializeObject<LegacySlimeStatusSaveData>(
+                        json,
+                        LoadSettings);
                 saveData = SlimeStatusSaveMigration.Upgrade(legacyData);
             }
             else
             {
-                saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(json);
+                saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(
+                    json,
+                    LoadSettings);
                 if (schemaVersion < SaveSchema.SlimeCurrentVersion)
                 {
                     saveData = SlimeStatusSaveMigration.UpgradeInstanceData(
@@ -92,6 +105,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             }
 
             saveData.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();
+            saveData.CompletedTutorials ??= new System.Collections.Generic.List<string>();
             saveData.NormalCollectionRegistered =
                 SlimeStatusSaveData.NormalizeNormalCollection(
                     saveData.NormalCollectionRegistered);

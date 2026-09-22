@@ -87,6 +87,26 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public bool AutoSpawnDisabled { get; set; }
 
+    // 없는 필드의 기본값 false가 기존 세이브에서 의도한 OFF와 같다.
+    [FirestoreProperty]
+    public bool AutoMergeEnabled { get; set; }
+
+    // 일반 도감 20종 완성 후 메인 엔딩을 이미 본 적이 있는지.
+    // 이전 문서의 기본값 false가 정확한 미확인 상태라 별도 승격값이 필요 없다.
+    [FirestoreProperty]
+    public bool MainEndingSeen { get; set; }
+
+    // 스페셜 가챠에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
+    // 이전 문서의 기본값 0은 기본 확률 3%를 뜻한다.
+    [FirestoreProperty]
+    public int SpecialGachaMissCount { get; set; }
+
+    // 이 계정이 마친 튜토리얼 식별자. 로컬 완료 표시는 앱 데이터를 지우면 사라진다.
+    // 기본값은 빈 목록이다. 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙는다.
+    // 필드가 없는 v7 이하 문서는 빈 목록, 즉 "기록 없음"으로 읽혀 지금까지와 같다.
+    [FirestoreProperty]
+    public List<string> CompletedTutorials { get; set; } = new();
+
     [FirestoreProperty]
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();
@@ -305,6 +325,7 @@ public static class SlimeStatusSaveMigration
 
         saveData.SchemaVersion = SaveSchema.SlimeCurrentVersion;
         saveData.ActiveSlimes ??= new List<SlimeInstanceSaveData>();
+        saveData.CompletedTutorials ??= new List<string>();
         saveData.NormalCollectionRegistered =
             SlimeStatusSaveData.NormalizeNormalCollection(
                 saveData.NormalCollectionRegistered);
