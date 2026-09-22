@@ -53,10 +53,16 @@ public class PointFloater : MonoBehaviour
         DOTween.To(() => 0f, FollowWorldPosition, 1f, _duration)
             .SetEase(_floatEase)
             .SetTarget(this);
-        _text.DOFade(0f, _duration).SetEase(_fadeEase).OnComplete(() =>
-        {
-            _pool.Despawn(gameObject);
-        });
+        // 대상을 this로 맞춰 OnDisable에서 함께 멈추게 한다. 기본 대상인 _text로 두면
+        // 씬이 바뀌어 이 오브젝트가 파괴된 뒤에도 페이드가 끝나 완료 콜백이 파괴된
+        // 오브젝트를 건드린다.
+        _text.DOFade(0f, _duration)
+            .SetEase(_fadeEase)
+            .SetTarget(this)
+            .OnComplete(() =>
+            {
+                _pool.Despawn(gameObject);
+            });
     }
 
     private void OnDisable()
