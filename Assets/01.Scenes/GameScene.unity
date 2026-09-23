@@ -1169,7 +1169,7 @@ GameObject:
   - component: {fileID: 120234466}
   - component: {fileID: 120234467}
   m_Layer: 5
-  m_Name: Arrow
+  m_Name: BackgroundThemeArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4437,7 +4437,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -4933,7 +4933,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -4977,7 +4977,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -7019,7 +7019,7 @@ GameObject:
   - component: {fileID: 827896474}
   - component: {fileID: 827896473}
   m_Layer: 5
-  m_Name: Arrow
+  m_Name: SkyThemeArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7054,7 +7054,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
   m_AspectMode: 1
   m_AspectRatio: 1
@@ -7068,7 +7068,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -7148,7 +7148,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
     m_Left: 0
@@ -7186,7 +7186,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
   m_Padding: {x: 0, y: 0, z: 0, w: 0}
   m_Softness: {x: 0, y: 0}
@@ -7200,7 +7200,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -7510,7 +7510,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -7554,7 +7554,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -9025,7 +9025,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -9361,9 +9361,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameplaySpaceManager
   _clicker: {fileID: 115063078}
   _upgradeUI: {fileID: 1526959884}
-  _stageUI: {fileID: 1324579906}
+  _backgroundThemeUI: {fileID: 1324579906}
   _transitionPlayer: {fileID: 954826975}
-  _skyIntroDirector: {fileID: 954826976}
+  _backgroundThemeUnlockDirector: {fileID: 954826976}
   _unlockPopupUI: {fileID: 1432576204}
 --- !u!4 &954826974
 Transform:
@@ -9393,7 +9393,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameplayTransitionPlayer
   _camera: {fileID: 519420031}
-  _stageUI: {fileID: 1324579906}
+  _backgroundThemeUI: {fileID: 1324579906}
   _transitionOverlay: {fileID: 1907240556}
   _backgroundMove: {fileID: 2131310039}
   _themeSlideDuration: 0.8
@@ -9422,7 +9422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUnlockDirector
   _canvas: {fileID: 457349916}
-  _stageUI: {fileID: 1324579906}
+  _backgroundThemeUI: {fileID: 1324579906}
   _panelSwitcher: {fileID: 998300001}
   _dialoguePresentationPrefab: {fileID: 810001, guid: 7f1a9c3e5b2d4a6f8c0e1d3b5a7f9246, type: 3}
   _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
@@ -9665,7 +9665,7 @@ MonoBehaviour:
   _panelSwitcher: {fileID: 998300001}
   _spaceToggleButton: {fileID: 1790500176}
   _sendButton: {fileID: 993100105}
-  _stageUI: {fileID: 1324579906}
+  _backgroundThemeUI: {fileID: 1324579906}
   _gameExitManager: {fileID: 286711904}
   _clicker: {fileID: 115063078}
   _upgradeUI: {fileID: 1526959884}
@@ -17310,10 +17310,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6f124b72d0c513458cd46a8ff4318fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUI
-  _stageButton: {fileID: 1872367948}
+  _backgroundButton: {fileID: 1872367948}
   _panelSwitcher: {fileID: 998300001}
   _groundThemeButton: {fileID: 606430597}
   _skyThemeButton: {fileID: 867482914}
+  _currentThemeAlpha: 0.45
 --- !u!4 &1324579907
 Transform:
   m_ObjectHideFlags: 0
@@ -17691,7 +17692,7 @@ GameObject:
   - component: {fileID: 1352513808}
   - component: {fileID: 1352513807}
   m_Layer: 5
-  m_Name: Arrow
+  m_Name: GroundThemeArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17726,7 +17727,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
   m_AspectMode: 1
   m_AspectRatio: 1
@@ -17740,7 +17741,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -20876,8 +20877,8 @@ MonoBehaviour:
   _collectArcScreenRatio: 0.4
   _collectArcRandomness: 0.4
   _collectSideSpreadRatio: 0.25
-  _collectEndScale: 0.35
-  _targetPunchScale: 0.15
+  _collectEndScale: 0.3
+  _targetPunchScale: 0.5
   _collectBurstParticleCount: 12
   _collectBurstDuration: 0.38
   _collectBurstLeadTime: 0.15
@@ -26509,8 +26510,8 @@ MonoBehaviour:
   _displayRoomBackgrounds:
   - {fileID: -1154725412739471629, guid: 9480ade6daed7b3459f0cd06aed6b931, type: 3}
   - {fileID: -8464134323578300689, guid: 747c0f4dd34ae9e40a37b12f9705c629, type: 3}
-  _groundStageRoot: {fileID: 991000001}
-  _skyStageRoot: {fileID: 991000011}
+  _groundThemeRoot: {fileID: 991000001}
+  _skyThemeRoot: {fileID: 991000011}
   _displayRoomRoot: {fileID: 991000021}
   _groundTiles:
   - {fileID: 2131310040}

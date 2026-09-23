@@ -12,8 +12,18 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     [SerializeField] private Button _groundThemeButton;
     [SerializeField] private Button _skyThemeButton;
 
+    [Tooltip("지금 쓰고 있는 배경 버튼을 얼마나 흐리게 할지입니다.")]
+    [SerializeField, Range(0.1f, 1f)] private float _currentThemeAlpha = 0.45f;
+
     private bool _isButtonAvailable;
     private bool _isMenuPresentationRequested;
+
+    // 그려 둔 투명도를 그대로 두고 배율만 곱한다. 1로 덮어쓰면 반투명하게 디자인한
+    // 그래픽이 선택될 때마다 불투명해진다.
+    private Graphic[] _groundThemeGraphics;
+    private Graphic[] _skyThemeGraphics;
+    private float[] _groundThemeAlphas;
+    private float[] _skyThemeAlphas;
 
     // 스포트라이트가 버튼을 가리킬 때 필요하다.
     public RectTransform ButtonTarget => _backgroundButton != null
@@ -38,6 +48,15 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         _groundThemeButton.onClick.AddListener(OnGroundThemeButtonClicked);
         _skyThemeButton.onClick.AddListener(OnSkyThemeButtonClicked);
         _backgroundButton.gameObject.SetActive(false);
+
+        CacheThemeGraphics(
+            _groundThemeButton,
+            out _groundThemeGraphics,
+            out _groundThemeAlphas);
+        CacheThemeGraphics(
+            _skyThemeButton,
+            out _skyThemeGraphics,
+            out _skyThemeAlphas);
     }
 
     private void OnDestroy()
@@ -86,6 +105,54 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         if (!isInteractable)
         {
             _panelSwitcher.TryHideBackgroundThemePanel(animated: false);
+        }
+    }
+
+    // 지금 쓰고 있는 배경을 알려 준다. 쓰고 있는 쪽은 눌러도 바뀔 것이 없으므로
+    // 흐리게 두고, 고를 수 있는 쪽을 선명하게 남긴다. 누름 자체는
+    // GameplaySpaceManager가 막으므로 여기서는 보이기만 맡는다.
+    public void SetSelectedTheme(EBackgroundTheme theme)
+    {
+        bool isGround = theme == EBackgroundTheme.Ground;
+        ApplyThemeAlpha(
+            _groundThemeGraphics,
+            _groundThemeAlphas,
+            isGround ? _currentThemeAlpha : 1f);
+        ApplyThemeAlpha(
+            _skyThemeGraphics,
+            _skyThemeAlphas,
+            isGround ? 1f : _currentThemeAlpha);
+    }
+
+    private static void CacheThemeGraphics(
+        Button button,
+        out Graphic[] graphics,
+        out float[] alphas)
+    {
+        graphics = button != null
+            ? button.GetComponentsInChildren<Graphic>(true)
+            : Array.Empty<Graphic>();
+        alphas = new float[graphics.Length];
+        for (int i = 0; i < graphics.Length; ++i)
+        {
+            alphas[i] = graphics[i] != null ? graphics[i].color.a : 1f;
+        }
+    }
+
+    private static void ApplyThemeAlpha(
+        Graphic[] graphics,
+        float[] alphas,
+        float multiplier)
+    {
+        if (graphics == null || alphas == null) return;
+
+        for (int i = 0; i < graphics.Length; ++i)
+        {
+            if (graphics[i] == null) continue;
+
+            Color color = graphics[i].color;
+            color.a = alphas[i] * multiplier;
+            graphics[i].color = color;
         }
     }
 

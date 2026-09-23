@@ -63,7 +63,9 @@ public class GachaTicketField : MonoBehaviour
 
     private readonly List<GameObject> _tickets = new();
     private readonly HashSet<GameObject> _collectingTickets = new();
-    private readonly HashSet<Tween> _targetPunchTweens = new();
+    // 일괄 회수는 티켓이 거의 동시에 닿는다. 도착할 때마다 펀치를 새로 걸면
+    // 크기가 겹쳐 널뛰므로 한 번에 하나만 돌린다.
+    private Tween _targetPunchTween;
 
     private Vector3 _collectTargetBaseScale;
     private bool _isBulkCollecting;
@@ -145,12 +147,8 @@ public class GachaTicketField : MonoBehaviour
             GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
         }
 
-        foreach (Tween tween in new List<Tween>(_targetPunchTweens))
-        {
-            tween?.Kill(complete: false);
-        }
-
-        _targetPunchTweens.Clear();
+        _targetPunchTween?.Kill(complete: false);
+        _targetPunchTween = null;
         _collectingTickets.Clear();
         RestoreCollectTargetScale();
     }
@@ -688,21 +686,23 @@ public class GachaTicketField : MonoBehaviour
     {
         if (_collectTarget == null) return;
 
-        Tween punch = _collectTarget.DOPunchScale(
+        // 이미 커졌다 작아지는 중이면 그 연출에 얹는다. 스무 장이 한꺼번에 닿아도
+        // 아이콘은 한 번만 움직인다.
+        if (_targetPunchTween != null && _targetPunchTween.IsActive()) return;
+
+        RestoreCollectTargetScale();
+        _targetPunchTween = _collectTarget.DOPunchScale(
             Vector3.one * _targetPunchScale,
             0.2f,
             5,
             0.5f);
-        _targetPunchTweens.Add(punch);
-        punch.OnComplete(() => FinishCollectTargetPunch(punch));
-        punch.OnKill(() => FinishCollectTargetPunch(punch));
+        _targetPunchTween.OnComplete(FinishCollectTargetPunch);
+        _targetPunchTween.OnKill(FinishCollectTargetPunch);
     }
 
-    private void FinishCollectTargetPunch(Tween punch)
+    private void FinishCollectTargetPunch()
     {
-        if (!_targetPunchTweens.Remove(punch)) return;
-        if (_targetPunchTweens.Count > 0) return;
-
+        _targetPunchTween = null;
         RestoreCollectTargetScale();
     }
 

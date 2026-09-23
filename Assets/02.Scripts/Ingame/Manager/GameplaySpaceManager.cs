@@ -257,6 +257,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _isInitialized = true;
         _transitionPlayer.ApplyEnvironment(_currentBackgroundTheme, 0f);
         BackgroundThemeChanged?.Invoke(_currentBackgroundTheme);
+        _backgroundThemeUI.SetSelectedTheme(_currentBackgroundTheme);
         ApplyAllSlimeVisibility();
         RefreshBackgroundButton();
         SetInteractionEnabled(false);
@@ -429,6 +430,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             {
                 _currentBackgroundTheme = targetTheme;
                 BackgroundThemeChanged?.Invoke(_currentBackgroundTheme);
+                _backgroundThemeUI.SetSelectedTheme(_currentBackgroundTheme);
             },
             onCompleted: () =>
             {
