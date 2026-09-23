@@ -2648,7 +2648,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &339001678
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13050,7 +13050,6 @@ MonoBehaviour:
   _spawnGaugeTarget: {fileID: 282534616}
   _systemUpgradePanel: {fileID: 920019899}
   _unlockPopupUI: {fileID: 1432576204}
-  _upgradeUI: {fileID: 1526959884}
   _mergeSlimeDistance: 1.5
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
@@ -19283,6 +19282,7 @@ MonoBehaviour:
   _dismissBackdropButton: {fileID: 2212700001}
   _clicker: {fileID: 115063078}
   _movingDuration: 0.5
+  _isContentAvailable: 0
   _topBar: {fileID: 1954789098}
   _toggleArrow: {fileID: 1800751682}
 --- !u!1 &1527574474
@@ -22276,11 +22276,10 @@ GameObject:
   - component: {fileID: 1864902236}
   - component: {fileID: 1864902239}
   - component: {fileID: 1864902238}
-  - component: {fileID: 1864902240}
   - component: {fileID: 1864902242}
   - component: {fileID: 1864902243}
   m_Layer: 5
-  m_Name: UpgradePanel
+  m_Name: SideDrawerPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22344,20 +22343,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1864902235}
   m_CullTransparentMesh: 1
---- !u!114 &1864902240
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1864902235}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a208732587313a429edfcd7e5fbedd5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePanel
-  _itemPrefab: {fileID: 8665643539257604844, guid: 0fd457db770b21444afd1baab782886f, type: 3}
-  _content: {fileID: 339001678}
 --- !u!114 &1864902242
 MonoBehaviour:
   m_ObjectHideFlags: 0

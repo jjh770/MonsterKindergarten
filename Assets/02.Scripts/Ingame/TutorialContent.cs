@@ -63,8 +63,6 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _pointMessage;
     [SerializeField] private string _dragMessage;
     [SerializeField] private string _mergeMessage;
-    [SerializeField] private string _upgradeMessage;
-    [SerializeField] private string _upgradePanelMessage;
     [SerializeField] private string _systemUpgradeCarouselMessage;
     [SerializeField] private string _spawnPoolButtonMessage;
     [SerializeField] private string _autoSpawnToggleMessage;
@@ -94,8 +92,6 @@ public sealed class TutorialContent : ScriptableObject
     public string PointMessage => _pointMessage;
     public string DragMessage => _dragMessage;
     public string MergeMessage => _mergeMessage;
-    public string UpgradeMessage => _upgradeMessage;
-    public string UpgradePanelMessage => _upgradePanelMessage;
     public string SystemUpgradeCarouselMessage => _systemUpgradeCarouselMessage;
     public string SpawnPoolButtonMessage => _spawnPoolButtonMessage;
     public string AutoSpawnToggleMessage => _autoSpawnToggleMessage;

@@ -11,6 +11,9 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private float _movingDuration = 0.5f;
 
+    [Tooltip("서랍의 다음 콘텐츠가 준비되기 전까지 손잡이를 숨깁니다.")]
+    [SerializeField] private bool _isContentAvailable;
+
     [Tooltip("서랍이 이 아래에서 시작합니다. 강화하는 동안 포인트가 가려지지 않게 합니다.")]
     [SerializeField] private RectTransform _topBar;
 
@@ -60,6 +63,9 @@ public class UpgradeUI : MonoBehaviour
         }
 
         _toggleEdgeOffset = _toggleRectTransform.anchoredPosition.x;
+        _isToggleVisible = _isContentAvailable;
+        _isToggleInputEnabled = _isContentAvailable;
+        _uiButton.interactable = _isContentAvailable;
         _uiButton.onClick.AddListener(ViewUI);
         _dismissBackdropButton.onClick.AddListener(CloseFromBackdrop);
         _dismissBackdropButton.gameObject.SetActive(false);
@@ -261,16 +267,17 @@ public class UpgradeUI : MonoBehaviour
 
     public void SetToggleInputEnabled(bool isEnabled)
     {
-        _isToggleInputEnabled = isEnabled;
+        _isToggleInputEnabled = _isContentAvailable && isEnabled;
 
         if (_uiButton != null)
         {
-            _uiButton.interactable = isEnabled;
+            _uiButton.interactable = _isToggleInputEnabled;
         }
     }
 
     public void SetToggleVisible(bool isVisible, bool animated = true)
     {
+        isVisible = _isContentAvailable && isVisible;
         if (_isToggleVisible == isVisible) return;
 
         _isToggleVisible = isVisible;

@@ -126,10 +126,6 @@ public class UpgradeManager : MonoBehaviour
     public Upgrade Get(EUpgradeType type, ESlimeGrade grade) =>
         _upgrades.TryGetValue((type, grade), out var upgrade) ? upgrade : null;
 
-    // 슬라임 개별 업그레이드만 반환 (SpawnTimeSub, MaxCountAdd 등 전체 공통 업그레이드 제외)
-    public List<Upgrade> GetSlimeUpgrades() =>
-        _upgrades.Values.Where(u => u.SpecData.SlimeGrade != ESlimeGrade.None).ToList();
-
     public List<Upgrade> GetSystemUpgrades() =>
         _upgrades.Values.Where(u => u.SpecData.SlimeGrade == ESlimeGrade.None).ToList();
 

@@ -50,6 +50,9 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
     public bool IsReady => _slots.Count == RequiredSlotCount;
     public int SelectedIndex => _selectedIndex;
     public int DataCount => _dataCount;
+    public RectTransform CenterTarget => IsReady
+        ? _slots[CenterSlotIndex].Root
+        : null;
     private bool IsBusy => _rotationTween != null || _isDragging;
 
     // 가운데 슬롯을 눌렀다. 항목 인덱스를 준다.

@@ -20,6 +20,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private bool _isInitialized;
 
     public RectTransform TutorialTarget => transform as RectTransform;
+    public RectTransform SelectedItemTarget => _carousel?.CenterTarget;
     public event Action RotationCompleted;
 
     public bool IsSelected(EUpgradeType type)
@@ -247,6 +248,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                     : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
             EUpgradeType.AutoMergePairAdd =>
                 BuildAutoMergeValueText(icon, upgrade.Level),
+            EUpgradeType.AllSlimePointPercentAdd =>
+                $"{icon}배율 {upgrade.Point:N0}% → {upgrade.NextPoint:N0}%",
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
     }

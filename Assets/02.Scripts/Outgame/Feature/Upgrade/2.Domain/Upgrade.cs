@@ -24,6 +24,16 @@ public class Upgrade
     {
         get
         {
+            if (SpecData.LateCostStartLevel > 0 &&
+                Level >= SpecData.LateCostStartLevel)
+            {
+                return Math.Ceiling(
+                    SpecData.LateBaseCost *
+                    Math.Pow(
+                        SpecData.LateCostMultiplier,
+                        Level - SpecData.LateCostStartLevel));
+            }
+
             double tierMultiplier = SpecData.CostTierSize > 0 &&
                                     SpecData.CostTierMultiplier > 0
                 ? Math.Pow(
@@ -65,6 +75,14 @@ public class Upgrade
         if (specData.CostMultiplier <= 0) throw new System.ArgumentException($"비용 증가량은 0보다 크거나 같아야 합니다. : {specData.CostMultiplier}");
         if (specData.CostTierSize > 0 && specData.CostTierMultiplier <= 0)
             throw new System.ArgumentException($"비용 구간 배율은 0보다 커야 합니다. : {specData.CostTierMultiplier}");
+        if (specData.LateCostStartLevel > 0 &&
+            (specData.LateCostStartLevel >= specData.MaxLevel ||
+             specData.LateBaseCost <= 0 ||
+             specData.LateCostMultiplier <= 0))
+        {
+            throw new System.ArgumentException(
+                $"후반 비용 구간 설정이 올바르지 않습니다. : {specData.Type}");
+        }
         // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
         if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)
             throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");

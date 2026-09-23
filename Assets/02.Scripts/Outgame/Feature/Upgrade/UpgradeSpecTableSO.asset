@@ -21,6 +21,9 @@ MonoBehaviour:
     CostMultiplier: 1.18
     CostTierSize: 10
     CostTierMultiplier: 1.5
+    LateCostStartLevel: 0
+    LateBaseCost: 0
+    LateCostMultiplier: 1
     PointMultiplier: 0.1
     PointFormula: 0
     SystemIconIndex: -1
@@ -32,6 +35,9 @@ MonoBehaviour:
     CostMultiplier: 1.5
     CostTierSize: 5
     CostTierMultiplier: 1.05
+    LateCostStartLevel: 0
+    LateBaseCost: 0
+    LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
     SystemIconIndex: -1
@@ -43,6 +49,9 @@ MonoBehaviour:
     CostMultiplier: 1.25
     CostTierSize: 10
     CostTierMultiplier: 2
+    LateCostStartLevel: 0
+    LateBaseCost: 0
+    LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
     SystemIconIndex: -1
@@ -54,446 +63,23 @@ MonoBehaviour:
     CostMultiplier: 1.6
     CostTierSize: 2
     CostTierMultiplier: 8
+    LateCostStartLevel: 0
+    LateBaseCost: 0
+    LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
     SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 1
-    MaxLevel: 10
-    BaseCost: 50
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 2
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 1
-    MaxLevel: 10
-    BaseCost: 30
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 1
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 2
-    MaxLevel: 10
+  - Type: 8
+    SlimeGrade: 0
+    MaxLevel: 200
     BaseCost: 100
     BasePoint: 0
-    CostMultiplier: 1.5
+    CostMultiplier: 1.25
     CostTierSize: 0
     CostTierMultiplier: 1
-    PointMultiplier: 4
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 2
-    MaxLevel: 10
-    BaseCost: 60
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 2
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 3
-    MaxLevel: 10
-    BaseCost: 200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 8
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 3
-    MaxLevel: 10
-    BaseCost: 120
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 4
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 4
-    MaxLevel: 10
-    BaseCost: 600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 24
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 4
-    MaxLevel: 10
-    BaseCost: 360
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 12
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 5
-    MaxLevel: 10
-    BaseCost: 1200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 48
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 5
-    MaxLevel: 10
-    BaseCost: 720
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 24
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 6
-    MaxLevel: 10
-    BaseCost: 3600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 144
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 6
-    MaxLevel: 10
-    BaseCost: 2160
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 72
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 7
-    MaxLevel: 10
-    BaseCost: 7200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 288
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 7
-    MaxLevel: 10
-    BaseCost: 4320
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 144
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 8
-    MaxLevel: 10
-    BaseCost: 26600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 1064
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 8
-    MaxLevel: 10
-    BaseCost: 15960
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 532
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 9
-    MaxLevel: 10
-    BaseCost: 53200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 2128
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 9
-    MaxLevel: 10
-    BaseCost: 31920
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 1064
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 10
-    MaxLevel: 10
-    BaseCost: 159600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 6384
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 10
-    MaxLevel: 10
-    BaseCost: 95760
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 3192
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 11
-    MaxLevel: 10
-    BaseCost: 319200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 12768
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 11
-    MaxLevel: 10
-    BaseCost: 191520
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 6384
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 12
-    MaxLevel: 10
-    BaseCost: 957600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 38304
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 12
-    MaxLevel: 10
-    BaseCost: 574560
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 19152
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 13
-    MaxLevel: 10
-    BaseCost: 1915200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 76608
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 13
-    MaxLevel: 10
-    BaseCost: 1149120
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 38304
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 14
-    MaxLevel: 10
-    BaseCost: 5745600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 229824
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 14
-    MaxLevel: 10
-    BaseCost: 3447360
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 114912
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 15
-    MaxLevel: 10
-    BaseCost: 11491200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 459648
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 15
-    MaxLevel: 10
-    BaseCost: 6894720
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 229824
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 16
-    MaxLevel: 10
-    BaseCost: 34473600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 1378944
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 16
-    MaxLevel: 10
-    BaseCost: 20684160
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 689472
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 17
-    MaxLevel: 10
-    BaseCost: 68947200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 2757888
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 17
-    MaxLevel: 10
-    BaseCost: 41368320
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 1378944
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 18
-    MaxLevel: 10
-    BaseCost: 206841600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 8273664
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 18
-    MaxLevel: 10
-    BaseCost: 124104960
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 4136832
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 19
-    MaxLevel: 10
-    BaseCost: 413683200
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 16547328
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 19
-    MaxLevel: 10
-    BaseCost: 248209920
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 8273664
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 0
-    SlimeGrade: 20
-    MaxLevel: 10
-    BaseCost: 1241049600
-    BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 49641984
-    PointFormula: 0
-    SystemIconIndex: -1
-  - Type: 1
-    SlimeGrade: 20
-    MaxLevel: 10
-    BaseCost: 744629760
-    BasePoint: 0
-    CostMultiplier: 1.4
-    CostTierSize: 0
-    CostTierMultiplier: 1
-    PointMultiplier: 24820992
+    LateCostStartLevel: 100
+    LateBaseCost: 1000000000000
+    LateCostMultiplier: 1.025
+    PointMultiplier: 1
     PointFormula: 0
     SystemIconIndex: -1

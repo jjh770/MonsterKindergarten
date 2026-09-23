@@ -14,9 +14,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Drag,
         Merge,
         WaitingForUnlock,
-        UpgradeButton,
-        UpgradePanel,
-        SystemUpgradeCarousel,
+        FocusingSlimeUpgrade,
+        SlimeUpgrade,
         Complete,
     }
 
@@ -26,7 +25,6 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     [SerializeField] private RectTransform _spawnGaugeTarget;
     [SerializeField] private SystemUpgradePanel _systemUpgradePanel;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
-    [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField, Min(0f)] private float _mergeSlimeDistance = 1.5f;
 
     [Header("Input")]
@@ -78,16 +76,9 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
         }
 
-        if (_upgradeUI != null)
-        {
-            _upgradeUI.Opened -= OnUpgradeOpened;
-            _upgradeUI.Closed -= OnUpgradeClosed;
-            _upgradeUI.SetToggleInputEnabled(true);
-        }
-
         if (_systemUpgradePanel != null)
         {
-            _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
+            _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
         }
 
         UnsubscribeGuide();
@@ -115,15 +106,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         _isGuideSubscribed = true;
 
-        if (_upgradeUI != null)
-        {
-            _upgradeUI.Opened += OnUpgradeOpened;
-            _upgradeUI.Closed += OnUpgradeClosed;
-        }
-
         SpawnManager.Instance.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
-        _upgradeUI?.SetToggleInputEnabled(false);
         RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
         if (scholarSlimeTarget != null)
         {
@@ -182,11 +166,17 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
     private void OnGuideAdvanceRequested()
     {
-        if (_step != Step.PointHighlight) return;
-
-        ShowStepDialogue(
-            Content.GetDialogue(DialogueId.Movement),
-            ShowDragStep);
+        switch (_step)
+        {
+            case Step.PointHighlight:
+                ShowStepDialogue(
+                    Content.GetDialogue(DialogueId.Movement),
+                    ShowDragStep);
+                break;
+            case Step.SlimeUpgrade:
+                ShowSpawnGaugeStep();
+                break;
+        }
     }
 
     private void ShowDragStep()
@@ -283,61 +273,11 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.ShowFocus(_promotedTutorialSlime.transform);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.MergeResult),
-            ShowUpgradeStep,
+            ShowSlimeUpgradeIntro,
             keepGuideVisible: true);
     }
 
-    private void ShowUpgradeStep()
-    {
-        RectTransform upgradeTarget = _upgradeUI?.ToggleTarget;
-        if (upgradeTarget == null)
-        {
-            Debug.LogWarning("강조할 업그레이드 버튼이 없어 튜토리얼을 종료합니다.");
-            Complete(_promotedTutorialSlime);
-            return;
-        }
-
-        _step = Step.UpgradeButton;
-        _upgradeUI.SetToggleInputEnabled(true);
-        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
-        Spotlight.ShowUiTarget(
-            Content.UpgradeMessage,
-            upgradeTarget,
-            SpotlightInteractionMode.PassThroughPrimary);
-    }
-
-    private void OnUpgradeOpened()
-    {
-        if (_step != Step.UpgradeButton) return;
-
-        RectTransform panelTarget = _upgradeUI.PanelTarget;
-        RectTransform closeTarget = _upgradeUI.ToggleTarget;
-        if (panelTarget == null || closeTarget == null)
-        {
-            Debug.LogWarning("강조할 업그레이드 창 또는 닫기 버튼이 없어 마무리 대화로 이동합니다.");
-            ShowFinalDialogue();
-            return;
-        }
-
-        _step = Step.UpgradePanel;
-        Spotlight.ShowUiTargets(
-            Content.UpgradePanelMessage,
-            closeTarget,
-            panelTarget,
-            interactionMode: SpotlightInteractionMode.PassThroughPrimary,
-            useCompactMessage: true,
-            backgroundDimStrength: 0.3f);
-    }
-
-    private void OnUpgradeClosed()
-    {
-        if (_step != Step.UpgradePanel) return;
-
-        _upgradeUI.SetToggleInputEnabled(false);
-        ShowSpawnUpgradeStep();
-    }
-
-    private void ShowSpawnUpgradeStep()
+    private void ShowSlimeUpgradeIntro()
     {
         RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null)
@@ -350,12 +290,12 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.ShowUiFocus(carouselTarget);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.SpawnUpgrade),
-            ShowSystemUpgradeCarouselStep,
+            FocusSlimeUpgrade,
             keepGuideVisible: true,
             placement: DialoguePlacement.Top);
     }
 
-    private void ShowSystemUpgradeCarouselStep()
+    private void FocusSlimeUpgrade()
     {
         RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null)
@@ -364,21 +304,53 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        _step = Step.SystemUpgradeCarousel;
-        _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
-        _systemUpgradePanel.RotationCompleted += OnSystemUpgradeRotationCompleted;
-        Spotlight.ShowUiTarget(
-            Content.SystemUpgradeCarouselMessage,
-            carouselTarget,
-            SpotlightInteractionMode.PassThroughPrimary);
+        _step = Step.FocusingSlimeUpgrade;
+        _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
+        _systemUpgradePanel.RotationCompleted += OnSlimeUpgradeFocusAdvanced;
+
+        if (_systemUpgradePanel.IsSelected(EUpgradeType.AllSlimePointPercentAdd))
+        {
+            ShowSlimeUpgradeGuide();
+            return;
+        }
+
+        if (!_systemUpgradePanel.TryFocus(EUpgradeType.AllSlimePointPercentAdd))
+        {
+            _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
+            Debug.LogWarning("슬라임 업그레이드 항목으로 이동할 수 없어 게이지 설명으로 이동합니다.");
+            ShowSpawnGaugeStep();
+        }
     }
 
-    private void OnSystemUpgradeRotationCompleted()
+    private void OnSlimeUpgradeFocusAdvanced()
     {
-        if (_step != Step.SystemUpgradeCarousel) return;
+        if (_step != Step.FocusingSlimeUpgrade) return;
 
-        _systemUpgradePanel.RotationCompleted -= OnSystemUpgradeRotationCompleted;
-        ShowSpawnGaugeStep();
+        if (_systemUpgradePanel.IsSelected(EUpgradeType.AllSlimePointPercentAdd))
+        {
+            ShowSlimeUpgradeGuide();
+            return;
+        }
+
+        if (!_systemUpgradePanel.TryFocus(EUpgradeType.AllSlimePointPercentAdd))
+        {
+            _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
+            ShowSpawnGaugeStep();
+        }
+    }
+
+    private void ShowSlimeUpgradeGuide()
+    {
+        _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
+
+        RectTransform target = _systemUpgradePanel.SelectedItemTarget ??
+                               _systemUpgradePanel.TutorialTarget;
+        _step = Step.SlimeUpgrade;
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
+        Spotlight.ShowUiTarget(
+            Content.SystemUpgradeCarouselMessage,
+            target,
+            SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
     private void ShowSpawnGaugeStep()
@@ -428,7 +400,6 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         }
 
         survivingSlime?.SetMovementLocked(false);
-        _upgradeUI?.SetToggleInputEnabled(true);
         _promotedTutorialSlime = null;
         _mergeTutorialSlime = null;
         SpawnManager.Instance?.SetSpawningPaused(false);

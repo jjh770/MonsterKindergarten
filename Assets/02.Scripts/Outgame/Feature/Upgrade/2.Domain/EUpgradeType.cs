@@ -10,6 +10,7 @@ public enum EUpgradeType
     MaxCountAdd,
     HigherGradeSpawnWeightAdd,
     AutoMergePairAdd,
+    AllSlimePointPercentAdd,
 
     Count,
 }

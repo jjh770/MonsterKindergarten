@@ -18,11 +18,7 @@ MonoBehaviour:
   _dragMessage: "\uC2AC\uB77C\uC784\uC744 \uB4DC\uB798\uADF8\uD574 \uBCF4\uC138\uC694!"
   _mergeMessage: "\uAC19\uC740 \uB808\uBCA8\uC758 \uC2AC\uB77C\uC784\uC744 \uD569\uCCD0
     \uBCF4\uC138\uC694!"
-  _upgradeMessage: "\uC2AC\uB77C\uC784\uC744 \uB354 \uC131\uC7A5\uC2DC\uD0AC \uC218
-    \uC788\uB294 \uC5C5\uADF8\uB808\uC774\uB4DC\uB3C4 \uC788\uC2B5\uB2C8\uB2E4!"
-  _upgradePanelMessage: "\uB2EB\uAE30"
-  _systemUpgradeCarouselMessage: "\uD558\uB2E8 \uD328\uB110\uC744 \uC88C\uC6B0\uB85C
-    \uB3CC\uB824 \uBCF4\uC138\uC694!"
+  _systemUpgradeCarouselMessage: "슬라임 업그레이드는 모든 포인트 획득량을 1%씩 올려 줘요!"
   _spawnPoolButtonMessage: "\uD559\uC790 \uC2AC\uB77C\uC784\uC744 \uB20C\uB7EC \uC790\uC5F0
     \uC0DD\uC131 \uD655\uB960\uC744 \uD655\uC778\uD574 \uBCF4\uC138\uC694!"
   _autoSpawnToggleMessage: "\uAC00\uCC60\uB97C \uC0AC\uC6A9\uD560 \uB54C\uB294 \uC790\uB3D9
@@ -83,13 +79,9 @@ MonoBehaviour:
   - _id: 4
     _lines:
     - _speaker: "\uD559\uC790 \uC2AC\uB77C\uC784"
-      _message: "\uC544\uB798 \uAC00\uC6B4\uB370 \uBC84\uD2BC\uC744 \uB20C\uB7EC
-        \uC2AC\uB77C\uC784\uC774 \uB4F1\uC7A5\uD558\uB294 \uC2DC\uAC04\uACFC \uCD5C\uB300
-        \uC218\uB97C \uC5C5\uADF8\uB808\uC774\uB4DC\uD560 \uC218 \uC788\uC5B4."
+      _message: "아래 시스템 업그레이드에서 모든 슬라임의 포인트 획득량을 올릴 수 있어."
     - _speaker: "\uD559\uC790 \uC2AC\uB77C\uC784"
-      _message: "\uD558\uB2E8 \uD328\uB110\uC744 \uC7A1\uACE0 \uC88C\uC6B0\uB85C
-        \uB3CC\uB9AC\uBA74 \uB2E4\uB978 \uC5C5\uADF8\uB808\uC774\uB4DC\uB85C \uBC14\uAFC0
-        \uC218 \uC788\uB2E8\uB2E4."
+      _message: "슬라임 업그레이드 항목을 보여 줄게. 확인하고 다음 설명으로 넘어가 보자."
   - _id: 5
     _lines:
     - _speaker: "\uD559\uC790 \uC2AC\uB77C\uC784"

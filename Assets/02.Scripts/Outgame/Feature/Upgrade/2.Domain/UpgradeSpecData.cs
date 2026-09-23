@@ -20,6 +20,9 @@ public class UpgradeSpecData
     public double CostMultiplier;
     public int CostTierSize;
     public double CostTierMultiplier = 1;
+    public int LateCostStartLevel;
+    public double LateBaseCost;
+    public double LateCostMultiplier = 1;
     public double PointMultiplier;
     public EPointFormula PointFormula;
     public int SystemIconIndex = -1;
