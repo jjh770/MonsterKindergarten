@@ -21,6 +21,8 @@ public enum DialogueId
     SkyFinal = 14,
     Gacha = 15,
     GachaResult = 16,
+    CollectionAutoMerge = 17,
+    CollectionTicketCollect = 18,
 }
 
 [Serializable]
@@ -67,6 +69,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _autoSpawnToggleMessage;
     [SerializeField] private string _gachaMakeRoomMessage;
     [SerializeField] private string _gachaButtonMessage;
+    [SerializeField] private string _autoMergeButtonMessage;
     [SerializeField] private string _displayRoomButtonMessage;
     [SerializeField] private string _displayRoomSendButtonMessage;
     [SerializeField] private string _displayRoomSelectSlimeMessage;
@@ -95,6 +98,7 @@ public sealed class TutorialContent : ScriptableObject
     public string AutoSpawnToggleMessage => _autoSpawnToggleMessage;
     public string GachaMakeRoomMessage => _gachaMakeRoomMessage;
     public string GachaButtonMessage => _gachaButtonMessage;
+    public string AutoMergeButtonMessage => _autoMergeButtonMessage;
     public string DisplayRoomButtonMessage => _displayRoomButtonMessage;
     public string DisplayRoomSendButtonMessage => _displayRoomSendButtonMessage;
     public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;

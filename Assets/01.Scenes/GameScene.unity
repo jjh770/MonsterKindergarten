@@ -12375,6 +12375,24 @@ MonoBehaviour:
   _unlockPopupUI: {fileID: 1432576204}
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
+--- !u!114 &997100005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215316397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bef06340c173ac42ac181c98a379b28, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CollectionMilestoneGuideSequence
+  _autoMergeButton: {fileID: 558640589}
+  _ticketCollectButton: {fileID: 975735617}
+  _panelSwitcher: {fileID: 998300001}
+  _gachaResultDirector: {fileID: 2101000003}
+  _unlockPopupUI: {fileID: 1432576204}
+  _clicker: {fileID: 115063078}
 --- !u!1 &998200101
 GameObject:
   m_ObjectHideFlags: 0
@@ -15564,6 +15582,7 @@ GameObject:
   - component: {fileID: 997100002}
   - component: {fileID: 997100003}
   - component: {fileID: 997100004}
+  - component: {fileID: 997100005}
   m_Layer: 0
   m_Name: TutorialManager
   m_TagString: Untagged

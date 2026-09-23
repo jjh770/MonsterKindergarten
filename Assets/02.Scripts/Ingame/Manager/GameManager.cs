@@ -232,6 +232,19 @@ public class GameManager : MonoBehaviour
             order: (int)UnlockGrades.Gacha,
             completeByDefault: false,
             completeStoredIncomplete: false);
+        // 도감 마일스톤 안내도 이번에 추가된 기능이라 이미 10종·12종을 넘긴
+        // 플레이어에게 한 번은 보여 준다. 순서는 도감 수를 그대로 쓴다. 앞 순서인
+        // 해금 등급과 같은 축이고, 도감 10종은 최고 Lv.10을 넘긴 뒤에만 닿는다.
+        TutorialProgress.Register(
+            TutorialIds.CollectionAutoMerge,
+            order: NormalCollectionRules.AutoMergeCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.CollectionTicketCollect,
+            order: NormalCollectionRules.AutoTicketCollectCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
 

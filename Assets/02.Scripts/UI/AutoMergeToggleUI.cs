@@ -20,8 +20,9 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
     private bool _wasReady;
 
     public RectTransform ButtonTarget => _view != null ? _view.ButtonTarget : null;
-    // 합성이 실제로 일어났을 때만 알린다. 튜토리얼과 안내가 쓴다.
-    public event Action Merged;
+    // 누를 때마다 결과와 함께 알린다. 도감 10종 안내가 눌렀다는 사실만 보고
+    // 끝내야 하므로, 합성에 실패한 누름도 빠뜨리지 않는다.
+    public event Action<AutoMergeManager.EMergeFailure> Pressed;
 
     private void Awake()
     {
@@ -88,11 +89,7 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
         if (manager == null) return;
 
         AutoMergeManager.EMergeFailure failure = manager.TryMerge();
-        if (failure == AutoMergeManager.EMergeFailure.None)
-        {
-            Merged?.Invoke();
-            return;
-        }
+        Pressed?.Invoke(failure);
 
         // 쿨타임과 잠긴 상황은 게이지와 버튼 상태가 이미 보여 주므로 문구까지 띄우지
         // 않는다. 누를 수 있는데 아무 일도 없었을 때만 이유를 알려 준다.

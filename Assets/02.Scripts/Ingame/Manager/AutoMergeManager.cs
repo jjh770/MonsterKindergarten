@@ -123,7 +123,10 @@ public sealed class AutoMergeManager : MonoBehaviour
     {
         SlimeManager slimeManager = SlimeManager.Instance;
         return GameplayGate.IsMainStageReady &&
-               !TutorialManager.IsRunning &&
+               // 도감 10종 안내는 이 버튼을 직접 눌러 보게 한다. 다른 튜토리얼은
+               // 여전히 막는다.
+               (!TutorialManager.IsRunning ||
+                TutorialManager.IsActive(TutorialIds.CollectionAutoMerge)) &&
                slimeManager != null &&
                slimeManager.IsAutoMergeUnlocked &&
                (_displayRoomUI == null || !_displayRoomUI.IsSendMode) &&

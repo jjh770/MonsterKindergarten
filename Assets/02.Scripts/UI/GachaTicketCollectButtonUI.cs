@@ -8,6 +8,10 @@ public sealed class GachaTicketCollectButtonUI : MonoBehaviour
     [SerializeField] private GachaTicketField _ticketField;
     [SerializeField] private Button _button;
 
+    public RectTransform ButtonTarget => _button != null
+        ? _button.transform as RectTransform
+        : null;
+
     private void Awake()
     {
         if (_ticketField == null || _button == null)
