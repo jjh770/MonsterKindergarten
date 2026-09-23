@@ -7,6 +7,16 @@ using UnityEngine.UI;
 // 배경 테마와 게임플레이 공간 전환 연출을 담당한다.
 public sealed class GameplayTransitionPlayer : MonoBehaviour
 {
+    [Serializable]
+    private sealed class ThemeAudioBinding
+    {
+        [SerializeField] private EBackgroundTheme _theme;
+        [SerializeField] private AudioClip _bgm;
+
+        public EBackgroundTheme Theme => _theme;
+        public AudioClip Bgm => _bgm;
+    }
+
     [Header("Scene References")]
     [SerializeField] private Camera _camera;
     [FormerlySerializedAs("_stageUI")]
@@ -14,15 +24,19 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     // 전환 중 화면을 덮는 판. 이 연출의 소유물이라 여기서 직접 다룬다.
     [SerializeField] private Image _transitionOverlay;
 
-    [Tooltip("배경 테마를 세로로 밀어 바꾸는 쪽입니다. 비우면 화면을 덮는 방식으로 바뀝니다.")]
+    [Tooltip("배경을 교차시켜 바꾸는 쪽입니다. 비우면 화면을 덮는 방식으로 바뀝니다.")]
     [SerializeField] private BackgroundMove _backgroundMove;
 
-    [Tooltip("배경이 한 화면만큼 밀려 바뀌는 데 걸리는 시간입니다.")]
-    [SerializeField, Min(0.1f)] private float _themeSlideDuration = 0.8f;
+    [Tooltip("두 배경이 부드럽게 교차되는 데 걸리는 시간입니다.")]
+    [FormerlySerializedAs("_themeSlideDuration")]
+    [SerializeField, Min(0.1f)] private float _themeDissolveDuration = 0.8f;
 
     [Header("Background Audio")]
     [SerializeField] private AudioClip _groundBgm;
     [SerializeField] private AudioClip _skyBgm;
+    [Tooltip("Ground와 Sky 이외에 추가할 테마의 BGM을 연결합니다.")]
+    [SerializeField] private ThemeAudioBinding[] _additionalThemeBgms =
+        Array.Empty<ThemeAudioBinding>();
 
     [Header("Camera Transition")]
     [SerializeField, Min(0.1f)] private float _cameraTransitionDuration = 1.2f;
@@ -213,20 +227,20 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         IsTransitioning = true;
         _backgroundThemeUI.SetButtonInteractable(false);
 
-        // 배경만 세로로 민다. 화면을 덮지 않으므로 슬라임이 계속 보이고, 어딘가로
-        // 올라가는 것이 아니라 배경이 갈리는 것으로 읽힌다.
+        // 배경만 부드럽게 교차시킨다. 화면을 덮지 않으므로 슬라임은 계속 보이고,
+        // 장소 이동이 아니라 환경이 바뀌는 것으로 읽힌다.
         if (_backgroundMove != null &&
-            _backgroundMove.TryPlayThemeSlide(
+            _backgroundMove.TryPlayThemeDissolve(
                 targetTheme,
-                _themeSlideDuration,
-                () => EndBackgroundThemeSlide(onCompleted)))
+                _themeDissolveDuration,
+                () => EndBackgroundThemeDissolve(onCompleted)))
         {
             AudioManager.Instance?.CrossFadeBGM(
                 GetThemeBgm(targetTheme),
-                _themeSlideDuration);
+                _themeDissolveDuration);
 
-            // 상태와 BGM은 미는 동안 함께 간다. 가려지는 순간이 없으므로 중간까지
-            // 기다릴 이유가 없다.
+            // 상태와 BGM은 디졸브와 함께 간다. 가려지는 순간이 없으므로 중간까지
+            // 기다리지 않는다.
             onThemeSwitched?.Invoke();
             ApplyEnvironment(targetTheme, crossFadeDuration: -1f);
             return;
@@ -265,8 +279,8 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         });
     }
 
-    // 슬라이드에는 덮개가 없어 걷어 낼 것도 없다. 입력만 돌려준다.
-    private void EndBackgroundThemeSlide(Action onCompleted)
+    // 디졸브에는 덮개가 없어 걷어 낼 것도 없다. 입력만 돌려준다.
+    private void EndBackgroundThemeDissolve(Action onCompleted)
     {
         IsTransitioning = false;
         _backgroundThemeUI.SetButtonInteractable(true);
@@ -413,6 +427,20 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
 
     private AudioClip GetThemeBgm(EBackgroundTheme theme)
     {
-        return theme == EBackgroundTheme.Ground ? _groundBgm : _skyBgm;
+        if (theme == EBackgroundTheme.Ground) return _groundBgm;
+        if (theme == EBackgroundTheme.Sky) return _skyBgm;
+
+        if (_additionalThemeBgms != null)
+        {
+            foreach (ThemeAudioBinding binding in _additionalThemeBgms)
+            {
+                if (binding != null && binding.Theme == theme)
+                {
+                    return binding.Bgm;
+                }
+            }
+        }
+
+        return null;
     }
 }

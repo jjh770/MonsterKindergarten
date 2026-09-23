@@ -1,16 +1,54 @@
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public sealed class BackgroundThemeUI : MonoBehaviour
 {
+    [Serializable]
+    private sealed class ThemeButtonBinding
+    {
+        [SerializeField] private EBackgroundTheme _theme;
+        [SerializeField] private Button _button;
+
+        public EBackgroundTheme Theme => _theme;
+        public Button Button => _button;
+    }
+
+    private sealed class ThemeButtonRuntime
+    {
+        public EBackgroundTheme Theme { get; }
+        public Button Button { get; }
+        public Graphic[] Graphics { get; }
+        public float[] Alphas { get; }
+        public UnityAction ClickListener { get; }
+
+        public ThemeButtonRuntime(
+            EBackgroundTheme theme,
+            Button button,
+            Graphic[] graphics,
+            float[] alphas,
+            UnityAction clickListener)
+        {
+            Theme = theme;
+            Button = button;
+            Graphics = graphics;
+            Alphas = alphas;
+            ClickListener = clickListener;
+        }
+    }
+
     [FormerlySerializedAs("_stageButton")]
     [SerializeField] private Button _backgroundButton;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private Button _groundThemeButton;
     [SerializeField] private Button _skyThemeButton;
+    [Tooltip("Ground와 Sky 이외에 추가할 테마의 선택 버튼을 연결합니다.")]
+    [SerializeField] private ThemeButtonBinding[] _additionalThemeButtons =
+        Array.Empty<ThemeButtonBinding>();
 
     [Tooltip("지금 쓰고 있는 배경 버튼을 얼마나 흐리게 할지입니다.")]
     [SerializeField, Range(0.1f, 1f)] private float _currentThemeAlpha = 0.45f;
@@ -20,10 +58,7 @@ public sealed class BackgroundThemeUI : MonoBehaviour
 
     // 그려 둔 투명도를 그대로 두고 배율만 곱한다. 1로 덮어쓰면 반투명하게 디자인한
     // 그래픽이 선택될 때마다 불투명해진다.
-    private Graphic[] _groundThemeGraphics;
-    private Graphic[] _skyThemeGraphics;
-    private float[] _groundThemeAlphas;
-    private float[] _skyThemeAlphas;
+    private readonly List<ThemeButtonRuntime> _themeButtons = new();
 
     // 스포트라이트가 버튼을 가리킬 때 필요하다.
     public RectTransform ButtonTarget => _backgroundButton != null
@@ -45,18 +80,18 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         }
 
         _backgroundButton.onClick.AddListener(OnBackgroundButtonClicked);
-        _groundThemeButton.onClick.AddListener(OnGroundThemeButtonClicked);
-        _skyThemeButton.onClick.AddListener(OnSkyThemeButtonClicked);
         _backgroundButton.gameObject.SetActive(false);
 
-        CacheThemeGraphics(
-            _groundThemeButton,
-            out _groundThemeGraphics,
-            out _groundThemeAlphas);
-        CacheThemeGraphics(
-            _skyThemeButton,
-            out _skyThemeGraphics,
-            out _skyThemeAlphas);
+        RegisterThemeButton(EBackgroundTheme.Ground, _groundThemeButton);
+        RegisterThemeButton(EBackgroundTheme.Sky, _skyThemeButton);
+        if (_additionalThemeButtons != null)
+        {
+            foreach (ThemeButtonBinding binding in _additionalThemeButtons)
+            {
+                if (binding == null) continue;
+                RegisterThemeButton(binding.Theme, binding.Button);
+            }
+        }
     }
 
     private void OnDestroy()
@@ -67,15 +102,15 @@ public sealed class BackgroundThemeUI : MonoBehaviour
             _backgroundButton.transform.DOKill();
         }
 
-        if (_groundThemeButton != null)
+        foreach (ThemeButtonRuntime runtime in _themeButtons)
         {
-            _groundThemeButton.onClick.RemoveListener(OnGroundThemeButtonClicked);
+            if (runtime.Button != null)
+            {
+                runtime.Button.onClick.RemoveListener(runtime.ClickListener);
+            }
         }
 
-        if (_skyThemeButton != null)
-        {
-            _skyThemeButton.onClick.RemoveListener(OnSkyThemeButtonClicked);
-        }
+        _themeButtons.Clear();
     }
 
     public void SetButtonVisible(bool isVisible)
@@ -100,8 +135,14 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         if (_backgroundButton == null) return;
 
         _backgroundButton.interactable = isInteractable;
-        _groundThemeButton.interactable = isInteractable;
-        _skyThemeButton.interactable = isInteractable;
+        foreach (ThemeButtonRuntime runtime in _themeButtons)
+        {
+            if (runtime.Button != null)
+            {
+                runtime.Button.interactable = isInteractable;
+            }
+        }
+
         if (!isInteractable)
         {
             _panelSwitcher.TryHideBackgroundThemePanel(animated: false);
@@ -113,15 +154,40 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     // GameplaySpaceManager가 막으므로 여기서는 보이기만 맡는다.
     public void SetSelectedTheme(EBackgroundTheme theme)
     {
-        bool isGround = theme == EBackgroundTheme.Ground;
-        ApplyThemeAlpha(
-            _groundThemeGraphics,
-            _groundThemeAlphas,
-            isGround ? _currentThemeAlpha : 1f);
-        ApplyThemeAlpha(
-            _skyThemeGraphics,
-            _skyThemeAlphas,
-            isGround ? 1f : _currentThemeAlpha);
+        foreach (ThemeButtonRuntime runtime in _themeButtons)
+        {
+            ApplyThemeAlpha(
+                runtime.Graphics,
+                runtime.Alphas,
+                runtime.Theme == theme ? _currentThemeAlpha : 1f);
+        }
+    }
+
+    private void RegisterThemeButton(EBackgroundTheme theme, Button button)
+    {
+        if (!BackgroundThemeRules.IsValid(theme) || button == null)
+        {
+            Debug.LogError($"배경 테마 버튼 연결이 올바르지 않습니다. : {theme}", this);
+            return;
+        }
+
+        foreach (ThemeButtonRuntime registered in _themeButtons)
+        {
+            if (registered.Theme != theme) continue;
+
+            Debug.LogError($"배경 테마 버튼이 중복 연결되어 있습니다. : {theme}", this);
+            return;
+        }
+
+        CacheThemeGraphics(button, out Graphic[] graphics, out float[] alphas);
+        UnityAction clickListener = () => SelectTheme(theme);
+        button.onClick.AddListener(clickListener);
+        _themeButtons.Add(new ThemeButtonRuntime(
+            theme,
+            button,
+            graphics,
+            alphas,
+            clickListener));
     }
 
     private static void CacheThemeGraphics(
@@ -175,16 +241,6 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     private void OnBackgroundButtonClicked()
     {
         ButtonClicked?.Invoke();
-    }
-
-    private void OnGroundThemeButtonClicked()
-    {
-        SelectTheme(EBackgroundTheme.Ground);
-    }
-
-    private void OnSkyThemeButtonClicked()
-    {
-        SelectTheme(EBackgroundTheme.Sky);
     }
 
     private void SelectTheme(EBackgroundTheme theme)

@@ -5,8 +5,24 @@ using UnityEngine.Serialization;
 
 public class BackgroundMove : MonoBehaviour
 {
+    [Serializable]
+    private sealed class ThemeBinding
+    {
+        [SerializeField] private EBackgroundTheme _theme;
+        [SerializeField] private Sprite[] _backgrounds;
+        [SerializeField] private GameObject _root;
+        [SerializeField] private SpriteRenderer[] _tiles;
+
+        public EBackgroundTheme Theme => _theme;
+        public Sprite[] Backgrounds => _backgrounds;
+        public GameObject Root => _root;
+        public SpriteRenderer[] Tiles => _tiles;
+    }
+
     [SerializeField] private Sprite[] _groundBackgrounds;
     [SerializeField] private Sprite[] _skyBackgrounds;
+    [Tooltip("Ground와 Sky 이외에 추가할 테마의 배경, 루트, 타일을 연결합니다.")]
+    [SerializeField] private ThemeBinding[] _additionalThemes = Array.Empty<ThemeBinding>();
     [SerializeField] private Sprite[] _displayRoomBackgrounds;
     [FormerlySerializedAs("_groundStageRoot")]
     [SerializeField] private GameObject _groundThemeRoot;
@@ -31,10 +47,13 @@ public class BackgroundMove : MonoBehaviour
     private float _cameraCenterY;
     private float _cameraHeight;
 
-    // 배경 테마를 세로로 밀어 바꾸는 연출. 미는 동안에는 두 배경이 함께 켜져 있다.
-    private Tween _slideTween;
-    private Vector3 _groundRootBasePosition;
-    private Vector3 _skyRootBasePosition;
+    // 두 테마 루트 전체를 함께 흐리게 바꾼다. 타일만 페이드하면 루트 아래의
+    // 장식 스프라이트가 순간적으로 나타나므로 모든 SpriteRenderer를 잡아 둔다.
+    private Sequence _themeTransitionSequence;
+    private SpriteRenderer[] _outgoingThemeRenderers;
+    private SpriteRenderer[] _incomingThemeRenderers;
+    private Color[] _outgoingThemeColors;
+    private Color[] _incomingThemeColors;
 
     // 한 배경을 깔기 위해 필요한 값 묶음. 들어오는 배경을 미리 깔아 두었다가
     // 연출이 끝난 뒤에 현재 값으로 넘기려고 따로 담는다.
@@ -77,7 +96,8 @@ public class BackgroundMove : MonoBehaviour
             _displayRoomRoot == null ||
             !HasTwoTiles(_groundTiles) ||
             !HasTwoTiles(_skyTiles) ||
-            !HasTwoTiles(_displayRoomTiles))
+            !HasTwoTiles(_displayRoomTiles) ||
+            !AreAdditionalThemesValid())
         {
             Debug.LogError("배경 테마 참조가 비어 있습니다.", this);
             enabled = false;
@@ -95,9 +115,6 @@ public class BackgroundMove : MonoBehaviour
             ? mainCamera.orthographicSize * 2f
             : 0f;
 
-        _groundRootBasePosition = _groundThemeRoot.transform.localPosition;
-        _skyRootBasePosition = _skyThemeRoot.transform.localPosition;
-
         _spaceManager = GameplaySpaceManager.Instance;
         if (_spaceManager != null)
         {
@@ -112,9 +129,7 @@ public class BackgroundMove : MonoBehaviour
 
     private void OnDestroy()
     {
-        _slideTween?.Kill();
-        _slideTween = null;
-
+        CancelThemeTransition();
         if (_spaceManager != null)
         {
             _spaceManager.BackgroundThemeChanged -= ApplyTheme;
@@ -140,27 +155,35 @@ public class BackgroundMove : MonoBehaviour
         }
     }
 
-    // 배경 테마를 세로로 밀어 바꾼다. 하늘은 위에서 내려오고 땅은 아래에서 올라온다.
-    // 슬라임은 배경 루트 밖에 있어 제자리에 그대로 남으므로, 화면이 올라가는 것이
-    // 아니라 배경만 갈리는 것으로 읽힌다.
-    //
-    // 장식장을 보는 중이거나 카메라 높이를 못 구한 상태면 연출할 자리가 없다.
-    // 그때는 false를 돌려주고 호출부가 화면을 덮는 기존 방식으로 처리한다.
-    public bool TryPlayThemeSlide(
+    // 두 배경을 같은 자리에서 부드럽게 교차시킨다. 슬라임은 배경 루트 밖에 있어
+    // 그대로 남으므로 장소 이동이 아니라 환경만 바뀌는 것으로 읽힌다.
+    // 장식장을 보는 중이거나 유효한 지속 시간이 없으면 호출부의 화면 페이드로 넘긴다.
+    public bool TryPlayThemeDissolve(
         EBackgroundTheme targetTheme,
         float duration,
         Action onCompleted)
     {
-        if (!enabled || _slideTween != null) return false;
+        if (!enabled || _themeTransitionSequence != null) return false;
         if (_currentSpace != EGameplaySpace.MainField) return false;
         if (targetTheme == _currentTheme) return false;
-        if (_cameraHeight <= 0f || duration <= 0f) return false;
+        if (duration <= 0f) return false;
 
-        SpriteRenderer[] incomingTiles = GetThemeTiles(targetTheme);
-        GameObject incomingRoot = GetThemeRoot(targetTheme);
-        GameObject outgoingRoot = GetThemeRoot(_currentTheme);
+        if (!TryGetThemeBinding(
+                targetTheme,
+                out Sprite[] incomingBackgrounds,
+                out SpriteRenderer[] incomingTiles,
+                out GameObject incomingRoot) ||
+            !TryGetThemeBinding(
+                _currentTheme,
+                out _,
+                out _,
+                out GameObject outgoingRoot))
+        {
+            return false;
+        }
+
         if (!TryBuildLayout(
-                GetThemeBackgrounds(targetTheme),
+                incomingBackgrounds,
                 incomingTiles,
                 out TileLayout layout))
         {
@@ -170,30 +193,40 @@ public class BackgroundMove : MonoBehaviour
         ApplyLayout(incomingTiles, layout);
         incomingRoot.SetActive(true);
 
-        float direction = targetTheme == EBackgroundTheme.Sky ? 1f : -1f;
-        float distance = _cameraHeight;
-        SetRootOffset(outgoingRoot, 0f);
-        SetRootOffset(incomingRoot, direction * distance);
+        _outgoingThemeRenderers =
+            outgoingRoot.GetComponentsInChildren<SpriteRenderer>(true);
+        _incomingThemeRenderers =
+            incomingRoot.GetComponentsInChildren<SpriteRenderer>(true);
+        _outgoingThemeColors = CaptureColors(_outgoingThemeRenderers);
+        _incomingThemeColors = CaptureColors(_incomingThemeRenderers);
+        ApplyAlpha(_outgoingThemeRenderers, _outgoingThemeColors, 1f);
+        ApplyAlpha(_incomingThemeRenderers, _incomingThemeColors, 0f);
 
-        // 미는 동안 들어오는 배경은 흐르지 않는다. 한 바퀴가 분 단위라 이 짧은
-        // 시간에 멈춰 있어도 눈에 띄지 않는다.
-        _slideTween = DOVirtual.Float(0f, 1f, duration, progress =>
+        // 들어오는 배경은 짧은 전환 동안 멈춘다. 평소 한 바퀴가 분 단위라 눈에 띄지
+        // 않고, 두 타일의 위상이 어긋나 틈이 생기는 위험도 피할 수 있다.
+        _themeTransitionSequence = DOTween.Sequence();
+        _themeTransitionSequence.Append(
+            DOVirtual.Float(0f, 1f, duration, progress =>
             {
-                SetRootOffset(incomingRoot, direction * distance * (1f - progress));
-                SetRootOffset(outgoingRoot, -direction * distance * progress);
-            })
-            .SetEase(Ease.InOutQuad)
-            .OnComplete(() =>
-            {
-                _slideTween = null;
-                SetRootOffset(incomingRoot, 0f);
-                SetRootOffset(outgoingRoot, 0f);
-                outgoingRoot.SetActive(false);
-                _currentTheme = targetTheme;
-                _activeTiles = incomingTiles;
-                CommitLayout(layout);
-                onCompleted?.Invoke();
-            });
+                ApplyAlpha(
+                    _outgoingThemeRenderers,
+                    _outgoingThemeColors,
+                    1f - progress);
+                ApplyAlpha(
+                    _incomingThemeRenderers,
+                    _incomingThemeColors,
+                    progress);
+            }).SetEase(Ease.InOutSine));
+        _themeTransitionSequence.OnComplete(() =>
+        {
+            RestoreThemeRendererColors();
+            _themeTransitionSequence = null;
+            outgoingRoot.SetActive(false);
+            _currentTheme = targetTheme;
+            _activeTiles = incomingTiles;
+            CommitLayout(layout);
+            onCompleted?.Invoke();
+        });
         return true;
     }
 
@@ -201,8 +234,8 @@ public class BackgroundMove : MonoBehaviour
     {
         _currentTheme = theme;
 
-        // 슬라이드가 이미 이 배경을 깔아 두고 미는 중이다. 여기서 다시 깔면 끊긴다.
-        if (_slideTween != null) return;
+        // 디졸브가 이미 이 배경을 깔아 두었다. 여기서 다시 깔면 전환이 끊긴다.
+        if (_themeTransitionSequence != null) return;
 
         ApplyBackground();
     }
@@ -217,21 +250,29 @@ public class BackgroundMove : MonoBehaviour
 
     private void ApplyBackground()
     {
-        CancelSlide();
+        CancelThemeTransition();
 
-        _groundThemeRoot.SetActive(false);
-        _skyThemeRoot.SetActive(false);
+        SetAllThemeRootsActive(false);
         _displayRoomRoot.SetActive(false);
 
-        Sprite[] backgrounds = _currentSpace == EGameplaySpace.DisplayRoom
-            ? _displayRoomBackgrounds
-            : GetThemeBackgrounds(_currentTheme);
-        _activeTiles = _currentSpace == EGameplaySpace.DisplayRoom
-            ? _displayRoomTiles
-            : GetThemeTiles(_currentTheme);
-        GameObject activeRoot = _currentSpace == EGameplaySpace.DisplayRoom
-            ? _displayRoomRoot
-            : GetThemeRoot(_currentTheme);
+        Sprite[] backgrounds;
+        GameObject activeRoot;
+        if (_currentSpace == EGameplaySpace.DisplayRoom)
+        {
+            backgrounds = _displayRoomBackgrounds;
+            _activeTiles = _displayRoomTiles;
+            activeRoot = _displayRoomRoot;
+        }
+        else if (!TryGetThemeBinding(
+                     _currentTheme,
+                     out backgrounds,
+                     out _activeTiles,
+                     out activeRoot))
+        {
+            Debug.LogError($"연결되지 않은 배경 테마입니다. : {_currentTheme}", this);
+            return;
+        }
+
         activeRoot.SetActive(true);
 
         if (!TryBuildLayout(backgrounds, _activeTiles, out TileLayout layout)) return;
@@ -240,16 +281,15 @@ public class BackgroundMove : MonoBehaviour
         CommitLayout(layout);
     }
 
-    // 미는 도중에 장식장으로 넘어가는 것처럼 배경을 다시 깔아야 하는 일이 생기면
-    // 연출을 접고 두 루트를 제자리로 돌린다.
-    private void CancelSlide()
+    // 전환 중 장식장으로 넘어가는 것처럼 배경을 다시 깔아야 하면 투명도를 원복한 뒤
+    // ApplyBackground가 현재 공간의 루트만 다시 고른다.
+    private void CancelThemeTransition()
     {
-        if (_slideTween == null) return;
+        if (_themeTransitionSequence == null) return;
 
-        _slideTween.Kill();
-        _slideTween = null;
-        SetRootOffset(_groundThemeRoot, 0f);
-        SetRootOffset(_skyThemeRoot, 0f);
+        _themeTransitionSequence.Kill();
+        _themeTransitionSequence = null;
+        RestoreThemeRendererColors();
     }
 
     private bool TryBuildLayout(
@@ -317,31 +357,137 @@ public class BackgroundMove : MonoBehaviour
         _tileOriginX = layout.OriginX;
     }
 
-    private void SetRootOffset(GameObject root, float offsetY)
+    private static Color[] CaptureColors(SpriteRenderer[] renderers)
     {
-        if (root == null) return;
+        if (renderers == null) return Array.Empty<Color>();
 
-        Vector3 basePosition = root == _skyThemeRoot
-            ? _skyRootBasePosition
-            : _groundRootBasePosition;
-        root.transform.localPosition = basePosition + Vector3.up * offsetY;
+        var colors = new Color[renderers.Length];
+        for (int i = 0; i < renderers.Length; ++i)
+        {
+            colors[i] = renderers[i] != null
+                ? renderers[i].color
+                : Color.white;
+        }
+
+        return colors;
     }
 
-    private Sprite[] GetThemeBackgrounds(EBackgroundTheme theme)
+    private static void ApplyAlpha(
+        SpriteRenderer[] renderers,
+        Color[] baseColors,
+        float multiplier)
     {
-        return theme == EBackgroundTheme.Ground
-            ? _groundBackgrounds
-            : _skyBackgrounds;
+        if (renderers == null || baseColors == null) return;
+
+        int count = Mathf.Min(renderers.Length, baseColors.Length);
+        for (int i = 0; i < count; ++i)
+        {
+            SpriteRenderer renderer = renderers[i];
+            if (renderer == null) continue;
+
+            Color color = baseColors[i];
+            color.a *= multiplier;
+            renderer.color = color;
+        }
     }
 
-    private SpriteRenderer[] GetThemeTiles(EBackgroundTheme theme)
+    private void RestoreThemeRendererColors()
     {
-        return theme == EBackgroundTheme.Ground ? _groundTiles : _skyTiles;
+        ApplyAlpha(_outgoingThemeRenderers, _outgoingThemeColors, 1f);
+        ApplyAlpha(_incomingThemeRenderers, _incomingThemeColors, 1f);
+        _outgoingThemeRenderers = null;
+        _incomingThemeRenderers = null;
+        _outgoingThemeColors = null;
+        _incomingThemeColors = null;
     }
 
-    private GameObject GetThemeRoot(EBackgroundTheme theme)
+    private bool AreAdditionalThemesValid()
     {
-        return theme == EBackgroundTheme.Ground ? _groundThemeRoot : _skyThemeRoot;
+        if (_additionalThemes == null) return true;
+
+        for (int i = 0; i < _additionalThemes.Length; ++i)
+        {
+            ThemeBinding binding = _additionalThemes[i];
+            if (binding == null ||
+                !BackgroundThemeRules.IsValid(binding.Theme) ||
+                binding.Theme == EBackgroundTheme.Ground ||
+                binding.Theme == EBackgroundTheme.Sky ||
+                binding.Backgrounds == null ||
+                binding.Backgrounds.Length == 0 ||
+                binding.Root == null ||
+                !HasTwoTiles(binding.Tiles))
+            {
+                return false;
+            }
+
+            for (int previous = 0; previous < i; ++previous)
+            {
+                if (_additionalThemes[previous] != null &&
+                    _additionalThemes[previous].Theme == binding.Theme)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private bool TryGetThemeBinding(
+        EBackgroundTheme theme,
+        out Sprite[] backgrounds,
+        out SpriteRenderer[] tiles,
+        out GameObject root)
+    {
+        if (theme == EBackgroundTheme.Ground)
+        {
+            backgrounds = _groundBackgrounds;
+            tiles = _groundTiles;
+            root = _groundThemeRoot;
+            return true;
+        }
+
+        if (theme == EBackgroundTheme.Sky)
+        {
+            backgrounds = _skyBackgrounds;
+            tiles = _skyTiles;
+            root = _skyThemeRoot;
+            return true;
+        }
+
+        if (_additionalThemes != null)
+        {
+            foreach (ThemeBinding binding in _additionalThemes)
+            {
+                if (binding == null || binding.Theme != theme) continue;
+
+                backgrounds = binding.Backgrounds;
+                tiles = binding.Tiles;
+                root = binding.Root;
+                return true;
+            }
+        }
+
+        backgrounds = null;
+        tiles = null;
+        root = null;
+        return false;
+    }
+
+    private void SetAllThemeRootsActive(bool isActive)
+    {
+        _groundThemeRoot.SetActive(isActive);
+        _skyThemeRoot.SetActive(isActive);
+
+        if (_additionalThemes == null) return;
+
+        foreach (ThemeBinding binding in _additionalThemes)
+        {
+            if (binding?.Root != null)
+            {
+                binding.Root.SetActive(isActive);
+            }
+        }
     }
 
     private static bool HasTwoTiles(SpriteRenderer[] tiles)

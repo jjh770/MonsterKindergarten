@@ -126,8 +126,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsDisplayRoomUnlocked ||
-            (SlimeManager.Instance.IsSkyUnlocked &&
-             !SlimeManager.Instance.SkyIntroCompleted))
+            (SlimeManager.Instance.IsBackgroundThemeUnlocked &&
+             !SlimeManager.Instance.BackgroundUnlockCompleted))
         {
             return false;
         }
@@ -251,7 +251,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             return;
         }
 
-        _currentBackgroundTheme = SlimeManager.Instance.IsSkyUnlocked
+        _currentBackgroundTheme = SlimeManager.Instance.IsBackgroundThemeUnlocked
             ? SlimeManager.Instance.SelectedBackgroundTheme
             : EBackgroundTheme.Ground;
         _isInitialized = true;
@@ -269,8 +269,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         // 하늘 안내를 아직 못 본 계정만 여기서 인트로를 띄운다. 버튼 노출은
         // 규칙 하나가 정하므로 분기마다 따로 켜고 끄지 않는다.
         RefreshBackgroundButton();
-        if (SlimeManager.Instance.IsSkyUnlocked &&
-            !SlimeManager.Instance.SkyIntroCompleted)
+        if (SlimeManager.Instance.IsBackgroundThemeUnlocked &&
+            !SlimeManager.Instance.BackgroundUnlockCompleted)
         {
             SlimeController skyTarget = FindFirstSkySlime();
             if (skyTarget != null)
@@ -327,7 +327,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         }
 
         if (SlimeManager.Instance != null &&
-            !SlimeManager.Instance.SkyIntroCompleted)
+            !SlimeManager.Instance.BackgroundUnlockCompleted)
         {
             target.PreparePresentationTransfer();
             _backgroundThemeUnlockDirector.Prepare(target);
@@ -373,7 +373,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsSkyUnlocked)
+            !SlimeManager.Instance.IsBackgroundThemeUnlocked)
         {
             return;
         }
@@ -396,7 +396,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsSkyUnlocked ||
+            !SlimeManager.Instance.IsBackgroundThemeUnlocked ||
             !BackgroundThemeRules.IsValid(theme) ||
             // 지금 보고 있는 배경을 다시 고른 것이라 바꿀 것이 없다. 그냥 두면
             // 밀 자리가 없어 화면을 덮는 쪽으로 떨어져, 같은 버튼이 다른 연출을 낸다.
@@ -569,8 +569,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _isInitialized &&
             IsMainFieldActive &&
             SlimeManager.Instance != null &&
-            SlimeManager.Instance.IsSkyUnlocked &&
-            SlimeManager.Instance.SkyIntroCompleted);
+            SlimeManager.Instance.IsBackgroundThemeUnlocked &&
+            SlimeManager.Instance.BackgroundUnlockCompleted);
     }
 
     public void RefreshInteraction()

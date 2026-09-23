@@ -1,7 +1,8 @@
 public enum EBackgroundTheme
 {
-    Ground,
-    Sky,
+    // 저장 데이터에는 정수로 남으므로 기존 값은 바꾸지 않고 새 테마는 뒤에 추가한다.
+    Ground = 0,
+    Sky = 1,
 }
 public static class BackgroundThemeRules
 {
@@ -23,7 +24,6 @@ public static class BackgroundThemeRules
 
     public static bool IsValid(EBackgroundTheme theme)
     {
-        return theme == EBackgroundTheme.Ground ||
-               theme == EBackgroundTheme.Sky;
+        return System.Enum.IsDefined(typeof(EBackgroundTheme), theme);
     }
 }

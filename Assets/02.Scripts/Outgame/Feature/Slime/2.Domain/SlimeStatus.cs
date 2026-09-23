@@ -151,10 +151,10 @@ public class SlimeStatus
                 $"올바른 배경 테마가 아닙니다. : {selectedBackgroundTheme}");
         }
 
-        if (selectedBackgroundTheme == EBackgroundTheme.Sky &&
+        if (selectedBackgroundTheme != EBackgroundTheme.Ground &&
             !BackgroundThemeRules.IsUnlocked(HighestGrade))
         {
-            throw new InvalidOperationException("하늘 배경이 아직 해금되지 않았습니다.");
+            throw new InvalidOperationException("배경 테마가 아직 해금되지 않았습니다.");
         }
 
         SelectedBackgroundTheme = selectedBackgroundTheme;

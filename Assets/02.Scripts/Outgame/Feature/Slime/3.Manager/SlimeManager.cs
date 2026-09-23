@@ -30,8 +30,6 @@ public class SlimeManager : MonoBehaviour
     public bool IsBackgroundThemeUnlocked =>
         _status != null &&
         BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
-    public bool SkyIntroCompleted => _status.BackgroundUnlockCompleted;
-    public bool IsSkyUnlocked => IsBackgroundThemeUnlocked;
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);

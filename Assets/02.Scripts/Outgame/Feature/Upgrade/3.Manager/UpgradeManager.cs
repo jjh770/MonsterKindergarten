@@ -192,7 +192,7 @@ public class UpgradeManager : MonoBehaviour
         }
 
         return SlimeManager.Instance == null ||
-               !SlimeManager.Instance.IsSkyUnlocked;
+               !SlimeManager.Instance.IsBackgroundThemeUnlocked;
     }
 
     private void Save()
