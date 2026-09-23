@@ -20,6 +20,8 @@ public static class SaveSchema
     // v6: 자동 스폰 설정을 추가했다.
     // v7: 메인 엔딩 확인 여부와 스페셜 가챠 피버 실패 횟수를 추가했다.
     // v8: 완료한 튜토리얼 목록을 추가했다. 로컬 표시만으로는 재설치 뒤 다시 나왔다.
-    public const int SlimeCurrentVersion = 8;
+    // v9: 현재 스테이지를 선택한 배경 테마로, 하늘 진입 완료를 배경 해금 연출 완료로
+    // 전환하고 스테이지별 미수령 티켓을 한 수량으로 합쳤다.
+    public const int SlimeCurrentVersion = 9;
     public const int UpgradeCurrentVersion = 1;
 }

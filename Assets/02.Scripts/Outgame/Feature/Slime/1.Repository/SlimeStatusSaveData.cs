@@ -55,27 +55,31 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public List<SlimeInstanceSaveData> ActiveSlimes { get; set; } = new();
 
+    // v8 이하 배경 선택 승격 전용. 새 저장에서는 기본값으로만 남는다.
     [FirestoreProperty]
     public int CurrentStage { get; set; }
 
     [FirestoreProperty]
     public bool SkyIntroCompleted { get; set; }
 
-    // 아직 줍지 않은 가챠권 수. 스테이지별로 따로 센다. 티켓이 속한 스테이지는
-    // 드랍시킨 슬라임의 등급으로 드랍 시점에 정해져 그대로 고정되기 때문이다.
-    //
-    // 개수만 저장한다. 슬라임도 좌표를 저장하지 않고 복원할 때 다시 흩뿌리므로,
-    // 티켓만 좌표를 남길 이유가 없다. 여러 장을 낱개 오브젝트로 보여주는 것은
-    // 화면의 규칙이라 복원할 때 개수만큼 만들면 된다.
-    //
-    // 초기화를 두지 않는다. v4 이하 문서에는 이 필드가 없고 Firestore는 없는 필드를
-    // C# 기본값으로 남기는데, 여기서는 그 0이 정확히 맞는 값이라 결손과 구분할
-    // 필요가 없다. 같은 이유로 Default와 레거시 승격에도 적지 않는다.
+    // v8 이하 호환 필드는 위에 남기고, v9부터는 배경 선택과 해금 연출 완료를
+    // 스테이지 진행과 분리해 저장한다.
+    [FirestoreProperty]
+    public int SelectedBackgroundTheme { get; set; }
+
+    [FirestoreProperty]
+    public bool BackgroundUnlockCompleted { get; set; }
+
+    // v5~v8의 스테이지별 티켓 승격 전용. 새 저장에서는 둘 다 0이다.
     [FirestoreProperty]
     public int PendingGroundTickets { get; set; }
 
     [FirestoreProperty]
     public int PendingSkyTickets { get; set; }
+
+    // v9부터 모든 슬라임과 티켓이 한 필드에 있으므로 미수령 수량도 하나로 저장한다.
+    [FirestoreProperty]
+    public int PendingTickets { get; set; }
 
     // 플레이어가 자연 스폰을 껐는지. 켜짐이 기본값이라 일부러 뒤집어 담는다.
     //
@@ -146,8 +150,8 @@ public sealed class SlimeStatusSaveData : ISaveData
         SchemaVersion = SaveSchema.SlimeCurrentVersion,
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeInstanceSaveData>(),
-        CurrentStage = (int)EGameStage.Ground,
-        SkyIntroCompleted = false,
+        SelectedBackgroundTheme = (int)EBackgroundTheme.Ground,
+        BackgroundUnlockCompleted = false,
         NormalCollectionRegistered = CreateEmptyNormalCollection(),
         NormalFirstRegisteredAt = CreateEmptyStringStats(),
         NormalNaturalSpawnCounts = CreateEmptyLongStats(),
@@ -257,6 +261,14 @@ public sealed class SlimeStatusSaveData : ISaveData
 
 public static class SlimeStatusSaveMigration
 {
+    public static bool HasLegacyPendingTickets(SlimeStatusSaveData saveData)
+    {
+        return saveData != null &&
+               saveData.PendingTickets == 0 &&
+               (saveData.PendingGroundTickets != 0 ||
+                saveData.PendingSkyTickets != 0);
+    }
+
     // v0/v1의 { Grade, Count }를 Count 수만큼의 일반 MainStage 개체로 승격한다.
     public static SlimeStatusSaveData Upgrade(
         LegacySlimeStatusSaveData legacyData)
@@ -303,8 +315,9 @@ public static class SlimeStatusSaveMigration
             SchemaVersion = SaveSchema.SlimeCurrentVersion,
             HighestGrade = legacyData.HighestGrade,
             ActiveSlimes = activeSlimes,
-            CurrentStage = legacyData.CurrentStage,
-            SkyIntroCompleted = legacyData.SkyIntroCompleted,
+            SelectedBackgroundTheme = legacyData.CurrentStage,
+            BackgroundUnlockCompleted = legacyData.SkyIntroCompleted,
+            PendingTickets = 0,
             NormalCollectionRegistered =
                 SlimeStatusSaveData.CreateEmptyNormalCollection(),
             NormalFirstRegisteredAt = SlimeStatusSaveData.CreateEmptyStringStats(),
@@ -318,11 +331,32 @@ public static class SlimeStatusSaveMigration
     }
 
     public static SlimeStatusSaveData UpgradeInstanceData(
-        SlimeStatusSaveData saveData)
+        SlimeStatusSaveData saveData,
+        int sourceSchemaVersion)
     {
         if (saveData == null)
         {
             return SlimeStatusSaveData.Default;
+        }
+
+        if (sourceSchemaVersion < 9)
+        {
+            saveData.SelectedBackgroundTheme = saveData.CurrentStage;
+            saveData.BackgroundUnlockCompleted = saveData.SkyIntroCompleted;
+        }
+
+        // v9 개발 중간본이 스테이지별 티켓만 가진 채 저장됐을 가능성도 흡수한다.
+        // 최종 v9 저장은 두 레거시 필드를 항상 0으로 쓰므로 정상 데이터와 충돌하지 않는다.
+        if (sourceSchemaVersion < 9 ||
+            HasLegacyPendingTickets(saveData))
+        {
+            long combinedTickets = (long)saveData.PendingGroundTickets +
+                                   saveData.PendingSkyTickets;
+            saveData.PendingTickets = saveData.PendingGroundTickets < 0 ||
+                                      saveData.PendingSkyTickets < 0 ||
+                                      combinedTickets > int.MaxValue
+                ? -1
+                : (int)combinedTickets;
         }
 
         saveData.SchemaVersion = SaveSchema.SlimeCurrentVersion;

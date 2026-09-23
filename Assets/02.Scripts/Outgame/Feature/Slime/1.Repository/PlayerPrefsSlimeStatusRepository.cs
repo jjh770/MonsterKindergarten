@@ -89,10 +89,12 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
                 saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(
                     json,
                     LoadSettings);
-                if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+                if (schemaVersion < SaveSchema.SlimeCurrentVersion ||
+                    SlimeStatusSaveMigration.HasLegacyPendingTickets(saveData))
                 {
                     saveData = SlimeStatusSaveMigration.UpgradeInstanceData(
-                        saveData);
+                        saveData,
+                        schemaVersion);
                 }
             }
 

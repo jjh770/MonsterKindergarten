@@ -9,8 +9,6 @@ using UnityEngine.UI;
 // 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    private const string SkyMessage = "새 친구가 하늘로 올라갔어요!";
-    private const string GroundMessage = "새 친구가 땅으로 내려갔어요!";
     private const string PortalTapMessage = "포탈을 터치하세요";
 
     // 흰색은 UI Image에서 스프라이트 원본 RGB를 그대로 보여준다.
@@ -25,7 +23,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private GameObject _reelViewport;
     [SerializeField] private Image _resultImage;
-    [SerializeField] private ToastMessageUI _toast;
     [SerializeField] private Clicker _clicker;
 
     [Header("Portal")]
@@ -62,7 +59,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField, Min(0f)] private float _nameSlideDistance = 180f;
     [SerializeField, Min(0f)] private float _moveArcRadius = 160f;
     [SerializeField, Min(0f)] private float _moveSpinTurns = 1f;
-    [SerializeField, Min(0f)] private float _offScreenMargin = 300f;
 
     private RectTransform _resultRect;
     private RectTransform _resultNameRect;
@@ -76,7 +72,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void Awake()
     {
         if (_root == null || _canvasGroup == null || _resultImage == null ||
-            _toast == null || _portalRoot == null || _portalRings == null ||
+            _portalRoot == null || _portalRings == null ||
             _portalRings.Length == 0 || _portalCore == null ||
             _orbitSparks == null || _burstSparks == null ||
             _shockwave == null || _flashImage == null ||
@@ -126,32 +122,23 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         _isPlaying = true;
         CancellationToken token = this.GetCancellationTokenOnDestroy();
-        EGameStage resultStage = GameStageRules.GetStage(target.Grade);
-        bool isSameStage = StageManager.Instance != null &&
-                           StageManager.Instance.CurrentStage == resultStage;
-
-        target.SetStagePresentationActive(false);
+        target.SetLocationPresentationActive(false);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         bool isCancelled = await Present(
             target,
             rarity,
-            isSameStage,
-            resultStage,
             token);
         _clicker?.ReleaseMode(this);
         _isPlaying = false;
 
         if (isCancelled) return;
-        if (isSameStage) target.SetStagePresentationActive(true);
-        else _toast.Show(resultStage == EGameStage.Sky ? SkyMessage : GroundMessage);
+        target.SetLocationPresentationActive(true);
         onCompleted?.Invoke();
     }
 
     private async UniTask<bool> Present(
         SlimeController target,
         EGachaRarity rarity,
-        bool isSameStage,
-        EGameStage resultStage,
         CancellationToken token)
     {
         Vector2 center = new(Screen.width * 0.5f, Screen.height * 0.5f);
@@ -169,11 +156,9 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (await Reveal(resultColor, token)) return true;
         if (await Wait(_holdDuration, token)) return true;
 
-        Vector2 destination = isSameStage
-            ? GetFieldScreenPosition(target, center)
-            : GetOffScreenPosition(resultStage, center);
+        Vector2 destination = GetFieldScreenPosition(target, center);
         if (await MoveTo(destination, token)) return true;
-        if (isSameStage && await PlayArrivalEffect(destination, resultColor, token)) return true;
+        if (await PlayArrivalEffect(destination, resultColor, token)) return true;
         if (await Fade(1f, 0f, _fadeDuration, token)) return true;
 
         CloseOverlay();
@@ -544,12 +529,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         Camera camera = Camera.main;
         return camera != null ? (Vector2)camera.WorldToScreenPoint(target.transform.position) : fallback;
-    }
-
-    private Vector2 GetOffScreenPosition(EGameStage stage, Vector2 center)
-    {
-        float y = stage == EGameStage.Sky ? Screen.height + _offScreenMargin : -_offScreenMargin;
-        return new Vector2(center.x, y);
     }
 
     private async UniTask<bool> MoveTo(Vector2 destination, CancellationToken token)

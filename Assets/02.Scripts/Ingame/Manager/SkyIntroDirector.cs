@@ -66,7 +66,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
 
         _isStarted = true;
         InteractionEnableRequested?.Invoke(false);
-        _pendingTarget.PrepareStageTransfer();
+        _pendingTarget.PreparePresentationTransfer();
 
         _presentation?.Dispose();
         _presentation = new DialoguePresentation(
@@ -106,7 +106,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
             return;
         }
 
-        target.PrepareStageTransfer();
+        target.PreparePresentationTransfer();
         _chargeSequence?.Kill();
         _chargeSequence = DOTween.Sequence();
         _chargeSequence.Append(

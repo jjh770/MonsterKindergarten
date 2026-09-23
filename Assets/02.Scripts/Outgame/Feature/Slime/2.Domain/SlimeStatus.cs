@@ -10,12 +10,11 @@ public class SlimeStatus
     private readonly HashSet<ESlimeGrade> _registeredNormalCollection = new();
     public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
     public int NormalCollectionCount => _registeredNormalCollection.Count;
-    public EGameStage CurrentStage { get; private set; }
-    public bool SkyIntroCompleted { get; private set; }
+    public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
+    public bool BackgroundUnlockCompleted { get; private set; }
 
-    // 아직 줍지 않은 가챠권 수. 티켓의 스테이지는 드랍 시점에 정해져 고정된다.
-    public int PendingGroundTickets { get; private set; }
-    public int PendingSkyTickets { get; private set; }
+    // 아직 줍지 않은 가챠권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
+    public int PendingTickets { get; private set; }
 
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
     public bool IsAutoSpawnEnabled { get; private set; }
@@ -31,10 +30,9 @@ public class SlimeStatus
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
         IEnumerable<ESlimeGrade> registeredNormalCollection,
-        EGameStage currentStage,
-        bool skyIntroCompleted,
-        int pendingGroundTickets,
-        int pendingSkyTickets,
+        EBackgroundTheme selectedBackgroundTheme,
+        bool backgroundUnlockCompleted,
+        int pendingTickets,
         bool isAutoSpawnEnabled,
         bool mainEndingSeen,
         int specialGachaMissCount,
@@ -43,24 +41,24 @@ public class SlimeStatus
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
 
-        bool isSkyUnlocked = GameStageRules.IsSkyUnlocked(highestGrade);
-        CurrentStage = isSkyUnlocked && GameStageRules.IsValid(currentStage)
-            ? currentStage
-            : EGameStage.Ground;
-        SkyIntroCompleted = isSkyUnlocked && skyIntroCompleted;
+        bool isBackgroundUnlocked = BackgroundThemeRules.IsUnlocked(highestGrade);
+        SelectedBackgroundTheme = isBackgroundUnlocked &&
+                                  BackgroundThemeRules.IsValid(selectedBackgroundTheme)
+            ? selectedBackgroundTheme
+            : EBackgroundTheme.Ground;
+        BackgroundUnlockCompleted = isBackgroundUnlocked &&
+                                    backgroundUnlockCompleted;
 
         // 음수는 쓰는 쪽에서 나올 수 없는 값이다. 재화와 같은 성격의 개수라
         // 같은 규율로 다룬다. 여기서 던지면 SlimeManager가 다른 손상과 같은
         // 경로로 보낸다.
-        if (pendingGroundTickets < 0 || pendingSkyTickets < 0)
+        if (pendingTickets < 0)
         {
             throw new ArgumentException(
-                "미수령 가챠권 수가 올바르지 않습니다. : " +
-                $"{pendingGroundTickets}, {pendingSkyTickets}");
+                $"미수령 가챠권 수가 올바르지 않습니다. : {pendingTickets}");
         }
 
-        PendingGroundTickets = pendingGroundTickets;
-        PendingSkyTickets = pendingSkyTickets;
+        PendingTickets = pendingTickets;
         IsAutoSpawnEnabled = isAutoSpawnEnabled;
         MainEndingSeen = mainEndingSeen;
 
@@ -143,76 +141,41 @@ public class SlimeStatus
 
     }
 
-    public void UpdateStageProgress(
-        EGameStage currentStage,
-        bool skyIntroCompleted)
+    public void UpdateBackgroundProgress(
+        EBackgroundTheme selectedBackgroundTheme,
+        bool backgroundUnlockCompleted)
     {
-        if (!GameStageRules.IsValid(currentStage))
+        if (!BackgroundThemeRules.IsValid(selectedBackgroundTheme))
         {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {currentStage}");
+            throw new ArgumentException(
+                $"올바른 배경 테마가 아닙니다. : {selectedBackgroundTheme}");
         }
 
-        if (currentStage == EGameStage.Sky &&
-            !GameStageRules.IsSkyUnlocked(HighestGrade))
+        if (selectedBackgroundTheme == EBackgroundTheme.Sky &&
+            !BackgroundThemeRules.IsUnlocked(HighestGrade))
         {
-            throw new InvalidOperationException("하늘 스테이지가 아직 해금되지 않았습니다.");
+            throw new InvalidOperationException("하늘 배경이 아직 해금되지 않았습니다.");
         }
 
-        CurrentStage = currentStage;
-        SkyIntroCompleted = skyIntroCompleted &&
-                            GameStageRules.IsSkyUnlocked(HighestGrade);
+        SelectedBackgroundTheme = selectedBackgroundTheme;
+        BackgroundUnlockCompleted = backgroundUnlockCompleted &&
+                                    BackgroundThemeRules.IsUnlocked(HighestGrade);
     }
 
-    public int GetPendingTickets(EGameStage stage)
+    public void AddPendingTicket()
     {
-        return stage == EGameStage.Sky
-            ? PendingSkyTickets
-            : PendingGroundTickets;
-    }
-
-    // 티켓의 스테이지는 드랍 시점에 정하고 그대로 굳힌다. 떨어뜨린 슬라임이
-    // 나중에 합성되어 하늘로 올라가도 이미 떨어진 티켓은 따라가지 않는다.
-    //
-    // 하늘 해금 여부는 보지 않는다. 하늘 등급 슬라임이 필드에 있다는 것 자체가
-    // 이미 해금됐다는 뜻이고, 여기서 다시 막으면 정상적인 드랍이 사라진다.
-    public void AddPendingTicket(EGameStage stage)
-    {
-        if (!GameStageRules.IsValid(stage))
-        {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {stage}");
-        }
-
-        if (stage == EGameStage.Sky)
-        {
-            PendingSkyTickets++;
-        }
-        else
-        {
-            PendingGroundTickets++;
-        }
+        PendingTickets++;
     }
 
     // 한 장 줍는다. 남은 장수가 없으면 아무것도 하지 않고 false를 준다.
     //
     // 화면의 오브젝트 수와 저장된 장수는 어긋날 수 있다. 표시 상한을 넘은 몫은
     // 저장에만 남기 때문이다. 그래서 오브젝트가 아니라 저장이 판정 근거다.
-    public bool TryConsumePendingTicket(EGameStage stage)
+    public bool TryConsumePendingTicket()
     {
-        if (!GameStageRules.IsValid(stage))
-        {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {stage}");
-        }
+        if (PendingTickets <= 0) return false;
 
-        if (GetPendingTickets(stage) <= 0) return false;
-
-        if (stage == EGameStage.Sky)
-        {
-            PendingSkyTickets--;
-        }
-        else
-        {
-            PendingGroundTickets--;
-        }
+        PendingTickets--;
 
         return true;
     }

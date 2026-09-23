@@ -163,7 +163,7 @@ public class SpawnManager : MonoBehaviour
                 GetRandomSpawnPosition());
             if (target != null && instance.Location == ESlimeLocation.DisplayRoom)
             {
-                target.SetStagePresentationActive(false);
+                target.SetLocationPresentationActive(false);
             }
         }
     }

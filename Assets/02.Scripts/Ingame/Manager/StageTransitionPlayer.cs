@@ -28,12 +28,6 @@ public sealed class StageTransitionPlayer : MonoBehaviour
     [SerializeField, Min(0f)] private float _displayRoomFollowSpeed = 8f;
 
     [Header("Slime Transfer")]
-    [SerializeField] private SlimeTransferSettings _skyTransfer = new()
-    {
-        Distance = 6f,
-        Duration = 0.9f,
-        Ease = Ease.InQuad,
-    };
     [SerializeField] private SlimeTransferSettings _displayRoomTransfer = new()
     {
         Distance = 6f,
@@ -225,7 +219,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
         if (travellingSlime != null)
         {
-            travellingSlime.PrepareStageTransfer();
+            travellingSlime.PreparePresentationTransfer();
         }
 
         AudioManager.Instance?.CrossFadeBGM(
@@ -260,7 +254,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
             if (travellingSlime != null)
             {
-                travellingSlime.PrepareStageTransfer();
+                travellingSlime.PreparePresentationTransfer();
                 travellingSlime.transform.position = new Vector3(
                     slimeDestination.x,
                     slimeDestination.y - direction * _cameraTravelDistance,
@@ -345,38 +339,12 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         });
     }
 
-    // 하늘이 이미 열린 뒤의 일반 승급은 화면 전환 없이 슬라임만 올려 보낸다.
-    public void PlayRegularSkyTransfer(SlimeController target, EGameStage currentStage)
-    {
-        if (target == null) return;
-
-        target.PrepareStageTransfer();
-        Vector3 startPosition = target.transform.position;
-        Vector2 destination = SpawnManager.Instance != null
-            ? SpawnManager.Instance.GetRandomSpawnPosition()
-            : Vector2.zero;
-        target.transform.DOMoveY(
-                startPosition.y + _skyTransfer.Distance,
-                Mathf.Min(_skyTransfer.Duration, _cameraTransitionDuration))
-            .SetEase(_skyTransfer.Ease)
-            .OnComplete(() =>
-            {
-                if (target == null) return;
-
-                target.transform.position = new Vector3(
-                    destination.x,
-                    destination.y,
-                    startPosition.z);
-                target.SetStagePresentationActive(currentStage == EGameStage.Sky);
-            });
-    }
-
     // 장식장으로 보낼 때는 화면 전환 없이 슬라임만 옆으로 내보낸다.
     public Tween PlayDisplayRoomTransfer(SlimeController target, Action onComplete)
     {
         if (target == null) return null;
 
-        target.PrepareStageTransfer();
+        target.PreparePresentationTransfer();
 
         float direction = target.transform.position.x >= 0f ? 1f : -1f;
         return target.transform

@@ -23,11 +23,18 @@ public class SlimeManager : MonoBehaviour
         _status != null ? _status.ActiveSlimes : Array.Empty<SlimeInstance>();
     // 호출부가 SlimeStatus 내부 구조를 거치지 않도록 최고 등급은 매니저가 직접 노출한다.
     public ESlimeGrade HighestGrade => _status.HighestGrade;
-    public EGameStage CurrentStage => _status.CurrentStage;
-    public bool SkyIntroCompleted => _status.SkyIntroCompleted;
-    public bool IsSkyUnlocked =>
+    public EBackgroundTheme SelectedBackgroundTheme =>
+        _status.SelectedBackgroundTheme;
+    public bool BackgroundUnlockCompleted =>
+        _status.BackgroundUnlockCompleted;
+    public bool IsBackgroundThemeUnlocked =>
         _status != null &&
-        GameStageRules.IsSkyUnlocked(_status.HighestGrade);
+        BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
+    // 기존 런타임 스테이지 흐름은 다음 리팩터링 단위에서 제거한다.
+    public EGameStage CurrentStage =>
+        (EGameStage)_status.SelectedBackgroundTheme;
+    public bool SkyIntroCompleted => _status.BackgroundUnlockCompleted;
+    public bool IsSkyUnlocked => IsBackgroundThemeUnlocked;
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
@@ -241,19 +248,36 @@ public class SlimeManager : MonoBehaviour
         EGameStage currentStage,
         bool skyIntroCompleted)
     {
-        if (_status.CurrentStage == currentStage &&
-            _status.SkyIntroCompleted == skyIntroCompleted)
+        EBackgroundTheme selectedTheme = (EBackgroundTheme)currentStage;
+        if (_status.SelectedBackgroundTheme == selectedTheme &&
+            _status.BackgroundUnlockCompleted == skyIntroCompleted)
         {
             return;
         }
 
-        _status.UpdateStageProgress(currentStage, skyIntroCompleted);
+        _status.UpdateBackgroundProgress(selectedTheme, skyIntroCompleted);
         Save();
     }
 
-    public int GetPendingTicketCount(EGameStage stage)
+    public void UpdateBackgroundProgress(
+        EBackgroundTheme selectedBackgroundTheme,
+        bool backgroundUnlockCompleted)
     {
-        return _status?.GetPendingTickets(stage) ?? 0;
+        if (_status.SelectedBackgroundTheme == selectedBackgroundTheme &&
+            _status.BackgroundUnlockCompleted == backgroundUnlockCompleted)
+        {
+            return;
+        }
+
+        _status.UpdateBackgroundProgress(
+            selectedBackgroundTheme,
+            backgroundUnlockCompleted);
+        Save();
+    }
+
+    public int GetPendingTicketCount()
+    {
+        return _status?.PendingTickets ?? 0;
     }
 
     public void SetAutoSpawnEnabled(bool isEnabled)
@@ -265,16 +289,16 @@ public class SlimeManager : MonoBehaviour
     }
 
     // 가챠권이 떨어졌을 때 호출한다.
-    public void AddPendingTicket(EGameStage stage)
+    public void AddPendingTicket()
     {
-        _status.AddPendingTicket(stage);
+        _status.AddPendingTicket();
         Save();
     }
 
     // 가챠권을 한 장 주웠을 때 호출한다. 저장에 남은 장수가 없으면 false다.
-    public bool TryConsumePendingTicket(EGameStage stage)
+    public bool TryConsumePendingTicket()
     {
-        if (!_status.TryConsumePendingTicket(stage)) return false;
+        if (!_status.TryConsumePendingTicket()) return false;
 
         Save();
         return true;

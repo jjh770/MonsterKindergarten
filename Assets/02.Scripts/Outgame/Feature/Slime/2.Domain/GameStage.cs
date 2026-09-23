@@ -4,6 +4,37 @@ public enum EGameStage
     Sky,
 }
 
+public enum EBackgroundTheme
+{
+    Ground,
+    Sky,
+}
+
+public static class BackgroundThemeRules
+{
+    public static bool IsUnlocked(ESlimeGrade highestGrade)
+    {
+        return highestGrade >= UnlockGrades.SkyStage;
+    }
+
+    public static bool IsUnlockMerge(ESlimeGrade fromGrade, ESlimeGrade toGrade)
+    {
+        return fromGrade < UnlockGrades.SkyStage &&
+               toGrade >= UnlockGrades.SkyStage;
+    }
+
+    public static bool IsUnlockGrade(ESlimeGrade grade)
+    {
+        return grade == UnlockGrades.SkyStage;
+    }
+
+    public static bool IsValid(EBackgroundTheme theme)
+    {
+        return theme == EBackgroundTheme.Ground ||
+               theme == EBackgroundTheme.Sky;
+    }
+}
+
 // 하늘 스테이지 경계 등급은 UnlockGrades.SkyStage 한곳에서만 정한다.
 public static class GameStageRules
 {

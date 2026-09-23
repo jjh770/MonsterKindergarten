@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 // 떨어진 가챠권을 필드의 상태로 만들고 화면에 유지한다. 판정은 GachaTicketDropper가
@@ -9,9 +10,6 @@ using UnityEngine.UI;
 //
 // 판정과 나눈 이유는 티켓의 수명이 판정보다 훨씬 길기 때문이다. 티켓은 주울 때까지
 // 남고 재접속해도 살아 있어야 하는데, 판정은 60초마다 끝나는 일이다.
-//
-// 티켓이 속한 스테이지는 떨어뜨린 슬라임의 등급으로 드랍 시점에 정하고 그대로 굳힌다.
-// 그 슬라임이 나중에 합성되어 하늘로 올라가도 이미 떨어진 티켓은 따라가지 않는다.
 //
 // 티켓은 월드 콜라이더가 아니라 UI 버튼으로 줍는다. 필드에 콜라이더를 두면
 // Clicker의 Physics2D.Raycast가 그것을 먼저 맞고 슬라임 선택이 통째로 사라진다.
@@ -42,8 +40,9 @@ public class GachaTicketField : MonoBehaviour
     [Tooltip("떨어뜨린 슬라임에서 이 반경 안에 흩어 놓습니다.")]
     [SerializeField, Min(0f)] private float _dropScatterRadius = 0.4f;
 
-    [Tooltip("한 스테이지에 동시에 놓을 오브젝트 수의 상한입니다. 저장된 장수는 줄지 않습니다.")]
-    [SerializeField, Min(1)] private int _maxObjectsPerStage = 30;
+    [Tooltip("필드에 동시에 놓을 오브젝트 수의 상한입니다. 저장된 장수는 줄지 않습니다.")]
+    [FormerlySerializedAs("_maxObjectsPerStage")]
+    [SerializeField, Min(1)] private int _maxObjects = 30;
 
     [Header("Collect Presentation")]
     [SerializeField, Min(0.05f)] private float _collectFlyDuration = 0.65f;
@@ -62,14 +61,13 @@ public class GachaTicketField : MonoBehaviour
     [SerializeField, Min(0f)] private float _collectBurstLeadTime = 0.12f;
     [SerializeField, Min(0.1f)] private float _collectBurstDistanceScale = 0.85f;
 
-    private readonly List<GameObject> _groundTickets = new();
-    private readonly List<GameObject> _skyTickets = new();
-    private readonly HashSet<EGameStage> _bulkCollectStages = new();
-    private readonly HashSet<EGameStage> _scheduledBulkCollectStages = new();
+    private readonly List<GameObject> _tickets = new();
     private readonly HashSet<GameObject> _collectingTickets = new();
     private readonly HashSet<Tween> _targetPunchTweens = new();
 
     private Vector3 _collectTargetBaseScale;
+    private bool _isBulkCollecting;
+    private bool _isBulkCollectScheduled;
 
     public event Action CollectionStateChanged;
 
@@ -79,8 +77,7 @@ public class GachaTicketField : MonoBehaviour
         {
             if (SlimeManager.Instance == null) return 0;
 
-            return SlimeManager.Instance.GetPendingTicketCount(EGameStage.Ground) +
-                   SlimeManager.Instance.GetPendingTicketCount(EGameStage.Sky);
+            return SlimeManager.Instance.GetPendingTicketCount();
         }
     }
 
@@ -88,13 +85,13 @@ public class GachaTicketField : MonoBehaviour
         SlimeManager.Instance != null &&
         SlimeManager.Instance.IsTicketBulkCollectUnlocked &&
         PendingTicketCount > 0 &&
-        _bulkCollectStages.Count == 0 &&
+        !_isBulkCollecting &&
         HasCollectableTicket();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void ConfigureTweenCapacity()
     {
-        // Ground와 Sky에서 최대 30장씩, 60장의 버스트와 비행이 동시에 재생될 수 있다.
+        // 화면 상한만큼의 버스트와 비행이 동시에 재생될 수 있다.
         // 플레이 도중 자동 확장하면 프레임 히치와 경고가 생기므로 씬 로드 전에 확보한다.
         DOTween.SetTweensCapacity(2000, 250);
     }
@@ -124,7 +121,6 @@ public class GachaTicketField : MonoBehaviour
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         if (StageManager.Instance != null)
         {
-            StageManager.Instance.StageChanged += OnStageChanged;
             StageManager.Instance.SpaceChanged += OnSpaceChanged;
         }
 
@@ -146,7 +142,6 @@ public class GachaTicketField : MonoBehaviour
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
         if (StageManager.Instance != null)
         {
-            StageManager.Instance.StageChanged -= OnStageChanged;
             StageManager.Instance.SpaceChanged -= OnSpaceChanged;
         }
 
@@ -162,13 +157,10 @@ public class GachaTicketField : MonoBehaviour
 
     private void OnAllDataInitialized()
     {
-        Restore(EGameStage.Ground);
-        Restore(EGameStage.Sky);
+        Restore();
         ApplyVisibility();
         CollectionStateChanged?.Invoke();
     }
-
-    private void OnStageChanged(EGameStage stage) => ApplyVisibility();
 
     private void OnSpaceChanged(EGameplaySpace space) => ApplyVisibility();
 
@@ -176,35 +168,33 @@ public class GachaTicketField : MonoBehaviour
     {
         if (source == null || SlimeManager.Instance == null) return;
 
-        EGameStage stage = GameStageRules.GetStage(source.Grade);
-        SlimeManager.Instance.AddPendingTicket(stage);
+        SlimeManager.Instance.AddPendingTicket();
 
         Vector2 scatter = UnityEngine.Random.insideUnitCircle * _dropScatterRadius;
-        Create(stage, (Vector2)source.transform.position + scatter);
+        Create((Vector2)source.transform.position + scatter);
         ApplyVisibility();
         CollectionStateChanged?.Invoke();
     }
 
-    private void Restore(EGameStage stage)
+    private void Restore()
     {
         int stored = SlimeManager.Instance != null
-            ? SlimeManager.Instance.GetPendingTicketCount(stage)
+            ? SlimeManager.Instance.GetPendingTicketCount()
             : 0;
-        int target = Mathf.Min(stored, _maxObjectsPerStage);
+        int target = Mathf.Min(stored, _maxObjects);
 
-        for (int i = GetTickets(stage).Count; i < target; i++)
+        for (int i = _tickets.Count; i < target; i++)
         {
-            Create(stage, GetRestorePosition());
+            Create(GetRestorePosition());
         }
     }
 
     // 저장된 장수는 상한 없이 늘지만 화면에 놓는 오브젝트는 여기서 끊는다. 며칠을
     // 방치하면 수백 장이 쌓이는데 그만큼 오브젝트를 만들 이유가 없다. 상한을 넘은
     // 몫도 저장에는 남아 있으므로 장수를 잃지는 않는다.
-    private void Create(EGameStage stage, Vector2 position)
+    private void Create(Vector2 position)
     {
-        List<GameObject> tickets = GetTickets(stage);
-        if (tickets.Count >= _maxObjectsPerStage) return;
+        if (_tickets.Count >= _maxObjects) return;
 
         GameObject ticket = Instantiate(_ticketPrefab, _ticketRoot);
         ticket.transform.position = position;
@@ -216,75 +206,73 @@ public class GachaTicketField : MonoBehaviour
         }
         else
         {
-            button.onClick.AddListener(() => Collect(stage, ticket));
+            button.onClick.AddListener(() => Collect(ticket));
         }
 
-        tickets.Add(ticket);
+        _tickets.Add(ticket);
     }
 
     public bool TryCollectAll()
     {
         if (!CanCollectAll) return false;
 
-        BeginBulkCollect(EGameStage.Ground);
-        BeginBulkCollect(EGameStage.Sky);
+        BeginBulkCollect();
         CollectionStateChanged?.Invoke();
         return true;
     }
 
-    private void BeginBulkCollect(EGameStage stage)
+    private void BeginBulkCollect()
     {
         if (SlimeManager.Instance == null ||
-            SlimeManager.Instance.GetPendingTicketCount(stage) <= 0)
+            SlimeManager.Instance.GetPendingTicketCount() <= 0)
         {
             return;
         }
 
-        _bulkCollectStages.Add(stage);
-        ContinueBulkCollect(stage);
+        _isBulkCollecting = true;
+        ContinueBulkCollect();
     }
 
-    private void ContinueBulkCollect(EGameStage stage)
+    private void ContinueBulkCollect()
     {
-        if (!_bulkCollectStages.Contains(stage)) return;
+        if (!_isBulkCollecting) return;
 
         if (SlimeManager.Instance == null ||
-            SlimeManager.Instance.GetPendingTicketCount(stage) <= 0)
+            SlimeManager.Instance.GetPendingTicketCount() <= 0)
         {
-            _bulkCollectStages.Remove(stage);
+            _isBulkCollecting = false;
             CollectionStateChanged?.Invoke();
             return;
         }
 
-        // 완료 콜백이 목록을 바꾸므로 복사본을 순회한다. 현재 화면에 보이지 않는
-        // 다른 스테이지 티켓도 이 순간에는 켜서, 회수 대상 전부가 상단으로 날아간다.
-        foreach (GameObject ticket in GetTickets(stage).ToArray())
+        // 완료 콜백이 목록을 바꾸므로 복사본을 순회한다.
+        foreach (GameObject ticket in _tickets.ToArray())
         {
             if (ticket == null) continue;
 
             Button button = ticket.GetComponentInChildren<Button>();
             if (button != null && !button.enabled) continue;
 
-            CollectBulk(stage, ticket);
+            CollectBulk(ticket);
         }
     }
 
-    private void ScheduleBulkCollect(EGameStage stage)
+    private void ScheduleBulkCollect()
     {
-        if (!_bulkCollectStages.Contains(stage) ||
-            !_scheduledBulkCollectStages.Add(stage))
+        if (!_isBulkCollecting || _isBulkCollectScheduled)
         {
             return;
         }
 
-        StartCoroutine(ContinueBulkCollectNextFrame(stage));
+        _isBulkCollectScheduled = true;
+        StartCoroutine(ContinueBulkCollectNextFrame());
     }
 
-    private System.Collections.IEnumerator ContinueBulkCollectNextFrame(EGameStage stage)
+    private System.Collections.IEnumerator ContinueBulkCollectNextFrame()
     {
         yield return null;
-        _scheduledBulkCollectStages.Remove(stage);
-        ContinueBulkCollect(stage);
+        _isBulkCollectScheduled = false;
+        ContinueBulkCollect();
     }
 
     // 한 장씩 줍는다. 저장을 줄이는 것도 재화를 올리는 것도 연출이 끝나는 순간에
@@ -293,44 +281,44 @@ public class GachaTicketField : MonoBehaviour
     //
     // 오브젝트는 날아가는 동안에도 목록에 남겨 둔다. 미리 빼면 아직 줄지 않은
     // 저장 장수와 개수가 어긋나, 그 사이에 도는 Restore가 대체 티켓을 하나 더 만든다.
-    private void Collect(EGameStage stage, GameObject ticket)
+    private void Collect(GameObject ticket)
     {
         if (SlimeManager.Instance == null || CurrencyManager.Instance == null) return;
-        if (SlimeManager.Instance.GetPendingTicketCount(stage) <= 0) return;
+        if (SlimeManager.Instance.GetPendingTicketCount() <= 0) return;
 
-        PlayCollectPresentation(ticket, () => CompleteCollect(stage, ticket));
+        PlayCollectPresentation(ticket, () => CompleteCollect(ticket));
         CollectionStateChanged?.Invoke();
     }
 
-    private void CollectBulk(EGameStage stage, GameObject ticket)
+    private void CollectBulk(GameObject ticket)
     {
         if (SlimeManager.Instance == null || CurrencyManager.Instance == null) return;
-        if (SlimeManager.Instance.GetPendingTicketCount(stage) <= 0) return;
+        if (SlimeManager.Instance.GetPendingTicketCount() <= 0) return;
 
         ticket.SetActive(true);
         PlayCollectPresentation(
             ticket,
-            () => CompleteCollect(stage, ticket));
+            () => CompleteCollect(ticket));
 
         CollectionStateChanged?.Invoke();
     }
 
-    private void CompleteCollect(EGameStage stage, GameObject ticket)
+    private void CompleteCollect(GameObject ticket)
     {
         _collectingTickets.Remove(ticket);
-        GetTickets(stage).Remove(ticket);
+        _tickets.Remove(ticket);
 
         if (SlimeManager.Instance == null || CurrencyManager.Instance == null)
         {
-            _bulkCollectStages.Remove(stage);
+            _isBulkCollecting = false;
             CollectionStateChanged?.Invoke();
             return;
         }
 
-        if (!SlimeManager.Instance.TryConsumePendingTicket(stage))
+        if (!SlimeManager.Instance.TryConsumePendingTicket())
         {
-            _bulkCollectStages.Remove(stage);
-            Restore(stage);
+            _isBulkCollecting = false;
+            Restore();
             ApplyVisibility();
             CollectionStateChanged?.Invoke();
             return;
@@ -339,16 +327,16 @@ public class GachaTicketField : MonoBehaviour
         CurrencyManager.Instance.Add(ECurrencyType.GachaTicket, 1d);
 
         // 표시 상한에 걸려 못 만든 몫이 남아 있으면 빈 자리를 채운다.
-        Restore(stage);
+        Restore();
         ApplyVisibility();
 
-        if (SlimeManager.Instance.GetPendingTicketCount(stage) <= 0)
+        if (SlimeManager.Instance.GetPendingTicketCount() <= 0)
         {
-            _bulkCollectStages.Remove(stage);
+            _isBulkCollecting = false;
         }
         else
         {
-            ScheduleBulkCollect(stage);
+            ScheduleBulkCollect();
         }
 
         CollectionStateChanged?.Invoke();
@@ -364,8 +352,7 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
-        // 일괄 회수는 다른 스테이지 티켓도 먼저 켜므로 이 경로에 오지 않는다.
-        // 씬 전환처럼 그 밖의 이유로 비활성이라면 보상은 연출 없이 안전하게 완료한다.
+        // 공간 전환처럼 티켓이 비활성이라면 보상은 연출 없이 안전하게 완료한다.
         if (!ticket.activeInHierarchy)
         {
             Destroy(ticket);
@@ -662,18 +649,10 @@ public class GachaTicketField : MonoBehaviour
 
     private void ApplyVisibility()
     {
-        SetVisible(_groundTickets, IsStageVisible(EGameStage.Ground));
-        SetVisible(_skyTickets, IsStageVisible(EGameStage.Sky));
-    }
-
-    // 슬라임 표시 규칙과 같다. 장식장을 보고 있으면 어느 스테이지의 티켓도 보이지
-    // 않는다. 전환 연출 중인지는 보지 않는데, 슬라임 쪽도 보지 않기 때문이다.
-    private static bool IsStageVisible(EGameStage stage)
-    {
         StageManager stageManager = StageManager.Instance;
-        return stageManager != null &&
-               stageManager.IsMainStageActive &&
-               stageManager.CurrentStage == stage;
+        SetVisible(
+            _tickets,
+            stageManager != null && stageManager.IsMainStageActive);
     }
 
     private void SetVisible(List<GameObject> tickets, bool isVisible)
@@ -687,15 +666,9 @@ public class GachaTicketField : MonoBehaviour
         }
     }
 
-    private List<GameObject> GetTickets(EGameStage stage)
-    {
-        return stage == EGameStage.Sky ? _skyTickets : _groundTickets;
-    }
-
     private bool HasCollectableTicket()
     {
-        return HasCollectableTicket(_groundTickets) ||
-               HasCollectableTicket(_skyTickets);
+        return HasCollectableTicket(_tickets);
     }
 
     private static bool HasCollectableTicket(List<GameObject> tickets)

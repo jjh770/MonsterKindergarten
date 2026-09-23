@@ -75,9 +75,12 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                     "SlimeStatus 문서를 변환하지 못했습니다.");
             }
 
-            if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+            if (schemaVersion < SaveSchema.SlimeCurrentVersion ||
+                SlimeStatusSaveMigration.HasLegacyPendingTickets(data))
             {
-                data = SlimeStatusSaveMigration.UpgradeInstanceData(data);
+                data = SlimeStatusSaveMigration.UpgradeInstanceData(
+                    data,
+                    schemaVersion);
             }
 
             data.ActiveSlimes ??= new System.Collections.Generic.List<SlimeInstanceSaveData>();

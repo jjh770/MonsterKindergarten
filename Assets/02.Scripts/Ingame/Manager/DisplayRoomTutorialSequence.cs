@@ -522,7 +522,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         {
             if (target != null &&
                 target.Location == ESlimeLocation.MainStage &&
-                target.IsCurrentStageActive &&
+                target.IsMainStageActive &&
                 SlimeManager.Instance.CanMoveToDisplayRoom(
                     target.Grade,
                     target.IsSpecial))

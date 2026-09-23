@@ -34,11 +34,11 @@ public class SlimeController : MonoBehaviour, IClickable
     public bool HasLanded => _hasLanded;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
-    public bool IsCurrentStageActive =>
+    public bool IsMainStageActive =>
         Instance != null &&
         Location == ESlimeLocation.MainStage &&
         (StageManager.Instance == null ||
-         StageManager.Instance.IsStageActive(Grade));
+         StageManager.Instance.IsMainFieldInteractionActive);
 
     public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnSpawned;
@@ -174,12 +174,12 @@ public class SlimeController : MonoBehaviour, IClickable
         }
     }
 
-    public void SetStagePresentationActive(bool isActive)
+    public void SetLocationPresentationActive(bool isActive)
     {
         if (!isActive)
         {
             CancelDrag();
-            // 비활성 스테이지에서 복원된 슬라임이 다시 활성화될 때
+            // 다른 공간에서 복원된 슬라임이 다시 활성화될 때
             // 일괄 충돌로 착지음이 재생되지 않도록 첫 착지를 소비한다.
             _hasLanded = true;
         }
@@ -218,7 +218,7 @@ public class SlimeController : MonoBehaviour, IClickable
         }
     }
 
-    public void PrepareStageTransfer()
+    public void PreparePresentationTransfer()
     {
         if (_spriteRenderer != null)
         {
@@ -346,7 +346,7 @@ public class SlimeController : MonoBehaviour, IClickable
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
-        if (!IsCurrentStageActive) return true;
+        if (!IsMainStageActive) return true;
 
         foreach (IFeedback feedback in _feedbacks)
         {

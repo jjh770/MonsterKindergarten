@@ -219,7 +219,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     {
         if (!_isSendMode || _isTransferPlaying || target == null) return;
         if (target.Location != ESlimeLocation.MainStage ||
-            !target.IsCurrentStageActive)
+            !target.IsMainStageActive)
         {
             return;
         }

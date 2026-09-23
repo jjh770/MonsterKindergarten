@@ -312,20 +312,12 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _step = Step.Result;
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
 
-        // 결과가 다른 스테이지 소속이면 지금 화면에 없다. 연출이 어디로 갔는지 이미
-        // 보여 주었으므로 가리키지 않고 대화만 잇는다. 등급이 벌어진 계정에서 닿는다.
-        bool isOnCurrentStage = StageManager.Instance != null &&
-                                StageManager.Instance.CurrentStage ==
-                                GameStageRules.GetStage(spawned.Grade);
-        if (isOnCurrentStage)
-        {
-            Spotlight.ShowFocus(spawned.transform);
-        }
+        Spotlight.ShowFocus(spawned.transform);
 
         ShowDialogue(
             Content.GetDialogue(DialogueId.GachaResult),
             Complete,
-            keepGuideVisible: isOnCurrentStage);
+            keepGuideVisible: true);
     }
 
     private void OnGuideAdvanceRequested()
@@ -424,7 +416,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         {
             SlimeController candidate = targets[i];
             if (candidate == null ||
-                !candidate.IsCurrentStageActive ||
+                !candidate.IsMainStageActive ||
                 candidate.IsSpecial)
             {
                 continue;
@@ -434,7 +426,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             {
                 SlimeController other = targets[j];
                 if (other == null ||
-                    !other.IsCurrentStageActive ||
+                    !other.IsMainStageActive ||
                     other.IsSpecial ||
                     candidate.Grade >= bestGrade ||
                     !candidate.CanMergeWith(other))

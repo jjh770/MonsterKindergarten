@@ -31,6 +31,8 @@ public sealed class StageManager : MonoBehaviour
     public bool IsMainStageActive => _currentSpace == EGameplaySpace.MainStage;
     public bool IsTransitioning => _transitionPlayer != null &&
                                    _transitionPlayer.IsTransitioning;
+    public bool IsMainFieldInteractionActive =>
+        IsMainStageActive && !IsTransitioning;
     public event Action<EGameStage> StageChanged;
     public event Action StageTransitionCompleted;
     public event Action<EGameplaySpace> SpaceChanged;
@@ -105,13 +107,6 @@ public sealed class StageManager : MonoBehaviour
             _skyIntroDirector.SkyTransitionRequested -= OnSkyTransitionRequested;
             _skyIntroDirector.InteractionEnableRequested -= SetInteractionEnabled;
         }
-    }
-
-    public bool IsStageActive(ESlimeGrade grade)
-    {
-        return IsMainStageActive &&
-               !_transitionPlayer.IsTransitioning &&
-               GameStageRules.GetStage(grade) == _currentStage;
     }
 
     public bool TryEnterDisplayRoom()
@@ -316,16 +311,15 @@ public sealed class StageManager : MonoBehaviour
         ESlimeGrade toGrade)
     {
         if (target == null ||
-            !GameStageRules.IsSkyEntryMerge(fromGrade, toGrade))
+            !BackgroundThemeRules.IsUnlockMerge(fromGrade, toGrade))
         {
             return;
         }
 
-        target.PrepareStageTransfer();
-
         if (SlimeManager.Instance != null &&
             !SlimeManager.Instance.SkyIntroCompleted)
         {
+            target.PreparePresentationTransfer();
             _skyIntroDirector.Prepare(target);
             SetInteractionEnabled(false);
 
@@ -339,12 +333,12 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        _transitionPlayer.PlayRegularSkyTransfer(target, _currentStage);
+        RefreshSlimePresentation(target);
     }
 
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
-        if (!GameStageRules.IsSkyEntryGrade(grade) ||
+        if (!BackgroundThemeRules.IsUnlockGrade(grade) ||
             !_skyIntroDirector.HasPendingTarget ||
             _transitionPlayer.IsTransitioning)
         {
@@ -488,10 +482,9 @@ public sealed class StageManager : MonoBehaviour
         if (target == null) return;
 
         bool isVisible = IsMainStageActive
-            ? target.Location == ESlimeLocation.MainStage &&
-              GameStageRules.GetStage(target.Grade) == _currentStage
+            ? target.Location == ESlimeLocation.MainStage
             : target.Location == ESlimeLocation.DisplayRoom;
-        target.SetStagePresentationActive(isVisible);
+        target.SetLocationPresentationActive(isVisible);
     }
 
     private void SetCurrentSpace(EGameplaySpace space)
@@ -511,7 +504,7 @@ public sealed class StageManager : MonoBehaviour
         foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
         {
             if (target != null &&
-                GameStageRules.GetStage(target.Grade) == EGameStage.Sky)
+                target.Grade >= UnlockGrades.SkyStage)
             {
                 return target;
             }

@@ -72,7 +72,7 @@ public sealed class AutoMergeManager : MonoBehaviour
             Removed = removed;
             FromGrade = keeper.Grade;
             Center = (keeper.transform.position + removed.transform.position) * 0.5f;
-            IsPresented = keeper.IsCurrentStageActive && removed.IsCurrentStageActive;
+            IsPresented = keeper.IsMainStageActive && removed.IsMainStageActive;
         }
     }
 
@@ -269,7 +269,7 @@ public sealed class AutoMergeManager : MonoBehaviour
                               pair.Removed != null &&
                               !pair.Removed.gameObject.activeInHierarchy;
             // 모이는 동안 스테이지를 바꿨으면 그 쌍도 이펙트를 띄우지 않는다.
-            if (pairMerged && pair.IsPresented && pair.Keeper.IsCurrentStageActive)
+            if (pairMerged && pair.IsPresented && pair.Keeper.IsMainStageActive)
             {
                 PlayMergeEffect(
                     pair.Center,
