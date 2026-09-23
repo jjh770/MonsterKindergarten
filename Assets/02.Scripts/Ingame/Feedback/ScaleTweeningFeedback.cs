@@ -11,11 +11,20 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     [SerializeField, Min(0f)] private float _promotePunchScale = 1f;
     [SerializeField, Min(0f)] private float _promoteDuration = 1f;
 
+    [Header("Background Theme")]
+    [Tooltip("배경이 바뀔 때 움찔하는 크기입니다.")]
+    [SerializeField, Min(0f)] private float _themeReactionPunchScale = 0.3f;
+    [SerializeField, Min(0f)] private float _themeReactionDuration = 0.5f;
+
+    [Tooltip("모두 한꺼번에 움찔하지 않도록 시작 시각을 흩뿌리는 폭입니다.")]
+    [SerializeField, Min(0f)] private float _themeReactionSpread = 0.35f;
+
     [Header("Common")]
     [SerializeField, Min(1)] private int _vibrato = 10;
     [SerializeField, Range(0f, 1f)] private float _elasticity = 1f;
 
     private SlimeController _owner;
+    private GameplaySpaceManager _spaceManager;
     private Tween _scaleTween;
     private Vector3 _defaultScale;
 
@@ -28,6 +37,14 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private void OnEnable()
     {
         _owner.OnPromoted += PlayPromoteFeedback;
+
+        // 풀에서 다시 꺼내질 때마다 매니저를 새로 잡는다. 씬이 바뀌면 인스턴스도
+        // 바뀌므로 구독해 둔 것을 그대로 들고 있으면 안 된다.
+        _spaceManager = GameplaySpaceManager.Instance;
+        if (_spaceManager != null)
+        {
+            _spaceManager.BackgroundThemeChanged += PlayThemeReaction;
+        }
     }
 
     // 역할 : 스케일 트위닝 피드백에 대한 로직을 담당
@@ -41,6 +58,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         if (_owner != null)
         {
             _owner.OnPromoted -= PlayPromoteFeedback;
+        }
+
+        if (_spaceManager != null)
+        {
+            _spaceManager.BackgroundThemeChanged -= PlayThemeReaction;
+            _spaceManager = null;
         }
 
         // 비활성화 시 Tween 정리 (오브젝트 풀링 대응)
@@ -58,7 +81,28 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         PlayPunch(_promotePunchScale, _promoteDuration);
     }
 
-    private void PlayPunch(float punchScale, float duration)
+    // 배경이 바뀌면 필드에 나와 있는 슬라임이 한 번 움찔한다. 들고 있는 슬라임과
+    // 아직 내려앉는 중인 슬라임은 건드리지 않는다. 장식장 쪽 슬라임도 제외된다.
+    //
+    // IsMainFieldActive는 쓰지 않는다. 전환 중에는 조작이 잠겨 있어 그 값이 false라,
+    // 정작 배경이 바뀌는 순간에 모두가 걸러진다.
+    private void PlayThemeReaction(EBackgroundTheme theme)
+    {
+        if (_owner == null ||
+            _owner.IsDragging ||
+            !_owner.HasLanded ||
+            _owner.Location != ESlimeLocation.MainField)
+        {
+            return;
+        }
+
+        PlayPunch(
+            _themeReactionPunchScale,
+            _themeReactionDuration,
+            Random.Range(0f, _themeReactionSpread));
+    }
+
+    private void PlayPunch(float punchScale, float duration, float delay = 0f)
     {
         CleanupTween();
         if (_owner == null) return;
@@ -69,6 +113,7 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
                 duration,
                 _vibrato,
                 _elasticity)
+            .SetDelay(delay)
             .OnComplete(CompleteTween);
     }
 

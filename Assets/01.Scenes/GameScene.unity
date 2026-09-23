@@ -9395,6 +9395,8 @@ MonoBehaviour:
   _camera: {fileID: 519420031}
   _stageUI: {fileID: 1324579906}
   _transitionOverlay: {fileID: 1907240556}
+  _backgroundMove: {fileID: 2131310039}
+  _themeSlideDuration: 0.8
   _groundBgm: {fileID: 8300000, guid: e2dbe04ef101b504d80dcd777a6778fc, type: 3}
   _skyBgm: {fileID: 8300000, guid: 4b75d5e95b5825f4583e868cb4226f00, type: 3}
   _cameraTransitionDuration: 1.2

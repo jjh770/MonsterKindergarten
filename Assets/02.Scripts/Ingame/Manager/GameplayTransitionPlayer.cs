@@ -14,6 +14,12 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     // 전환 중 화면을 덮는 판. 이 연출의 소유물이라 여기서 직접 다룬다.
     [SerializeField] private Image _transitionOverlay;
 
+    [Tooltip("배경 테마를 세로로 밀어 바꾸는 쪽입니다. 비우면 화면을 덮는 방식으로 바뀝니다.")]
+    [SerializeField] private BackgroundMove _backgroundMove;
+
+    [Tooltip("배경이 한 화면만큼 밀려 바뀌는 데 걸리는 시간입니다.")]
+    [SerializeField, Min(0.1f)] private float _themeSlideDuration = 0.8f;
+
     [Header("Background Audio")]
     [SerializeField] private AudioClip _groundBgm;
     [SerializeField] private AudioClip _skyBgm;
@@ -206,6 +212,27 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     {
         IsTransitioning = true;
         _backgroundThemeUI.SetButtonInteractable(false);
+
+        // 배경만 세로로 민다. 화면을 덮지 않으므로 슬라임이 계속 보이고, 어딘가로
+        // 올라가는 것이 아니라 배경이 갈리는 것으로 읽힌다.
+        if (_backgroundMove != null &&
+            _backgroundMove.TryPlayThemeSlide(
+                targetTheme,
+                _themeSlideDuration,
+                () => EndBackgroundThemeSlide(onCompleted)))
+        {
+            AudioManager.Instance?.CrossFadeBGM(
+                GetThemeBgm(targetTheme),
+                _themeSlideDuration);
+
+            // 상태와 BGM은 미는 동안 함께 간다. 가려지는 순간이 없으므로 중간까지
+            // 기다릴 이유가 없다.
+            onThemeSwitched?.Invoke();
+            ApplyEnvironment(targetTheme, crossFadeDuration: -1f);
+            return;
+        }
+
+        // 밀 자리가 없을 때(장식장을 보는 중 등)는 화면을 덮었다 걷는 방식으로 바꾼다.
         BeginOverlay();
 
         float halfDuration = _cameraTransitionDuration * 0.5f;
@@ -236,6 +263,14 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             _backgroundThemeUI.SetButtonInteractable(true);
             onCompleted?.Invoke();
         });
+    }
+
+    // 슬라이드에는 덮개가 없어 걷어 낼 것도 없다. 입력만 돌려준다.
+    private void EndBackgroundThemeSlide(Action onCompleted)
+    {
+        IsTransitioning = false;
+        _backgroundThemeUI.SetButtonInteractable(true);
+        onCompleted?.Invoke();
     }
 
     public void PlaySpace(
