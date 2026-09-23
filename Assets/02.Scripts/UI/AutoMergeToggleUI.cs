@@ -16,8 +16,16 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
     [SerializeField] private Color _onColor = Color.white;
     [SerializeField] private Color _offColor = new(1f, 1f, 1f, 0.55f);
 
+    [Tooltip("합성할 쌍이 없을 때 띄우는 안내입니다.")]
+    [SerializeField] private ToastMessageUI _toast;
+
+    private const string NoPairMessage = "합성할 수 있는 슬라임이 없어요.";
+
+    private bool _wasReady;
+
     public RectTransform ButtonTarget => _view != null ? _view.ButtonTarget : null;
-    public event Action<bool> StateChanged;
+    // 합성이 실제로 일어났을 때만 알린다. 튜토리얼과 안내가 쓴다.
+    public event Action Merged;
 
     private void Awake()
     {
@@ -40,10 +48,16 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
             return;
         }
 
-        if (_button != null && _icon != null && _onSprite != null &&
-            _offSprite != null && _stateLabel != null)
+        // 켜고 끄는 버튼이 아니라 ON/OFF를 쓸 자리가 없다. 라벨은 넘기지 않고 감춘다.
+        if (_stateLabel != null)
         {
-            _view.Configure(_button, _icon, _onSprite, _offSprite, _stateLabel,
+            _stateLabel.gameObject.SetActive(false);
+        }
+
+        if (_button != null && _icon != null && _onSprite != null &&
+            _offSprite != null)
+        {
+            _view.Configure(_button, _icon, _onSprite, _offSprite, null,
                 _onColor, _offColor);
         }
     }
@@ -71,22 +85,31 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
 
     private void Update()
     {
-        if (AutoMergeManager.Instance != null)
-        {
-            _progressView.SetProgress(AutoMergeManager.Instance.Progress01);
-        }
+        AutoMergeManager manager = AutoMergeManager.Instance;
+        if (manager == null) return;
+
+        _progressView.SetProgress(manager.Progress01);
+        Refresh();
     }
 
     private void OnButtonClicked()
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
-        if (slimeManager == null) return;
+        AutoMergeManager manager = AutoMergeManager.Instance;
+        if (manager == null) return;
 
-        bool isEnabled = !slimeManager.IsAutoMergeEnabled;
-        if (!slimeManager.SetAutoMergeEnabled(isEnabled)) return;
+        AutoMergeManager.EMergeFailure failure = manager.TryMerge();
+        if (failure == AutoMergeManager.EMergeFailure.None)
+        {
+            Merged?.Invoke();
+            return;
+        }
 
-        Refresh();
-        StateChanged?.Invoke(isEnabled);
+        // 쿨타임과 잠긴 상황은 게이지와 버튼 상태가 이미 보여 주므로 문구까지 띄우지
+        // 않는다. 누를 수 있는데 아무 일도 없었을 때만 이유를 알려 준다.
+        if (failure == AutoMergeManager.EMergeFailure.NoPair)
+        {
+            _toast?.Show(NoPairMessage);
+        }
     }
 
     private void OnCollectionCountChanged(int count)
@@ -94,11 +117,17 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
         Refresh();
     }
 
+    // 매 프레임 도니 상태가 바뀔 때만 손댄다.
     private void Refresh()
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
-        if (slimeManager == null) return;
+        AutoMergeManager manager = AutoMergeManager.Instance;
+        if (manager == null) return;
 
-        _view.SetState(slimeManager.IsAutoMergeEnabled);
+        // 켜고 끄는 버튼이 아니므로 상태는 "지금 누를 수 있는가"를 뜻한다.
+        bool isReady = manager.IsReady && manager.IsAvailable();
+        if (isReady == _wasReady) return;
+
+        _wasReady = isReady;
+        _view.SetState(isReady);
     }
 }

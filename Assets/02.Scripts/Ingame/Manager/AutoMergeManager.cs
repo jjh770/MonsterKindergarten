@@ -3,18 +3,32 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
+// 도감 10종에서 열리는 합성 버튼. 플레이어가 누를 때마다 필드에서 낮은 등급부터
+// 업그레이드 레벨만큼의 쌍을 한 번에 합친다.
+//
+// 처음에는 주기가 다 차면 알아서 발동했지만, 누르는 재미가 없고 화면을 보지 않는
+// 동안에도 필드가 바뀌어 버렸다. 지금은 발동 시점을 플레이어가 정하고, 연출이 끝난 뒤
+// 짧은 쿨타임만 둔다.
 public sealed class AutoMergeManager : MonoBehaviour
 {
-    public const float BaseInterval = 20f;
-    public const float MinimumInterval = 10f;
+    public enum EMergeFailure
+    {
+        None,
+        // 해금 전이거나 튜토리얼·장식장 선택·가챠 연출처럼 지금 눌러선 안 되는 상황.
+        Unavailable,
+        // 연출 중이거나 쿨타임이 남았다.
+        Cooldown,
+        // 합성할 수 있는 쌍이 없다.
+        NoPair,
+    }
 
     public static AutoMergeManager Instance { get; private set; }
 
     [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private GachaResultDirector _gachaResultDirector;
 
-    [Tooltip("합성할 쌍이 없어 대기 중일 때 다시 살펴보는 간격입니다.")]
-    [SerializeField, Min(0.05f)] private float _pendingRetryInterval = 0.25f;
+    [Tooltip("연출이 끝난 뒤 다시 누를 수 있기까지의 시간입니다.")]
+    [SerializeField, Min(0f)] private float _cooldown = 0.5f;
 
     [Header("Presentation")]
     [Tooltip("두 슬라임이 서로에게 모이는 시간입니다.")]
@@ -31,15 +45,11 @@ public sealed class AutoMergeManager : MonoBehaviour
     [Tooltip("슬라임보다 앞에 그리기 위해 더하는 정렬 순서입니다.")]
     [SerializeField] private int _mergeEffectSortingOrderOffset = 5;
 
-    private float _elapsed;
-    private float _interval = BaseInterval;
-    // 주기를 채웠는데 합성할 쌍이 없어 발동을 미룬 상태.
-    private bool _isPending;
-    private float _pendingRetryTimer;
-    // 합성이 거절된 개체. 대기 중에는 짧은 간격으로 다시 살펴보므로, 기억해 두지 않으면
-    // 같은 쌍을 계속 집어 경고만 쌓는다.
+    // 남은 쿨타임. 연출이 끝나는 순간부터 센다.
+    private float _remainingCooldown;
+    // 합성이 거절된 개체. 기억해 두지 않으면 누를 때마다 같은 쌍을 집어 경고만 쌓는다.
     private readonly HashSet<string> _rejectedIds = new();
-    // 두 슬라임이 모이는 연출 중. 다음 주기는 연출이 끝나고 다시 시작한다.
+    // 두 슬라임이 모이는 연출 중. 쿨타임은 연출이 끝나고 시작한다.
     private bool _isPresenting;
     private Sequence _presentation;
     private readonly List<PresentationPair> _presentationPairs = new();
@@ -63,12 +73,12 @@ public sealed class AutoMergeManager : MonoBehaviour
         }
     }
 
-    public float Interval => _interval;
-    public float Progress01 => _interval > 0f
-        ? Mathf.Clamp01(_elapsed / _interval)
-        : 0f;
-
-    public event Action<float> IntervalChanged;
+    // 다시 누를 수 있기까지의 진행도. 1이면 준비된 상태다. 버튼 테두리 게이지가 쓴다.
+    public float Progress01 => _cooldown > 0f
+        ? Mathf.Clamp01(1f - _remainingCooldown / _cooldown)
+        : 1f;
+    public bool IsReady => !_isPresenting && _remainingCooldown <= 0f;
+    public int PairsPerMerge => GetPairCountForLevel(GetUpgradeLevel());
 
     private void Awake()
     {
@@ -81,21 +91,8 @@ public sealed class AutoMergeManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-        GameManager.OnAllDataInitialized += RefreshInterval;
-        UpgradeManager.OnUpgraded += OnUpgraded;
-
-        if (GameManager.Instance != null && GameManager.Instance.IsAllDataInitialized)
-        {
-            RefreshInterval();
-        }
-    }
-
     private void OnDestroy()
     {
-        GameManager.OnAllDataInitialized -= RefreshInterval;
-        UpgradeManager.OnUpgraded -= OnUpgraded;
         _presentation?.Kill();
         _presentation = null;
         if (Instance == this) Instance = null;
@@ -103,47 +100,36 @@ public sealed class AutoMergeManager : MonoBehaviour
 
     private void Update()
     {
-        if (!CanAdvance()) return;
+        if (_isPresenting || _remainingCooldown <= 0f) return;
 
-        // 합성할 쌍이 없으면 주기를 채운 채로 기다린다. 스폰이 끝나 슬라임이 내려앉거나
-        // 가챠 결과가 필드에 놓이면 그때 바로 합성한다. 기다리는 동안 매 프레임 필드를
-        // 훑을 이유는 없으므로 짧은 간격으로만 다시 살펴본다.
-        if (_isPending)
-        {
-            _pendingRetryTimer += Time.deltaTime;
-            if (_pendingRetryTimer < _pendingRetryInterval) return;
-
-            _pendingRetryTimer = 0f;
-            _isPending = !ExecuteTick();
-            return;
-        }
-
-        _elapsed += Time.deltaTime;
-        if (_elapsed < _interval) return;
-
-        if (ExecuteTick()) return;
-
-        _elapsed = _interval;
-        _isPending = true;
-        _pendingRetryTimer = 0f;
+        _remainingCooldown = Mathf.Max(0f, _remainingCooldown - Time.deltaTime);
     }
 
-    private bool CanAdvance()
+    // 버튼이 부른다. 실패하면 이유를 돌려주어 호출부가 안내 문구를 고르게 한다.
+    public EMergeFailure TryMerge()
+    {
+        if (!IsAvailable()) return EMergeFailure.Unavailable;
+        if (!IsReady) return EMergeFailure.Cooldown;
+        if (!ExecuteMerge()) return EMergeFailure.NoPair;
+
+        return EMergeFailure.None;
+    }
+
+    // 지금 눌러도 되는 상황인가. 쿨타임과 연출은 따로 본다.
+    public bool IsAvailable()
     {
         SlimeManager slimeManager = SlimeManager.Instance;
-        return !_isPresenting &&
-               GameplayGate.IsMainStageReady &&
+        return GameplayGate.IsMainStageReady &&
                !TutorialManager.IsRunning &&
                slimeManager != null &&
                slimeManager.IsAutoMergeUnlocked &&
-               slimeManager.IsAutoMergeEnabled &&
                (_displayRoomUI == null || !_displayRoomUI.IsSendMode) &&
                (_gachaResultDirector == null || !_gachaResultDirector.IsPlaying);
     }
 
     // 낮은 등급부터 훑어 현재 업그레이드 레벨이 허용하는 수만큼 쌍을 고른다.
-    // 한 슬라임은 한 번만 고르므로 이번 결과가 같은 Tick에서 다시 합성되지 않는다.
-    private bool ExecuteTick()
+    // 한 슬라임은 한 번만 고르므로 이번 결과가 같은 발동에서 다시 합성되지 않는다.
+    private bool ExecuteMerge()
     {
         if (SpawnManager.Instance == null || MergeManager.Instance == null) return false;
 
@@ -293,19 +279,15 @@ public sealed class AutoMergeManager : MonoBehaviour
         _presentationPairs.Clear();
         _isPresenting = false;
 
-        // 다음 주기는 합쳐진 슬라임이 나온 뒤부터 센다.
-        _elapsed = merged ? 0f : _interval;
-        _isPending = !merged;
-        _pendingRetryTimer = 0f;
+        // 쿨타임은 연출이 끝난 지금부터 센다. 저장이 모든 쌍을 거절해 아무것도 합쳐지지
+        // 않았다면 기다리게 할 이유가 없으므로 바로 다시 누를 수 있게 둔다.
+        _remainingCooldown = merged ? _cooldown : 0f;
     }
 
+    // 레벨 하나에 한 쌍씩 늘어난다. 레벨 0이 1쌍이고 최대 레벨이 10쌍이다.
     public static int GetPairCountForLevel(int level)
     {
-        int pairCount = 1;
-        if (level >= 20) pairCount++;
-        if (level >= 40) pairCount++;
-        if (level >= 50) pairCount++;
-        return pairCount;
+        return Mathf.Max(1, level + 1);
     }
 
     private static int GetUpgradeLevel()
@@ -342,25 +324,4 @@ public sealed class AutoMergeManager : MonoBehaviour
         Destroy(effect, _mergeEffectLifetime);
     }
 
-    private void OnUpgraded(EUpgradeType type, ESlimeGrade grade)
-    {
-        if (type == EUpgradeType.AutoMergeTimeSub)
-        {
-            RefreshInterval();
-        }
-    }
-
-    private void RefreshInterval()
-    {
-        float previousInterval = _interval;
-        float progress = previousInterval > 0f ? _elapsed / previousInterval : 0f;
-        Upgrade upgrade = UpgradeManager.Instance != null
-            ? UpgradeManager.Instance.Get(EUpgradeType.AutoMergeTimeSub, ESlimeGrade.None)
-            : null;
-        _interval = Mathf.Max(
-            MinimumInterval,
-            BaseInterval - (float)(upgrade?.Point ?? 0d));
-        _elapsed = Mathf.Clamp01(progress) * _interval;
-        IntervalChanged?.Invoke(_interval);
-    }
 }

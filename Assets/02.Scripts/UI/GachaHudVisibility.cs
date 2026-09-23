@@ -28,14 +28,19 @@ public sealed class GachaHudVisibility : MonoBehaviour
     [Tooltip("자동 합성 해금과 함께 나타날 오브젝트들입니다.")]
     [SerializeField] private GameObject[] _autoMergeRoots;
 
+    [Tooltip("도감 12종 달성 뒤 나타날 티켓 회수 버튼입니다.")]
+    [SerializeField] private GameObject[] _ticketCollectRoots;
+
     private bool _areGachaRootsVisible = true;
     private bool _areAutoMergeRootsVisible = true;
+    private bool _areTicketCollectRootsVisible = true;
 
     private void Awake()
     {
         // 대상은 씬에서 연결한다. 비어 있을 때 이름이나 타입으로 찾아 메우면 연결이
         // 빠진 것을 아무도 모른 채 넘어가므로, 에러로 드러내고 멈춘다.
-        if (_panelSwitcher == null || !HasRoot(_gachaRoots) || !HasRoot(_autoMergeRoots))
+        if (_panelSwitcher == null || !HasRoot(_gachaRoots) ||
+            !HasRoot(_autoMergeRoots) || !HasRoot(_ticketCollectRoots))
         {
             Debug.LogError("하단 기능 UI 노출 대상이 비어 있습니다.", this);
             enabled = false;
@@ -45,6 +50,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
         // 판단할 근거가 아직 없다. 켜 두었다가 감추면 깜빡인다.
         Apply(_gachaRoots, false, ref _areGachaRootsVisible);
         Apply(_autoMergeRoots, false, ref _areAutoMergeRootsVisible);
+        Apply(_ticketCollectRoots, false, ref _areTicketCollectRootsVisible);
     }
 
     private void Update()
@@ -60,9 +66,15 @@ public sealed class GachaHudVisibility : MonoBehaviour
                                  TutorialManager.IsActive(TutorialIds.Gacha));
         bool isAutoMergeAvailable = isBaseAvailable &&
                                     slimeManager.IsAutoMergeUnlocked;
+        bool isTicketCollectAvailable = isBaseAvailable &&
+                                        slimeManager.IsTicketAutoCollectUnlocked;
 
         Apply(_gachaRoots, isGachaAvailable, ref _areGachaRootsVisible);
         Apply(_autoMergeRoots, isAutoMergeAvailable, ref _areAutoMergeRootsVisible);
+        Apply(
+            _ticketCollectRoots,
+            isTicketCollectAvailable,
+            ref _areTicketCollectRootsVisible);
     }
 
     private static void Apply(

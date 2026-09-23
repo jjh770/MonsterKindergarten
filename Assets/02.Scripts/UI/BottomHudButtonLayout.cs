@@ -9,6 +9,7 @@ public sealed class BottomHudButtonLayout : MonoBehaviour
     [SerializeField] private RectTransform _systemUpgradePanel;
     [SerializeField] private RectTransform[] _leftButtons;
     [SerializeField] private RectTransform _rightButton;
+    [SerializeField] private RectTransform _rightSecondaryButton;
     [SerializeField, Min(0f)] private float _buttonMargin = 20f;
 
     [Tooltip("왼쪽 버튼끼리의 간격입니다. 버튼 아래 이름표가 버튼보다 넓어 서로 닿지 않을 만큼 둡니다.")]
@@ -71,6 +72,14 @@ public sealed class BottomHudButtonLayout : MonoBehaviour
             _rightButton,
             new Vector2(-(insets.Right + _buttonMargin), buttonY));
         NormalizeLabels(_rightButton);
+
+        SetBottomRight(
+            _rightSecondaryButton,
+            new Vector2(
+                -(insets.Right + _buttonMargin +
+                  _rightButton.rect.width + _buttonSpacing),
+                buttonY));
+        NormalizeLabels(_rightSecondaryButton);
     }
 
     private bool HasRequiredReferences()
@@ -79,7 +88,8 @@ public sealed class BottomHudButtonLayout : MonoBehaviour
                              _systemUpgradePanel != null &&
                              _leftButtons != null &&
                              _leftButtons.Length > 0 &&
-                             _rightButton != null;
+                             _rightButton != null &&
+                             _rightSecondaryButton != null;
         if (!hasReferences)
         {
             Debug.LogError("하단 기능 버튼 배치의 필수 참조가 비어 있습니다.", this);

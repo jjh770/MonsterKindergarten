@@ -118,7 +118,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
     {
         if (!TryBeginTutorial()) return;
 
-        TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Dialogue;
         SpawnManager.Instance?.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
@@ -242,6 +241,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
         }
 
+        TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Complete;
         SpawnManager.Instance?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);

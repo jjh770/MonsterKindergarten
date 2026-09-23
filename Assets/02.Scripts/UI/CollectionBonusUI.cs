@@ -36,6 +36,8 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
         GameManager.OnAllDataInitialized += RefreshAvailability;
+        TutorialManager.Started += RefreshAvailability;
+        TutorialManager.Finished += RefreshAvailability;
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGameplayActivated += RefreshAvailability;
@@ -51,6 +53,8 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
         GameManager.OnAllDataInitialized -= RefreshAvailability;
+        TutorialManager.Started -= RefreshAvailability;
+        TutorialManager.Finished -= RefreshAvailability;
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGameplayActivated -= RefreshAvailability;
@@ -167,7 +171,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         AppendBonus(builder, count, NormalCollectionRules.AutoMergeCount,
             "자동 합성", "같은 등급 슬라임을 자동으로 합성해요.");
         AppendBonus(builder, count, NormalCollectionRules.AutoTicketCollectCount,
-            "가챠권 자동 회수", "필드에 떨어진 가챠권을 자동으로 회수해요.");
+            "티켓 회수", "필드에 떨어진 가챠권을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
             "오프라인 가챠권 보상", "접속하지 않은 시간에 가챠권도 모아줘요.");
         AppendBonus(builder, count, NormalCollectionRules.HiddenFeverCount,

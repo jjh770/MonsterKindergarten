@@ -62,10 +62,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             SpawnManager.Instance.OnSpawnMaxChanged += OnSpawnMaxChanged;
         }
 
-        if (AutoMergeManager.Instance != null)
-        {
-            AutoMergeManager.Instance.IntervalChanged += OnAutoMergeIntervalChanged;
-        }
 
         if (GameManager.Instance != null && GameManager.Instance.IsAllDataInitialized)
         {
@@ -95,10 +91,6 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             SpawnManager.Instance.OnSpawnMaxChanged -= OnSpawnMaxChanged;
         }
 
-        if (AutoMergeManager.Instance != null)
-        {
-            AutoMergeManager.Instance.IntervalChanged -= OnAutoMergeIntervalChanged;
-        }
     }
 
     private void OnAllDataInitialized()
@@ -206,20 +198,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         Refresh();
     }
 
-    private void OnAutoMergeIntervalChanged(float interval)
-    {
-        Refresh();
-    }
-
     private static bool IsMax(Upgrade upgrade)
     {
         if (upgrade.IsMaxLevel) return true;
 
         return upgrade.SpecData.Type == EUpgradeType.SpawnTimeSub &&
-               SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval ||
-               upgrade.SpecData.Type == EUpgradeType.AutoMergeTimeSub &&
-               AutoMergeManager.Instance != null &&
-               AutoMergeManager.Instance.Interval <= AutoMergeManager.MinimumInterval;
+               SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval;
     }
 
     private static string BuildValueText(
@@ -262,30 +246,16 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                     ? $"{icon}상위 슬라임 추가!"
                     : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
             EUpgradeType.AutoMergeTimeSub =>
-                BuildAutoMergeValueText(icon, modifierIncrease, upgrade.Level),
+                BuildAutoMergeValueText(icon, upgrade.Level),
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
     }
 
-    private static string BuildAutoMergeValueText(
-        string icon,
-        double modifierIncrease,
-        int currentLevel)
+    private static string BuildAutoMergeValueText(string icon, int currentLevel)
     {
         int currentPairCount = AutoMergeManager.GetPairCountForLevel(currentLevel);
         int nextPairCount = AutoMergeManager.GetPairCountForLevel(currentLevel + 1);
-        if (currentPairCount != nextPairCount)
-        {
-            return $"{icon}합성 {currentPairCount}쌍 → {nextPairCount}쌍";
-        }
-
-        float current = AutoMergeManager.Instance != null
-            ? AutoMergeManager.Instance.Interval
-            : AutoMergeManager.BaseInterval;
-        float next = Mathf.Max(
-            AutoMergeManager.MinimumInterval,
-            current - (float)modifierIncrease);
-        return $"{icon}{current:F1}초 → {next:F1}초";
+        return $"{icon}한 번에 {currentPairCount}쌍 → {nextPairCount}쌍";
     }
 
     private static bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)

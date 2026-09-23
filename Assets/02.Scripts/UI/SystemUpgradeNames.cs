@@ -12,7 +12,8 @@ public static class SystemUpgradeNames
             EUpgradeType.SpawnTimeSub => "스폰 시간 단축",
             EUpgradeType.MaxCountAdd => "최대 슬라임 수",
             EUpgradeType.HigherGradeSpawnWeightAdd => "상위 슬라임 등장 확률",
-            EUpgradeType.AutoMergeTimeSub => "자동 합성 시간 단축",
+            // 열거형 이름은 저장된 값과 묶여 있어 그대로 두고, 화면에 보이는 이름만 바꿨다.
+            EUpgradeType.AutoMergeTimeSub => "자동 합성 쌍 수",
             _ => upgradeType.ToString(),
         };
     }

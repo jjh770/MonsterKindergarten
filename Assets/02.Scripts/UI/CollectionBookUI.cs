@@ -69,6 +69,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         StageManager.Instance.SpaceChanged += OnSpaceChanged;
         GameManager.OnAllDataInitialized += RefreshOpenButton;
         GameManager.Instance.OnGameplayActivated += RefreshOpenButton;
+        TutorialManager.Started += RefreshOpenButton;
+        TutorialManager.Finished += RefreshOpenButton;
         SlimeManager.OnNormalCollectionRegistered += OnNormalCollectionRegistered;
         RefreshLayout();
         RefreshOpenButton();
@@ -89,6 +91,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= RefreshOpenButton;
+        TutorialManager.Started -= RefreshOpenButton;
+        TutorialManager.Finished -= RefreshOpenButton;
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnGameplayActivated -= RefreshOpenButton;
