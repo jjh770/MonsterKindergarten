@@ -47,7 +47,7 @@ public class GachaTicketDropper : MonoBehaviour
         // 구독자가 티켓을 만드는 것은 슬라임 목록을 건드리지 않으므로 괜찮다.
         foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
         {
-            if (target == null || target.Location != ESlimeLocation.MainStage) continue;
+            if (target == null || target.Location != ESlimeLocation.MainField) continue;
             if (UnityEngine.Random.value >= _dropChancePerSlime) continue;
 
             // 시간당 몇 장 나오는지는 밸런스 조정의 근거가 되고, 드랍은 시간당 몇 번

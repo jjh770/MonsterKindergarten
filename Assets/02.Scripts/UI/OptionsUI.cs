@@ -102,7 +102,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     {
         if (_isOpen || _isClosing || AudioManager.Instance == null ||
             !GameplayGate.IsActive ||
-            (StageManager.Instance != null && StageManager.Instance.IsTransitioning)) return;
+            (GameplaySpaceManager.Instance != null && GameplaySpaceManager.Instance.IsTransitioning)) return;
 
         _isOpen = true;
         _panelRoot.SetActive(true);

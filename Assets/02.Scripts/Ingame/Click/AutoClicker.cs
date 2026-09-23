@@ -21,7 +21,7 @@ public class AutoClicker : MonoBehaviour
         {
             if (target == null ||
                 target.IsDragging ||
-                target.Location != ESlimeLocation.MainStage)
+                target.Location != ESlimeLocation.MainField)
             {
                 continue;
             }

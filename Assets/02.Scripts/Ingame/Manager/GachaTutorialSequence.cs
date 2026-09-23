@@ -108,7 +108,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     {
         if (_step == Step.MakeRoom &&
             SpawnManager.Instance != null &&
-            SpawnManager.Instance.HasMainStageRoom())
+            SpawnManager.Instance.HasMainFieldRoom())
         {
             ShowGachaButtonStep();
             return;
@@ -127,9 +127,9 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsGachaUnlocked ||
             CurrencyManager.Instance == null ||
-            StageManager.Instance == null ||
-            !StageManager.Instance.IsMainStageActive ||
-            StageManager.Instance.IsTransitioning ||
+            GameplaySpaceManager.Instance == null ||
+            !GameplaySpaceManager.Instance.IsMainFieldActive ||
+            GameplaySpaceManager.Instance.IsTransitioning ||
             (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
@@ -196,7 +196,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void ShowMakeRoomStep()
     {
         UnsubscribeGuide();
-        if (SpawnManager.Instance.HasMainStageRoom())
+        if (SpawnManager.Instance.HasMainFieldRoom())
         {
             ShowGachaButtonStep();
             return;
@@ -234,7 +234,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.MakeRoom ||
             SpawnManager.Instance == null ||
-            !SpawnManager.Instance.HasMainStageRoom())
+            !SpawnManager.Instance.HasMainFieldRoom())
         {
             return;
         }
@@ -251,7 +251,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void ShowGachaButtonStep()
     {
         UnsubscribeMerge();
-        if (SpawnManager.Instance == null || !SpawnManager.Instance.HasMainStageRoom())
+        if (SpawnManager.Instance == null || !SpawnManager.Instance.HasMainFieldRoom())
         {
             ShowMakeRoomStep();
             return;
@@ -385,7 +385,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 
     private void Abort(string message)
@@ -399,7 +399,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 
     private static bool TryFindMergePair(
@@ -416,7 +416,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         {
             SlimeController candidate = targets[i];
             if (candidate == null ||
-                !candidate.IsMainStageActive ||
+                !candidate.IsMainFieldActive ||
                 candidate.IsSpecial)
             {
                 continue;
@@ -426,7 +426,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             {
                 SlimeController other = targets[j];
                 if (other == null ||
-                    !other.IsMainStageActive ||
+                    !other.IsMainFieldActive ||
                     other.IsSpecial ||
                     candidate.Grade >= bestGrade ||
                     !candidate.CanMergeWith(other))

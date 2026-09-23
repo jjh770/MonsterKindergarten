@@ -306,7 +306,7 @@ public static class SlimeStatusSaveMigration
                     $"legacy-{pair.Key}-{i}",
                     (ESlimeGrade)pair.Key,
                     false,
-                    ESlimeLocation.MainStage));
+                    ESlimeLocation.MainField));
             }
         }
 

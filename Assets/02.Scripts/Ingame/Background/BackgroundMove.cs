@@ -1,12 +1,15 @@
-﻿using UnityEngine;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 public class BackgroundMove : MonoBehaviour
 {
     [SerializeField] private Sprite[] _groundBackgrounds;
     [SerializeField] private Sprite[] _skyBackgrounds;
     [SerializeField] private Sprite[] _displayRoomBackgrounds;
-    [SerializeField] private GameObject _groundStageRoot;
-    [SerializeField] private GameObject _skyStageRoot;
+    [FormerlySerializedAs("_groundStageRoot")]
+    [SerializeField] private GameObject _groundThemeRoot;
+    [FormerlySerializedAs("_skyStageRoot")]
+    [SerializeField] private GameObject _skyThemeRoot;
     [SerializeField] private GameObject _displayRoomRoot;
     [SerializeField] private SpriteRenderer[] _groundTiles;
     [SerializeField] private SpriteRenderer[] _skyTiles;
@@ -16,9 +19,9 @@ public class BackgroundMove : MonoBehaviour
     [SerializeField, Range(0f, 2f)] private float _seamOverlapPixels = 1f;
 
     private SpriteRenderer[] _activeTiles;
-    private StageManager _stageManager;
-    private EGameStage _currentStage = EGameStage.Ground;
-    private EGameplaySpace _currentSpace = EGameplaySpace.MainStage;
+    private GameplaySpaceManager _spaceManager;
+    private EBackgroundTheme _currentTheme = EBackgroundTheme.Ground;
+    private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private float _tileWidth;
     private float _tileSpacing;
     private float _tileOriginX;
@@ -34,14 +37,14 @@ public class BackgroundMove : MonoBehaviour
             _skyBackgrounds.Length == 0 ||
             _displayRoomBackgrounds == null ||
             _displayRoomBackgrounds.Length == 0 ||
-            _groundStageRoot == null ||
-            _skyStageRoot == null ||
+            _groundThemeRoot == null ||
+            _skyThemeRoot == null ||
             _displayRoomRoot == null ||
             !HasTwoTiles(_groundTiles) ||
             !HasTwoTiles(_skyTiles) ||
             !HasTwoTiles(_displayRoomTiles))
         {
-            Debug.LogError("스테이지 배경 참조가 비어 있습니다.", this);
+            Debug.LogError("배경 테마 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -57,13 +60,13 @@ public class BackgroundMove : MonoBehaviour
             ? mainCamera.orthographicSize * 2f
             : 0f;
 
-        _stageManager = StageManager.Instance;
-        if (_stageManager != null)
+        _spaceManager = GameplaySpaceManager.Instance;
+        if (_spaceManager != null)
         {
-            _stageManager.StageChanged += ApplyStage;
-            _stageManager.SpaceChanged += ApplySpace;
-            _currentStage = _stageManager.CurrentStage;
-            _currentSpace = _stageManager.CurrentSpace;
+            _spaceManager.BackgroundThemeChanged += ApplyTheme;
+            _spaceManager.SpaceChanged += ApplySpace;
+            _currentTheme = _spaceManager.CurrentBackgroundTheme;
+            _currentSpace = _spaceManager.CurrentSpace;
         }
 
         ApplyBackground();
@@ -71,10 +74,10 @@ public class BackgroundMove : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_stageManager != null)
+        if (_spaceManager != null)
         {
-            _stageManager.StageChanged -= ApplyStage;
-            _stageManager.SpaceChanged -= ApplySpace;
+            _spaceManager.BackgroundThemeChanged -= ApplyTheme;
+            _spaceManager.SpaceChanged -= ApplySpace;
         }
     }
 
@@ -96,11 +99,9 @@ public class BackgroundMove : MonoBehaviour
         }
     }
 
-    private void ApplyStage(EGameStage stage)
+    private void ApplyTheme(EBackgroundTheme theme)
     {
-        if (_currentStage == stage && _activeTiles != null) return;
-
-        _currentStage = stage;
+        _currentTheme = theme;
         ApplyBackground();
     }
 
@@ -114,25 +115,25 @@ public class BackgroundMove : MonoBehaviour
 
     private void ApplyBackground()
     {
-        _groundStageRoot.SetActive(false);
-        _skyStageRoot.SetActive(false);
+        _groundThemeRoot.SetActive(false);
+        _skyThemeRoot.SetActive(false);
         _displayRoomRoot.SetActive(false);
 
         Sprite[] backgrounds = _currentSpace == EGameplaySpace.DisplayRoom
             ? _displayRoomBackgrounds
-            : _currentStage == EGameStage.Ground
+            : _currentTheme == EBackgroundTheme.Ground
             ? _groundBackgrounds
             : _skyBackgrounds;
         _activeTiles = _currentSpace == EGameplaySpace.DisplayRoom
             ? _displayRoomTiles
-            : _currentStage == EGameStage.Ground
+            : _currentTheme == EBackgroundTheme.Ground
                 ? _groundTiles
                 : _skyTiles;
         GameObject activeRoot = _currentSpace == EGameplaySpace.DisplayRoom
             ? _displayRoomRoot
-            : _currentStage == EGameStage.Ground
-                ? _groundStageRoot
-                : _skyStageRoot;
+            : _currentTheme == EBackgroundTheme.Ground
+                ? _groundThemeRoot
+                : _skyThemeRoot;
         Sprite selectedBackground =
             backgrounds[Random.Range(0, backgrounds.Length)];
         activeRoot.SetActive(true);

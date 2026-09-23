@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 // 슬라임 도메인을 가지고 있고 실제 갖가지 기능을 동작하게하는 슬라임 컨트롤러
@@ -28,17 +28,17 @@ public class SlimeController : MonoBehaviour, IClickable
     public bool IsSpecial => Instance != null && Instance.IsSpecial;
     public ESlimeLocation Location => Instance != null
         ? Instance.Location
-        : ESlimeLocation.MainStage;
+        : ESlimeLocation.MainField;
     public bool IsDragging => _isDragging;
     // 스폰 직후 떨어지는 동안에는 합성 대상으로 삼지 않는다.
     public bool HasLanded => _hasLanded;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
-    public bool IsMainStageActive =>
+    public bool IsMainFieldActive =>
         Instance != null &&
-        Location == ESlimeLocation.MainStage &&
-        (StageManager.Instance == null ||
-         StageManager.Instance.IsMainFieldInteractionActive);
+        Location == ESlimeLocation.MainField &&
+        (GameplaySpaceManager.Instance == null ||
+         GameplaySpaceManager.Instance.IsMainFieldInteractionActive);
 
     public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnSpawned;
@@ -297,8 +297,8 @@ public class SlimeController : MonoBehaviour, IClickable
         return other != null &&
                other != this &&
                // 기획서 §7.2 - 장식장 개체는 합성 대상이 되지 않는다.
-               Location == ESlimeLocation.MainStage &&
-               other.Location == ESlimeLocation.MainStage &&
+               Location == ESlimeLocation.MainField &&
+               other.Location == ESlimeLocation.MainField &&
                _slime != null &&
                other.Slime != null &&
                SlimeManager.Instance != null &&
@@ -346,7 +346,7 @@ public class SlimeController : MonoBehaviour, IClickable
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
-        if (!IsMainStageActive) return true;
+        if (!IsMainFieldActive) return true;
 
         foreach (IFeedback feedback in _feedbacks)
         {

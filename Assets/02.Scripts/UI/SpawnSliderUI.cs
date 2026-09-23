@@ -127,7 +127,7 @@ public class SpawnSliderUI : MonoBehaviour
 
         if (_spawnMaxText != null)
         {
-            int current = SpawnManager.Instance.GetMainStageSlimeCount();
+            int current = SpawnManager.Instance.GetMainFieldSlimeCount();
             int max = SpawnManager.Instance.MaxActiveCount;
 
             if (_displayedActiveCount != current || _displayedMaxCount != max)
@@ -176,7 +176,7 @@ public class SpawnSliderUI : MonoBehaviour
             return SpawnGaugeState.AutoSpawnOff;
         }
 
-        return SpawnManager.Instance.HasMainStageRoom()
+        return SpawnManager.Instance.HasMainFieldRoom()
             ? SpawnGaugeState.Running
             : SpawnGaugeState.FieldFull;
     }

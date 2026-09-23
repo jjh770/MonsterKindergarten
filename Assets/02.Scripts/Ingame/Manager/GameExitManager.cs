@@ -36,7 +36,7 @@ public sealed class GameExitManager : MonoBehaviour
     private void Update()
     {
         if (Keyboard.current?.escapeKey.wasPressedThisFrame != true) return;
-        if (StageManager.Instance != null && StageManager.Instance.IsTransitioning) return;
+        if (GameplaySpaceManager.Instance != null && GameplaySpaceManager.Instance.IsTransitioning) return;
 
         if (TryHandleBack()) return;
 

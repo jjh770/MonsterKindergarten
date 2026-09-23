@@ -62,10 +62,10 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _displayRoomInfoUI.InfoClosed += OnInfoClosed;
         }
 
-        if (StageManager.Instance != null)
+        if (GameplaySpaceManager.Instance != null)
         {
-            StageManager.Instance.SpaceChanged += OnSpaceChanged;
-            StageManager.Instance.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
+            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
+            GameplaySpaceManager.Instance.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
         }
 
         if (GameManager.Instance != null)
@@ -109,10 +109,10 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _displayRoomInfoUI.InfoClosed -= OnInfoClosed;
         }
 
-        if (StageManager.Instance != null)
+        if (GameplaySpaceManager.Instance != null)
         {
-            StageManager.Instance.SpaceChanged -= OnSpaceChanged;
-            StageManager.Instance.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
+            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+            GameplaySpaceManager.Instance.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
         }
 
         if (GameManager.Instance != null)
@@ -148,9 +148,9 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             !TutorialProgress.CanStart(TutorialIds.DisplayRoom) ||
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsDisplayRoomUnlocked ||
-            StageManager.Instance == null ||
-            !StageManager.Instance.IsMainStageActive ||
-            StageManager.Instance.IsTransitioning ||
+            GameplaySpaceManager.Instance == null ||
+            !GameplaySpaceManager.Instance.IsMainFieldActive ||
+            GameplaySpaceManager.Instance.IsTransitioning ||
             (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
@@ -359,8 +359,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     private void OnSpaceTransitionCompleted()
     {
         if (_step != Step.EnterTransition ||
-            StageManager.Instance == null ||
-            StageManager.Instance.CurrentSpace != EGameplaySpace.DisplayRoom)
+            GameplaySpaceManager.Instance == null ||
+            GameplaySpaceManager.Instance.CurrentSpace != EGameplaySpace.DisplayRoom)
         {
             return;
         }
@@ -494,7 +494,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 
     private void Abort(string message)
@@ -508,7 +508,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 
     private static SlimeController FindTransferCandidate()
@@ -521,8 +521,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
         {
             if (target != null &&
-                target.Location == ESlimeLocation.MainStage &&
-                target.IsMainStageActive &&
+                target.Location == ESlimeLocation.MainField &&
+                target.IsMainFieldActive &&
                 SlimeManager.Instance.CanMoveToDisplayRoom(
                     target.Grade,
                     target.IsSpecial))

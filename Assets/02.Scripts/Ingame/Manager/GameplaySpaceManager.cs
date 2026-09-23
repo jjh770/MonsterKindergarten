@@ -1,40 +1,43 @@
-﻿using System;
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum EGameplaySpace
 {
-    MainStage,
+    MainField,
     DisplayRoom,
 }
 
-public sealed class StageManager : MonoBehaviour
+public sealed class GameplaySpaceManager : MonoBehaviour
 {
-    public static StageManager Instance { get; private set; }
+    public static GameplaySpaceManager Instance { get; private set; }
 
     [Header("Scene References")]
     [SerializeField] private Clicker _clicker;
     [SerializeField] private UpgradeUI _upgradeUI;
-    [SerializeField] private StageUI _stageUI;
-    [SerializeField] private StageTransitionPlayer _transitionPlayer;
-    [SerializeField] private SkyIntroDirector _skyIntroDirector;
+    [FormerlySerializedAs("_stageUI")]
+    [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
+    [SerializeField] private GameplayTransitionPlayer _transitionPlayer;
+    [FormerlySerializedAs("_skyIntroDirector")]
+    [SerializeField] private BackgroundThemeUnlockDirector _backgroundThemeUnlockDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
 
-    private EGameStage _currentStage = EGameStage.Ground;
-    private EGameplaySpace _currentSpace = EGameplaySpace.MainStage;
+    private EBackgroundTheme _currentBackgroundTheme = EBackgroundTheme.Ground;
+    private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private bool _isInitializeStarted;
     private bool _isInitialized;
 
-    public EGameStage CurrentStage => _currentStage;
+    public EBackgroundTheme CurrentBackgroundTheme => _currentBackgroundTheme;
     public EGameplaySpace CurrentSpace => _currentSpace;
-    public bool IsMainStageActive => _currentSpace == EGameplaySpace.MainStage;
+    public bool IsMainFieldActive => _currentSpace == EGameplaySpace.MainField;
     public bool IsTransitioning => _transitionPlayer != null &&
                                    _transitionPlayer.IsTransitioning;
     public bool IsMainFieldInteractionActive =>
-        IsMainStageActive && !IsTransitioning;
-    public event Action<EGameStage> StageChanged;
-    public event Action StageTransitionCompleted;
+        IsMainFieldActive && !IsTransitioning;
+    public event Action<EBackgroundTheme> BackgroundThemeChanged;
+    public event Action BackgroundThemeTransitionCompleted;
     public event Action<EGameplaySpace> SpaceChanged;
     public event Action SpaceTransitionCompleted;
 
@@ -57,9 +60,12 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        _stageUI.ButtonClicked += OnStageButtonClicked;
-        _skyIntroDirector.SkyTransitionRequested += OnSkyTransitionRequested;
-        _skyIntroDirector.InteractionEnableRequested += SetInteractionEnabled;
+        _backgroundThemeUI.ButtonClicked += OnBackgroundButtonClicked;
+        _backgroundThemeUI.ThemeSelected += OnBackgroundThemeSelected;
+        _backgroundThemeUnlockDirector.BackgroundThemeTransitionRequested +=
+            OnBackgroundThemeTransitionRequested;
+        _backgroundThemeUnlockDirector.InteractionEnableRequested +=
+            SetInteractionEnabled;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
         MergeManager.Merged += OnMerged;
@@ -97,22 +103,25 @@ public sealed class StageManager : MonoBehaviour
             SlimeSpawner.Instance.Spawned -= OnSlimeSpawned;
         }
 
-        if (_stageUI != null)
+        if (_backgroundThemeUI != null)
         {
-            _stageUI.ButtonClicked -= OnStageButtonClicked;
+            _backgroundThemeUI.ButtonClicked -= OnBackgroundButtonClicked;
+            _backgroundThemeUI.ThemeSelected -= OnBackgroundThemeSelected;
         }
 
-        if (_skyIntroDirector != null)
+        if (_backgroundThemeUnlockDirector != null)
         {
-            _skyIntroDirector.SkyTransitionRequested -= OnSkyTransitionRequested;
-            _skyIntroDirector.InteractionEnableRequested -= SetInteractionEnabled;
+            _backgroundThemeUnlockDirector.BackgroundThemeTransitionRequested -=
+                OnBackgroundThemeTransitionRequested;
+            _backgroundThemeUnlockDirector.InteractionEnableRequested -=
+                SetInteractionEnabled;
         }
     }
 
     public bool TryEnterDisplayRoom()
     {
         if (!_isInitialized ||
-            !IsMainStageActive ||
+            !IsMainFieldActive ||
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
@@ -132,7 +141,7 @@ public sealed class StageManager : MonoBehaviour
         return true;
     }
 
-    // 연출 값은 StageTransitionPlayer가 소유하므로 UI는 이 경계로만 호출한다.
+    // 연출 값은 GameplayTransitionPlayer가 소유하므로 UI는 이 경계로만 호출한다.
     public void PlayDisplayRoomTransfer(SlimeController target, Action onComplete)
     {
         if (_transitionPlayer == null)
@@ -191,15 +200,15 @@ public sealed class StageManager : MonoBehaviour
     public bool TryExitDisplayRoom()
     {
         if (!_isInitialized ||
-            IsMainStageActive ||
+            IsMainFieldActive ||
             _transitionPlayer.IsTransitioning)
         {
             return false;
         }
 
         _transitionPlayer.PlaySpace(
-            EGameplaySpace.MainStage,
-            () => SetCurrentSpace(EGameplaySpace.MainStage),
+            EGameplaySpace.MainField,
+            () => SetCurrentSpace(EGameplaySpace.MainField),
             onCompleted: CompleteSpaceTransition);
         return true;
     }
@@ -214,8 +223,8 @@ public sealed class StageManager : MonoBehaviour
     {
         bool hasReferences = _clicker != null &&
                              _upgradeUI != null &&
-                             _skyIntroDirector != null &&
-                             _stageUI != null &&
+                             _backgroundThemeUnlockDirector != null &&
+                             _backgroundThemeUI != null &&
                              _unlockPopupUI != null &&
                              _transitionPlayer != null;
         if (!hasReferences)
@@ -242,14 +251,14 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        _currentStage = SlimeManager.Instance.IsSkyUnlocked
-            ? SlimeManager.Instance.CurrentStage
-            : EGameStage.Ground;
+        _currentBackgroundTheme = SlimeManager.Instance.IsSkyUnlocked
+            ? SlimeManager.Instance.SelectedBackgroundTheme
+            : EBackgroundTheme.Ground;
         _isInitialized = true;
-        _transitionPlayer.ApplyEnvironment(_currentStage, 0f);
-        StageChanged?.Invoke(_currentStage);
+        _transitionPlayer.ApplyEnvironment(_currentBackgroundTheme, 0f);
+        BackgroundThemeChanged?.Invoke(_currentBackgroundTheme);
         ApplyAllSlimeVisibility();
-        RefreshStageButton();
+        RefreshBackgroundButton();
         SetInteractionEnabled(false);
 
         await WaitForGameplayActiveAsync(token);
@@ -258,22 +267,22 @@ public sealed class StageManager : MonoBehaviour
 
         // 하늘 안내를 아직 못 본 계정만 여기서 인트로를 띄운다. 버튼 노출은
         // 규칙 하나가 정하므로 분기마다 따로 켜고 끄지 않는다.
-        RefreshStageButton();
+        RefreshBackgroundButton();
         if (SlimeManager.Instance.IsSkyUnlocked &&
             !SlimeManager.Instance.SkyIntroCompleted)
         {
             SlimeController skyTarget = FindFirstSkySlime();
             if (skyTarget != null)
             {
-                _skyIntroDirector.Prepare(skyTarget);
-                _skyIntroDirector.Begin();
+                _backgroundThemeUnlockDirector.Prepare(skyTarget);
+                _backgroundThemeUnlockDirector.Begin();
             }
             else
             {
-                SlimeManager.Instance.UpdateStageProgress(
-                    EGameStage.Ground,
-                    skyIntroCompleted: true);
-                RefreshStageButton();
+                SlimeManager.Instance.UpdateBackgroundProgress(
+                    EBackgroundTheme.Ground,
+                    backgroundUnlockCompleted: true);
+                RefreshBackgroundButton();
             }
         }
     }
@@ -320,14 +329,14 @@ public sealed class StageManager : MonoBehaviour
             !SlimeManager.Instance.SkyIntroCompleted)
         {
             target.PreparePresentationTransfer();
-            _skyIntroDirector.Prepare(target);
+            _backgroundThemeUnlockDirector.Prepare(target);
             SetInteractionEnabled(false);
 
             // 해금 팝업이 재생 중일 때만 PresentationCompleted가 온다.
             // 이미 해금된 등급이면 팝업이 뜨지 않으므로 바로 인트로를 시작한다.
             if (!_unlockPopupUI.IsPresenting)
             {
-                _skyIntroDirector.Begin();
+                _backgroundThemeUnlockDirector.Begin();
             }
 
             return;
@@ -339,28 +348,27 @@ public sealed class StageManager : MonoBehaviour
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
         if (!BackgroundThemeRules.IsUnlockGrade(grade) ||
-            !_skyIntroDirector.HasPendingTarget ||
+            !_backgroundThemeUnlockDirector.HasPendingTarget ||
             _transitionPlayer.IsTransitioning)
         {
             return;
         }
 
-        _skyIntroDirector.Begin();
+        _backgroundThemeUnlockDirector.Begin();
     }
 
-    private void OnSkyTransitionRequested(SlimeController target, Action onArrived)
+    private void OnBackgroundThemeTransitionRequested(SlimeController target, Action onArrived)
     {
-        StartStageTransition(
-            EGameStage.Sky,
-            target,
+        StartBackgroundThemeTransition(
+            EBackgroundTheme.Sky,
             onArrived,
-            saveStage: false);
+            saveTheme: false);
     }
 
-    private void OnStageButtonClicked()
+    private void OnBackgroundButtonClicked()
     {
         if (!_isInitialized ||
-            !IsMainStageActive ||
+            !IsMainFieldActive ||
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
             SlimeManager.Instance == null ||
@@ -369,32 +377,42 @@ public sealed class StageManager : MonoBehaviour
             return;
         }
 
-        if (_skyIntroDirector.IsWaitingForStageButton)
+        if (_backgroundThemeUnlockDirector.IsWaitingForBackgroundButton)
         {
             // 첫 안내에서는 이동하지 않고 버튼 설명 다음 대화로 이어진다.
-            _skyIntroDirector.AdvanceStageButtonStep();
+            _backgroundThemeUnlockDirector.AdvanceBackgroundButtonStep();
             return;
         }
 
         _upgradeUI.TryClose();
-        EGameStage targetStage = _currentStage == EGameStage.Ground
-            ? EGameStage.Sky
-            : EGameStage.Ground;
-
-        StartStageTransition(
-            targetStage,
-            null,
-            onComplete: null,
-            saveStage: true);
+        _backgroundThemeUI.ToggleThemeSelector();
     }
 
-    private void StartStageTransition(
-        EGameStage targetStage,
-        SlimeController travellingSlime,
-        Action onComplete,
-        bool saveStage)
+    private void OnBackgroundThemeSelected(EBackgroundTheme theme)
     {
-        if (_transitionPlayer.IsTransitioning || targetStage == _currentStage)
+        if (!_isInitialized ||
+            !IsMainFieldActive ||
+            _transitionPlayer.IsTransitioning ||
+            !GameplayGate.IsActive ||
+            SlimeManager.Instance == null ||
+            !SlimeManager.Instance.IsSkyUnlocked ||
+            !BackgroundThemeRules.IsValid(theme))
+        {
+            return;
+        }
+
+        StartBackgroundThemeTransition(
+            theme,
+            onComplete: null,
+            saveTheme: true);
+    }
+
+    private void StartBackgroundThemeTransition(
+        EBackgroundTheme targetTheme,
+        Action onComplete,
+        bool saveTheme)
+    {
+        if (_transitionPlayer.IsTransitioning)
         {
             onComplete?.Invoke();
             return;
@@ -402,29 +420,25 @@ public sealed class StageManager : MonoBehaviour
 
         SetInteractionEnabled(false);
 
-        _transitionPlayer.Play(
-            targetStage,
-            travellingSlime,
-            onStageSwitched: () =>
+        _transitionPlayer.PlayBackgroundTheme(
+            targetTheme,
+            onThemeSwitched: () =>
             {
-                _currentStage = targetStage;
-                StageChanged?.Invoke(_currentStage);
-                ApplyAllSlimeVisibility();
+                _currentBackgroundTheme = targetTheme;
+                BackgroundThemeChanged?.Invoke(_currentBackgroundTheme);
             },
             onCompleted: () =>
             {
-                ApplyAllSlimeVisibility();
-
-                if (saveStage && SlimeManager.Instance != null)
+                if (saveTheme && SlimeManager.Instance != null)
                 {
-                    SlimeManager.Instance.UpdateStageProgress(
-                        _currentStage,
-                        SlimeManager.Instance.SkyIntroCompleted);
+                    SlimeManager.Instance.UpdateBackgroundProgress(
+                        _currentBackgroundTheme,
+                        SlimeManager.Instance.BackgroundUnlockCompleted);
                 }
 
                 SetInteractionEnabled(true);
                 onComplete?.Invoke();
-                StageTransitionCompleted?.Invoke();
+                BackgroundThemeTransitionCompleted?.Invoke();
             });
     }
 
@@ -481,8 +495,8 @@ public sealed class StageManager : MonoBehaviour
     {
         if (target == null) return;
 
-        bool isVisible = IsMainStageActive
-            ? target.Location == ESlimeLocation.MainStage
+        bool isVisible = IsMainFieldActive
+            ? target.Location == ESlimeLocation.MainField
             : target.Location == ESlimeLocation.DisplayRoom;
         target.SetLocationPresentationActive(isVisible);
     }
@@ -493,7 +507,7 @@ public sealed class StageManager : MonoBehaviour
 
         _currentSpace = space;
         ApplyAllSlimeVisibility();
-        RefreshStageButton();
+        RefreshBackgroundButton();
         SpaceChanged?.Invoke(_currentSpace);
     }
 
@@ -504,7 +518,7 @@ public sealed class StageManager : MonoBehaviour
         foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
         {
             if (target != null &&
-                target.Grade >= UnlockGrades.SkyStage)
+                target.Grade >= UnlockGrades.BackgroundTheme)
             {
                 return target;
             }
@@ -517,7 +531,7 @@ public sealed class StageManager : MonoBehaviour
     // 평상시는 공간 기본값이며, 초기화·전환 연출 중에는 차단 우선순위를 쓴다.
     private void SetInteractionEnabled(bool isEnabled)
     {
-        _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainStageActive);
+        _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainFieldActive);
         _clicker.PushMode(
             this,
             GetSpaceInputMode(isEnabled),
@@ -527,7 +541,7 @@ public sealed class StageManager : MonoBehaviour
     private ClickerInputMode GetSpaceInputMode(bool isEnabled)
     {
         if (!isEnabled) return ClickerInputMode.Blocked;
-        if (IsMainStageActive) return ClickerInputMode.Free;
+        if (IsMainFieldActive) return ClickerInputMode.Free;
 
         // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
         return ClickerInputMode.SelectOnly();
@@ -535,20 +549,20 @@ public sealed class StageManager : MonoBehaviour
 
     // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.
     // 평상시 공간 기본값은 갱신 순서와 무관하게 선택 모드·튜토리얼보다 낮다.
-    // 하늘 버튼을 열어도 되는지 판정하는 한 곳. 초기화 직후, 하늘 인트로가
+    // 배경 버튼을 열어도 되는지 판정하는 한 곳. 초기화 직후, 배경 해금 안내가
     // 끝날 때, 공간을 오갈 때가 모두 같은 규칙을 쓴다.
     //
     // 나뉘어 있을 때는 공간 전환만 인트로 완료를 보지 않는 등 조건이 서로
     // 달랐고, 하늘 인트로 쪽은 조건 없이 켜기만 했다. 규칙이 늘어날 때
     // 빠뜨리는 자리가 생긴다.
     //
-    // 메뉴 안에서 실제로 보일지는 StageUI의 다른 축이 정한다. 여기서는
+    // 메뉴 안에서 실제로 보일지는 BackgroundThemeUI의 다른 축이 정한다. 여기서는
     // 버튼을 열어도 되는 상태인지만 답한다.
-    public void RefreshStageButton()
+    public void RefreshBackgroundButton()
     {
-        _stageUI.SetButtonVisible(
+        _backgroundThemeUI.SetButtonVisible(
             _isInitialized &&
-            IsMainStageActive &&
+            IsMainFieldActive &&
             SlimeManager.Instance != null &&
             SlimeManager.Instance.IsSkyUnlocked &&
             SlimeManager.Instance.SkyIntroCompleted);

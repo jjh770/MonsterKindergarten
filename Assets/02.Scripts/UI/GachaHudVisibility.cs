@@ -56,7 +56,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
     private void Update()
     {
         SlimeManager slimeManager = SlimeManager.Instance;
-        bool isBaseAvailable = GameplayGate.IsMainStageReady &&
+        bool isBaseAvailable = GameplayGate.IsMainFieldReady &&
                                _panelSwitcher.IsAreaVisible &&
                                slimeManager != null;
 

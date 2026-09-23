@@ -119,9 +119,9 @@ public class GachaTicketField : MonoBehaviour
         if (!enabled) return;
 
         GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        if (StageManager.Instance != null)
+        if (GameplaySpaceManager.Instance != null)
         {
-            StageManager.Instance.SpaceChanged += OnSpaceChanged;
+            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
         }
 
         // 이미 발화한 뒤에 붙었으면 이벤트를 다시 기다릴 수 없다.
@@ -140,9 +140,9 @@ public class GachaTicketField : MonoBehaviour
         }
 
         GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        if (StageManager.Instance != null)
+        if (GameplaySpaceManager.Instance != null)
         {
-            StageManager.Instance.SpaceChanged -= OnSpaceChanged;
+            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
         }
 
         foreach (Tween tween in new List<Tween>(_targetPunchTweens))
@@ -649,10 +649,10 @@ public class GachaTicketField : MonoBehaviour
 
     private void ApplyVisibility()
     {
-        StageManager stageManager = StageManager.Instance;
+        GameplaySpaceManager spaceManager = GameplaySpaceManager.Instance;
         SetVisible(
             _tickets,
-            stageManager != null && stageManager.IsMainStageActive);
+            spaceManager != null && spaceManager.IsMainFieldActive);
     }
 
     private void SetVisible(List<GameObject> tickets, bool isVisible)

@@ -103,9 +103,9 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
             !TutorialProgress.CanStart(TutorialIds.HigherGradeSpawn) ||
-            StageManager.Instance == null ||
-            !StageManager.Instance.IsMainStageActive ||
-            StageManager.Instance.IsTransitioning ||
+            GameplaySpaceManager.Instance == null ||
+            !GameplaySpaceManager.Instance.IsMainFieldActive ||
+            GameplaySpaceManager.Instance.IsTransitioning ||
             (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
@@ -247,6 +247,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 }

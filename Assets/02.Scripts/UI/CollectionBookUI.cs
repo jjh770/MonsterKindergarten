@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using DG.Tweening;
@@ -66,7 +66,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _closeButton.onClick.AddListener(Close);
         _previousButton.onClick.AddListener(ShowPrevious);
         _nextButton.onClick.AddListener(ShowNext);
-        StageManager.Instance.SpaceChanged += OnSpaceChanged;
+        GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
         GameManager.OnAllDataInitialized += RefreshOpenButton;
         GameManager.Instance.OnGameplayActivated += RefreshOpenButton;
         TutorialManager.Started += RefreshOpenButton;
@@ -85,9 +85,9 @@ public sealed class CollectionBookUI : MonoBehaviour
         _previousButton?.onClick.RemoveListener(ShowPrevious);
         _nextButton?.onClick.RemoveListener(ShowNext);
 
-        if (StageManager.Instance != null)
+        if (GameplaySpaceManager.Instance != null)
         {
-            StageManager.Instance.SpaceChanged -= OnSpaceChanged;
+            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
         }
 
         GameManager.OnAllDataInitialized -= RefreshOpenButton;
@@ -126,7 +126,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailDescriptionText != null &&
                              _displayRoomBadge != null &&
                              GameManager.Instance != null &&
-                             StageManager.Instance != null;
+                             GameplaySpaceManager.Instance != null;
         if (!hasReferences)
         {
             Debug.LogError("도감 UI의 필수 참조가 비어 있습니다.", this);
@@ -430,9 +430,9 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void RestoreUpgradeToggle(bool animated = true)
     {
-        bool isMainStage = StageManager.Instance != null &&
-                           StageManager.Instance.IsMainStageActive;
-        _upgradeUI.SetToggleVisible(isMainStage, animated);
+        bool isMainField = GameplaySpaceManager.Instance != null &&
+                           GameplaySpaceManager.Instance.IsMainFieldActive;
+        _upgradeUI.SetToggleVisible(isMainField, animated);
         _upgradeUI.SetToggleInputEnabled(_wasUpgradeToggleInputEnabled);
     }
 

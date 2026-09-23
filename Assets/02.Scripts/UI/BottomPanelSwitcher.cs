@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 하단 HUD의 두 패널(시스템 업그레이드 / 스테이지 이동)을 슬라이드로 교체한다.
+// 하단 HUD의 시스템 업그레이드 / 이동 / 배경 테마 패널을 슬라이드로 교체한다.
 //
 // 어떤 상황인지는 ApplyContext로 외부가 알려준다. 이 컴포넌트는 장식장이나
 // 스테이지 상태를 직접 조회하지 않는다. 그래야 하늘 인트로처럼 장식장과
@@ -15,6 +15,8 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     [SerializeField] private RectTransform _systemUpgradePanel;
     [SerializeField] private RectTransform _movePanel;
     [SerializeField] private CanvasGroup _movePanelGroup;
+    [SerializeField] private RectTransform _backgroundThemePanel;
+    [SerializeField] private CanvasGroup _backgroundThemePanelGroup;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _animationDuration = 0.25f;
@@ -22,7 +24,9 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     private Sequence _sequence;
     private Vector2 _systemUpgradeStartPosition;
     private Vector2 _movePanelStartPosition;
+    private Vector2 _backgroundThemePanelStartPosition;
     private bool _isMovePanelSelected;
+    private bool _isBackgroundThemePanelSelected;
     private bool _isAreaVisible = true;
     private bool _isForcedMovePanel;
     private bool _canSwitch;
@@ -34,6 +38,9 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     public bool IsAreaVisible => _isAreaVisible;
     public bool IsMovePanelOpen => _movePanel != null &&
                                    _movePanel.gameObject.activeSelf;
+    public bool IsBackgroundThemePanelOpen =>
+        _backgroundThemePanel != null &&
+        _backgroundThemePanel.gameObject.activeSelf;
 
     // 이동 패널이 완전히 열린 순간. 튜토리얼과 하늘 인트로가 이 시점을 기다린다.
     public event Action MovePanelOpened;
@@ -53,6 +60,8 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
 
         _systemUpgradeStartPosition = _systemUpgradePanel.anchoredPosition;
         _movePanelStartPosition = _movePanel.anchoredPosition;
+        _backgroundThemePanelStartPosition =
+            _backgroundThemePanel.anchoredPosition;
         _isInitialized = true;
     }
 
@@ -74,7 +83,9 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
         bool hasReferences = _switchButton != null &&
                              _systemUpgradePanel != null &&
                              _movePanel != null &&
-                             _movePanelGroup != null;
+                             _movePanelGroup != null &&
+                             _backgroundThemePanel != null &&
+                             _backgroundThemePanelGroup != null;
         if (!hasReferences)
         {
             Debug.LogError("하단 패널 전환의 필수 참조가 비어 있습니다.", this);
@@ -98,6 +109,11 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
             _isMovePanelSelected = false;
         }
 
+        if (!isAreaVisible || forceMovePanel)
+        {
+            _isBackgroundThemePanelSelected = false;
+        }
+
         ApplyState();
     }
 
@@ -105,6 +121,7 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     public void ResetSelection(bool selectMovePanel)
     {
         _isMovePanelSelected = selectMovePanel;
+        _isBackgroundThemePanelSelected = false;
     }
 
     // 튜토리얼이 숨겨진 업그레이드를 강조하지 않도록 표시까지 즉시 확정한다.
@@ -112,13 +129,62 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
     {
         if (!_isInitialized || !_isAreaVisible || _isForcedMovePanel) return false;
 
+        _isBackgroundThemePanelSelected = false;
         _isMovePanelSelected = false;
         ApplyState();
         return _systemUpgradePanel.gameObject.activeInHierarchy;
     }
 
+    public bool TryShowBackgroundThemePanel()
+    {
+        if (!_isInitialized ||
+            !_isAreaVisible ||
+            _isForcedMovePanel ||
+            !_canSwitch ||
+            _isBackgroundThemePanelSelected ||
+            !_movePanel.gameObject.activeInHierarchy)
+        {
+            return false;
+        }
+
+        _isBackgroundThemePanelSelected = true;
+        PlayPanelTransition(
+            _movePanel,
+            _backgroundThemePanel,
+            _movePanelStartPosition,
+            _backgroundThemePanelStartPosition,
+            onCompleted: null);
+        return true;
+    }
+
+    public bool TryHideBackgroundThemePanel(bool animated = true)
+    {
+        if (!_isInitialized || !_isBackgroundThemePanelSelected) return false;
+
+        _isBackgroundThemePanelSelected = false;
+        if (!animated)
+        {
+            ApplyState();
+            return true;
+        }
+
+        PlayPanelTransition(
+            _backgroundThemePanel,
+            _movePanel,
+            _backgroundThemePanelStartPosition,
+            _movePanelStartPosition,
+            onCompleted: () => MovePanelOpened?.Invoke());
+        return true;
+    }
+
     private void Toggle()
     {
+        if (_isBackgroundThemePanelSelected)
+        {
+            TryHideBackgroundThemePanel();
+            return;
+        }
+
         if (!_isInitialized ||
             !_isAreaVisible ||
             _isForcedMovePanel ||
@@ -182,26 +248,81 @@ public sealed class BottomPanelSwitcher : MonoBehaviour
             });
     }
 
+    private void PlayPanelTransition(
+        RectTransform outgoing,
+        RectTransform incoming,
+        Vector2 outgoingBase,
+        Vector2 incomingBase,
+        Action onCompleted)
+    {
+        _sequence?.Kill();
+        _sequence = null;
+
+        float distance = Mathf.Max(
+            _movePanel.rect.height,
+            _backgroundThemePanel.rect.height);
+
+        _switchButton.interactable = false;
+        outgoing.gameObject.SetActive(true);
+        incoming.gameObject.SetActive(true);
+        outgoing.anchoredPosition = outgoingBase;
+        incoming.anchoredPosition = incomingBase + Vector2.down * distance;
+        _movePanelGroup.interactable = false;
+        _backgroundThemePanelGroup.interactable = false;
+
+        // 어느 방향이든 이동 패널이 슬라이드 중이라면 자식 버튼도 함께 보여야 한다.
+        MovePanelPresentationChanged?.Invoke(true);
+
+        _sequence = DOTween.Sequence()
+            .Join(outgoing.DOAnchorPos(
+                outgoingBase + Vector2.down * distance,
+                _animationDuration).SetEase(Ease.InOutCubic))
+            .Join(incoming.DOAnchorPos(
+                incomingBase,
+                _animationDuration).SetEase(Ease.InOutCubic))
+            .OnComplete(() =>
+            {
+                _sequence = null;
+                outgoing.gameObject.SetActive(false);
+                outgoing.anchoredPosition = outgoingBase;
+                incoming.anchoredPosition = incomingBase;
+                ApplyState();
+                onCompleted?.Invoke();
+            });
+    }
+
     private void ApplyState()
     {
         _sequence?.Kill();
         _sequence = null;
 
         bool showMovePanel = _isAreaVisible &&
+                             !_isBackgroundThemePanelSelected &&
                              (_isForcedMovePanel ||
                               (_canSwitch && _isMovePanelSelected));
         bool showSystemPanel = _isAreaVisible &&
                                !_isForcedMovePanel &&
+                               !_isBackgroundThemePanelSelected &&
                                !showMovePanel;
+        bool showBackgroundThemePanel = _isAreaVisible &&
+                                        !_isForcedMovePanel &&
+                                        _canSwitch &&
+                                        _isBackgroundThemePanelSelected;
 
         _switchButton.gameObject.SetActive(
-            _isAreaVisible && !_isForcedMovePanel && _canSwitch);
+            _isAreaVisible &&
+            !_isForcedMovePanel &&
+            _canSwitch);
         _switchButton.interactable = true;
         _systemUpgradePanel.anchoredPosition = _systemUpgradeStartPosition;
         _movePanel.anchoredPosition = _movePanelStartPosition;
+        _backgroundThemePanel.anchoredPosition =
+            _backgroundThemePanelStartPosition;
         _systemUpgradePanel.gameObject.SetActive(showSystemPanel);
         _movePanel.gameObject.SetActive(showMovePanel);
+        _backgroundThemePanel.gameObject.SetActive(showBackgroundThemePanel);
         _movePanelGroup.interactable = true;
+        _backgroundThemePanelGroup.interactable = true;
 
         MovePanelPresentationChanged?.Invoke(showMovePanel);
     }

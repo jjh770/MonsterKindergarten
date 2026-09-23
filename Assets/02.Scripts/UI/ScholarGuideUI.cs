@@ -90,7 +90,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
     public void Open()
     {
         if (!enabled || _isOpen || _isTransitioning || !GameplayGate.IsActive) return;
-        if (StageManager.Instance != null && StageManager.Instance.IsTransitioning) return;
+        if (GameplaySpaceManager.Instance != null && GameplaySpaceManager.Instance.IsTransitioning) return;
 
         _isOpen = true;
         IsAnyOpen = true;

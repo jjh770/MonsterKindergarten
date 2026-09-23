@@ -72,7 +72,7 @@ public sealed class AutoMergeManager : MonoBehaviour
             Removed = removed;
             FromGrade = keeper.Grade;
             Center = (keeper.transform.position + removed.transform.position) * 0.5f;
-            IsPresented = keeper.IsMainStageActive && removed.IsMainStageActive;
+            IsPresented = keeper.IsMainFieldActive && removed.IsMainFieldActive;
         }
     }
 
@@ -121,7 +121,7 @@ public sealed class AutoMergeManager : MonoBehaviour
     public bool IsAvailable()
     {
         SlimeManager slimeManager = SlimeManager.Instance;
-        return GameplayGate.IsMainStageReady &&
+        return GameplayGate.IsMainFieldReady &&
                // 도감 10종 안내는 이 버튼을 직접 눌러 보게 한다. 다른 튜토리얼은
                // 여전히 막는다.
                (!TutorialManager.IsRunning ||
@@ -143,7 +143,7 @@ public sealed class AutoMergeManager : MonoBehaviour
         {
             if (target == null || target.IsDragging || target.IsSpecial ||
                 !target.HasLanded ||
-                target.Location != ESlimeLocation.MainStage ||
+                target.Location != ESlimeLocation.MainField ||
                 target.Grade >= ESlimeGrade.Count - 1 ||
                 string.IsNullOrEmpty(target.InstanceId) ||
                 _rejectedIds.Contains(target.InstanceId))
@@ -269,7 +269,7 @@ public sealed class AutoMergeManager : MonoBehaviour
                               pair.Removed != null &&
                               !pair.Removed.gameObject.activeInHierarchy;
             // 모이는 동안 스테이지를 바꿨으면 그 쌍도 이펙트를 띄우지 않는다.
-            if (pairMerged && pair.IsPresented && pair.Keeper.IsMainStageActive)
+            if (pairMerged && pair.IsPresented && pair.Keeper.IsMainFieldActive)
             {
                 PlayMergeEffect(
                     pair.Center,

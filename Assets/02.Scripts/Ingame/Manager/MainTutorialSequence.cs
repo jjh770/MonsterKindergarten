@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public sealed class MainTutorialSequence : TutorialSequenceBase
@@ -435,7 +435,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         _autoClicker?.SetPaused(false);
         _clicker.ReleaseMode(this);
         CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        GameplaySpaceManager.Instance?.RefreshInteraction();
     }
 
     private void UnsubscribeGuide()

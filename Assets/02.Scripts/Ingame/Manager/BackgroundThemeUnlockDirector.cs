@@ -1,14 +1,16 @@
-﻿using System;
+using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-// 하늘 스테이지를 처음 여는 1회성 인트로 연출을 담당한다.
-// 언제 시작할지는 StageManager가 판단하고, 이 클래스는 진행만 맡는다.
-public sealed class SkyIntroDirector : MonoBehaviour
+// 하늘 배경 테마를 처음 여는 1회성 인트로 연출을 담당한다.
+// 언제 시작할지는 GameplaySpaceManager가 판단하고, 이 클래스는 진행만 맡는다.
+public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
 {
     [Header("Scene References")]
     [SerializeField] private Canvas _canvas;
-    [SerializeField] private StageUI _stageUI;
+    [FormerlySerializedAs("_stageUI")]
+    [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
@@ -23,16 +25,16 @@ public sealed class SkyIntroDirector : MonoBehaviour
     private bool _isWaitingForMovePanel;
 
     public bool HasPendingTarget => _pendingTarget != null;
-    public bool IsWaitingForStageButton { get; private set; }
+    public bool IsWaitingForBackgroundButton { get; private set; }
 
     // 인트로가 하늘 전환을 요청한다. 두 번째 인자는 도착 후 콜백이다.
-    public event Action<SlimeController, Action> SkyTransitionRequested;
+    public event Action<SlimeController, Action> BackgroundThemeTransitionRequested;
     public event Action<bool> InteractionEnableRequested;
 
     private void Awake()
     {
         if (_canvas == null ||
-            _stageUI == null ||
+            _backgroundThemeUI == null ||
             _panelSwitcher == null ||
             _dialoguePresentationPrefab == null ||
             _tutorialContent == null)
@@ -78,11 +80,11 @@ public sealed class SkyIntroDirector : MonoBehaviour
             PlayJourney);
     }
 
-    public void AdvanceStageButtonStep()
+    public void AdvanceBackgroundButtonStep()
     {
-        if (!IsWaitingForStageButton || _presentation == null) return;
+        if (!IsWaitingForBackgroundButton || _presentation == null) return;
 
-        IsWaitingForStageButton = false;
+        IsWaitingForBackgroundButton = false;
         _presentation.ShowDialogue(
             _tutorialContent.GetDialogue(DialogueId.SkyFinal),
             Complete);
@@ -90,7 +92,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
 
     public void Complete()
     {
-        IsWaitingForStageButton = false;
+        IsWaitingForBackgroundButton = false;
         _isWaitingForMovePanel = false;
         _presentation?.Dispose();
         _presentation = null;
@@ -118,21 +120,21 @@ public sealed class SkyIntroDirector : MonoBehaviour
         _chargeSequence.OnComplete(() =>
         {
             _chargeSequence = null;
-            SkyTransitionRequested?.Invoke(target, OnArrived);
+            BackgroundThemeTransitionRequested?.Invoke(target, OnArrived);
         });
     }
 
     private void OnArrived()
     {
-        SlimeManager.Instance?.UpdateStageProgress(
-            EGameStage.Sky,
-            skyIntroCompleted: true);
+        SlimeManager.Instance?.UpdateBackgroundProgress(
+            EBackgroundTheme.Sky,
+            backgroundUnlockCompleted: true);
         _pendingTarget = null;
         _isStarted = false;
 
         // 버튼을 직접 켜지 않는다. 인트로 완료를 저장한 뒤 규칙에 다시 묻는다.
         // 여기서 켜 두면 그 조건이 늘어날 때 이 자리만 규칙을 모른 채 남는다.
-        StageManager.Instance?.RefreshStageButton();
+        GameplaySpaceManager.Instance?.RefreshBackgroundButton();
 
         if (_presentation == null)
         {
@@ -151,7 +153,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (_panelSwitcher.IsMovePanelOpen)
         {
-            ShowStageButtonStep();
+            ShowBackgroundButtonStep();
             return;
         }
 
@@ -164,7 +166,7 @@ public sealed class SkyIntroDirector : MonoBehaviour
 
         _isWaitingForMovePanel = true;
         _presentation.Spotlight.ShowUiTarget(
-            _tutorialContent.StageMenuButtonMessage,
+            _tutorialContent.BackgroundMenuButtonMessage,
             panelSwitchTarget,
             SpotlightInteractionMode.PassThroughPrimary);
     }
@@ -173,12 +175,12 @@ public sealed class SkyIntroDirector : MonoBehaviour
     {
         if (!_isWaitingForMovePanel || _presentation == null) return;
 
-        ShowStageButtonStep();
+        ShowBackgroundButtonStep();
     }
 
-    private void ShowStageButtonStep()
+    private void ShowBackgroundButtonStep()
     {
-        RectTransform buttonTarget = _stageUI.ButtonTarget;
+        RectTransform buttonTarget = _backgroundThemeUI.ButtonTarget;
         if (_presentation == null || buttonTarget == null)
         {
             Complete();
@@ -186,19 +188,19 @@ public sealed class SkyIntroDirector : MonoBehaviour
         }
 
         _isWaitingForMovePanel = false;
-        IsWaitingForStageButton = true;
+        IsWaitingForBackgroundButton = true;
         _presentation.Spotlight.ShowUiTarget(
-            _tutorialContent.StageButtonMessage,
+            _tutorialContent.BackgroundButtonMessage,
             buttonTarget,
             SpotlightInteractionMode.PassThroughPrimary);
     }
 
     private void CompleteWithoutTarget()
     {
-        SlimeManager.Instance?.UpdateStageProgress(
-            EGameStage.Ground,
-            skyIntroCompleted: true);
-        StageManager.Instance?.RefreshStageButton();
+        SlimeManager.Instance?.UpdateBackgroundProgress(
+            EBackgroundTheme.Ground,
+            backgroundUnlockCompleted: true);
+        GameplaySpaceManager.Instance?.RefreshBackgroundButton();
         Complete();
     }
 }

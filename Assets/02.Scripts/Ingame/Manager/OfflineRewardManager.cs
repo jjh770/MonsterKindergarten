@@ -168,7 +168,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
         foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
         {
-            if (instance.Location != ESlimeLocation.MainStage)
+            if (instance.Location != ESlimeLocation.MainField)
             {
                 continue;
             }

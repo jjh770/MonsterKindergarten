@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -97,7 +97,7 @@ public class SpawnManager : MonoBehaviour
         InitSlimeSpawns();
 
         // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
-        if (SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) == 0)
+        if (SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField) == 0)
         {
             if (TutorialProgress.ShouldRun(TutorialIds.Main))
             {
@@ -202,7 +202,7 @@ public class SpawnManager : MonoBehaviour
             return;
         }
 
-        if (!HasMainStageRoom()) return;
+        if (!HasMainFieldRoom()) return;
 
         _timer += Time.deltaTime;
 
@@ -335,15 +335,15 @@ public class SpawnManager : MonoBehaviour
     }
 
     // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
-    public int GetMainStageSlimeCount() =>
-        SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage);
+    public int GetMainFieldSlimeCount() =>
+        SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField);
 
     // 메인 필드에 개체를 더 놓을 자리가 있는지 판정한다.
     // 자연 스폰과 장식장 꺼내기(기획서 §7.5)가 같은 기준을 쓰도록 한곳에 둔다.
-    public bool HasMainStageRoom()
+    public bool HasMainFieldRoom()
     {
         return SlimeSpawner.Instance != null &&
-               SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainStage) <
+               SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField) <
                _maxActiveCount;
     }
 

@@ -1,19 +1,20 @@
-﻿using System;
+using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-// 스테이지 전환의 카메라, 오버레이, 배경, BGM 연출만 담당한다.
-// 현재 스테이지 값과 저장 여부는 StageManager가 콜백으로 처리한다.
-public sealed class StageTransitionPlayer : MonoBehaviour
+// 배경 테마와 게임플레이 공간 전환 연출을 담당한다.
+public sealed class GameplayTransitionPlayer : MonoBehaviour
 {
     [Header("Scene References")]
     [SerializeField] private Camera _camera;
-    [SerializeField] private StageUI _stageUI;
+    [FormerlySerializedAs("_stageUI")]
+    [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     // 전환 중 화면을 덮는 판. 이 연출의 소유물이라 여기서 직접 다룬다.
     [SerializeField] private Image _transitionOverlay;
 
-    [Header("Stage Audio")]
+    [Header("Background Audio")]
     [SerializeField] private AudioClip _groundBgm;
     [SerializeField] private AudioClip _skyBgm;
 
@@ -45,7 +46,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
 
     private void Awake()
     {
-        if (_camera == null || _stageUI == null)
+        if (_camera == null || _backgroundThemeUI == null)
         {
             Debug.LogError("스테이지 전환 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -188,96 +189,43 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         });
     }
 
-    public void ApplyEnvironment(EGameStage stage, float crossFadeDuration)
+    public void ApplyEnvironment(EBackgroundTheme theme, float crossFadeDuration)
     {
         _camera.backgroundColor = Color.white;
 
         if (crossFadeDuration < 0f || AudioManager.Instance == null) return;
 
-        AudioManager.Instance.CrossFadeBGM(GetStageBgm(stage), crossFadeDuration);
+        AudioManager.Instance.CrossFadeBGM(GetThemeBgm(theme), crossFadeDuration);
     }
 
-    // onStageSwitched는 화면이 가려진 중간 시점에, onCompleted는 연출이 끝난 뒤에 호출된다.
-    public void Play(
-        EGameStage targetStage,
-        SlimeController travellingSlime,
-        Action onStageSwitched,
+    // onThemeSwitched는 화면이 가려진 중간 시점에, onCompleted는 연출이 끝난 뒤에 호출된다.
+    public void PlayBackgroundTheme(
+        EBackgroundTheme targetTheme,
+        Action onThemeSwitched,
         Action onCompleted)
     {
         IsTransitioning = true;
-        _stageUI.SetButtonInteractable(false);
+        _backgroundThemeUI.SetButtonInteractable(false);
         BeginOverlay();
 
-        float direction = targetStage == EGameStage.Sky ? 1f : -1f;
         float halfDuration = _cameraTransitionDuration * 0.5f;
-        Vector2 slimeDestination = SpawnManager.Instance != null
-            ? SpawnManager.Instance.GetRandomSpawnPosition()
-            : Vector2.zero;
-        Vector3 slimeStart = travellingSlime != null
-            ? travellingSlime.transform.position
-            : Vector3.zero;
-
-        if (travellingSlime != null)
-        {
-            travellingSlime.PreparePresentationTransfer();
-        }
 
         AudioManager.Instance?.CrossFadeBGM(
-            GetStageBgm(targetStage),
+            GetThemeBgm(targetTheme),
             _cameraTransitionDuration);
 
         _transitionSequence?.Kill();
         _transitionSequence = DOTween.Sequence();
         _transitionSequence.Join(
-            _camera.transform.DOMoveY(
-                _cameraBasePosition.y + direction * _cameraTravelDistance,
-                halfDuration).SetEase(Ease.InQuad));
-        _transitionSequence.Join(
             FadeOverlay(1f, halfDuration));
-
-        if (travellingSlime != null)
-        {
-            _transitionSequence.Join(
-                travellingSlime.transform.DOMoveY(
-                    slimeStart.y + direction * _cameraTravelDistance,
-                    halfDuration).SetEase(Ease.InQuad));
-        }
 
         _transitionSequence.AppendCallback(() =>
         {
-            onStageSwitched?.Invoke();
-            ApplyEnvironment(targetStage, crossFadeDuration: -1f);
-
-            Vector3 cameraPosition = _cameraBasePosition;
-            cameraPosition.y -= direction * _cameraTravelDistance;
-            _camera.transform.position = cameraPosition;
-
-            if (travellingSlime != null)
-            {
-                travellingSlime.PreparePresentationTransfer();
-                travellingSlime.transform.position = new Vector3(
-                    slimeDestination.x,
-                    slimeDestination.y - direction * _cameraTravelDistance,
-                    slimeStart.z);
-            }
+            onThemeSwitched?.Invoke();
+            ApplyEnvironment(targetTheme, crossFadeDuration: -1f);
         });
         _transitionSequence.Append(
-            _camera.transform.DOMoveY(
-                _cameraBasePosition.y,
-                halfDuration).SetEase(Ease.OutQuad));
-        _transitionSequence.Join(
             FadeOverlay(0f, halfDuration));
-
-        if (travellingSlime != null)
-        {
-            _transitionSequence.Join(
-                travellingSlime.transform.DOMove(
-                    new Vector3(
-                        slimeDestination.x,
-                        slimeDestination.y,
-                        slimeStart.z),
-                    halfDuration).SetEase(Ease.OutQuad));
-        }
 
         _transitionSequence.OnComplete(() =>
         {
@@ -285,7 +233,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
             _camera.transform.position = _cameraBasePosition;
             EndOverlay();
             IsTransitioning = false;
-            _stageUI.SetButtonInteractable(true);
+            _backgroundThemeUI.SetButtonInteractable(true);
             onCompleted?.Invoke();
         });
     }
@@ -300,7 +248,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         ResetDisplayRoomFocus();
 
         IsTransitioning = true;
-        _stageUI.SetButtonInteractable(false);
+        _backgroundThemeUI.SetButtonInteractable(false);
         BeginOverlay();
 
         float direction = targetSpace == EGameplaySpace.DisplayRoom ? 1f : -1f;
@@ -334,7 +282,7 @@ public sealed class StageTransitionPlayer : MonoBehaviour
             _camera.transform.position = _cameraBasePosition;
             EndOverlay();
             IsTransitioning = false;
-            _stageUI.SetButtonInteractable(true);
+            _backgroundThemeUI.SetButtonInteractable(true);
             onCompleted?.Invoke();
         });
     }
@@ -428,8 +376,8 @@ public sealed class StageTransitionPlayer : MonoBehaviour
         _transitionOverlay.color = color;
     }
 
-    private AudioClip GetStageBgm(EGameStage stage)
+    private AudioClip GetThemeBgm(EBackgroundTheme theme)
     {
-        return stage == EGameStage.Ground ? _groundBgm : _skyBgm;
+        return theme == EBackgroundTheme.Ground ? _groundBgm : _skyBgm;
     }
 }

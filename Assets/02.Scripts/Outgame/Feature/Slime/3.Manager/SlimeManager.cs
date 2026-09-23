@@ -30,9 +30,6 @@ public class SlimeManager : MonoBehaviour
     public bool IsBackgroundThemeUnlocked =>
         _status != null &&
         BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
-    // 기존 런타임 스테이지 흐름은 다음 리팩터링 단위에서 제거한다.
-    public EGameStage CurrentStage =>
-        (EGameStage)_status.SelectedBackgroundTheme;
     public bool SkyIntroCompleted => _status.BackgroundUnlockCompleted;
     public bool IsSkyUnlocked => IsBackgroundThemeUnlocked;
     public bool HasExistingProgress =>
@@ -242,21 +239,6 @@ public class SlimeManager : MonoBehaviour
         OnHighestGradeChanged?.Invoke(newGrade);
         Save();
         return true;
-    }
-
-    public void UpdateStageProgress(
-        EGameStage currentStage,
-        bool skyIntroCompleted)
-    {
-        EBackgroundTheme selectedTheme = (EBackgroundTheme)currentStage;
-        if (_status.SelectedBackgroundTheme == selectedTheme &&
-            _status.BackgroundUnlockCompleted == skyIntroCompleted)
-        {
-            return;
-        }
-
-        _status.UpdateBackgroundProgress(selectedTheme, skyIntroCompleted);
-        Save();
     }
 
     public void UpdateBackgroundProgress(

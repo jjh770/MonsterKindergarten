@@ -141,13 +141,13 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
     // 가리킬 버튼이 화면에 있고, 다른 전면 연출이 없는 상태인가.
     private bool CanPresent()
     {
-        return GameplayGate.IsMainStageReady &&
+        return GameplayGate.IsMainFieldReady &&
                _panelSwitcher.IsAreaVisible &&
                SpawnManager.Instance != null &&
                SpawnManager.Instance.IsInitialized &&
-               StageManager.Instance != null &&
-               StageManager.Instance.IsMainStageActive &&
-               !StageManager.Instance.IsTransitioning &&
+               GameplaySpaceManager.Instance != null &&
+               GameplaySpaceManager.Instance.IsMainFieldActive &&
+               !GameplaySpaceManager.Instance.IsTransitioning &&
                (_unlockPopupUI == null || !_unlockPopupUI.IsPresenting) &&
                (_gachaResultDirector == null || !_gachaResultDirector.IsPlaying);
     }

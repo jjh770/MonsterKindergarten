@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum DialogueId
 {
@@ -83,9 +84,11 @@ public sealed class TutorialContent : ScriptableObject
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
 
-    [Header("Stage")]
-    [SerializeField] private string _stageMenuButtonMessage;
-    [SerializeField] private string _stageButtonMessage;
+    [Header("Background Theme")]
+    [FormerlySerializedAs("_stageMenuButtonMessage")]
+    [SerializeField] private string _backgroundMenuButtonMessage;
+    [FormerlySerializedAs("_stageButtonMessage")]
+    [SerializeField] private string _backgroundButtonMessage;
 
     public string ClickMessage => _clickMessage;
     public string PointMessage => _pointMessage;
@@ -108,8 +111,8 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
-    public string StageMenuButtonMessage => _stageMenuButtonMessage;
-    public string StageButtonMessage => _stageButtonMessage;
+    public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
+    public string BackgroundButtonMessage => _backgroundButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)
     {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 public class MergeManager : MonoBehaviour
@@ -35,7 +35,7 @@ public class MergeManager : MonoBehaviour
     // 최고 등급 갱신을 앞에 두면 그 예외가 났을 때 저장에는 등급이 올라가 있고
     // 화면에는 두 마리가 남아 서로 어긋난다. 되돌릴 수 없는 갱신을 검증 뒤로 미루면
     // 실패해도 아무것도 바뀌지 않으므로 롤백이 필요 없다.
-    // StageManager.TryRelocateSlime()과 같은 처리 방식이다.
+    // GameplaySpaceManager.TryRelocateSlime()과 같은 처리 방식이다.
     public void Merge(SlimeController keeper, SlimeController removed)
     {
         MergeBatch(new[] { new MergeTargetPair(keeper, removed) });

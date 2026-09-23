@@ -30,7 +30,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     private void PlayLevelUpSound()
     {
-        if (!_slimeController.IsMainStageActive ||
+        if (!_slimeController.IsMainFieldActive ||
             AudioManager.Instance == null ||
             _levelUpSounds == null ||
             _levelUpSounds.Length == 0)
@@ -44,7 +44,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     private void PlayLandSound()
     {
-        if (!_slimeController.IsMainStageActive ||
+        if (!_slimeController.IsMainFieldActive ||
             AudioManager.Instance == null ||
             _landSound == null)
         {

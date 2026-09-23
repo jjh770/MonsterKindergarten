@@ -57,7 +57,7 @@ public sealed class SlimeInstance
     public static SlimeInstance Create(
         ESlimeGrade grade,
         bool isSpecial = false,
-        ESlimeLocation location = ESlimeLocation.MainStage)
+        ESlimeLocation location = ESlimeLocation.MainField)
     {
         return new SlimeInstance(
             Guid.NewGuid().ToString("N"),

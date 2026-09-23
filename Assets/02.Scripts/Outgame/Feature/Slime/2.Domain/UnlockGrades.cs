@@ -9,8 +9,8 @@ public static class UnlockGrades
     // 기획서 §11.1 - 가챠권 드랍 + 가챠 시스템 (Phase 4에서 사용 예정)
     public const ESlimeGrade Gacha = ESlimeGrade.Grade7;
 
-    // 기획서 §6 - 하늘 스테이지
-    public const ESlimeGrade SkyStage = ESlimeGrade.Grade11;
+    // 11레벨 달성 시 배경 테마 선택 해금
+    public const ESlimeGrade BackgroundTheme = ESlimeGrade.Grade11;
 
     // 상위 슬라임 등장(Lv.5)은 여기 두지 않는다.
     // SpawnWeightTable의 _spawnCaps에서 파생되는 값이므로 상수로 복제하면
