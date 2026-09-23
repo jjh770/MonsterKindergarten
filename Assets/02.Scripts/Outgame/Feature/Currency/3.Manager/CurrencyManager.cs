@@ -116,9 +116,14 @@ public class CurrencyManager : MonoBehaviour
         for (int i = 0; i < _currencies.Length; i++)
         {
             // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
-            _currencies[i] = i < currencyValues.Length
+            double stored = i < currencyValues.Length
                 ? currencyValues[i]
                 : 0d;
+
+            // 재화는 모두 정수 단위로 센다. 배율을 곱한 값이 소수로 남던 시절의
+            // 저장값이 그대로 올라오므로 여기서 한 번 내림한다. 1 미만을 버리는
+            // 것이라 진행에는 영향이 없고, 이후로는 더하는 쪽에서 정수만 넣는다.
+            _currencies[i] = Math.Floor(stored);
         }
 
         OnDataInitialized?.Invoke();
