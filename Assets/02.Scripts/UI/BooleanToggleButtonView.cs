@@ -21,6 +21,16 @@ public sealed class BooleanToggleButtonView : MonoBehaviour
 
     public event Action Clicked;
 
+    // 아이콘만 쓰는 버튼용. 라벨이 없으면 색도 쓰이지 않는다.
+    public void Configure(
+        UnityEngine.UI.Button button,
+        UnityEngine.UI.Image icon,
+        Sprite onSprite,
+        Sprite offSprite)
+    {
+        Configure(button, icon, onSprite, offSprite, null, _onColor, _offColor);
+    }
+
     public void Configure(
         UnityEngine.UI.Button button,
         UnityEngine.UI.Image icon,

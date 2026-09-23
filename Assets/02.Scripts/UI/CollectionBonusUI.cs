@@ -169,7 +169,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
 
         var builder = new StringBuilder();
         AppendBonus(builder, count, NormalCollectionRules.AutoMergeCount,
-            "자동 합성", "같은 등급 슬라임을 자동으로 합성해요.");
+            "자동 합성", "버튼을 누르면 같은 등급 슬라임을 한 번에 합성해요.");
         AppendBonus(builder, count, NormalCollectionRules.AutoTicketCollectCount,
             "티켓 회수", "필드에 떨어진 가챠권을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,

@@ -1,5 +1,4 @@
 using System;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,9 +11,6 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
     [SerializeField] private Image _icon;
     [SerializeField] private Sprite _onSprite;
     [SerializeField] private Sprite _offSprite;
-    [SerializeField] private TextMeshProUGUI _stateLabel;
-    [SerializeField] private Color _onColor = Color.white;
-    [SerializeField] private Color _offColor = new(1f, 1f, 1f, 0.55f);
 
     [Tooltip("합성할 쌍이 없을 때 띄우는 안내입니다.")]
     [SerializeField] private ToastMessageUI _toast;
@@ -48,17 +44,11 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
             return;
         }
 
-        // 켜고 끄는 버튼이 아니라 ON/OFF를 쓸 자리가 없다. 라벨은 넘기지 않고 감춘다.
-        if (_stateLabel != null)
-        {
-            _stateLabel.gameObject.SetActive(false);
-        }
-
+        // 켜고 끄는 버튼이 아니므로 ON/OFF를 쓸 자리가 없다. 라벨 없이 묶는다.
         if (_button != null && _icon != null && _onSprite != null &&
             _offSprite != null)
         {
-            _view.Configure(_button, _icon, _onSprite, _offSprite, null,
-                _onColor, _offColor);
+            _view.Configure(_button, _icon, _onSprite, _offSprite);
         }
     }
 

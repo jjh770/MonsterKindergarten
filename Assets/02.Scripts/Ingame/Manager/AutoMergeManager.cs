@@ -7,8 +7,8 @@ using UnityEngine;
 // 업그레이드 레벨만큼의 쌍을 한 번에 합친다.
 //
 // 처음에는 주기가 다 차면 알아서 발동했지만, 누르는 재미가 없고 화면을 보지 않는
-// 동안에도 필드가 바뀌어 버렸다. 지금은 발동 시점을 플레이어가 정하고, 연출이 끝난 뒤
-// 짧은 쿨타임만 둔다.
+// 동안에도 필드가 바뀌어 버렸다. 지금은 발동 시점을 플레이어가 정하고, 누른 순간부터
+// 짧은 쿨타임을 센다.
 public sealed class AutoMergeManager : MonoBehaviour
 {
     public enum EMergeFailure
@@ -27,7 +27,7 @@ public sealed class AutoMergeManager : MonoBehaviour
     [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private GachaResultDirector _gachaResultDirector;
 
-    [Tooltip("연출이 끝난 뒤 다시 누를 수 있기까지의 시간입니다.")]
+    [Tooltip("다시 누를 수 있기까지의 시간입니다. 누른 순간부터 흐릅니다.")]
     [SerializeField, Min(0f)] private float _cooldown = 0.5f;
 
     [Header("Presentation")]
@@ -45,11 +45,14 @@ public sealed class AutoMergeManager : MonoBehaviour
     [Tooltip("슬라임보다 앞에 그리기 위해 더하는 정렬 순서입니다.")]
     [SerializeField] private int _mergeEffectSortingOrderOffset = 5;
 
-    // 남은 쿨타임. 연출이 끝나는 순간부터 센다.
-    private float _remainingCooldown;
+    // 다시 누를 수 있기까지 남은 시간과 그 전체 길이. 누른 순간부터 흐른다.
+    // 연출 중에는 어차피 누를 수 없으므로 쿨타임을 연출과 같이 흘려보내고, 연출이
+    // 쿨타임보다 길면 연출이 끝나는 시점에 맞춘다.
+    private float _remainingWait;
+    private float _waitDuration;
     // 합성이 거절된 개체. 기억해 두지 않으면 누를 때마다 같은 쌍을 집어 경고만 쌓는다.
     private readonly HashSet<string> _rejectedIds = new();
-    // 두 슬라임이 모이는 연출 중. 쿨타임은 연출이 끝나고 시작한다.
+    // 두 슬라임이 모이는 연출 중. 이때는 대기 시간이 끝나도 누를 수 없다.
     private bool _isPresenting;
     private Sequence _presentation;
     private readonly List<PresentationPair> _presentationPairs = new();
@@ -74,10 +77,10 @@ public sealed class AutoMergeManager : MonoBehaviour
     }
 
     // 다시 누를 수 있기까지의 진행도. 1이면 준비된 상태다. 버튼 테두리 게이지가 쓴다.
-    public float Progress01 => _cooldown > 0f
-        ? Mathf.Clamp01(1f - _remainingCooldown / _cooldown)
+    public float Progress01 => _waitDuration > 0f
+        ? Mathf.Clamp01(1f - _remainingWait / _waitDuration)
         : 1f;
-    public bool IsReady => !_isPresenting && _remainingCooldown <= 0f;
+    public bool IsReady => !_isPresenting && _remainingWait <= 0f;
     public int PairsPerMerge => GetPairCountForLevel(GetUpgradeLevel());
 
     private void Awake()
@@ -100,9 +103,9 @@ public sealed class AutoMergeManager : MonoBehaviour
 
     private void Update()
     {
-        if (_isPresenting || _remainingCooldown <= 0f) return;
+        if (_remainingWait <= 0f) return;
 
-        _remainingCooldown = Mathf.Max(0f, _remainingCooldown - Time.deltaTime);
+        _remainingWait = Mathf.Max(0f, _remainingWait - Time.deltaTime);
     }
 
     // 버튼이 부른다. 실패하면 이유를 돌려주어 호출부가 안내 문구를 고르게 한다.
@@ -210,6 +213,13 @@ public sealed class AutoMergeManager : MonoBehaviour
                     .SetEase(Ease.InQuad));
         }
 
+        // 대기 시간은 누른 지금부터 센다. 연출이 더 길면 그 길이에 맞춰야 게이지가 다
+        // 찬 뒤에도 눌리지 않는 구간이 생기지 않는다.
+        _waitDuration = hasPresentedPair
+            ? Mathf.Max(_cooldown, _gatherDuration)
+            : _cooldown;
+        _remainingWait = _waitDuration;
+
         if (!hasPresentedPair)
         {
             _presentation.Kill();
@@ -279,9 +289,12 @@ public sealed class AutoMergeManager : MonoBehaviour
         _presentationPairs.Clear();
         _isPresenting = false;
 
-        // 쿨타임은 연출이 끝난 지금부터 센다. 저장이 모든 쌍을 거절해 아무것도 합쳐지지
-        // 않았다면 기다리게 할 이유가 없으므로 바로 다시 누를 수 있게 둔다.
-        _remainingCooldown = merged ? _cooldown : 0f;
+        // 저장이 모든 쌍을 거절해 아무것도 합쳐지지 않았다면 기다리게 할 이유가 없으므로
+        // 남은 대기 시간을 지워 바로 다시 누를 수 있게 둔다.
+        if (!merged)
+        {
+            _remainingWait = 0f;
+        }
     }
 
     // 레벨 하나에 한 쌍씩 늘어난다. 레벨 0이 1쌍이고 최대 레벨이 10쌍이다.
