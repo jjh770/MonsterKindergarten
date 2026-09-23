@@ -41,7 +41,7 @@ public static class GachaService
             return EGachaFailure.NoTicket;
         }
 
-        // 메인 스테이지에 자리가 있어야 한다. 결과는 별도 보관함이 아니라 필드에
+        // 메인 필드에 자리가 있어야 한다. 결과는 별도 보관함이 아니라 필드에
         // 실제로 태어나므로, 자리가 없으면 놓을 곳이 없다.
         if (!spawnManager.HasMainFieldRoom()) return EGachaFailure.NoRoom;
 

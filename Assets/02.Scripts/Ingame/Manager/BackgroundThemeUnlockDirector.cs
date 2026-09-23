@@ -142,7 +142,7 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
             return;
         }
 
-        // 스테이지 전환이 복원한 입력을 안내가 끝날 때까지 다시 막는다.
+        // 배경 전환이 복원한 입력을 안내가 끝날 때까지 다시 막는다.
         InteractionEnableRequested?.Invoke(false);
         _presentation.ShowDialogue(
             _tutorialContent.GetDialogue(DialogueId.SkyArrived),

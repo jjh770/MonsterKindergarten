@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // 하단 HUD의 시스템 업그레이드 / 이동 / 배경 테마 패널을 슬라이드로 교체한다.
 //
 // 어떤 상황인지는 ApplyContext로 외부가 알려준다. 이 컴포넌트는 장식장이나
-// 스테이지 상태를 직접 조회하지 않는다. 그래야 하늘 인트로처럼 장식장과
+// 배경 상태를 직접 조회하지 않는다. 그래야 배경 해금 연출처럼 장식장과
 // 무관한 기능이 패널 상태를 알려고 DisplayRoomUI를 참조하지 않아도 된다.
 public sealed class BottomPanelSwitcher : MonoBehaviour
 {

@@ -269,7 +269,7 @@ public static class SlimeStatusSaveMigration
                 saveData.PendingSkyTickets != 0);
     }
 
-    // v0/v1의 { Grade, Count }를 Count 수만큼의 일반 MainStage 개체로 승격한다.
+    // v0/v1의 { Grade, Count }를 Count 수만큼의 일반 MainField 개체로 승격한다.
     public static SlimeStatusSaveData Upgrade(
         LegacySlimeStatusSaveData legacyData)
     {

@@ -9341,7 +9341,7 @@ GameObject:
   - component: {fileID: 954826976}
   - component: {fileID: 2131310039}
   m_Layer: 0
-  m_Name: StageManager
+  m_Name: GameplaySpaceManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9358,7 +9358,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0affdb23347347579d87d180ffb5e70f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StageManager
+  m_EditorClassIdentifier: Assembly-CSharp::GameplaySpaceManager
   _clicker: {fileID: 115063078}
   _upgradeUI: {fileID: 1526959884}
   _stageUI: {fileID: 1324579906}
@@ -9391,7 +9391,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b46d867aa8c1b184593fad49cc8c6ea3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StageTransitionPlayer
+  m_EditorClassIdentifier: Assembly-CSharp::GameplayTransitionPlayer
   _camera: {fileID: 519420031}
   _stageUI: {fileID: 1324579906}
   _transitionOverlay: {fileID: 1907240556}
@@ -9418,7 +9418,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d27893e306905d40a49ff350f7acf06, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkyIntroDirector
+  m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUnlockDirector
   _canvas: {fileID: 457349916}
   _stageUI: {fileID: 1324579906}
   _panelSwitcher: {fileID: 998300001}
@@ -9931,7 +9931,7 @@ GameObject:
   m_Component:
   - component: {fileID: 991000002}
   m_Layer: 0
-  m_Name: GroundStageRoot
+  m_Name: GroundThemeRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9966,7 +9966,7 @@ GameObject:
   m_Component:
   - component: {fileID: 991000012}
   m_Layer: 0
-  m_Name: SkyStageRoot
+  m_Name: SkyThemeRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17307,7 +17307,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6f124b72d0c513458cd46a8ff4318fe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StageUI
+  m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUI
   _stageButton: {fileID: 1872367948}
   _panelSwitcher: {fileID: 998300001}
   _groundThemeButton: {fileID: 606430597}
@@ -22758,7 +22758,7 @@ GameObject:
   - component: {fileID: 1907240557}
   - component: {fileID: 1907240556}
   m_Layer: 5
-  m_Name: StageTransitionOverlay
+  m_Name: GameplayTransitionOverlay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

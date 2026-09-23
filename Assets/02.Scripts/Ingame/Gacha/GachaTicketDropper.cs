@@ -24,7 +24,7 @@ public class GachaTicketDropper : MonoBehaviour
 
     private float _timer;
 
-    // 판정에 성공한 슬라임을 넘긴다. 티켓의 위치와 소속 스테이지는 받는 쪽이 정한다.
+    // 판정에 성공한 슬라임을 넘긴다. 티켓을 어디에 놓을지는 받는 쪽이 정한다.
     public event Action<SlimeController> Dropped;
 
     private void Update()

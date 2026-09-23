@@ -229,7 +229,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
                              _transitionPlayer != null;
         if (!hasReferences)
         {
-            Debug.LogError("스테이지 매니저의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("게임플레이 공간 매니저의 필수 참조가 비어 있습니다.", this);
         }
 
         return hasReferences;
@@ -489,7 +489,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         }
     }
 
-    // 표시 규칙은 이 클래스 안에서만 쓴다. 밖에서 부르면 스테이지·공간 상태와
+    // 표시 규칙은 이 클래스 안에서만 쓴다. 밖에서 부르면 배경·공간 상태와
     // 어긋난 시점에 적용될 수 있어 공개하지 않는다.
     private void RefreshSlimePresentation(SlimeController target)
     {

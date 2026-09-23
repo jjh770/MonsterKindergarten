@@ -48,7 +48,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     {
         if (_camera == null || _backgroundThemeUI == null)
         {
-            Debug.LogError("스테이지 전환 연출의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("전환 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
