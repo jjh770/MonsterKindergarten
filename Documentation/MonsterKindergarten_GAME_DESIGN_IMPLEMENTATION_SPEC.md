@@ -919,7 +919,7 @@ Lv.19 이하의 중복 특별 슬라임은 수동 합성으로 처분한다.
 
 - 레벨 하나에 한 쌍씩 늘어난다. 처음 기획은 "주기 단축 50레벨, 발동당 1~4쌍"이었고,
   주기가 사라지면서 같은 업그레이드를 쌍 수 업그레이드로 바꿨다. 세이브는 업그레이드
-  종류의 정수 값을 저장하므로 `AutoMergeTimeSub`라는 이름은 그대로 둔다.
+  종류의 정수 값을 저장하므로 열거형 순서는 유지하고 이름만 `AutoMergePairAdd`로 정리한다.
 - 비용은 3쌍까지 완만하고 4쌍부터 가파르다. 기본 1,500,000, 레벨 배율 1.6, 2레벨
   구간마다 8배다.
 - 기존 세이브의 Lv.50은 로드할 때 최대 레벨 9로 잘린다.
@@ -1224,7 +1224,7 @@ MaxSlimeCountUpgradeLevel
 HigherSpawnChanceUpgradeLevel
 
 AutoMergeUnlocked
-AutoMergeEnabled (사용하지 않음, §18.2)
+AutoMergeEnabled (레거시 저장 호환 필드, 런타임에서 읽지 않음, §18.2)
 AutoSpawnEnabled
 AutoMergeUpgradeLevel
 
@@ -1243,7 +1243,7 @@ SpecialCollectionRegistered[20]
 DisplayRoomNormalInstanceByLevel[20]
 DisplayRoomSpecialInstanceByLevel[20]
 
-AutoTicketCollectUnlocked
+TicketBulkCollectUnlocked
 OfflineTicketUnlocked
 
 MainEndingSeen
@@ -1338,7 +1338,7 @@ OnTicketDropped(ticket)
 OnTicketCollected(ticket)
 
 OnAutoMergeUnlocked()
-OnAutoTicketCollectUnlocked()
+OnTicketBulkCollectUnlocked()
 OnOfflineTicketRewardUnlocked()
 
 OnMainCollectionCompleted()

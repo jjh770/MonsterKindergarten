@@ -41,7 +41,7 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         }
     }
 
-    [SerializeField] private AutoMergeToggleUI _autoMergeButton;
+    [SerializeField] private AutoMergeButtonUI _autoMergeButton;
     [SerializeField] private GachaTicketCollectButtonUI _ticketCollectButton;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private GachaResultDirector _gachaResultDirector;
@@ -81,7 +81,7 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
                 requiresPress: true),
             new Milestone(
                 TutorialIds.CollectionTicketCollect,
-                NormalCollectionRules.AutoTicketCollectCount,
+                NormalCollectionRules.TicketBulkCollectCount,
                 DialogueId.CollectionTicketCollect,
                 requiresPress: false),
         };

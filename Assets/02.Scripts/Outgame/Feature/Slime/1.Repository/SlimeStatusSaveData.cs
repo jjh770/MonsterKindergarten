@@ -87,7 +87,9 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public bool AutoSpawnDisabled { get; set; }
 
-    // 없는 필드의 기본값 false가 기존 세이브에서 의도한 OFF와 같다.
+    // v6에서 쓰던 자동 합성 ON/OFF 값이다. 지금은 버튼을 누를 때 한 번만 발동하므로
+    // 런타임에서는 읽지 않는다. 기존 로컬 JSON과 Firestore 문서의 필드 호환을 위해
+    // 이름과 타입만 유지하고, 새 저장은 항상 false를 쓴다.
     [FirestoreProperty]
     public bool AutoMergeEnabled { get; set; }
 

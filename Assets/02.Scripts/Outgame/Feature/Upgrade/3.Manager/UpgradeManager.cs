@@ -171,7 +171,7 @@ public class UpgradeManager : MonoBehaviour
     public bool IsLockedByProgress(Upgrade upgrade)
     {
         if (upgrade != null &&
-            upgrade.SpecData.Type == EUpgradeType.AutoMergeTimeSub)
+            upgrade.SpecData.Type == EUpgradeType.AutoMergePairAdd)
         {
             return SlimeManager.Instance == null ||
                    !SlimeManager.Instance.IsAutoMergeUnlocked;

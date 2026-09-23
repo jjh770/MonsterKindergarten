@@ -17,7 +17,7 @@ public static class SystemUpgradeVisibility
                 slimeManager.IsHigherGradeSpawnUnlocked &&
                 (TutorialProgress.IsCompleted(TutorialIds.HigherGradeSpawn) ||
                  TutorialManager.IsActive(TutorialIds.HigherGradeSpawn)),
-            EUpgradeType.AutoMergeTimeSub =>
+            EUpgradeType.AutoMergePairAdd =>
                 slimeManager != null && slimeManager.IsAutoMergeUnlocked,
             _ => true,
         };

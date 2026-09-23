@@ -19,7 +19,6 @@ public class SlimeStatus
 
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
     public bool IsAutoSpawnEnabled { get; private set; }
-    public bool IsAutoMergeEnabled { get; private set; }
     public bool MainEndingSeen { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
 
@@ -37,7 +36,6 @@ public class SlimeStatus
         int pendingGroundTickets,
         int pendingSkyTickets,
         bool isAutoSpawnEnabled,
-        bool isAutoMergeEnabled,
         bool mainEndingSeen,
         int specialGachaMissCount,
         IEnumerable<string> completedTutorials = null)
@@ -64,7 +62,6 @@ public class SlimeStatus
         PendingGroundTickets = pendingGroundTickets;
         PendingSkyTickets = pendingSkyTickets;
         IsAutoSpawnEnabled = isAutoSpawnEnabled;
-        IsAutoMergeEnabled = isAutoMergeEnabled;
         MainEndingSeen = mainEndingSeen;
 
         if (specialGachaMissCount < 0 ||
@@ -144,11 +141,6 @@ public class SlimeStatus
             throw new ArgumentException("피버 해금 전에 실패 횟수가 저장되어 있습니다.");
         }
 
-        if (IsAutoMergeEnabled &&
-            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
-        {
-            throw new ArgumentException("자동 합성 해금 전에 켜진 저장입니다.");
-        }
     }
 
     public void UpdateStageProgress(
@@ -228,18 +220,6 @@ public class SlimeStatus
     public void SetAutoSpawnEnabled(bool isEnabled)
     {
         IsAutoSpawnEnabled = isEnabled;
-    }
-
-    public bool SetAutoMergeEnabled(bool isEnabled)
-    {
-        if (isEnabled &&
-            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
-        {
-            return false;
-        }
-
-        IsAutoMergeEnabled = isEnabled;
-        return true;
     }
 
     public bool IsTutorialCompleted(string tutorialId)

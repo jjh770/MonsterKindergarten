@@ -38,7 +38,6 @@ public class SlimeManager : MonoBehaviour
     public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
     public bool IsAutoMergeUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.AutoMergeCount;
-    public bool IsAutoMergeEnabled => _status?.IsAutoMergeEnabled ?? false;
     public bool IsGachaUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.Gacha;
@@ -52,8 +51,8 @@ public class SlimeManager : MonoBehaviour
             ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
             : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
-    public bool IsTicketAutoCollectUnlocked =>
-        NormalCollectionCount >= NormalCollectionRules.AutoTicketCollectCount;
+    public bool IsTicketBulkCollectUnlocked =>
+        NormalCollectionCount >= NormalCollectionRules.TicketBulkCollectCount;
     public bool IsOfflineTicketRewardUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.OfflineTicketRewardCount;
     public bool IsHiddenFeverUnlocked =>
@@ -354,16 +353,6 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.RecordSpecialGachaResult(wasSpecial)) return;
 
         Save();
-    }
-
-    public bool SetAutoMergeEnabled(bool isEnabled)
-    {
-        if (_status == null) return false;
-        if (_status.IsAutoMergeEnabled == isEnabled) return true;
-        if (!_status.SetAutoMergeEnabled(isEnabled)) return false;
-
-        Save();
-        return true;
     }
 
     public NormalSlimeCollectionStatsSnapshot GetNormalCollectionStats(

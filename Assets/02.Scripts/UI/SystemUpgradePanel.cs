@@ -245,7 +245,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 IsNextSpawnGradeUnlock(upgrade.Level)
                     ? $"{icon}상위 슬라임 추가!"
                     : $"{icon}Lv.{upgrade.Level} → Lv.{upgrade.Level + 1}",
-            EUpgradeType.AutoMergeTimeSub =>
+            EUpgradeType.AutoMergePairAdd =>
                 BuildAutoMergeValueText(icon, upgrade.Level),
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };

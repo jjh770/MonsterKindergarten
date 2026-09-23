@@ -110,7 +110,7 @@ public static class GameplayInfoTextBuilder
                 return spawnManager == null
                     ? string.Empty
                     : $"자연 등장 최고 Lv.{GetHighestSpawnGrade(spawnManager)}";
-            case EUpgradeType.AutoMergeTimeSub:
+            case EUpgradeType.AutoMergePairAdd:
                 return $"버튼을 누를 때마다 한 번에 " +
                        $"{AutoMergeManager.GetPairCountForLevel(upgrade.Level)}쌍";
             default:

@@ -4331,7 +4331,7 @@ GameObject:
   - component: {fileID: 558640589}
   - component: {fileID: 558640590}
   m_Layer: 5
-  m_Name: AutoMergeToggleUI
+  m_Name: AutoMergeButtonUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4371,14 +4371,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c748d96db75e7b949abc6bfa98a8fb58, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AutoMergeToggleUI
-  _view: {fileID: 1380768088}
+  m_EditorClassIdentifier: Assembly-CSharp::AutoMergeButtonUI
   _progressView: {fileID: 558640590}
-  _contentRoot: {fileID: 1380768083}
   _button: {fileID: 1380768085}
-  _icon: {fileID: 1380768086}
-  _onSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
-  _offSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
   _toast: {fileID: 487418094}
 --- !u!114 &558640590
 MonoBehaviour:
@@ -12385,7 +12380,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8bef06340c173ac42ac181c98a379b28, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollectionMilestoneGuideSequence
   _autoMergeButton: {fileID: 558640589}
   _ticketCollectButton: {fileID: 975735617}
@@ -17238,7 +17233,6 @@ GameObject:
   - component: {fileID: 1380768087}
   - component: {fileID: 1380768086}
   - component: {fileID: 1380768085}
-  - component: {fileID: 1380768088}
   m_Layer: 5
   m_Name: ContentRoot
   m_TagString: Untagged
@@ -17348,25 +17342,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1380768083}
   m_CullTransparentMesh: 1
---- !u!114 &1380768088
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1380768083}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 569d52b78e5a5f54b8953a5d02b187e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BooleanToggleButtonView
-  _button: {fileID: 1380768085}
-  _icon: {fileID: 1380768086}
-  _onSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
-  _offSprite: {fileID: 21300000, guid: 2cc10caaa92edcd45b433255d75ccd7d, type: 3}
-  _stateLabel: {fileID: 0}
-  _onColor: {r: 0.54901963, g: 0.9490196, b: 0.4, a: 1}
-  _offColor: {r: 0.9019608, g: 0.9019608, b: 0.9019608, a: 1}
 --- !u!1 &1422780169
 GameObject:
   m_ObjectHideFlags: 0

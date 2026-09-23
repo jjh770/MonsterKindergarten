@@ -2,54 +2,36 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class AutoMergeToggleUI : MonoBehaviour
+public sealed class AutoMergeButtonUI : MonoBehaviour
 {
-    [SerializeField] private BooleanToggleButtonView _view;
     [SerializeField] private RadialProgressView _progressView;
-    [SerializeField] private GameObject _contentRoot;
     [SerializeField] private Button _button;
-    [SerializeField] private Image _icon;
-    [SerializeField] private Sprite _onSprite;
-    [SerializeField] private Sprite _offSprite;
 
     [Tooltip("합성할 쌍이 없을 때 띄우는 안내입니다.")]
     [SerializeField] private ToastMessageUI _toast;
 
     private const string NoPairMessage = "합성할 수 있는 슬라임이 없어요.";
 
-    private bool _wasReady;
+    private bool? _lastInteractable;
 
-    public RectTransform ButtonTarget => _view != null ? _view.ButtonTarget : null;
+    public RectTransform ButtonTarget => _button != null
+        ? _button.transform as RectTransform
+        : null;
     // 누를 때마다 결과와 함께 알린다. 도감 10종 안내가 눌렀다는 사실만 보고
     // 끝내야 하므로, 합성에 실패한 누름도 빠뜨리지 않는다.
     public event Action<AutoMergeManager.EMergeFailure> Pressed;
 
     private void Awake()
     {
-        if (_view == null)
-        {
-            _view = _contentRoot != null
-                ? _contentRoot.GetComponent<BooleanToggleButtonView>()
-                : GetComponentInChildren<BooleanToggleButtonView>(true);
-        }
-
         if (_progressView == null)
         {
             _progressView = GetComponent<RadialProgressView>();
         }
 
-        if (_view == null || _progressView == null)
+        if (_button == null || _progressView == null)
         {
             Debug.LogError("자동 합성 버튼의 필수 참조가 비어 있습니다.", this);
             enabled = false;
-            return;
-        }
-
-        // 켜고 끄는 버튼이 아니므로 ON/OFF를 쓸 자리가 없다. 라벨 없이 묶는다.
-        if (_button != null && _icon != null && _onSprite != null &&
-            _offSprite != null)
-        {
-            _view.Configure(_button, _icon, _onSprite, _offSprite);
         }
     }
 
@@ -57,7 +39,7 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
     {
         if (!enabled) return;
 
-        _view.Clicked += OnButtonClicked;
+        _button.onClick.AddListener(OnButtonClicked);
         SlimeManager.OnDataInitialized += Refresh;
         SlimeManager.OnNormalCollectionCountChanged += OnCollectionCountChanged;
         Refresh();
@@ -65,9 +47,9 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_view != null)
+        if (_button != null)
         {
-            _view.Clicked -= OnButtonClicked;
+            _button.onClick.RemoveListener(OnButtonClicked);
         }
 
         SlimeManager.OnDataInitialized -= Refresh;
@@ -99,7 +81,7 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
         }
     }
 
-    private void OnCollectionCountChanged(int count)
+    private void OnCollectionCountChanged(int _)
     {
         Refresh();
     }
@@ -110,11 +92,10 @@ public sealed class AutoMergeToggleUI : MonoBehaviour
         AutoMergeManager manager = AutoMergeManager.Instance;
         if (manager == null) return;
 
-        // 켜고 끄는 버튼이 아니므로 상태는 "지금 누를 수 있는가"를 뜻한다.
-        bool isReady = manager.IsReady && manager.IsAvailable();
-        if (isReady == _wasReady) return;
+        bool isInteractable = manager.IsReady && manager.IsAvailable();
+        if (isInteractable == _lastInteractable) return;
 
-        _wasReady = isReady;
-        _view.SetState(isReady);
+        _lastInteractable = isInteractable;
+        _button.interactable = isInteractable;
     }
 }

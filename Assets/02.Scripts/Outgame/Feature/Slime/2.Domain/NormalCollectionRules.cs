@@ -3,7 +3,7 @@ using UnityEngine;
 public static class NormalCollectionRules
 {
     public const int AutoMergeCount = 10;
-    public const int AutoTicketCollectCount = 12;
+    public const int TicketBulkCollectCount = 12;
     public const int OfflineTicketRewardCount = 15;
     public const int MainEndingCount = 20;
     public const int HiddenFeverCount = MainEndingCount;

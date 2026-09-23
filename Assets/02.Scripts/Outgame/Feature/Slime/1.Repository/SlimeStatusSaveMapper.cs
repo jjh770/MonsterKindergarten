@@ -80,7 +80,6 @@ public static class SlimeStatusSaveMapper
                 saveData.PendingGroundTickets,
                 saveData.PendingSkyTickets,
                 !saveData.AutoSpawnDisabled,
-                saveData.AutoMergeEnabled,
                 saveData.MainEndingSeen,
                 saveData.SpecialGachaMissCount,
                 saveData.CompletedTutorials);
@@ -129,7 +128,9 @@ public static class SlimeStatusSaveMapper
             PendingGroundTickets = status.PendingGroundTickets,
             PendingSkyTickets = status.PendingSkyTickets,
             AutoSpawnDisabled = !status.IsAutoSpawnEnabled,
-            AutoMergeEnabled = status.IsAutoMergeEnabled,
+            // 자동 합성은 버튼 발동형이라 ON/OFF 상태가 없다. 필드는 기존 로컬 JSON과
+            // Firestore 문서 호환을 위해 남기되 새 저장에는 항상 false를 쓴다.
+            AutoMergeEnabled = false,
             MainEndingSeen = status.MainEndingSeen,
             SpecialGachaMissCount = status.SpecialGachaMissCount,
             CompletedTutorials = new List<string>(status.CompletedTutorials),

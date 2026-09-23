@@ -242,7 +242,7 @@ public class GameManager : MonoBehaviour
             completeStoredIncomplete: false);
         TutorialProgress.Register(
             TutorialIds.CollectionTicketCollect,
-            order: NormalCollectionRules.AutoTicketCollectCount,
+            order: NormalCollectionRules.TicketBulkCollectCount,
             completeByDefault: false,
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(

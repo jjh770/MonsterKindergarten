@@ -67,7 +67,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
         bool isAutoMergeAvailable = isBaseAvailable &&
                                     slimeManager.IsAutoMergeUnlocked;
         bool isTicketCollectAvailable = isBaseAvailable &&
-                                        slimeManager.IsTicketAutoCollectUnlocked;
+                                        slimeManager.IsTicketBulkCollectUnlocked;
 
         Apply(_gachaRoots, isGachaAvailable, ref _areGachaRootsVisible);
         Apply(_autoMergeRoots, isAutoMergeAvailable, ref _areAutoMergeRootsVisible);

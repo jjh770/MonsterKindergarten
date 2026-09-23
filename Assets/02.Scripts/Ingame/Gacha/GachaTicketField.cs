@@ -86,7 +86,7 @@ public class GachaTicketField : MonoBehaviour
 
     public bool CanCollectAll =>
         SlimeManager.Instance != null &&
-        SlimeManager.Instance.IsTicketAutoCollectUnlocked &&
+        SlimeManager.Instance.IsTicketBulkCollectUnlocked &&
         PendingTicketCount > 0 &&
         _bulkCollectStages.Count == 0 &&
         HasCollectableTicket();
@@ -94,7 +94,7 @@ public class GachaTicketField : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void ConfigureTweenCapacity()
     {
-        // 필드 최대 30장의 출발/도착 버스트와 비행이 동시에 재생될 수 있다.
+        // Ground와 Sky에서 최대 30장씩, 60장의 버스트와 비행이 동시에 재생될 수 있다.
         // 플레이 도중 자동 확장하면 프레임 히치와 경고가 생기므로 씬 로드 전에 확보한다.
         DOTween.SetTweensCapacity(2000, 250);
     }

@@ -81,7 +81,6 @@ public sealed class AutoMergeManager : MonoBehaviour
         ? Mathf.Clamp01(1f - _remainingWait / _waitDuration)
         : 1f;
     public bool IsReady => !_isPresenting && _remainingWait <= 0f;
-    public int PairsPerMerge => GetPairCountForLevel(GetUpgradeLevel());
 
     private void Awake()
     {
@@ -309,7 +308,7 @@ public sealed class AutoMergeManager : MonoBehaviour
     private static int GetUpgradeLevel()
     {
         Upgrade upgrade = UpgradeManager.Instance != null
-            ? UpgradeManager.Instance.Get(EUpgradeType.AutoMergeTimeSub, ESlimeGrade.None)
+            ? UpgradeManager.Instance.Get(EUpgradeType.AutoMergePairAdd, ESlimeGrade.None)
             : null;
         return upgrade?.Level ?? 0;
     }
