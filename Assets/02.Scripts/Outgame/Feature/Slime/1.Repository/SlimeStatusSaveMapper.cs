@@ -81,7 +81,10 @@ public static class SlimeStatusSaveMapper
                 !saveData.AutoSpawnDisabled,
                 saveData.MainEndingSeen,
                 saveData.SpecialGachaMissCount,
-                saveData.CompletedTutorials);
+                saveData.CompletedTutorials,
+                ToPlacedObjects(saveData.PlacedObjects),
+                saveData.OwnedPlaygroundObjects,
+                ToBackgroundThemes(saveData.OwnedBackgroundThemes));
         }
         catch (ArgumentException e)
         {
@@ -113,6 +116,75 @@ public static class SlimeStatusSaveMapper
         return true;
     }
 
+    // 저장의 정수를 도메인 값으로 옮긴다. 모르는 번호를 여기서 거르지 않는 것은
+    // 판단을 도메인 한 곳에 두기 위해서다. 도메인이 흘려보낸다.
+    private static List<PlacedPlaygroundObject> ToPlacedObjects(
+        List<PlacedObjectSaveData> saved)
+    {
+        var result = new List<PlacedPlaygroundObject>();
+        if (saved == null) return result;
+
+        foreach (PlacedObjectSaveData entry in saved)
+        {
+            if (entry == null) continue;
+
+            result.Add(new PlacedPlaygroundObject(
+                (EPlaygroundObjectType)entry.Type,
+                entry.X,
+                entry.Y));
+        }
+
+        return result;
+    }
+
+    private static List<EBackgroundTheme> ToBackgroundThemes(List<int> saved)
+    {
+        var result = new List<EBackgroundTheme>();
+        if (saved == null) return result;
+
+        foreach (int value in saved)
+        {
+            result.Add((EBackgroundTheme)value);
+        }
+
+        return result;
+    }
+
+    private static List<PlacedObjectSaveData> BuildPlacedObjects(SlimeStatus status)
+    {
+        var result = new List<PlacedObjectSaveData>();
+        foreach (PlacedPlaygroundObject placed in status.PlacedObjects)
+        {
+            result.Add(new PlacedObjectSaveData((int)placed.Type, placed.X, placed.Y));
+        }
+
+        return result;
+    }
+
+    private static List<int> BuildOwnedPlaygroundObjects(SlimeStatus status)
+    {
+        var result = new List<int>((int)EPlaygroundObjectType.Count);
+        for (int i = 0; i < (int)EPlaygroundObjectType.Count; i++)
+        {
+            result.Add(status.GetOwnedPlaygroundObjectCount((EPlaygroundObjectType)i));
+        }
+
+        return result;
+    }
+
+    // 기본 테마는 담지 않는다. 도메인이 저장 없이도 가진 것으로 보므로,
+    // 담으면 같은 사실을 두 곳에서 관리하게 된다.
+    private static List<int> BuildOwnedBackgroundThemes(SlimeStatus status)
+    {
+        var result = new List<int>();
+        foreach (EBackgroundTheme theme in status.OwnedBackgroundThemes)
+        {
+            result.Add((int)theme);
+        }
+
+        return result;
+    }
+
     public static SlimeStatusSaveData Build(
         SlimeStatus status,
         NormalSlimeCollectionStats collectionStats)
@@ -132,6 +204,9 @@ public static class SlimeStatusSaveMapper
             MainEndingSeen = status.MainEndingSeen,
             SpecialGachaMissCount = status.SpecialGachaMissCount,
             CompletedTutorials = new List<string>(status.CompletedTutorials),
+            PlacedObjects = BuildPlacedObjects(status),
+            OwnedPlaygroundObjects = BuildOwnedPlaygroundObjects(status),
+            OwnedBackgroundThemes = BuildOwnedBackgroundThemes(status),
             NormalCollectionRegistered = BuildNormalCollectionSaveData(status),
             NormalFirstRegisteredAt = collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = collectionStats.BuildNaturalSpawnCounts(),

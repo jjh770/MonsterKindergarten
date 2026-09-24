@@ -95,6 +95,11 @@ public class SlimeManager : MonoBehaviour
     public static event Action<ESlimeGrade> OnNormalCollectionRegistered;
     public static event Action<int> OnNormalCollectionCountChanged;
 
+    // 상점과 배치 모드가 화면을 다시 그릴 때 쓴다. 놓인 것과 보유 수가 함께
+    // 바뀌므로 하나로 알린다.
+    public static event Action OnPlaygroundChanged;
+    public static event Action OnBackgroundThemesChanged;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -258,6 +263,77 @@ public class SlimeManager : MonoBehaviour
     public int GetPendingTicketCount()
     {
         return _status?.PendingTickets ?? 0;
+    }
+
+    // --- 배경 테마 소유 ---
+
+    public bool IsBackgroundThemeOwned(EBackgroundTheme theme)
+    {
+        return _status != null && _status.IsBackgroundThemeOwned(theme);
+    }
+
+    // 값을 치르는 것은 부르는 쪽이 맡는다. 재화는 다른 도메인이라 여기서 끌어오면
+    // 서로 침범한다. UpgradeManager.TryLevelUp과 같은 분담이다.
+    public bool TryAddBackgroundTheme(EBackgroundTheme theme)
+    {
+        if (_status == null || !_status.TryAddBackgroundTheme(theme)) return false;
+
+        Save();
+        OnBackgroundThemesChanged?.Invoke();
+        return true;
+    }
+
+    // --- 놀이터 오브젝트 ---
+
+    public IReadOnlyList<PlacedPlaygroundObject> PlacedPlaygroundObjects =>
+        _status != null
+            ? _status.PlacedObjects
+            : Array.Empty<PlacedPlaygroundObject>();
+
+    public int GetOwnedPlaygroundObjectCount(EPlaygroundObjectType type)
+    {
+        return _status?.GetOwnedPlaygroundObjectCount(type) ?? 0;
+    }
+
+    public int GetPlacedPlaygroundObjectCount(EPlaygroundObjectType type)
+    {
+        return _status?.GetPlacedPlaygroundObjectCount(type) ?? 0;
+    }
+
+    public bool TryBuyPlaygroundObject(EPlaygroundObjectType type)
+    {
+        if (_status == null || !_status.TryBuyPlaygroundObject(type)) return false;
+
+        Save();
+        OnPlaygroundChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)
+    {
+        if (_status == null || !_status.TryPlacePlaygroundObject(type, x, y)) return false;
+
+        Save();
+        OnPlaygroundChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryMovePlacedObject(int index, float x, float y)
+    {
+        if (_status == null || !_status.TryMovePlacedObject(index, x, y)) return false;
+
+        Save();
+        OnPlaygroundChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryRemovePlacedObject(int index)
+    {
+        if (_status == null || !_status.TryRemovePlacedObject(index)) return false;
+
+        Save();
+        OnPlaygroundChanged?.Invoke();
+        return true;
     }
 
     public void SetAutoSpawnEnabled(bool isEnabled)

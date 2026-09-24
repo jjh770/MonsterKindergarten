@@ -22,6 +22,9 @@ public static class SaveSchema
     // v8: 완료한 튜토리얼 목록을 추가했다. 로컬 표시만으로는 재설치 뒤 다시 나왔다.
     // v9: 현재 스테이지를 선택한 배경 테마로, 하늘 진입 완료를 배경 해금 연출 완료로
     // 전환하고 스테이지별 미수령 티켓을 한 수량으로 합쳤다.
-    public const int SlimeCurrentVersion = 9;
+    // v10: 장식장에 놓은 놀이터 오브젝트, 사 둔 오브젝트 수, 사 둔 배경 테마를
+    // 추가했다. 세 필드 모두 없으면 빈 목록으로 읽히고 그것이 "아무것도 사지 않은"
+    // 정확한 상태라, 승격 함수에서 채울 것이 없다.
+    public const int SlimeCurrentVersion = 10;
     public const int UpgradeCurrentVersion = 1;
 }

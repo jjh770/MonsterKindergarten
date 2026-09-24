@@ -39,6 +39,30 @@ public sealed class LegacySlimeStatusSaveData : ISaveData
     public string LastSaveTime { get; set; }
 }
 
+// 장식장에 놓인 놀이터 오브젝트 하나. 종류와 자리만 담는다.
+[Serializable]
+[FirestoreData]
+public sealed class PlacedObjectSaveData
+{
+    [FirestoreProperty]
+    public int Type { get; set; }
+
+    [FirestoreProperty]
+    public float X { get; set; }
+
+    [FirestoreProperty]
+    public float Y { get; set; }
+
+    public PlacedObjectSaveData() { }
+
+    public PlacedObjectSaveData(int type, float x, float y)
+    {
+        Type = type;
+        X = x;
+        Y = y;
+    }
+}
+
 [Serializable]
 [FirestoreData]
 public sealed class SlimeStatusSaveData : ISaveData
@@ -112,6 +136,21 @@ public sealed class SlimeStatusSaveData : ISaveData
     // 필드가 없는 v7 이하 문서는 빈 목록, 즉 "기록 없음"으로 읽혀 지금까지와 같다.
     [FirestoreProperty]
     public List<string> CompletedTutorials { get; set; } = new();
+
+    // v10. 플레이어가 장식장에 직접 놓은 오브젝트다. 슬라임과 달리 자리를 저장한다.
+    // 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙으므로 빈 목록으로 둔다.
+    [FirestoreProperty]
+    public List<PlacedObjectSaveData> PlacedObjects { get; set; } = new();
+
+    // v10. 종류별로 사 둔 개수다. 놓은 것도 포함한 총량이라, 아직 안 놓은 수는
+    // 이 값에서 놓은 수를 뺀 값이 된다. 두 수를 따로 저장하면 서로 어긋날 수 있다.
+    [FirestoreProperty]
+    public List<int> OwnedPlaygroundObjects { get; set; } = new();
+
+    // v10. 상점에서 산 배경 테마 번호다. 땅과 하늘은 해금이 주는 기본 테마라
+    // 여기 담지 않는다. 담으면 필드가 없는 이전 문서가 전부 잃는다.
+    [FirestoreProperty]
+    public List<int> OwnedBackgroundThemes { get; set; } = new();
 
     [FirestoreProperty]
     public List<bool> NormalCollectionRegistered { get; set; } =

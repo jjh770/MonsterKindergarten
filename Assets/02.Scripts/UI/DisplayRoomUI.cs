@@ -295,7 +295,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private void ApplySpacePresentation(bool isDisplayRoom, bool animated)
     {
         _spaceToggleButton.SetSpace(isDisplayRoom);
-        _upgradeUI.SetToggleVisible(!isDisplayRoom, animated);
+        // 상점은 장식장에서도 쓴다. 공간에 따라 파는 물건만 달라진다.
+        _upgradeUI.SetToggleVisible(true, animated);
         Refresh();
     }
 

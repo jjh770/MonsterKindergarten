@@ -26,6 +26,15 @@ public class SlimeStatus
     private readonly List<string> _completedTutorials = new();
     public IReadOnlyList<string> CompletedTutorials => _completedTutorials;
 
+    private readonly List<PlacedPlaygroundObject> _placedObjects = new();
+    private readonly int[] _ownedPlaygroundObjects =
+        new int[(int)EPlaygroundObjectType.Count];
+    private readonly HashSet<EBackgroundTheme> _ownedBackgroundThemes = new();
+
+    public IReadOnlyList<PlacedPlaygroundObject> PlacedObjects => _placedObjects;
+    public IReadOnlyCollection<EBackgroundTheme> OwnedBackgroundThemes =>
+        _ownedBackgroundThemes;
+
     public SlimeStatus(
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
@@ -36,14 +45,23 @@ public class SlimeStatus
         bool isAutoSpawnEnabled,
         bool mainEndingSeen,
         int specialGachaMissCount,
-        IEnumerable<string> completedTutorials = null)
+        IEnumerable<string> completedTutorials = null,
+        IEnumerable<PlacedPlaygroundObject> placedObjects = null,
+        IReadOnlyList<int> ownedPlaygroundObjects = null,
+        IEnumerable<EBackgroundTheme> ownedBackgroundThemes = null)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
 
+        RestoreOwnedBackgroundThemes(ownedBackgroundThemes);
+        RestorePlayground(placedObjects, ownedPlaygroundObjects);
+
+        // 가지지 않은 테마가 선택되어 있으면 기본 테마로 돌린다. 상점에서 산 것을
+        // 잃는 개편이 있어도 화면이 빈 배경으로 남지 않는다.
         bool isBackgroundUnlocked = BackgroundThemeRules.IsUnlocked(highestGrade);
         SelectedBackgroundTheme = isBackgroundUnlocked &&
-                                  BackgroundThemeRules.IsValid(selectedBackgroundTheme)
+                                  BackgroundThemeRules.IsValid(selectedBackgroundTheme) &&
+                                  IsBackgroundThemeOwned(selectedBackgroundTheme)
             ? selectedBackgroundTheme
             : EBackgroundTheme.Ground;
         BackgroundUnlockCompleted = isBackgroundUnlocked &&
@@ -139,6 +157,158 @@ public class SlimeStatus
             throw new ArgumentException("피버 해금 전에 실패 횟수가 저장되어 있습니다.");
         }
 
+    }
+
+    // --- 배경 테마 소유 ---
+
+    public bool IsBackgroundThemeOwned(EBackgroundTheme theme)
+    {
+        return BackgroundThemeRules.IsFree(theme) ||
+               _ownedBackgroundThemes.Contains(theme);
+    }
+
+    public bool TryAddBackgroundTheme(EBackgroundTheme theme)
+    {
+        if (!BackgroundThemeRules.IsValid(theme) ||
+            IsBackgroundThemeOwned(theme))
+        {
+            return false;
+        }
+
+        _ownedBackgroundThemes.Add(theme);
+        return true;
+    }
+
+    // 모르는 번호는 흘려보낸다. 종류를 줄이는 개편이 있어도 막히지 않아야 한다.
+    // 기본 테마는 담지 않는다. 담아 두면 저장에도 실려 나가 규칙이 둘이 된다.
+    private void RestoreOwnedBackgroundThemes(IEnumerable<EBackgroundTheme> themes)
+    {
+        if (themes == null) return;
+
+        foreach (EBackgroundTheme theme in themes)
+        {
+            if (!BackgroundThemeRules.IsValid(theme)) continue;
+            if (BackgroundThemeRules.IsFree(theme)) continue;
+
+            _ownedBackgroundThemes.Add(theme);
+        }
+    }
+
+    // --- 놀이터 오브젝트 ---
+
+    public int GetOwnedPlaygroundObjectCount(EPlaygroundObjectType type)
+    {
+        return PlaygroundRules.IsValid(type) ? _ownedPlaygroundObjects[(int)type] : 0;
+    }
+
+    public int GetPlacedPlaygroundObjectCount(EPlaygroundObjectType type)
+    {
+        int count = 0;
+        foreach (PlacedPlaygroundObject placed in _placedObjects)
+        {
+            if (placed.Type == type) count++;
+        }
+
+        return count;
+    }
+
+    public bool TryBuyPlaygroundObject(EPlaygroundObjectType type)
+    {
+        if (!PlaygroundRules.IsValid(type)) return false;
+        if (_ownedPlaygroundObjects[(int)type] >= PlaygroundRules.MaxPerType) return false;
+
+        _ownedPlaygroundObjects[(int)type]++;
+        return true;
+    }
+
+    // 산 것 중 아직 놓지 않은 것이 있어야 놓을 수 있다.
+    public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)
+    {
+        if (!PlaygroundRules.IsValid(type)) return false;
+        if (GetPlacedPlaygroundObjectCount(type) >= GetOwnedPlaygroundObjectCount(type))
+        {
+            return false;
+        }
+
+        _placedObjects.Add(new PlacedPlaygroundObject(
+            type,
+            PlaygroundRules.ClampX(x),
+            PlaygroundRules.ClampY(y)));
+        return true;
+    }
+
+    public bool TryMovePlacedObject(int index, float x, float y)
+    {
+        if (index < 0 || index >= _placedObjects.Count) return false;
+
+        PlacedPlaygroundObject placed = _placedObjects[index];
+        _placedObjects[index] = new PlacedPlaygroundObject(
+            placed.Type,
+            PlaygroundRules.ClampX(x),
+            PlaygroundRules.ClampY(y));
+        return true;
+    }
+
+    // 치우면 보유로 돌아간다. 보유 수는 놓은 것을 포함한 총량이라 건드리지 않는다.
+    public bool TryRemovePlacedObject(int index)
+    {
+        if (index < 0 || index >= _placedObjects.Count) return false;
+
+        _placedObjects.RemoveAt(index);
+        return true;
+    }
+
+    // 쓰는 쪽에서 나올 수 없는 값만 막는다. 밸런스로 달라질 수 있는 값은 흡수한다.
+    //  - 모르는 종류, 상한을 넘은 배치 : 흘려보내거나 잘라낸다
+    //  - 방 밖 좌표 : 방 크기는 바뀔 수 있으므로 가둔다
+    //  - 음수 보유 수 : 정상적으로 만들 수 없으므로 막는다
+    private void RestorePlayground(
+        IEnumerable<PlacedPlaygroundObject> placedObjects,
+        IReadOnlyList<int> ownedCounts)
+    {
+        if (ownedCounts != null)
+        {
+            for (int i = 0; i < ownedCounts.Count && i < _ownedPlaygroundObjects.Length; i++)
+            {
+                int owned = ownedCounts[i];
+                if (owned < 0)
+                {
+                    throw new ArgumentException(
+                        $"놀이터 오브젝트 보유 수가 올바르지 않습니다. : {owned}");
+                }
+
+                _ownedPlaygroundObjects[i] = Math.Min(owned, PlaygroundRules.MaxPerType);
+            }
+        }
+
+        if (placedObjects != null)
+        {
+            foreach (PlacedPlaygroundObject placed in placedObjects)
+            {
+                if (!PlaygroundRules.IsValid(placed.Type)) continue;
+                if (GetPlacedPlaygroundObjectCount(placed.Type) >=
+                    PlaygroundRules.MaxPerType)
+                {
+                    continue;
+                }
+
+                _placedObjects.Add(new PlacedPlaygroundObject(
+                    placed.Type,
+                    PlaygroundRules.ClampX(placed.X),
+                    PlaygroundRules.ClampY(placed.Y)));
+            }
+        }
+
+        // 상한을 낮추는 개편이 있으면 놓은 수가 보유 수를 넘을 수 있다.
+        // 놓여 있는 것이 사실이므로 보유 수를 그쪽에 맞춘다.
+        for (int i = 0; i < _ownedPlaygroundObjects.Length; i++)
+        {
+            int placedCount = GetPlacedPlaygroundObjectCount((EPlaygroundObjectType)i);
+            if (_ownedPlaygroundObjects[i] < placedCount)
+            {
+                _ownedPlaygroundObjects[i] = placedCount;
+            }
+        }
     }
 
     public void UpdateBackgroundProgress(

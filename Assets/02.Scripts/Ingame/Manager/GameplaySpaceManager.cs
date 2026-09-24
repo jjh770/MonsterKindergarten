@@ -536,7 +536,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     // 평상시는 공간 기본값이며, 초기화·전환 연출 중에는 차단 우선순위를 쓴다.
     private void SetInteractionEnabled(bool isEnabled)
     {
-        _upgradeUI.SetToggleInputEnabled(isEnabled && IsMainFieldActive);
+        // 서랍은 상점이라 두 공간에서 모두 열린다. 파는 물건만 공간에 따라 다르다.
+        // 보내기 모드와 튜토리얼, 도감, 학자 안내는 저마다 따로 서랍을 닫는다.
+        _upgradeUI.SetToggleInputEnabled(isEnabled);
         _clicker.PushMode(
             this,
             GetSpaceInputMode(isEnabled),
