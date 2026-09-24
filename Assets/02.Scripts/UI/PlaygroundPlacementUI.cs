@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -46,7 +45,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
 
     private Camera _camera;
-    private Tween _modeTween;
+    private GameplayModeSession _modeSession;
     private bool _isPointerBlocked;
     private bool _isActive;
     private bool _hasSelectedType;
@@ -68,7 +67,16 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         }
 
         _camera = Camera.main;
-        _modeRoot.SetActive(false);
+        _modeSession = new GameplayModeSession(
+            _upgradeUI,
+            _clicker,
+            _gameExitManager,
+            _hudVisibility,
+            EHudParts.All,
+            _modeRoot,
+            _modeCanvasGroup,
+            _modeAnimationDuration);
+        _modeSession.ResetPresentation();
     }
 
     private void Start()
@@ -95,11 +103,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        _modeTween?.Kill();
+        _modeSession?.Dispose();
         SlimeManager.OnPlaygroundChanged -= Refresh;
-
-        // 배치 모드를 켠 채로 씬이 내려가면 HUD가 화면 밖에 남는다.
-        if (_isActive && _hudVisibility != null) _hudVisibility.Release(this, animated: false);
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
         if (GameplaySpaceManager.Instance == null) return;
@@ -136,23 +141,16 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         }
 
         _isActive = true;
-        _upgradeUI.TryClose();
-        _upgradeUI.SetToggleInputEnabled(false);
-        _upgradeUI.SetToggleVisible(false);
-
-        // 슬라임 관찰이 열리면 배치 탭과 겹친다. 이 모드에서는 월드 입력을 막고
-        // 이 컴포넌트가 직접 읽는다.
-        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Selection);
-        _gameExitManager.RegisterBackHandler(this, TryCancel);
+        _modeSession.Enter(
+            ClickerInputMode.Blocked,
+            ClickerInputPriority.Selection,
+            TryCancel);
 
         // 옮기는 동안 대포가 슬라임을 삼키거나 범퍼가 밀어내면, 플레이어가 잡고
         // 있는 것과 물리가 움직이는 것이 뒤섞인다.
         _field.SetInteractive(false);
 
         // 형제 순서는 씬이 정한다. 여기서 맨 위로 올리면 공간 전환 막까지 덮는다.
-        _modeRoot.SetActive(true);
-        _modeCanvasGroup.alpha = 0f;
-        PlayModePresentation(show: true);
         ClearSelection();
         Refresh();
     }
@@ -175,39 +173,12 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         _heldIndex = -1;
         ClearSelection();
 
-        _clicker.ReleaseMode(this);
-        _gameExitManager.UnregisterBackHandler(this);
-        _upgradeUI.SetToggleInputEnabled(true);
-        _upgradeUI.SetToggleVisible(true);
-        PlayModePresentation(show: false);
+        _modeSession.Exit();
 
         _field.SetInteractive(true);
 
         // 끌던 중이었다면 화면이 저장과 어긋나 있다. 저장 기준으로 다시 세운다.
         _field.Rebuild();
-    }
-
-    // 보내기 모드와 같은 연출이다. 위아래 HUD가 물러나고 테두리가 떠오른다.
-    //
-    // 오버레이는 HUD 루트 바깥에 두어야 한다. 안에 두면 하단 HUD를 밀어낼 때
-    // 배치 버튼까지 같이 화면 밖으로 나간다.
-    private void PlayModePresentation(bool show)
-    {
-        if (show) _hudVisibility.PushHide(this, EHudParts.All);
-        else _hudVisibility.Release(this);
-
-        // 사라지는 동안에도 버튼은 눌린다. 나가는 중에 범퍼를 고르면 다음에
-        // 들어올 때까지 그 선택이 남는다.
-        _modeCanvasGroup.blocksRaycasts = show;
-
-        _modeTween?.Kill();
-        _modeTween = _modeCanvasGroup
-            .DOFade(show ? 1f : 0f, _modeAnimationDuration)
-            .OnComplete(() =>
-            {
-                _modeTween = null;
-                if (!show) _modeRoot.SetActive(false);
-            });
     }
 
     private void SelectType(EPlaygroundObjectType type)

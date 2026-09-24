@@ -48,7 +48,6 @@ public sealed class CollectionBookUI : MonoBehaviour
     private Tween _scrollTween;
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
-    private bool _wasUpgradeToggleInputEnabled;
 
     public bool IsOpen => _isOpen;
 
@@ -102,6 +101,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _gameExitManager?.UnregisterBackHandler(this);
         _clicker?.ReleaseMode(this);
         _hudVisibility?.Release(this, animated: false);
+        _upgradeUI?.ReleaseStandDown(this, animated: false);
     }
 
     private bool HasRequiredReferences()
@@ -171,9 +171,7 @@ public sealed class CollectionBookUI : MonoBehaviour
             this,
             ClickerInputMode.Blocked,
             ClickerInputPriority.Modal);
-        _wasUpgradeToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
-        _upgradeUI.SetToggleInputEnabled(false);
-        _upgradeUI.SetToggleVisible(false);
+        _upgradeUI.PushStandDown(this);
         _hudVisibility.PushHide(this, EHudParts.All);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         RefreshOpenButton();
@@ -432,8 +430,9 @@ public sealed class CollectionBookUI : MonoBehaviour
     {
         bool isMainField = GameplaySpaceManager.Instance != null &&
                            GameplaySpaceManager.Instance.IsMainFieldActive;
+        // 보이기는 공간이 정한다. 그 값을 먼저 세우고 연출을 물린다.
         _upgradeUI.SetToggleVisible(isMainField, animated);
-        _upgradeUI.SetToggleInputEnabled(_wasUpgradeToggleInputEnabled);
+        _upgradeUI.ReleaseStandDown(this, animated);
     }
 
     private bool CanOpen()

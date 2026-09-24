@@ -41,13 +41,11 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [SerializeField, Min(0f)] private float _observationDuration = 0.3f;
 
     private Tween _fadeTween;
-    private Sequence _observationSequence;
+    private GameplayModeSession _observationSession;
     private SlimeController _target;
     private Vector3 _takeOutStartPosition;
     private bool _isTakeOutPlaying;
     private bool _isObserving;
-    private bool _isShopDrawerHidden;
-    private bool _wasShopToggleInputEnabled;
 
     public bool IsVisible => _target != null;
     public bool IsObserving => _isObserving;
@@ -81,7 +79,19 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
         _infoCanvasGroup.interactable = false;
         _infoRoot.SetActive(false);
-        _observationInputRoot.SetActive(false);
+        _observationSession = new GameplayModeSession(
+            _upgradeUI,
+            _clicker,
+            _gameExitManager,
+            _hudVisibility,
+            EHudParts.All,
+            _observationInputRoot,
+            _infoCanvasGroup,
+            _observationDuration,
+            activeAlpha: 0f,
+            inactiveAlpha: 1f,
+            manageRaycasts: false);
+        _observationSession.ResetPresentation();
         _observeButton.onClick.AddListener(EnterObservationMode);
         _closeButton.onClick.AddListener(Close);
         _takeOutButton.onClick.AddListener(OnTakeOutButtonClicked);
@@ -92,7 +102,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     private void OnDestroy()
     {
         _fadeTween?.Kill();
-        _observationSequence?.Kill();
+        _observationSession?.Dispose();
         _observeButton?.onClick.RemoveListener(EnterObservationMode);
         _closeButton?.onClick.RemoveListener(Close);
         _takeOutButton?.onClick.RemoveListener(OnTakeOutButtonClicked);
@@ -203,7 +213,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             return true;
         }
 
-        if (_observationSequence != null) return true;
+        if (_observationSession.IsTransitioning) return true;
 
         // 물려 있는 동안에는 닫지 않되 입력은 소비한다.
         if (IsTargetHeld) return true;
@@ -256,19 +266,14 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isObserving = true;
         _infoCanvasGroup.interactable = false;
         _infoCanvasGroup.blocksRaycasts = false;
-        _observationInputRoot.SetActive(true);
-        _observationInputRoot.transform.SetAsLastSibling();
         GameplaySpaceManager.Instance?.BeginDisplayRoomObservation();
-        SetShopDrawerHidden(true);
-
         _fadeTween?.Kill();
         _fadeTween = null;
-        _observationSequence?.Kill();
-        _observationSequence = DOTween.Sequence();
-        _observationSequence.Join(
-            _infoCanvasGroup.DOFade(0f, _observationDuration));
-        _observationSequence.OnComplete(() => _observationSequence = null);
-        _hudVisibility.PushHide(this, EHudParts.All);
+        _observationSession.Enter(
+            ClickerInputMode.Blocked,
+            ClickerInputPriority.Modal,
+            TryClose,
+            bringRootToFront: true);
     }
 
     private void ExitObservationMode()
@@ -276,21 +281,11 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         if (!_isObserving) return;
 
         _isObserving = false;
-        _observationInputRoot.SetActive(false);
         _infoCanvasGroup.blocksRaycasts = true;
         GameplaySpaceManager.Instance?.EndDisplayRoomObservation();
-        SetShopDrawerHidden(false);
-
-        _observationSequence?.Kill();
-        _observationSequence = DOTween.Sequence();
-        _observationSequence.Join(
-            _infoCanvasGroup.DOFade(1f, _observationDuration));
-        _hudVisibility.Release(this);
-        _observationSequence.OnComplete(() =>
-        {
-            _observationSequence = null;
-            _infoCanvasGroup.interactable = true;
-        });
+        _observationSession.Exit(
+            deactivateRootImmediately: true,
+            onCompleted: () => _infoCanvasGroup.interactable = true);
     }
 
     private void OnTakeOutButtonClicked()
@@ -364,28 +359,6 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoRoot.SetActive(false);
     }
 
-    // 관찰 중에는 화면에서 UI가 모두 물러난다. 서랍 손잡이만 남으면 어색하다.
-    //
-    // 들어갈 때의 입력 상태를 기억했다가 그대로 돌려준다. 무조건 켜면 튜토리얼이
-    // 잠가 둔 서랍이 관찰 한 번으로 열리게 된다.
-    private void SetShopDrawerHidden(bool isHidden)
-    {
-        if (_upgradeUI == null || _isShopDrawerHidden == isHidden) return;
-
-        _isShopDrawerHidden = isHidden;
-
-        if (isHidden)
-        {
-            _upgradeUI.TryClose();
-            _wasShopToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
-            _upgradeUI.SetToggleInputEnabled(false);
-            _upgradeUI.SetToggleVisible(false);
-            return;
-        }
-
-        _upgradeUI.SetToggleInputEnabled(_wasShopToggleInputEnabled);
-        _upgradeUI.SetToggleVisible(true);
-    }
 
     // 대포가 물어 가면 버튼을 내리고, 놓아 주면 되돌린다.
     //
@@ -404,17 +377,12 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void ResetObservationPresentation()
     {
-        SetShopDrawerHidden(false);
-
         if (_observeButton != null) _observeButton.interactable = true;
         if (_takeOutButton != null) _takeOutButton.interactable = true;
         if (_closeButton != null) _closeButton.interactable = true;
 
         _isObserving = false;
-        _observationSequence?.Kill();
-        _observationSequence = null;
-        _observationInputRoot.SetActive(false);
-        _hudVisibility.Release(this, animated: false);
+        _observationSession.ResetPresentation();
         _infoCanvasGroup.blocksRaycasts = true;
     }
 
