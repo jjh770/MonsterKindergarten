@@ -96,6 +96,17 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         CleanupTween();
     }
 
+    // 연출이 크기를 직접 다루기 전에 부른다. 돌고 있던 펀치를 멈추고 원래 크기로
+    // 되돌린다.
+    //
+    // 이게 없으면 부딪힌 직후 연출에 들어간 슬라임이 두 주인을 갖는다. 연출이
+    // 줄여 놓은 크기를 펀치가 끝나면서 제 기본값으로 덮어쓰고, 연출이 그때의
+    // 부푼 크기를 "원래 크기"로 기억해 두면 끝난 뒤에도 그대로 남는다.
+    public void StopAndReset()
+    {
+        CleanupTween();
+    }
+
     private void PlayPromoteFeedback()
     {
         PlayPunch(_promotePunchScale, _promoteDuration);

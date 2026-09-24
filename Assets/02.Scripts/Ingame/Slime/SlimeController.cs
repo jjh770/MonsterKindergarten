@@ -10,6 +10,7 @@ public class SlimeController : MonoBehaviour, IClickable
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private SlimeMove _slimeMove;
+    private ScaleTweeningFeedback _scaleFeedback;
     private SpriteRenderer _spriteRenderer;
     private Collider2D[] _colliders = Array.Empty<Collider2D>();
     private Rigidbody2D _rigidbody;
@@ -55,6 +56,7 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         _feedbacks = GetComponentsInChildren<IFeedback>();
         _slimeMove = GetComponent<SlimeMove>();
+        _scaleFeedback = GetComponent<ScaleTweeningFeedback>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
         if (_spriteRenderer != null)
         {
@@ -133,22 +135,29 @@ public class SlimeController : MonoBehaviour, IClickable
         _slimeMove?.SetMovementLocked(isLocked);
     }
 
-    // 장식장 놀이터 오브젝트가 슬라임을 날릴 때 쓴다. 실제로 밀었는지를 돌려주므로
-    // 부르는 쪽은 같은 조건을 다시 쓰지 않고 연출만 이 결과에 맞추면 된다.
+    // 장식장 놀이터가 이 슬라임을 건드려도 되는지.
     //
     // 이 놀이는 장식장 안에서만 성립한다. 메인 필드 슬라임은 터치 포인트와 드래그
     // 합성의 대상이라, 밀려 날아가면 조준이 불가능해지고 합성 판정이 겹친다.
     // 다른 공간의 슬라임은 물리가 꺼져 있어 닿지도 않지만, 충돌을 거치지 않는
     // 호출이 생길 수 있으므로 여기서 한 번 더 막는다.
+    //
+    // 관찰 중인 슬라임도 뺀다. 카메라가 그 슬라임을 따라다니므로(기획서 §8)
+    // 날아가거나 대포에 들어가면 화면 전체가 휘둘린다.
+    //
+    // 범퍼는 미는 순간에, 대포는 붙잡기 전에 같은 조건을 봐야 한다. 두 곳에
+    // 따로 쓰면 한쪽만 고쳐졌을 때 조용히 어긋난다.
+    public bool IsPlaygroundTarget =>
+        !_isDragging &&
+        !_isDisplayRoomFocused &&
+        _slimeMove != null &&
+        Location == ESlimeLocation.DisplayRoom;
+
+    // 실제로 밀었는지를 돌려주므로, 부르는 쪽은 조건을 다시 쓰지 않고 연출만
+    // 이 결과에 맞추면 된다.
     public bool Launch(Vector2 velocity)
     {
-        if (_isDragging ||
-            _isDisplayRoomFocused ||
-            _slimeMove == null ||
-            Location != ESlimeLocation.DisplayRoom)
-        {
-            return false;
-        }
+        if (!IsPlaygroundTarget) return false;
 
         return _slimeMove.Launch(velocity);
     }
@@ -163,6 +172,10 @@ public class SlimeController : MonoBehaviour, IClickable
         if (isLocked)
         {
             CancelDrag();
+
+            // 크기의 주인은 피드백 쪽이다. 돌고 있던 펀치를 여기서 정리하지 않으면
+            // 연출이 정한 크기를 펀치가 끝나면서 덮어쓴다.
+            _scaleFeedback?.StopAndReset();
         }
 
         // 풀 때는 공간이 정해 둔 표시 상태를 따른다. 그림이 꺼진 슬라임은 지금 화면에 없는
