@@ -44,7 +44,6 @@ public sealed class ScholarGuideUI : MonoBehaviour
     private bool _isOpen;
     private bool _isTransitioning;
     private bool _presentationRestored;
-    private bool _previousToggleVisible = true;
 
     public static bool IsAnyOpen { get; private set; }
     public bool IsOpen => _isOpen;
@@ -96,9 +95,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         IsAnyOpen = true;
         _isTransitioning = true;
         _presentationRestored = false;
-        _previousToggleVisible = _upgradeUI == null || _upgradeUI.IsToggleVisible;
-        _upgradeUI?.TryClose();
-        _upgradeUI?.SetToggleVisible(false);
+        _upgradeUI?.PushStandDown(this);
         _hudVisibility?.PushHide(this, EHudParts.All);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager?.RegisterBackHandler(this, TryHandleBack);
@@ -254,9 +251,6 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
         _presentationRestored = true;
         _hudVisibility?.Release(this, animated);
-        if (_previousToggleVisible)
-        {
-            _upgradeUI?.SetToggleVisible(true, animated);
-        }
+        _upgradeUI?.ReleaseStandDown(this, animated);
     }
 }

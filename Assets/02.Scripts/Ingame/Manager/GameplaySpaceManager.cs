@@ -398,6 +398,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             SlimeManager.Instance == null ||
             !SlimeManager.Instance.IsBackgroundThemeUnlocked ||
             !BackgroundThemeRules.IsValid(theme) ||
+            !SlimeManager.Instance.IsBackgroundThemeOwned(theme) ||
             // 지금 보고 있는 배경을 다시 고른 것이라 바꿀 것이 없다. 그냥 두면
             // 밀 자리가 없어 화면을 덮는 쪽으로 떨어져, 같은 버튼이 다른 연출을 낸다.
             theme == _currentBackgroundTheme)

@@ -230,6 +230,8 @@ public class SlimeStatus
             return false;
         }
 
+        if (!IsPlaygroundPositionAvailable(x, y)) return false;
+
         _placedObjects.Add(new PlacedPlaygroundObject(
             type,
             PlaygroundRules.ClampX(x),
@@ -240,12 +242,40 @@ public class SlimeStatus
     public bool TryMovePlacedObject(int index, float x, float y)
     {
         if (index < 0 || index >= _placedObjects.Count) return false;
+        if (!IsPlaygroundPositionAvailable(x, y, index)) return false;
 
         PlacedPlaygroundObject placed = _placedObjects[index];
         _placedObjects[index] = new PlacedPlaygroundObject(
             placed.Type,
             PlaygroundRules.ClampX(x),
             PlaygroundRules.ClampY(y));
+        return true;
+    }
+
+    // 배치 규칙은 저장 상태를 소유한 도메인이 최종 판정한다. UI가 미리 물어보는
+    // 것은 안내 문구를 고르기 위한 것이고, 실제 변경도 반드시 이 검사를 다시 거친다.
+    public bool IsPlaygroundPositionAvailable(float x, float y, int ignoreIndex = -1)
+    {
+        if (!IsFinite(x) || !IsFinite(y)) return false;
+        if (ignoreIndex < -1 || ignoreIndex >= _placedObjects.Count) return false;
+
+        float clampedX = PlaygroundRules.ClampX(x);
+        float clampedY = PlaygroundRules.ClampY(y);
+        float minimumDistanceSquared =
+            PlaygroundRules.MinimumSpacing * PlaygroundRules.MinimumSpacing;
+
+        for (int i = 0; i < _placedObjects.Count; i++)
+        {
+            if (i == ignoreIndex) continue;
+
+            float dx = _placedObjects[i].X - clampedX;
+            float dy = _placedObjects[i].Y - clampedY;
+            if (dx * dx + dy * dy < minimumDistanceSquared)
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -286,11 +316,21 @@ public class SlimeStatus
             foreach (PlacedPlaygroundObject placed in placedObjects)
             {
                 if (!PlaygroundRules.IsValid(placed.Type)) continue;
+                if (!IsFinite(placed.X) || !IsFinite(placed.Y))
+                {
+                    throw new ArgumentException(
+                        $"놀이터 오브젝트 위치가 올바르지 않습니다. : ({placed.X}, {placed.Y})");
+                }
+
                 if (GetPlacedPlaygroundObjectCount(placed.Type) >=
                     PlaygroundRules.MaxPerType)
                 {
                     continue;
                 }
+
+                // 간격은 밸런스 값이라 나중에 넓어질 수 있다. 예전 저장끼리 겹치면
+                // 먼저 저장된 것만 놓고 나머지는 보유 상태로 돌려 막지 않고 흡수한다.
+                if (!IsPlaygroundPositionAvailable(placed.X, placed.Y)) continue;
 
                 _placedObjects.Add(new PlacedPlaygroundObject(
                     placed.Type,
@@ -325,6 +365,11 @@ public class SlimeStatus
             !BackgroundThemeRules.IsUnlocked(HighestGrade))
         {
             throw new InvalidOperationException("배경 테마가 아직 해금되지 않았습니다.");
+        }
+
+        if (!IsBackgroundThemeOwned(selectedBackgroundTheme))
+        {
+            throw new InvalidOperationException("가지고 있지 않은 배경 테마입니다.");
         }
 
         SelectedBackgroundTheme = selectedBackgroundTheme;
@@ -561,5 +606,10 @@ public class SlimeStatus
         {
             throw new ArgumentException($"올바른 등급 설정이 아닙니다. : {grade}");
         }
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

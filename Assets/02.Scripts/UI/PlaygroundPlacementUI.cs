@@ -342,30 +342,38 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         float x = PlaygroundRules.ClampX(world.x);
         float y = PlaygroundRules.ClampY(world.y);
+        SlimeManager manager = SlimeManager.Instance;
 
-        if (IsTooClose(x, y, index))
+        if (manager != null &&
+            !manager.IsPlaygroundPositionAvailable(x, y, index))
         {
             _toast?.Show("다른 것과 너무 가까워요.");
             _field.Rebuild();
             return;
         }
 
-        SlimeManager.Instance?.TryMovePlacedObject(index, x, y);
+        if (manager == null || !manager.TryMovePlacedObject(index, x, y))
+        {
+            _toast?.Show("여기에는 옮길 수 없어요.");
+            _field.Rebuild();
+        }
     }
 
     private void Place(Vector2 world)
     {
         float x = PlaygroundRules.ClampX(world.x);
         float y = PlaygroundRules.ClampY(world.y);
+        SlimeManager manager = SlimeManager.Instance;
 
-        if (IsTooClose(x, y, -1))
+        if (manager != null &&
+            !manager.IsPlaygroundPositionAvailable(x, y))
         {
             _toast?.Show("다른 것과 너무 가까워요.");
             return;
         }
 
-        if (SlimeManager.Instance == null ||
-            !SlimeManager.Instance.TryPlacePlaygroundObject(_selectedType, x, y))
+        if (manager == null ||
+            !manager.TryPlacePlaygroundObject(_selectedType, x, y))
         {
             _toast?.Show("여기에는 놓을 수 없어요.");
             return;
@@ -375,29 +383,6 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (RemainingCount(_selectedType) <= 0) ClearSelection();
 
         Refresh();
-    }
-
-    // 겹쳐 놓으면 어느 쪽이 슬라임을 잡았는지 알 수 없다. ignoreIndex는 자기 자신이다.
-    private static bool IsTooClose(float x, float y, int ignoreIndex)
-    {
-        SlimeManager manager = SlimeManager.Instance;
-        if (manager == null) return false;
-
-        IReadOnlyList<PlacedPlaygroundObject> placed = manager.PlacedPlaygroundObjects;
-        for (int i = 0; i < placed.Count; i++)
-        {
-            if (i == ignoreIndex) continue;
-
-            float dx = placed[i].X - x;
-            float dy = placed[i].Y - y;
-            if (dx * dx + dy * dy <
-                PlaygroundRules.MinimumSpacing * PlaygroundRules.MinimumSpacing)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private GameObject GetSpawned(int index)

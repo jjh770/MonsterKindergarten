@@ -309,6 +309,12 @@ public class SlimeManager : MonoBehaviour
         return true;
     }
 
+    public bool IsPlaygroundPositionAvailable(float x, float y, int ignoreIndex = -1)
+    {
+        return _status != null &&
+               _status.IsPlaygroundPositionAvailable(x, y, ignoreIndex);
+    }
+
     public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)
     {
         if (_status == null || !_status.TryPlacePlaygroundObject(type, x, y)) return false;
