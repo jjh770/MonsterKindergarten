@@ -63,14 +63,20 @@ public class UnlockPopupUI : MonoBehaviour
             AudioManager.Instance.PlaySFX(_unlockSound);
         }
 
+        // 등급 숫자만으로는 무엇이 열렸는지 알 수 없다. 이름과 그림이 같은 스펙에서
+        // 나오므로 한 번만 찾아 둘 다 쓴다.
+        SlimeSpecData specData = SlimeManager.Instance != null
+            ? SlimeManager.Instance.Get(grade)?.SpecData
+            : null;
+
         if (_gradeText != null)
         {
-            _gradeText.text = $"Lv.{(int)grade} 해금!";
+            _gradeText.text = $"{specData?.Name ?? grade.ToString()} 해금!";
         }
 
         if (_gradeImage != null)
         {
-            _gradeImage.sprite = SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
+            _gradeImage.sprite = specData?.Sprite;
         }
 
         if (_whiteGlowImage != null)
