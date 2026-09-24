@@ -19,6 +19,20 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     [Tooltip("모두 한꺼번에 움찔하지 않도록 시작 시각을 흩뿌리는 폭입니다.")]
     [SerializeField, Min(0f)] private float _themeReactionSpread = 0.35f;
 
+    [Header("Bump")]
+    [Tooltip("장식장에서 슬라임끼리 부딪힐 때 찌그러지는 크기입니다.")]
+    [SerializeField, Min(0f)] private float _bumpPunchScale = 0.35f;
+    [SerializeField, Min(0f)] private float _bumpDuration = 0.35f;
+
+    [Tooltip("이 속도로 부딪히면 위 크기가 그대로 나옵니다. 느릴수록 약해집니다.")]
+    [SerializeField, Min(0.01f)] private float _bumpReferenceSpeed = 4f;
+
+    [Tooltip("이보다 느리게 스치면 반응하지 않습니다. 붙어서 비비는 동안 계속 떨리는 것을 막습니다.")]
+    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 0.6f;
+
+    [Tooltip("한 번 반응한 뒤 이만큼은 다시 반응하지 않습니다. 연달아 부딪힐 때 찌그러짐이 겹치는 것을 막습니다.")]
+    [SerializeField, Min(0f)] private float _bumpCooldown = 0.3f;
+
     [Header("Common")]
     [SerializeField, Min(1)] private int _vibrato = 10;
     [SerializeField, Range(0f, 1f)] private float _elasticity = 1f;
@@ -27,6 +41,7 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private GameplaySpaceManager _spaceManager;
     private Tween _scaleTween;
     private Vector3 _defaultScale;
+    private float _nextBumpTime;
 
     private void Awake()
     {
@@ -37,6 +52,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private void OnEnable()
     {
         _owner.OnPromoted += PlayPromoteFeedback;
+        _owner.OnBumped += PlayBumpReaction;
+
+        // 풀에서 다시 나온 오브젝트가 이전 개체의 쿨다운을 물려받지 않게 한다.
+        _nextBumpTime = 0f;
 
         // 풀에서 다시 꺼내질 때마다 매니저를 새로 잡는다. 씬이 바뀌면 인스턴스도
         // 바뀌므로 구독해 둔 것을 그대로 들고 있으면 안 된다.
@@ -58,6 +77,7 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         if (_owner != null)
         {
             _owner.OnPromoted -= PlayPromoteFeedback;
+            _owner.OnBumped -= PlayBumpReaction;
         }
 
         if (_spaceManager != null)
@@ -100,6 +120,27 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
             _themeReactionPunchScale,
             _themeReactionDuration,
             Random.Range(0f, _themeReactionSpread));
+    }
+
+    // 세게 부딪힐수록 크게 찌그러진다. 기준 속도에서 1이 되도록 묶어 두지 않으면
+    // 대포에 맞은 슬라임이 화면을 덮을 만큼 커진다.
+    //
+    // 여기서는 장식장인지 묻지 않는다. 슬라임끼리 부딪히는 일 자체가 장식장에서만
+    // 일어나고, 공간을 다시 물으면 전환 중에 판정이 흔들린다.
+    private void PlayBumpReaction(float impactSpeed)
+    {
+        if (_owner == null ||
+            _owner.IsDragging ||
+            impactSpeed < _bumpMinimumSpeed ||
+            Time.time < _nextBumpTime)
+        {
+            return;
+        }
+
+        _nextBumpTime = Time.time + _bumpCooldown;
+
+        float strength = Mathf.Clamp01(impactSpeed / _bumpReferenceSpeed);
+        PlayPunch(_bumpPunchScale * strength, _bumpDuration);
     }
 
     private void PlayPunch(float punchScale, float duration, float delay = 0f)

@@ -7,6 +7,14 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     [SerializeField] private AudioClip _landSound;
     [SerializeField, Min(0f)] private float _landSoundCooldown = 0.1f;
 
+    [Header("Bump")]
+    [Tooltip("장식장에서 슬라임끼리 부딪힐 때 나는 소리입니다.")]
+    [SerializeField] private AudioClip _bumpSound;
+    [SerializeField, Min(0f)] private float _bumpSoundCooldown = 0.08f;
+
+    [Tooltip("이보다 느리게 스치면 소리를 내지 않습니다.")]
+    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 0.6f;
+
     private SlimeController _slimeController;
 
     private void Awake()
@@ -18,6 +26,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     {
         _slimeController.OnPromoted += PlayLevelUpSound;
         _slimeController.OnLanded += PlayLandSound;
+        _slimeController.OnBumped += PlayBumpSound;
     }
 
     private void OnDisable()
@@ -26,6 +35,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
         _slimeController.OnPromoted -= PlayLevelUpSound;
         _slimeController.OnLanded -= PlayLandSound;
+        _slimeController.OnBumped -= PlayBumpSound;
     }
 
     private void PlayLevelUpSound()
@@ -40,6 +50,20 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
         int soundIndex = Random.Range(0, _levelUpSounds.Length);
         AudioManager.Instance.PlaySFX(_levelUpSounds[soundIndex]);
+    }
+
+    // IsMainFieldActive를 묻지 않는다. 슬라임끼리 부딪히는 일은 장식장에서만
+    // 일어나므로, 그 조건을 걸면 정작 필요한 자리에서 전부 걸러진다.
+    private void PlayBumpSound(float impactSpeed)
+    {
+        if (impactSpeed < _bumpMinimumSpeed ||
+            AudioManager.Instance == null ||
+            _bumpSound == null)
+        {
+            return;
+        }
+
+        AudioManager.Instance.PlaySFXWithCooldown(_bumpSound, _bumpSoundCooldown);
     }
 
     private void PlayLandSound()

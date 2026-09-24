@@ -9,6 +9,26 @@ public class Clicker : MonoBehaviour
     [SerializeField] private float _dragThresholdDistance = 0.3f;
     [SerializeField] private float _mergeDetectionRadius = 0.65f;
 
+    // 콜라이더 실효 크기가 0.75 x 0.42이고 그려지는 슬라임은 0.8 x 0.5쯤이다.
+    // 둘의 차이(모서리 둥글림 포함)가 약 0.1, 손가락 굵기가 약 0.1이라 0.2면
+    // 그림 위를 누른 손가락은 모두 닿는다. 더 키우면 빈 곳을 눌러도 잡히므로
+    // 메인 필드의 클릭이 쉬워지는 쪽으로 성격이 바뀐다.
+    [Tooltip("터치가 빗나갔을 때 이 반경 안에서 가장 가까운 슬라임을 집습니다. 0이면 정확히 닿은 것만 고릅니다.")]
+    [SerializeField, Min(0f)] private float _selectionRadius = 0.2f;
+
+    [Header("Throw")]
+    [Tooltip("놓는 순간 손가락 속도에 곱할 값입니다. 장식장 슬라임에만 적용됩니다.")]
+    [SerializeField, Min(0f)] private float _throwSpeedMultiplier = 1f;
+
+    [Tooltip("이보다 느리게 놓으면 던지지 않고 그 자리에 둡니다.")]
+    [SerializeField, Min(0f)] private float _minimumThrowSpeed = 2f;
+
+    [Tooltip("아무리 빠르게 휘둘러도 이 속도를 넘기지 않습니다.")]
+    [SerializeField, Min(0.1f)] private float _maximumThrowSpeed = 14f;
+
+    [Tooltip("1에 가까울수록 마지막 한 프레임을 그대로 씁니다. 손 떨림이 그대로 실립니다.")]
+    [SerializeField, Range(0.05f, 1f)] private float _throwVelocitySmoothing = 0.5f;
+
     [Header("Drag Bounds")]
     [SerializeField] private Vector2 _dragMinBounds = new Vector2(-5f, -3f);
     [SerializeField] private Vector2 _dragMaxBounds = new Vector2(5f, 3f);
@@ -22,8 +42,18 @@ public class Clicker : MonoBehaviour
     private bool _isClickEnabled = true;
     private bool _isDragEnabled = true;
     private bool _invokeClickAction = true;
+    private bool _holdStartsDrag = true;
+
+    // 던질 속도. 한 프레임 차이는 손 떨림에 휘둘리므로 섞어서 들고 다닌다.
+    private Vector2 _dragVelocity;
+    private Vector2 _dragLastPosition;
+    private float _dragLastTime;
     private SlimeController _restrictedTarget;
     private SlimeController _secondaryRestrictedTarget;
+
+    // 손가락 보정용. 프레임마다 새 리스트를 만들지 않도록 하나를 돌려 쓴다.
+    private readonly List<Collider2D> _selectionHits = new(8);
+    private ContactFilter2D _selectionFilter;
 
     // 소유자별 입력 요청. 우선순위가 높은 요청을 적용한다.
     // 같은 우선순위에서는 나중에 등록된 요청이 우선한다.
@@ -36,6 +66,14 @@ public class Clicker : MonoBehaviour
     private void Awake()
     {
         _mainCamera = Camera.main;
+
+        // 기본 레이캐스트 대상만 본다. 장식장 놀이터 오브젝트처럼 Ignore Raycast에
+        // 둔 것은 여기서도 빠진다. 트리거는 보지 않는다 - 슬라임 콜라이더는 트리거가
+        // 아니고, 범퍼 같은 트리거를 집어도 쓸 데가 없다.
+        _selectionFilter = default;
+        _selectionFilter.useTriggers = false;
+        _selectionFilter.SetLayerMask(Physics2D.DefaultRaycastLayers);
+        _selectionFilter.useLayerMask = true;
     }
 
     private void Update()
@@ -79,22 +117,64 @@ public class Clicker : MonoBehaviour
         if (!_isClickEnabled && !_isDragEnabled) return;
 
         Vector2 worldPos = _mainCamera.ScreenToWorldPoint(pointerPosition);
-        RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero, 0f);
+        SlimeController clickTarget = FindSelectionTarget(worldPos);
+        if (clickTarget == null) return;
 
+        _selectedTarget = clickTarget;
+        _mouseDownPos = worldPos;
+        _mouseDownTime = Time.time;
+        _isDragging = false;
+    }
+
+    // 손가락은 점이 아니다. 콜라이더를 그림보다 작게 잡으면 점 레이캐스트로는 자주
+    // 빗나가는데, 콜라이더를 다시 키우면 슬라임끼리 부딪히는 자리가 그림 밖으로
+    // 나간다. 충돌 모양과 터치 범위는 서로 다른 요구라 여기서 나눈다.
+    //
+    // 정확히 닿은 것을 먼저 보고, 없을 때만 반경 안에서 가장 가까운 것을 집는다.
+    // 겹쳐 있는 슬라임 중 엉뚱한 쪽을 빼앗지 않기 위해서다.
+    private SlimeController FindSelectionTarget(Vector2 worldPos)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero, 0f);
         if (hit)
         {
-            SlimeController clickTarget = hit.collider.GetComponent<SlimeController>();
-            if (clickTarget != null &&
-                (_restrictedTarget == null ||
-                 clickTarget == _restrictedTarget ||
-                 clickTarget == _secondaryRestrictedTarget))
-            {
-                _selectedTarget = clickTarget;
-                _mouseDownPos = worldPos;
-                _mouseDownTime = Time.time;
-                _isDragging = false;
-            }
+            SlimeController exactTarget = hit.collider.GetComponent<SlimeController>();
+            if (IsSelectable(exactTarget)) return exactTarget;
         }
+
+        if (_selectionRadius <= 0f) return null;
+
+        _selectionHits.Clear();
+        Physics2D.OverlapCircle(
+            worldPos, _selectionRadius, _selectionFilter, _selectionHits);
+
+        SlimeController nearest = null;
+        float nearestDistance = float.MaxValue;
+        foreach (Collider2D candidateCollider in _selectionHits)
+        {
+            if (candidateCollider == null) continue;
+
+            SlimeController candidate =
+                candidateCollider.GetComponent<SlimeController>();
+            if (!IsSelectable(candidate)) continue;
+
+            float distance =
+                ((Vector2)candidate.transform.position - worldPos).sqrMagnitude;
+            if (distance >= nearestDistance) continue;
+
+            nearestDistance = distance;
+            nearest = candidate;
+        }
+
+        return nearest;
+    }
+
+    // 튜토리얼이 대상을 지정한 동안에는 그 슬라임만 고를 수 있다.
+    private bool IsSelectable(SlimeController target)
+    {
+        return target != null &&
+               (_restrictedTarget == null ||
+                target == _restrictedTarget ||
+                target == _secondaryRestrictedTarget);
     }
 
     private void CheckDragStart(Vector2 pointerPosition)
@@ -105,12 +185,16 @@ public class Clicker : MonoBehaviour
         float distance = Vector2.Distance(_mouseDownPos, currentPos);
         float heldTime = Time.time - _mouseDownTime;
 
-        // 일정 거리 이상 이동하거나 일정 시간 이상 누르면 드래그 시작
-        if (distance > _dragThresholdDistance || heldTime > _dragThresholdTime)
-        {
-            _isDragging = true;
-            _selectedTarget.StartDrag();
-        }
+        // 일정 거리 이상 이동하거나, 모드가 허용하면 일정 시간 이상 눌러도 드래그 시작
+        bool movedFarEnough = distance > _dragThresholdDistance;
+        bool heldLongEnough = _holdStartsDrag && heldTime > _dragThresholdTime;
+        if (!movedFarEnough && !heldLongEnough) return;
+
+        _isDragging = true;
+        _dragVelocity = Vector2.zero;
+        _dragLastPosition = currentPos;
+        _dragLastTime = Time.time;
+        _selectedTarget.StartDrag();
     }
 
     private void UpdateDrag(Vector2 pointerPosition)
@@ -120,8 +204,43 @@ public class Clicker : MonoBehaviour
         mousePos.x = Mathf.Clamp(mousePos.x, _dragMinBounds.x, _dragMaxBounds.x);
         mousePos.y = Mathf.Clamp(mousePos.y, _dragMinBounds.y, _dragMaxBounds.y);
 
+        TrackDragVelocity(mousePos);
+
         _selectedTarget.transform.position = mousePos;
         UpdateMergeCandidate();
+    }
+
+    private void TrackDragVelocity(Vector2 position)
+    {
+        float deltaTime = Time.time - _dragLastTime;
+        if (deltaTime <= 0f) return;
+
+        Vector2 frameVelocity = (position - _dragLastPosition) / deltaTime;
+        _dragVelocity = Vector2.Lerp(
+            _dragVelocity, frameVelocity, _throwVelocitySmoothing);
+        _dragLastPosition = position;
+        _dragLastTime = Time.time;
+    }
+
+    // 놓는 순간의 손가락 속도로 슬라임을 날린다.
+    //
+    // 장식장인지 여기서 묻지 않는다. SlimeController.Launch가 소속을 확인하므로
+    // 메인 필드 슬라임은 이 호출을 그냥 무시한다. 조건을 두 곳에 두면 한쪽만
+    // 고쳐졌을 때 조용히 어긋난다.
+    private void TryThrow(SlimeController target)
+    {
+        if (target == null) return;
+
+        Vector2 velocity = _dragVelocity * _throwSpeedMultiplier;
+        float speed = velocity.magnitude;
+        if (speed < _minimumThrowSpeed) return;
+
+        if (speed > _maximumThrowSpeed)
+        {
+            velocity = velocity / speed * _maximumThrowSpeed;
+        }
+
+        target.Launch(velocity);
     }
 
     private void OnPointerUp(Vector2 pointerPosition)
@@ -133,6 +252,10 @@ public class Clicker : MonoBehaviour
             // 릴리스 프레임의 포인터 위치까지 반영한 뒤 표시된 대상을 우선 합성한다.
             UpdateDrag(pointerPosition);
             _selectedTarget.EndDrag(_mergeCandidate);
+
+            // EndDrag가 OnInteracted로 속도를 0으로 만들고 평소 이동을 예약하므로
+            // 던지기는 반드시 그 뒤에 온다. 순서가 바뀌면 던진 속도가 지워진다.
+            TryThrow(selectedTarget);
 
             Vector2 releaseWorldPosition = _mainCamera.ScreenToWorldPoint(pointerPosition);
             if (Vector2.Distance(_mouseDownPos, releaseWorldPosition) >= _dragThresholdDistance)
@@ -245,6 +368,7 @@ public class Clicker : MonoBehaviour
         _restrictedTarget = mode.RestrictedTarget;
         _secondaryRestrictedTarget = mode.SecondaryRestrictedTarget;
         _invokeClickAction = mode.InvokeClickAction;
+        _holdStartsDrag = mode.HoldStartsDrag;
     }
 
     private void WarnIfStackTooDeep()
@@ -327,5 +451,6 @@ public class Clicker : MonoBehaviour
 
         _selectedTarget = null;
         _isDragging = false;
+        _dragVelocity = Vector2.zero;
     }
 }

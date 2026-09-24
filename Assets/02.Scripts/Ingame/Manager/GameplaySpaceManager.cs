@@ -548,8 +548,10 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         if (!isEnabled) return ClickerInputMode.Blocked;
         if (IsMainFieldActive) return ClickerInputMode.Free;
 
-        // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막고 선택만 허용한다.
-        return ClickerInputMode.SelectOnly();
+        // 장식장에서는 기획서 §7.2대로 클릭 포인트와 드래그 합성을 막는다.
+        // 대신 집어서 던질 수는 있다. 보내기 모드와 장식장 튜토리얼은 저마다
+        // SelectOnly를 더 높은 우선순위로 밀어 넣으므로 여기 영향을 받지 않는다.
+        return ClickerInputMode.ObserveAndThrow();
     }
 
     // 팝업이나 연출이 끝난 뒤 현재 공간에 맞는 입력 상태로 되돌린다.

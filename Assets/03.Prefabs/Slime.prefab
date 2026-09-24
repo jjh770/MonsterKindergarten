@@ -169,8 +169,8 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.8, y: 0.5}
-  m_EdgeRadius: 0
+  m_Size: {x: 0.55, y: 0.2}
+  m_EdgeRadius: 0.1
 --- !u!50 &3903659675861419707
 Rigidbody2D:
   serializedVersion: 5
@@ -214,6 +214,14 @@ MonoBehaviour:
   _clickDuration: 0.5
   _promotePunchScale: 1
   _promoteDuration: 1
+  _themeReactionPunchScale: 0.3
+  _themeReactionDuration: 0.5
+  _themeReactionSpread: 0.35
+  _bumpPunchScale: 0.7
+  _bumpDuration: 0.3
+  _bumpReferenceSpeed: 5
+  _bumpMinimumSpeed: 1
+  _bumpCooldown: 0.2
   _vibrato: 10
   _elasticity: 1
 --- !u!114 &2205505537005354731
@@ -271,6 +279,10 @@ MonoBehaviour:
   _minIdleDuration: 0.5
   _maxIdleDuration: 2
   _interactionIdleDuration: 2
+  _launchRecoverSpeed: 0.6
+  _launchDamping: 0.3
+  _facingDeadzone: 0.15
+  _collisionDriveMinimumSpeed: 0.8
 --- !u!114 &6008348853146703040
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -329,6 +341,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dde44811eb3fe46439d28ee7b6550b3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeController
+  _dragSortingOrderOffset: 10
 --- !u!114 &1449321985000000000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -339,7 +352,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a84cc0e3294143cbb3f5905b0d78df74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeAudioFeedback
   _levelUpSounds:
   - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
@@ -350,6 +363,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
   _landSound: {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
   _landSoundCooldown: 0.1
+  _bumpSound: {fileID: 0}
+  _bumpSoundCooldown: 0.08
+  _bumpMinimumSpeed: 0.6
 --- !u!114 &2657138910400000000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -360,7 +376,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b98d5f7e9f624f2f8cc933cb5df780d1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpawnFeedback
   _dropHeight: 8
   _dropDuration: 0.5

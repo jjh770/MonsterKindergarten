@@ -18,7 +18,7 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
 - Release profile version: `0.1.11` (Android Version Code `13`)
-- Development profile version: `0.1.11` (Android Version Code `12`) - code 12 went to a device-check APK, so the release profile skipped to 13
+- Development profile version: `0.1.12` (Android Version Code `14`) - code 12 went to the `0.1.11` device-check APK and 13 to the release build, so the next device check takes 14
 - Version snapshot: 2026-09-22. `0.1.11` is the first release build with the HUD rework, Phase 7 and `SlimeStatus` 8; it was submitted to the Play Console closed testing track and is still in review. Profile-specific Player Settings override the project-wide version.
 
 The release profile builds an AAB with Development Build disabled; the development profile builds an APK with Development Build enabled. Both include LoginScene followed by GameScene. There is no supported command-line Unity build in this repository. Static checks do not verify Google Play Games, Firebase, touch, device performance, or store signing.
