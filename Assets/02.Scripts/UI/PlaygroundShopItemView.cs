@@ -50,7 +50,12 @@ public sealed class PlaygroundShopItemView : MonoBehaviour
         if (_nameText != null) _nameText.text = displayName;
         if (_descriptionText != null) _descriptionText.text = description;
         if (_priceText != null) _priceText.text = priceLabel;
-        if (_buyButton != null) _buyButton.interactable = canBuy;
+        SetInteractable(canBuy);
+    }
+
+    public void SetInteractable(bool interactable)
+    {
+        if (_buyButton != null) _buyButton.interactable = interactable;
     }
 
     private void OnBuyClicked()

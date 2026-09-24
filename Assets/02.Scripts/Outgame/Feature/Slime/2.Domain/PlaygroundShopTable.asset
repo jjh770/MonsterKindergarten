@@ -16,17 +16,17 @@ MonoBehaviour:
   - _type: 0
     _displayName: "\uBC94\uD37C"
     _description: "\uB2FF\uC740 \uC2AC\uB77C\uC784\uC744 \uD295\uACA8 \uB0C5\uB2C8\uB2E4."
-    _icon: {fileID: 0}
+    _icon: {fileID: 21300000, guid: 53405cbe959ef2c448fd60afa30ee3a1, type: 3}
     _price: 1000000
   - _type: 1
     _displayName: "\uB300\uD3EC"
     _description: "\uC2AC\uB77C\uC784\uC744 \uC0BC\uCF30\uB2E4\uAC00 \uBA40\uB9AC
       \uC3E9\uB2C8\uB2E4."
-    _icon: {fileID: 0}
+    _icon: {fileID: 21300000, guid: 3b4480894fe6e4b4b8660359734617f2, type: 3}
     _price: 10000000
   _themes:
   - _theme: 2
     _displayName: "\uC6B0\uC8FC"
     _description: "\uBCC4\uC774 \uD750\uB974\uB294 \uBC30\uACBD\uC73C\uB85C \uBC14\uAFC9\uB2C8\uB2E4."
-    _icon: {fileID: 0}
+    _icon: {fileID: 1217213805088430585, guid: 4282ec9aeb132ee4ba91ddec68c92332, type: 3}
     _price: 100000000

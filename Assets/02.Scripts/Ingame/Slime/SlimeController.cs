@@ -23,7 +23,9 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _isDragging = false;
     private int _defaultSortingOrder;
     private float _autoProductionTimer;
-    private bool _isDisplayRoomFocused;
+    // 연출이 이 슬라임을 쓰는 중인지. 대포가 물고 있는 동안 정보창이 이 값을 보고
+    // 버튼을 내린다.
+    private bool _isPresentationLocked;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
@@ -142,14 +144,18 @@ public class SlimeController : MonoBehaviour, IClickable
     // 다른 공간의 슬라임은 물리가 꺼져 있어 닿지도 않지만, 충돌을 거치지 않는
     // 호출이 생길 수 있으므로 여기서 한 번 더 막는다.
     //
-    // 관찰 중인 슬라임도 뺀다. 카메라가 그 슬라임을 따라다니므로(기획서 §8)
-    // 날아가거나 대포에 들어가면 화면 전체가 휘둘린다.
+    // 보고 있는 슬라임도 뺄 이유가 없다. 카메라가 그 슬라임을 따라다니므로
+    // (기획서 §8) 밀려 날아가면 화면도 같이 따라간다. 그 편이 재미있다.
+    // 대신 물려 있는 동안 정보창이 손을 떼는 일은 DisplayRoomInfoUI가 맡는다.
+    //
+    // 이미 다른 연출이 쓰는 중이면 뺀다. 그때는 콜라이더가 꺼져 있어 부딪힐 일도
+    // 없지만, Launch는 콜라이더를 거치지 않고 들어온다.
     //
     // 범퍼는 미는 순간에, 대포는 붙잡기 전에 같은 조건을 봐야 한다. 두 곳에
     // 따로 쓰면 한쪽만 고쳐졌을 때 조용히 어긋난다.
     public bool IsPlaygroundTarget =>
         !_isDragging &&
-        !_isDisplayRoomFocused &&
+        !_isPresentationLocked &&
         _slimeMove != null &&
         Location == ESlimeLocation.DisplayRoom;
 
@@ -165,10 +171,16 @@ public class SlimeController : MonoBehaviour, IClickable
     // 이미 날아가는 중인지. 오브젝트가 같은 슬라임을 연달아 밀지 판단한다.
     public bool IsLaunched => _slimeMove != null && _slimeMove.IsLaunched;
 
+    // 합성이나 대포처럼 다른 연출이 이 슬라임을 쓰는 중인지. 그동안 이 슬라임을
+    // 옮기거나 위치를 손대면 연출이 끝나면서 그 결과를 덮어쓴다.
+    public bool IsPresentationLocked => _isPresentationLocked;
+
     // 자동 합성처럼 연출이 개체를 직접 움직이는 동안 쓴다. 콜라이더를 끄므로 터치도
     // 드래그도 닿지 않고, 물리가 연출 위치를 밀어내지도 않는다. 화면에는 계속 보인다.
     public void SetPresentationLocked(bool isLocked)
     {
+        _isPresentationLocked = isLocked;
+
         if (isLocked)
         {
             CancelDrag();
@@ -207,10 +219,8 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void SetDisplayRoomCameraFocus(bool isFocused)
     {
-        // 관찰 중에는 카메라가 이 슬라임을 따라다닌다(기획서 §8). 이때 밀려 날아가면
-        // 화면 전체가 같이 휘둘리므로, 보고 있는 동안에는 놀이터의 힘에서 뺀다.
-        _isDisplayRoomFocused = isFocused;
-
+        // 카메라가 이 슬라임을 따라다니는 동안이다(기획서 §8). 보간을 켜 두지 않으면
+        // 물리 갱신 주기로 끊기는 위치를 카메라가 그대로 따라가 화면이 떨린다.
         if (_rigidbody != null)
         {
             _rigidbody.interpolation = isFocused

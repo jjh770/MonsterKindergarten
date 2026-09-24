@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -13,6 +15,7 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
     [SerializeField, Min(0f)] private float _horizontalPadding = 40f;
     [SerializeField, Min(0f)] private float _dragThreshold = 12f;
 
+    private static readonly List<RaycastResult> _raycastResults = new();
     private Vector2[] _basePositions;
     private bool[] _buttonInteractableStates;
     private readonly Vector3[] _worldCorners = new Vector3[4];
@@ -87,7 +90,8 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
             RectTransformUtility.RectangleContainsScreenPoint(
                 _viewport,
                 screenPosition,
-                GetEventCamera()))
+                GetEventCamera()) &&
+            IsTopMostAtPointer(screenPosition))
         {
             _isPointerDown = TryGetLocalPosition(screenPosition, out _previousLocalPosition);
             _pressScreenPosition = screenPosition;
@@ -209,6 +213,26 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
         }
 
         return signature;
+    }
+
+    // 이 메뉴는 화면 입력을 직접 읽으므로, 위에 다른 UI가 덮여 있어도 알지 못한다.
+    // 상점 서랍이 열린 채로 그 위를 끌면 뒤에서 메뉴가 같이 움직인다.
+    //
+    // 그래서 누른 자리의 맨 위에 걸린 것이 이 메뉴인지 확인한다. 판정은 캔버스
+    // 순서를 따르므로, 서랍(PopupCanvas)이 덮고 있으면 그쪽이 먼저 잡힌다.
+    private bool IsTopMostAtPointer(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        // 판정할 수단이 없으면 막지 않는다. 덮인 경우보다 안 덮인 경우가 흔하다.
+        if (eventSystem == null) return true;
+
+        var pointerData = new PointerEventData(eventSystem) { position = screenPosition };
+        _raycastResults.Clear();
+        eventSystem.RaycastAll(pointerData, _raycastResults);
+        if (_raycastResults.Count == 0) return false;
+
+        // IsChildOf는 자기 자신도 참으로 본다. 빈자리를 눌렀을 때 패널이 잡히는 경우다.
+        return _raycastResults[0].gameObject.transform.IsChildOf(_viewport);
     }
 
     private bool TryGetLocalPosition(Vector2 screenPosition, out Vector2 localPosition)

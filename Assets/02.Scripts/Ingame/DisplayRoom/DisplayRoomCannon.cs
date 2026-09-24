@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
@@ -7,10 +8,13 @@ using UnityEngine;
 // 콜라이더는 범퍼와 같은 이유로 트리거다. 단단한 콜라이더면 슬라임이 먼저
 // 물리적으로 튕겨 나가 들어올 수가 없다.
 //
-// 물고 있는 동안 SpriteRenderer를 끄지 않는다. SlimeController가 잠금을 풀 때
-// "그림이 켜져 있는가"로 상호작용 여부를 정하기 때문에, 그림을 끈 채로 풀면
-// 보이지도 않고 만질 수도 없는 슬라임이 남는다. 대신 크기를 줄여 빨려 들어가는
-// 것처럼 보이게 한다.
+// 다 빨려 들어간 슬라임은 SpriteRenderer를 끈다. 색의 알파를 내리는 것으로는
+// 안 된다. 슬라임의 머티리얼이 테두리를 따로 그리는 셰이더(Sprites/Outline)라,
+// 알파를 내리면 몸통만 사라지고 흰 테두리만 남는다.
+//
+// 대신 켜는 순서를 지켜야 한다. SlimeController는 잠금을 풀 때 "그림이 켜져
+// 있는가"로 상호작용 여부를 정하므로, 그림을 먼저 켜고 잠금을 푼다. 순서가
+// 바뀌면 보이지만 만질 수 없는 슬라임이 남는다.
 public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
 {
     private enum State
@@ -44,9 +48,6 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
     [Tooltip("물고 있는 동안 줄어드는 크기 비율입니다.")]
     [SerializeField, Range(0.01f, 1f)] private float _loadedScale = 0.15f;
 
-    [Tooltip("빨려 들어가면서 옅어지는 정도입니다. 0이면 완전히 사라집니다.")]
-    [SerializeField, Range(0f, 1f)] private float _loadedAlpha;
-
     [Tooltip("포신이 멈추기 전에 몇 바퀴 돌지입니다.")]
     [SerializeField, Min(0f)] private float _aimSpins = 3f;
 
@@ -59,8 +60,9 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
     private State _state = State.Ready;
     private SlimeController _held;
     private Vector3 _heldBaseScale;
-    private SpriteRenderer _heldRenderer;
-    private Color _heldBaseColor;
+
+    // 내가 끈 것만 담는다. 원래 꺼져 있던 그림을 켜 주면 없던 슬라임이 나타난다.
+    private readonly List<SpriteRenderer> _hiddenRenderers = new();
     private Sequence _sequence;
     private Tween _punchTween;
     private Vector3 _baseScale;
@@ -162,14 +164,6 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
         slime.transform.DOKill();
         _heldBaseScale = slime.transform.localScale;
 
-        // 그림을 끄지 않고 옅게 만든다. 끄면 잠금을 풀 때 상호작용 판정이 뒤집힌다.
-        _heldRenderer = slime.GetComponent<SpriteRenderer>();
-        if (_heldRenderer != null)
-        {
-            _heldRenderer.DOKill();
-            _heldBaseColor = _heldRenderer.color;
-        }
-
         if (AudioManager.Instance != null && _loadSound != null)
         {
             AudioManager.Instance.PlaySFX(_loadSound);
@@ -186,11 +180,8 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
         _sequence.Join(slime.transform.DOScale(_heldBaseScale * _loadedScale, _loadDuration)
             .SetEase(Ease.InQuad));
 
-        if (_heldRenderer != null)
-        {
-            _sequence.Join(_heldRenderer.DOFade(_loadedAlpha, _loadDuration)
-                .SetEase(Ease.InQuad));
-        }
+        // 다 들어간 순간에 감춘다. 처음부터 끄면 빨려 들어가는 것이 보이지 않는다.
+        _sequence.AppendCallback(() => HideHeld(slime));
 
         if (_barrel != null)
         {
@@ -246,30 +237,61 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
 
     private void ReleaseHeld()
     {
-        if (_held == null) return;
+        if (_held == null)
+        {
+            // 물고 있던 슬라임이 사라졌어도 꺼 둔 그림은 되돌려야 한다. 풀에서
+            // 같은 오브젝트가 다시 나오므로, 두면 보이지 않는 슬라임이 태어난다.
+            ShowHeld();
+            return;
+        }
 
         RestoreHeld(_held, _held.transform.position);
         _held = null;
     }
 
-    // 크기와 색을 먼저 되돌리고 잠금을 푼다. 순서가 바뀌면 작아진 채로 물리가
-    // 살아나 한 프레임 동안 다른 크기로 부딪힌다.
+    // 그림과 크기를 먼저 되돌리고 잠금을 푼다. 순서가 바뀌면 작아진 채로 물리가
+    // 살아나 한 프레임 동안 다른 크기로 부딪히고, 그림이 꺼진 채로 잠금을 풀면
+    // 만질 수 없는 슬라임이 남는다.
     //
-    // 색을 되돌리는 것은 빠뜨리면 안 된다. 옅어진 채로 놓아 준 슬라임은 보이지
-    // 않는 채로 돌아다니고, 위치는 저장하지 않으므로 앱을 껐다 켜야 돌아온다.
+    // 되돌리기를 빠뜨리면 안 된다. 보이지 않는 슬라임이 계속 돌아다니고, 위치는
+    // 저장하지 않으므로 앱을 껐다 켜야 돌아온다.
     private void RestoreHeld(SlimeController slime, Vector3 position)
     {
-        if (_heldRenderer != null)
-        {
-            _heldRenderer.DOKill();
-            _heldRenderer.color = _heldBaseColor;
-            _heldRenderer = null;
-        }
+        ShowHeld();
 
         slime.transform.DOKill();
         slime.transform.localScale = _heldBaseScale;
         slime.transform.position = position;
         slime.SetPresentationLocked(false);
+    }
+
+    private void HideHeld(SlimeController slime)
+    {
+        if (slime == null) return;
+
+        slime.GetComponentsInChildren(includeInactive: true, result: _hiddenRenderers);
+        for (int i = _hiddenRenderers.Count - 1; i >= 0; --i)
+        {
+            if (_hiddenRenderers[i].enabled)
+            {
+                _hiddenRenderers[i].enabled = false;
+            }
+            else
+            {
+                // 원래 꺼져 있던 것은 되돌릴 대상이 아니다.
+                _hiddenRenderers.RemoveAt(i);
+            }
+        }
+    }
+
+    private void ShowHeld()
+    {
+        foreach (SpriteRenderer renderer in _hiddenRenderers)
+        {
+            if (renderer != null) renderer.enabled = true;
+        }
+
+        _hiddenRenderers.Clear();
     }
 
     private void PlayFireFeedback()

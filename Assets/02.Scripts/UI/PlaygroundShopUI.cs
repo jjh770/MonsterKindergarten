@@ -19,7 +19,28 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _emptyText;
     [SerializeField] private ToastMessageUI _toast;
 
+    // 다 산 것에 값을 그대로 두면 살 수 있어 보인다.
+    private const string SoldOutLabel = "SOLD OUT";
+
     private readonly List<PlaygroundShopItemView> _items = new();
+    private readonly List<AffordabilityBinding> _affordabilityBindings = new();
+
+    private sealed class AffordabilityBinding
+    {
+        public PlaygroundShopItemView View { get; }
+        public Currency Price { get; }
+        public bool IsPurchasable { get; }
+
+        public AffordabilityBinding(
+            PlaygroundShopItemView view,
+            Currency price,
+            bool isPurchasable)
+        {
+            View = view;
+            Price = price;
+            IsPurchasable = isPurchasable;
+        }
+    }
 
     private void Awake()
     {
@@ -34,6 +55,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     {
         if (!enabled) return;
 
+        // 세이브가 올라오기 전에 목록을 세우면 가진 것이 없는 것으로 읽힌다.
+        // 그 뒤로는 사거나 놓을 때만 다시 세우므로, 이미 산 물건이 값이 붙은 채로
+        // 남아 다시 살 수 있어 보인다. 값을 치르고 나서야 거절당한다.
+        SlimeManager.OnDataInitialized += Refresh;
         SlimeManager.OnPlaygroundChanged += Refresh;
         SlimeManager.OnBackgroundThemesChanged += Refresh;
         CurrencyManager.OnDataChanged += OnCurrencyChanged;
@@ -48,6 +73,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        SlimeManager.OnDataInitialized -= Refresh;
         SlimeManager.OnPlaygroundChanged -= Refresh;
         SlimeManager.OnBackgroundThemesChanged -= Refresh;
         CurrencyManager.OnDataChanged -= OnCurrencyChanged;
@@ -63,12 +89,13 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         Refresh();
     }
 
-    // 살 수 있는지는 잔액에 따라 바뀐다. 포인트만 보고 다시 그린다.
+    // 잔액은 자주 바뀐다. 카드를 다시 만들면 자동 생산 때마다 화면이 깜빡이므로
+    // 구매 버튼의 활성 상태만 갱신한다.
     private void OnCurrencyChanged(ECurrencyType type, Currency value)
     {
         if (type != ECurrencyType.Point) return;
 
-        Refresh();
+        RefreshAffordability();
     }
 
     private void Refresh()
@@ -117,9 +144,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Icon,
                 $"{entry.DisplayName}  {owned}/{PlaygroundRules.MaxPerType}",
                 entry.Description,
-                isSoldOut ? "다 모았어요" : entry.Price.ToFormattedString(),
+                isSoldOut ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isSoldOut && canAfford,
                 () => BuyObject(entry));
+            TrackAffordability(view, entry.Price, !isSoldOut);
             shown++;
         }
 
@@ -148,9 +176,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Icon,
                 entry.DisplayName,
                 entry.Description,
-                isOwned ? "가지고 있어요" : entry.Price.ToFormattedString(),
+                isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isOwned && canAfford,
                 () => BuyTheme(entry));
+            TrackAffordability(view, entry.Price, !isOwned);
             shown++;
         }
 
@@ -207,13 +236,45 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         return view;
     }
 
+    private void TrackAffordability(
+        PlaygroundShopItemView view,
+        Currency price,
+        bool isPurchasable)
+    {
+        _affordabilityBindings.Add(
+            new AffordabilityBinding(view, price, isPurchasable));
+    }
+
+    private void RefreshAffordability()
+    {
+        CurrencyManager currencyManager = CurrencyManager.Instance;
+        foreach (AffordabilityBinding binding in _affordabilityBindings)
+        {
+            if (binding.View == null) continue;
+
+            bool canAfford = currencyManager != null &&
+                             currencyManager.CanAfford(
+                                 ECurrencyType.Point, binding.Price);
+            binding.View.SetInteractable(binding.IsPurchasable && canAfford);
+        }
+    }
+
+    // 내가 만든 목록만 믿지 않고 자리에 남은 항목까지 치운다.
+    //
+    // 개발 중에 스크립트를 고치면 플레이 도중 도메인이 다시 올라오는데, 그때
+    // 직렬화되지 않는 _items는 비워지고 이미 만들어 둔 항목은 화면에 남는다.
+    // 그러면 상점을 열 때마다 같은 물건이 한 줄씩 쌓인다.
     private void ClearItems()
     {
-        foreach (PlaygroundShopItemView item in _items)
-        {
-            if (item != null) Destroy(item.gameObject);
-        }
-
         _items.Clear();
+        _affordabilityBindings.Clear();
+
+        for (int i = _itemRoot.childCount - 1; i >= 0; --i)
+        {
+            Transform child = _itemRoot.GetChild(i);
+            if (child.GetComponent<PlaygroundShopItemView>() == null) continue;
+
+            Destroy(child.gameObject);
+        }
     }
 }

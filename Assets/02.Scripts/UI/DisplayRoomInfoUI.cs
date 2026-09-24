@@ -32,6 +32,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [Header("Observation Mode")]
     [SerializeField] private GameObject _observationInputRoot;
     [SerializeField] private HudVisibility _hudVisibility;
+    // 상점 서랍은 HudVisibility가 옮기는 두 루트에 들어 있지 않다. 자기 폭과
+    // 세이프에어리어로 숨는 자리를 스스로 계산하므로 서랍에 맡겨야 한다.
+    [SerializeField] private UpgradeUI _upgradeUI;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -43,9 +46,15 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     private Vector3 _takeOutStartPosition;
     private bool _isTakeOutPlaying;
     private bool _isObserving;
+    private bool _isShopDrawerHidden;
+    private bool _wasShopToggleInputEnabled;
 
     public bool IsVisible => _target != null;
     public bool IsObserving => _isObserving;
+
+    // 대포가 물고 있는 동안이다. 이때 꺼내면 필드로 보낸 슬라임을 대포가 3초 뒤에
+    // 장식장 좌표로 끌어다 놓고 쏜다. 저장과 화면이 갈라지므로 손을 떼고 기다린다.
+    private bool IsTargetHeld => _target != null && _target.IsPresentationLocked;
     public RectTransform InfoSummaryTarget => _infoSummaryTarget;
     public RectTransform ObserveButtonTarget =>
         _observeButton != null ? _observeButton.transform as RectTransform : null;
@@ -118,6 +127,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _takeOutButton != null &&
                              _observationInputRoot != null &&
                              _hudVisibility != null &&
+                             _upgradeUI != null &&
                              GameplaySpaceManager.Instance != null;
         if (!hasReferences)
         {
@@ -195,6 +205,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
         if (_observationSequence != null) return true;
 
+        // 물려 있는 동안에는 닫지 않되 입력은 소비한다.
+        if (IsTargetHeld) return true;
+
         // 꺼내기 연출 중에는 닫지 않되 입력은 소비한다.
         // false를 반환하면 GameExitManager가 이 핸들러를 목록에서 제거해
         // 연출이 끝난 뒤 뒤로가기로 정보 UI를 닫을 수 없게 된다.
@@ -238,7 +251,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void EnterObservationMode()
     {
-        if (!IsVisible || _isTakeOutPlaying || _isObserving) return;
+        if (!IsVisible || _isTakeOutPlaying || _isObserving || IsTargetHeld) return;
 
         _isObserving = true;
         _infoCanvasGroup.interactable = false;
@@ -246,6 +259,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _observationInputRoot.SetActive(true);
         _observationInputRoot.transform.SetAsLastSibling();
         GameplaySpaceManager.Instance?.BeginDisplayRoomObservation();
+        SetShopDrawerHidden(true);
 
         _fadeTween?.Kill();
         _fadeTween = null;
@@ -265,6 +279,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _observationInputRoot.SetActive(false);
         _infoCanvasGroup.blocksRaycasts = true;
         GameplaySpaceManager.Instance?.EndDisplayRoomObservation();
+        SetShopDrawerHidden(false);
 
         _observationSequence?.Kill();
         _observationSequence = DOTween.Sequence();
@@ -280,7 +295,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void OnTakeOutButtonClicked()
     {
-        if (!IsVisible || _isTakeOutPlaying) return;
+        if (!IsVisible || _isTakeOutPlaying || IsTargetHeld) return;
 
         // 기획서 §7.5 - 메인 필드가 가득 차면 꺼낼 수 없다.
         if (SpawnManager.Instance == null ||
@@ -349,8 +364,52 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoRoot.SetActive(false);
     }
 
+    // 관찰 중에는 화면에서 UI가 모두 물러난다. 서랍 손잡이만 남으면 어색하다.
+    //
+    // 들어갈 때의 입력 상태를 기억했다가 그대로 돌려준다. 무조건 켜면 튜토리얼이
+    // 잠가 둔 서랍이 관찰 한 번으로 열리게 된다.
+    private void SetShopDrawerHidden(bool isHidden)
+    {
+        if (_upgradeUI == null || _isShopDrawerHidden == isHidden) return;
+
+        _isShopDrawerHidden = isHidden;
+
+        if (isHidden)
+        {
+            _upgradeUI.TryClose();
+            _wasShopToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
+            _upgradeUI.SetToggleInputEnabled(false);
+            _upgradeUI.SetToggleVisible(false);
+            return;
+        }
+
+        _upgradeUI.SetToggleInputEnabled(_wasShopToggleInputEnabled);
+        _upgradeUI.SetToggleVisible(true);
+    }
+
+    // 대포가 물어 가면 버튼을 내리고, 놓아 주면 되돌린다.
+    //
+    // 신호를 받아 한 번만 바꾸지 않고 매 프레임 확인한다. 대포가 놓아 주는 경로가
+    // 발사·중단·공간 이탈·배치 모드로 여럿이라, 그중 하나만 신호를 빠뜨려도 버튼이
+    // 꺼진 채로 남고 정보창을 닫을 수도 없게 된다.
+    private void Update()
+    {
+        if (!IsVisible) return;
+
+        bool canUse = !IsTargetHeld && !_isTakeOutPlaying;
+        if (_observeButton != null) _observeButton.interactable = canUse;
+        if (_takeOutButton != null) _takeOutButton.interactable = canUse;
+        if (_closeButton != null) _closeButton.interactable = canUse;
+    }
+
     private void ResetObservationPresentation()
     {
+        SetShopDrawerHidden(false);
+
+        if (_observeButton != null) _observeButton.interactable = true;
+        if (_takeOutButton != null) _takeOutButton.interactable = true;
+        if (_closeButton != null) _closeButton.interactable = true;
+
         _isObserving = false;
         _observationSequence?.Kill();
         _observationSequence = null;

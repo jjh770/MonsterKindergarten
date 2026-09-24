@@ -42,8 +42,34 @@ public static class PlaygroundRules
     public const float AreaMinY = -3.6f;
     public const float AreaMaxY = 3.6f;
 
+    // 위 범위가 벽에서 물러난 거리. 가장 큰 오브젝트인 대포의 그림 반지름이
+    // 0.600이라, 중심을 여기까지만 놓아야 그림이 벽을 넘지 않는다.
+    public const float WallInset = 0.6f;
+
     // 서로 이만큼은 떨어뜨린다. 겹쳐 놓으면 어느 쪽이 슬라임을 잡았는지 알 수 없다.
     public const float MinimumSpacing = 1.1f;
+
+    // 벽은 씬에 있고 이 규칙은 도메인에 있다. 세이브를 불러올 때 쓰는 값이라
+    // 씬에서 읽어 오면 세이브의 유효성이 씬 상태를 따라 흔들린다. 그래서 값을
+    // 가져오는 대신 둘이 어긋났는지 확인할 방법만 내어 준다.
+    public static bool MatchesWalls(
+        float wallMinX,
+        float wallMinY,
+        float wallMaxX,
+        float wallMaxY)
+    {
+        const float Tolerance = 0.01f;
+        return IsNear(wallMinX + WallInset, AreaMinX, Tolerance) &&
+               IsNear(wallMaxX - WallInset, AreaMaxX, Tolerance) &&
+               IsNear(wallMinY + WallInset, AreaMinY, Tolerance) &&
+               IsNear(wallMaxY - WallInset, AreaMaxY, Tolerance);
+    }
+
+    private static bool IsNear(float a, float b, float tolerance)
+    {
+        float difference = a - b;
+        return difference < 0f ? -difference <= tolerance : difference <= tolerance;
+    }
 
     public static bool IsValid(EPlaygroundObjectType type)
     {

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -18,10 +20,13 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private ToastMessageUI _toast;
+    // 보내기 모드와 같다. 자리를 고르는 동안에는 HUD가 자리를 비켜 준다.
+    [SerializeField] private HudVisibility _hudVisibility;
 
     [Header("UI")]
     [SerializeField] private Button _enterButton;
     [SerializeField] private GameObject _modeRoot;
+    [SerializeField] private CanvasGroup _modeCanvasGroup;
     [SerializeField] private Button _exitButton;
     [SerializeField] private Button _removeButton;
     [SerializeField] private Button _bumperButton;
@@ -34,7 +39,15 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [Tooltip("이만큼 끌어야 옮기는 것으로 본다. 그 아래는 고르기로 본다.")]
     [SerializeField, Min(0.01f)] private float _dragThreshold = 0.25f;
 
+    [Tooltip("여기를 누른 손가락은 자리를 고르는 것으로 보지 않습니다.")]
+    [SerializeField] private RectTransform[] _pointerBlockers = Array.Empty<RectTransform>();
+
+    [Header("Animation")]
+    [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
+
     private Camera _camera;
+    private Tween _modeTween;
+    private bool _isPointerBlocked;
     private bool _isActive;
     private bool _hasSelectedType;
     private EPlaygroundObjectType _selectedType;
@@ -46,7 +59,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     private void Awake()
     {
         if (_field == null || _clicker == null || _upgradeUI == null ||
-            _gameExitManager == null || _modeRoot == null)
+            _gameExitManager == null || _modeRoot == null ||
+            _modeCanvasGroup == null || _hudVisibility == null)
         {
             Debug.LogError("배치 모드의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -81,7 +95,11 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        _modeTween?.Kill();
         SlimeManager.OnPlaygroundChanged -= Refresh;
+
+        // 배치 모드를 켠 채로 씬이 내려가면 HUD가 화면 밖에 남는다.
+        if (_isActive && _hudVisibility != null) _hudVisibility.Release(this, animated: false);
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
         if (GameplaySpaceManager.Instance == null) return;
@@ -131,7 +149,10 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         // 있는 것과 물리가 움직이는 것이 뒤섞인다.
         _field.SetInteractive(false);
 
+        // 형제 순서는 씬이 정한다. 여기서 맨 위로 올리면 공간 전환 막까지 덮는다.
         _modeRoot.SetActive(true);
+        _modeCanvasGroup.alpha = 0f;
+        PlayModePresentation(show: true);
         ClearSelection();
         Refresh();
     }
@@ -150,6 +171,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
         _isActive = false;
         _isDragging = false;
+        _isPointerBlocked = false;
         _heldIndex = -1;
         ClearSelection();
 
@@ -157,12 +179,35 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         _gameExitManager.UnregisterBackHandler(this);
         _upgradeUI.SetToggleInputEnabled(true);
         _upgradeUI.SetToggleVisible(true);
-        _modeRoot.SetActive(false);
+        PlayModePresentation(show: false);
 
         _field.SetInteractive(true);
 
         // 끌던 중이었다면 화면이 저장과 어긋나 있다. 저장 기준으로 다시 세운다.
         _field.Rebuild();
+    }
+
+    // 보내기 모드와 같은 연출이다. 위아래 HUD가 물러나고 테두리가 떠오른다.
+    //
+    // 오버레이는 HUD 루트 바깥에 두어야 한다. 안에 두면 하단 HUD를 밀어낼 때
+    // 배치 버튼까지 같이 화면 밖으로 나간다.
+    private void PlayModePresentation(bool show)
+    {
+        if (show) _hudVisibility.PushHide(this, EHudParts.All);
+        else _hudVisibility.Release(this);
+
+        // 사라지는 동안에도 버튼은 눌린다. 나가는 중에 범퍼를 고르면 다음에
+        // 들어올 때까지 그 선택이 남는다.
+        _modeCanvasGroup.blocksRaycasts = show;
+
+        _modeTween?.Kill();
+        _modeTween = _modeCanvasGroup
+            .DOFade(show ? 1f : 0f, _modeAnimationDuration)
+            .OnComplete(() =>
+            {
+                _modeTween = null;
+                if (!show) _modeRoot.SetActive(false);
+            });
     }
 
     private void SelectType(EPlaygroundObjectType type)
@@ -236,16 +281,43 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         Vector2 screenPosition = pointer.position.ReadValue();
         Vector2 world = _camera.ScreenToWorldPoint(screenPosition);
 
-        if (pointer.press.wasPressedThisFrame) OnPointerDown(world);
+        if (pointer.press.wasPressedThisFrame) OnPointerDown(world, screenPosition);
+        else if (_isPointerBlocked)
+        {
+            if (pointer.press.wasReleasedThisFrame) _isPointerBlocked = false;
+        }
         else if (pointer.press.isPressed) OnPointerDrag(world);
         else if (pointer.press.wasReleasedThisFrame) OnPointerUp(world);
     }
 
-    private void OnPointerDown(Vector2 world)
+    private void OnPointerDown(Vector2 world, Vector2 screenPosition)
     {
+        // 버튼을 누른 손가락으로 자리까지 고르면, 범퍼를 고를 때마다 버튼 아래
+        // 언저리에 하나씩 놓인다. 화면 밖 좌표는 규칙이 안쪽으로 끌어당기므로
+        // 자리가 없어서 거절되지도 않는다.
+        _isPointerBlocked = IsOverBlocker(screenPosition);
+        if (_isPointerBlocked) return;
+
         _pointerDownWorld = world;
         _isDragging = false;
         _heldIndex = FindPlacedIndexAt(world);
+    }
+
+    private bool IsOverBlocker(Vector2 screenPosition)
+    {
+        foreach (RectTransform blocker in _pointerBlockers)
+        {
+            if (blocker == null || !blocker.gameObject.activeInHierarchy) continue;
+
+            // 오버레이 캔버스라 카메라가 없다.
+            if (RectTransformUtility.RectangleContainsScreenPoint(
+                    blocker, screenPosition, null))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnPointerDrag(Vector2 world)
