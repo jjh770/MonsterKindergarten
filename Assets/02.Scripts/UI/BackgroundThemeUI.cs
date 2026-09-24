@@ -94,8 +94,36 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        if (!enabled) return;
+
+        SlimeManager.OnBackgroundThemesChanged += RefreshOwnership;
+        SlimeManager.OnDataInitialized += RefreshOwnership;
+        RefreshOwnership();
+    }
+
+    // 상점에서 산 테마만 고를 수 있게 한다. 땅과 하늘은 해금이 주는 기본 테마라
+    // 늘 남는다. 데이터가 준비되기 전에는 기본 테마만 보인다.
+    private void RefreshOwnership()
+    {
+        SlimeManager manager = SlimeManager.Instance;
+        foreach (ThemeButtonRuntime runtime in _themeButtons)
+        {
+            if (runtime.Button == null) continue;
+
+            bool isOwned = BackgroundThemeRules.IsFree(runtime.Theme) ||
+                           (manager != null &&
+                            manager.IsBackgroundThemeOwned(runtime.Theme));
+            runtime.Button.gameObject.SetActive(isOwned);
+        }
+    }
+
     private void OnDestroy()
     {
+        SlimeManager.OnBackgroundThemesChanged -= RefreshOwnership;
+        SlimeManager.OnDataInitialized -= RefreshOwnership;
+
         if (_backgroundButton != null)
         {
             _backgroundButton.onClick.RemoveListener(OnBackgroundButtonClicked);

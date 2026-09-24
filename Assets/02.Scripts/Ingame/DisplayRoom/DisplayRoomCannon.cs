@@ -11,7 +11,7 @@ using UnityEngine;
 // "그림이 켜져 있는가"로 상호작용 여부를 정하기 때문에, 그림을 끈 채로 풀면
 // 보이지도 않고 만질 수도 없는 슬라임이 남는다. 대신 크기를 줄여 빨려 들어가는
 // 것처럼 보이게 한다.
-public class DisplayRoomCannon : MonoBehaviour
+public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
 {
     private enum State
     {
@@ -44,6 +44,9 @@ public class DisplayRoomCannon : MonoBehaviour
     [Tooltip("물고 있는 동안 줄어드는 크기 비율입니다.")]
     [SerializeField, Range(0.01f, 1f)] private float _loadedScale = 0.15f;
 
+    [Tooltip("빨려 들어가면서 옅어지는 정도입니다. 0이면 완전히 사라집니다.")]
+    [SerializeField, Range(0f, 1f)] private float _loadedAlpha;
+
     [Tooltip("포신이 멈추기 전에 몇 바퀴 돌지입니다.")]
     [SerializeField, Min(0f)] private float _aimSpins = 3f;
 
@@ -56,6 +59,8 @@ public class DisplayRoomCannon : MonoBehaviour
     private State _state = State.Ready;
     private SlimeController _held;
     private Vector3 _heldBaseScale;
+    private SpriteRenderer _heldRenderer;
+    private Color _heldBaseColor;
     private Sequence _sequence;
     private Tween _punchTween;
     private Vector3 _baseScale;
@@ -94,6 +99,15 @@ public class DisplayRoomCannon : MonoBehaviour
                 "가로챌 수 있습니다. Ignore Raycast 레이어로 옮기세요.",
                 this);
         }
+    }
+
+    // 배치 모드처럼 놀이터를 만지는 동안 기능을 세운다. 컴포넌트를 끄면 OnDisable이
+    // 돌아 물고 있던 슬라임까지 되돌려 준다. 반환 경로를 새로 만들 필요가 없다.
+    public void SetInteractive(bool isInteractive)
+    {
+        enabled = isInteractive;
+
+        if (_collider != null) _collider.enabled = isInteractive;
     }
 
     private void OnDisable()
@@ -148,6 +162,14 @@ public class DisplayRoomCannon : MonoBehaviour
         slime.transform.DOKill();
         _heldBaseScale = slime.transform.localScale;
 
+        // 그림을 끄지 않고 옅게 만든다. 끄면 잠금을 풀 때 상호작용 판정이 뒤집힌다.
+        _heldRenderer = slime.GetComponent<SpriteRenderer>();
+        if (_heldRenderer != null)
+        {
+            _heldRenderer.DOKill();
+            _heldBaseColor = _heldRenderer.color;
+        }
+
         if (AudioManager.Instance != null && _loadSound != null)
         {
             AudioManager.Instance.PlaySFX(_loadSound);
@@ -163,6 +185,12 @@ public class DisplayRoomCannon : MonoBehaviour
             .SetEase(Ease.InQuad));
         _sequence.Join(slime.transform.DOScale(_heldBaseScale * _loadedScale, _loadDuration)
             .SetEase(Ease.InQuad));
+
+        if (_heldRenderer != null)
+        {
+            _sequence.Join(_heldRenderer.DOFade(_loadedAlpha, _loadDuration)
+                .SetEase(Ease.InQuad));
+        }
 
         if (_barrel != null)
         {
@@ -224,10 +252,20 @@ public class DisplayRoomCannon : MonoBehaviour
         _held = null;
     }
 
-    // 크기를 먼저 되돌리고 잠금을 푼다. 순서가 바뀌면 작아진 채로 물리가 살아나
-    // 한 프레임 동안 다른 크기로 부딪힌다.
+    // 크기와 색을 먼저 되돌리고 잠금을 푼다. 순서가 바뀌면 작아진 채로 물리가
+    // 살아나 한 프레임 동안 다른 크기로 부딪힌다.
+    //
+    // 색을 되돌리는 것은 빠뜨리면 안 된다. 옅어진 채로 놓아 준 슬라임은 보이지
+    // 않는 채로 돌아다니고, 위치는 저장하지 않으므로 앱을 껐다 켜야 돌아온다.
     private void RestoreHeld(SlimeController slime, Vector3 position)
     {
+        if (_heldRenderer != null)
+        {
+            _heldRenderer.DOKill();
+            _heldRenderer.color = _heldBaseColor;
+            _heldRenderer = null;
+        }
+
         slime.transform.DOKill();
         slime.transform.localScale = _heldBaseScale;
         slime.transform.position = position;

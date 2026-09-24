@@ -9,7 +9,7 @@ using UnityEngine;
 // 트리거로 두면 적은 값이 그대로 출발 속도가 된다.
 // RequireComponent은 쓰지 않는다. Collider2D는 추상 타입이라 Unity가 대신 붙이지
 // 못하고, 모양은 놓는 사람이 정하는 편이 낫다. 대신 Awake에서 확인한다.
-public class DisplayRoomBumper : MonoBehaviour
+public class DisplayRoomBumper : MonoBehaviour, IPlaygroundObject
 {
     [Tooltip("밀어낼 때의 속도입니다. 슬라임의 평소 배회 속도는 1입니다.")]
     [SerializeField, Min(0.1f)] private float _launchSpeed = 8f;
@@ -62,6 +62,15 @@ public class DisplayRoomBumper : MonoBehaviour
                 "가로채 관찰이 열리지 않을 수 있습니다. Ignore Raycast 레이어로 옮기세요.",
                 this);
         }
+    }
+
+    // 배치 모드처럼 놀이터를 만지는 동안 기능을 세운다. 컴포넌트를 끄면 Unity가
+    // 트리거 콜백을 부르지 않는다. 콜라이더까지 끄는 것은 덤이다.
+    public void SetInteractive(bool isInteractive)
+    {
+        enabled = isInteractive;
+
+        if (_collider != null) _collider.enabled = isInteractive;
     }
 
     private void OnDisable()
