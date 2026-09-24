@@ -7,7 +7,8 @@ using UnityEngine;
 // 먼저 튕긴 위에 이쪽 힘이 얹혀, 한 번의 충돌을 두 규칙이 나눠 정하게 된다.
 // 그러면 인스펙터에 적은 세기와 눈에 보이는 속도가 서로 달라져 조정할 수가 없다.
 // 트리거로 두면 적은 값이 그대로 출발 속도가 된다.
-[RequireComponent(typeof(Collider2D))]
+// RequireComponent은 쓰지 않는다. Collider2D는 추상 타입이라 Unity가 대신 붙이지
+// 못하고, 모양은 놓는 사람이 정하는 편이 낫다. 대신 Awake에서 확인한다.
 public class DisplayRoomBumper : MonoBehaviour
 {
     [Tooltip("밀어낼 때의 속도입니다. 슬라임의 평소 배회 속도는 1입니다.")]
@@ -29,6 +30,13 @@ public class DisplayRoomBumper : MonoBehaviour
     {
         _collider = GetComponent<Collider2D>();
         _baseScale = transform.localScale;
+
+        if (_collider == null)
+        {
+            Debug.LogError("범퍼에 Collider2D가 없습니다. 원형 콜라이더를 붙이세요.", this);
+            enabled = false;
+            return;
+        }
 
         if (!_collider.isTrigger)
         {

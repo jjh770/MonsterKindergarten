@@ -130,6 +130,14 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
 
     private bool IsEverythingCompleted()
     {
+        // FindPending은 매니저가 아직 없으면 표를 건드리기 전에 빠져나간다. 그래서
+        // Update가 곧바로 여기로 넘어오는데, 그 시점에는 표가 없을 수 있다.
+        // 초기화 전 첫 프레임과, 플레이 도중 스크립트가 다시 컴파일되어 Awake 없이
+        // 살아난 경우가 모두 이 자리를 지난다.
+        //
+        // 아직 모른다는 뜻이므로 완료로 보지 않는다. 다음 프레임에 다시 묻는다.
+        if (_milestones == null) return false;
+
         foreach (Milestone milestone in _milestones)
         {
             if (!TutorialProgress.IsCompleted(milestone.TutorialId)) return false;

@@ -16,19 +16,6 @@ public class Clicker : MonoBehaviour
     [Tooltip("터치가 빗나갔을 때 이 반경 안에서 가장 가까운 슬라임을 집습니다. 0이면 정확히 닿은 것만 고릅니다.")]
     [SerializeField, Min(0f)] private float _selectionRadius = 0.2f;
 
-    [Header("Throw")]
-    [Tooltip("놓는 순간 손가락 속도에 곱할 값입니다. 장식장 슬라임에만 적용됩니다.")]
-    [SerializeField, Min(0f)] private float _throwSpeedMultiplier = 1f;
-
-    [Tooltip("이보다 느리게 놓으면 던지지 않고 그 자리에 둡니다.")]
-    [SerializeField, Min(0f)] private float _minimumThrowSpeed = 2f;
-
-    [Tooltip("아무리 빠르게 휘둘러도 이 속도를 넘기지 않습니다.")]
-    [SerializeField, Min(0.1f)] private float _maximumThrowSpeed = 14f;
-
-    [Tooltip("1에 가까울수록 마지막 한 프레임을 그대로 씁니다. 손 떨림이 그대로 실립니다.")]
-    [SerializeField, Range(0.05f, 1f)] private float _throwVelocitySmoothing = 0.5f;
-
     [Header("Drag Bounds")]
     [SerializeField] private Vector2 _dragMinBounds = new Vector2(-5f, -3f);
     [SerializeField] private Vector2 _dragMaxBounds = new Vector2(5f, 3f);
@@ -42,12 +29,6 @@ public class Clicker : MonoBehaviour
     private bool _isClickEnabled = true;
     private bool _isDragEnabled = true;
     private bool _invokeClickAction = true;
-    private bool _holdStartsDrag = true;
-
-    // 던질 속도. 한 프레임 차이는 손 떨림에 휘둘리므로 섞어서 들고 다닌다.
-    private Vector2 _dragVelocity;
-    private Vector2 _dragLastPosition;
-    private float _dragLastTime;
     private SlimeController _restrictedTarget;
     private SlimeController _secondaryRestrictedTarget;
 
@@ -185,16 +166,12 @@ public class Clicker : MonoBehaviour
         float distance = Vector2.Distance(_mouseDownPos, currentPos);
         float heldTime = Time.time - _mouseDownTime;
 
-        // 일정 거리 이상 이동하거나, 모드가 허용하면 일정 시간 이상 눌러도 드래그 시작
-        bool movedFarEnough = distance > _dragThresholdDistance;
-        bool heldLongEnough = _holdStartsDrag && heldTime > _dragThresholdTime;
-        if (!movedFarEnough && !heldLongEnough) return;
-
-        _isDragging = true;
-        _dragVelocity = Vector2.zero;
-        _dragLastPosition = currentPos;
-        _dragLastTime = Time.time;
-        _selectedTarget.StartDrag();
+        // 일정 거리 이상 이동하거나 일정 시간 이상 누르면 드래그 시작
+        if (distance > _dragThresholdDistance || heldTime > _dragThresholdTime)
+        {
+            _isDragging = true;
+            _selectedTarget.StartDrag();
+        }
     }
 
     private void UpdateDrag(Vector2 pointerPosition)
@@ -204,43 +181,8 @@ public class Clicker : MonoBehaviour
         mousePos.x = Mathf.Clamp(mousePos.x, _dragMinBounds.x, _dragMaxBounds.x);
         mousePos.y = Mathf.Clamp(mousePos.y, _dragMinBounds.y, _dragMaxBounds.y);
 
-        TrackDragVelocity(mousePos);
-
         _selectedTarget.transform.position = mousePos;
         UpdateMergeCandidate();
-    }
-
-    private void TrackDragVelocity(Vector2 position)
-    {
-        float deltaTime = Time.time - _dragLastTime;
-        if (deltaTime <= 0f) return;
-
-        Vector2 frameVelocity = (position - _dragLastPosition) / deltaTime;
-        _dragVelocity = Vector2.Lerp(
-            _dragVelocity, frameVelocity, _throwVelocitySmoothing);
-        _dragLastPosition = position;
-        _dragLastTime = Time.time;
-    }
-
-    // 놓는 순간의 손가락 속도로 슬라임을 날린다.
-    //
-    // 장식장인지 여기서 묻지 않는다. SlimeController.Launch가 소속을 확인하므로
-    // 메인 필드 슬라임은 이 호출을 그냥 무시한다. 조건을 두 곳에 두면 한쪽만
-    // 고쳐졌을 때 조용히 어긋난다.
-    private void TryThrow(SlimeController target)
-    {
-        if (target == null) return;
-
-        Vector2 velocity = _dragVelocity * _throwSpeedMultiplier;
-        float speed = velocity.magnitude;
-        if (speed < _minimumThrowSpeed) return;
-
-        if (speed > _maximumThrowSpeed)
-        {
-            velocity = velocity / speed * _maximumThrowSpeed;
-        }
-
-        target.Launch(velocity);
     }
 
     private void OnPointerUp(Vector2 pointerPosition)
@@ -252,10 +194,6 @@ public class Clicker : MonoBehaviour
             // 릴리스 프레임의 포인터 위치까지 반영한 뒤 표시된 대상을 우선 합성한다.
             UpdateDrag(pointerPosition);
             _selectedTarget.EndDrag(_mergeCandidate);
-
-            // EndDrag가 OnInteracted로 속도를 0으로 만들고 평소 이동을 예약하므로
-            // 던지기는 반드시 그 뒤에 온다. 순서가 바뀌면 던진 속도가 지워진다.
-            TryThrow(selectedTarget);
 
             Vector2 releaseWorldPosition = _mainCamera.ScreenToWorldPoint(pointerPosition);
             if (Vector2.Distance(_mouseDownPos, releaseWorldPosition) >= _dragThresholdDistance)
@@ -368,7 +306,6 @@ public class Clicker : MonoBehaviour
         _restrictedTarget = mode.RestrictedTarget;
         _secondaryRestrictedTarget = mode.SecondaryRestrictedTarget;
         _invokeClickAction = mode.InvokeClickAction;
-        _holdStartsDrag = mode.HoldStartsDrag;
     }
 
     private void WarnIfStackTooDeep()
@@ -451,6 +388,5 @@ public class Clicker : MonoBehaviour
 
         _selectedTarget = null;
         _isDragging = false;
-        _dragVelocity = Vector2.zero;
     }
 }

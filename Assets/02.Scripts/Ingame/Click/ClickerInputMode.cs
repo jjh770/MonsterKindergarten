@@ -17,25 +17,18 @@ public readonly struct ClickerInputMode
     public SlimeController RestrictedTarget { get; }
     public SlimeController SecondaryRestrictedTarget { get; }
 
-    // 누르고 있기만 해도 드래그로 넘어갈지. 메인 필드는 연타하는 곳이라 이 편이
-    // 집기 쉽지만, 탭과 집기가 서로 다른 일을 하는 곳에서는 신중하게 누른 탭이
-    // 시간 기준에 걸려 엉뚱한 쪽으로 간다.
-    public bool HoldStartsDrag { get; }
-
     public ClickerInputMode(
         bool clickEnabled,
         bool dragEnabled,
         SlimeController restrictedTarget = null,
         SlimeController secondaryRestrictedTarget = null,
-        bool invokeClickAction = true,
-        bool holdStartsDrag = true)
+        bool invokeClickAction = true)
     {
         ClickEnabled = clickEnabled;
         DragEnabled = dragEnabled;
         RestrictedTarget = restrictedTarget;
         SecondaryRestrictedTarget = secondaryRestrictedTarget;
         InvokeClickAction = invokeClickAction;
-        HoldStartsDrag = holdStartsDrag;
     }
 
     // 대사, 팝업, 연출 중 월드 입력을 완전히 막는다.
@@ -53,21 +46,6 @@ public readonly struct ClickerInputMode
             dragEnabled: false,
             restrictedTarget: restrictedTarget,
             invokeClickAction: false);
-    }
-
-    // 장식장 평상시(기획서 §7.2). 탭하면 관찰, 끌면 집어서 던진다.
-    // 클릭 포인트는 주지 않고, 합성은 CanMergeWith가 양쪽 MainField를 요구해 막힌다.
-    //
-    // 누르고 있는 시간으로는 드래그를 시작하지 않는다. 관찰은 신중하게 누르는
-    // 동작이라 0.2초 기준을 자주 넘기고, 그러면 탭인데 슬라임이 딸려 온다.
-    // 여기서는 손가락이 실제로 움직여야 집힌다.
-    public static ClickerInputMode ObserveAndThrow()
-    {
-        return new ClickerInputMode(
-            clickEnabled: true,
-            dragEnabled: true,
-            invokeClickAction: false,
-            holdStartsDrag: false);
     }
 
     // 지정한 슬라임만 클릭할 수 있다. 튜토리얼 안내용.

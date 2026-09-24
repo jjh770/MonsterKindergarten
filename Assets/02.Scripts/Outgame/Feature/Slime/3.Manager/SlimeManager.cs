@@ -451,6 +451,14 @@ public class SlimeManager : MonoBehaviour
             return UniTask.CompletedTask;
         }
 
+        // 초기화가 끝나지 않았거나 로드가 막힌 세션에는 저장할 상태 자체가 없다.
+        // 예외를 삼키는 것과 다르다. 쓸 내용이 없으니 쓰지 않는 것이고, 그대로 두면
+        // 종료 시점의 저장이 예외로 끊겨 뒤따르는 정리까지 건너뛴다.
+        if (_status == null)
+        {
+            return UniTask.CompletedTask;
+        }
+
         _statsDirty = false;
         _statsSaveTimer = 0f;
         return _statusRepository.Save(BuildSaveData());

@@ -42,6 +42,9 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _cameraTransitionDuration = 1.2f;
     [SerializeField, Min(1f)] private float _cameraTravelDistance = 6f;
 
+    [Tooltip("장식장에서 쓰는 화면 크기입니다. 메인 필드보다 키우면 같은 화면에 더 넓은 방이 들어갑니다.")]
+    [SerializeField, Min(0.1f)] private float _displayRoomOrthographicSize = 6.5f;
+
     [Header("Display Room Focus")]
     [SerializeField, Min(0.1f)] private float _displayRoomFocusDuration = 0.35f;
     [SerializeField, Min(0.1f)] private float _displayRoomFocusSize = 2.5f;
@@ -58,11 +61,18 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
 
     private Vector3 _cameraBasePosition;
     private float _cameraBaseOrthographicSize;
+    private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private Sequence _transitionSequence;
     private Sequence _focusSequence;
     private SlimeController _displayRoomFocusTarget;
 
     public bool IsTransitioning { get; private set; }
+
+    // 공간마다 쉬는 자리의 화면 크기가 다르다. 확대·복귀·경계 계산이 모두 이 값을
+    // 기준으로 삼아야 장식장에서 확대했다가 돌아올 때 메인 필드 크기로 튀지 않는다.
+    private float BaseOrthographicSize => _currentSpace == EGameplaySpace.DisplayRoom
+        ? _displayRoomOrthographicSize
+        : _cameraBaseOrthographicSize;
 
     private void Awake()
     {
@@ -127,7 +137,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         _focusSequence.Join(
             _camera
                 .DOOrthoSize(
-                    Mathf.Min(_cameraBaseOrthographicSize, _displayRoomFocusSize),
+                    Mathf.Min(BaseOrthographicSize, _displayRoomFocusSize),
                     _displayRoomFocusDuration)
                 .SetEase(Ease.OutQuad));
         _focusSequence.OnComplete(() =>
@@ -151,7 +161,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             _camera
                 .DOOrthoSize(
                     Mathf.Min(
-                        _cameraBaseOrthographicSize,
+                        BaseOrthographicSize,
                         _displayRoomObservationSize),
                     _displayRoomFocusDuration)
                 .SetEase(Ease.OutQuad));
@@ -176,7 +186,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             _camera
                 .DOOrthoSize(
                     Mathf.Min(
-                        _cameraBaseOrthographicSize,
+                        BaseOrthographicSize,
                         _displayRoomFocusSize),
                     _displayRoomFocusDuration)
                 .SetEase(Ease.OutQuad));
@@ -198,13 +208,13 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
                 .SetEase(Ease.OutQuad));
         _focusSequence.Join(
             _camera
-                .DOOrthoSize(_cameraBaseOrthographicSize, _displayRoomFocusDuration)
+                .DOOrthoSize(BaseOrthographicSize, _displayRoomFocusDuration)
                 .SetEase(Ease.OutQuad));
         _focusSequence.OnComplete(() =>
         {
             _focusSequence = null;
             _camera.transform.position = _cameraBasePosition;
-            _camera.orthographicSize = _cameraBaseOrthographicSize;
+            _camera.orthographicSize = BaseOrthographicSize;
             onComplete?.Invoke();
         });
     }
@@ -313,11 +323,19 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             FadeOverlay(1f, halfDuration));
         _transitionSequence.AppendCallback(() =>
         {
-            onSpaceSwitched?.Invoke();
+            // 화면이 완전히 덮인 순간이라 카메라를 그냥 갈아 끼워도 보이지 않는다.
+            // 공간마다 화면 크기가 다르므로 위치와 함께 여기서 맞춘다.
+            //
+            // 알리기 전에 바꾼다. 배경은 카메라 높이에 맞춰 크기를 다시 잡는데,
+            // 순서가 뒤바뀌면 예전 높이로 계산해 화면보다 짧은 배경이 깔린다.
+            _currentSpace = targetSpace;
+            _camera.orthographicSize = BaseOrthographicSize;
 
             Vector3 cameraPosition = _cameraBasePosition;
             cameraPosition.x -= direction * _cameraTravelDistance;
             _camera.transform.position = cameraPosition;
+
+            onSpaceSwitched?.Invoke();
         });
         _transitionSequence.Append(
             _camera.transform.DOMoveX(
@@ -364,7 +382,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         // 가로는 배경이 기본 화면보다 넓어 가두지 않는다.
         float verticalMargin = Mathf.Max(
             0f,
-            _cameraBaseOrthographicSize - _camera.orthographicSize);
+            BaseOrthographicSize - _camera.orthographicSize);
         position.y = Mathf.Clamp(
             position.y,
             _cameraBasePosition.y - verticalMargin,
@@ -391,7 +409,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         _focusSequence?.Kill();
         _focusSequence = null;
         _camera.transform.position = _cameraBasePosition;
-        _camera.orthographicSize = _cameraBaseOrthographicSize;
+        _camera.orthographicSize = BaseOrthographicSize;
     }
 
     // 전환 시작 시 오버레이를 최상단으로 올리고 입력을 막는다.

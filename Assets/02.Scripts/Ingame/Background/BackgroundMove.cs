@@ -104,16 +104,7 @@ public class BackgroundMove : MonoBehaviour
             return;
         }
 
-        Camera mainCamera = Camera.main;
-        _cameraCenterX = mainCamera != null
-            ? mainCamera.transform.position.x
-            : transform.position.x;
-        _cameraCenterY = mainCamera != null
-            ? mainCamera.transform.position.y
-            : transform.position.y;
-        _cameraHeight = mainCamera != null && mainCamera.orthographic
-            ? mainCamera.orthographicSize * 2f
-            : 0f;
+        RefreshCameraMetrics();
 
         _spaceManager = GameplaySpaceManager.Instance;
         if (_spaceManager != null)
@@ -240,6 +231,27 @@ public class BackgroundMove : MonoBehaviour
         ApplyBackground();
     }
 
+    // 카메라가 쉬는 자리에 있을 때만 부른다. Start가 그 시점이다.
+    private void RefreshCameraMetrics()
+    {
+        Camera mainCamera = Camera.main;
+        _cameraCenterX = mainCamera != null
+            ? mainCamera.transform.position.x
+            : transform.position.x;
+        _cameraCenterY = mainCamera != null
+            ? mainCamera.transform.position.y
+            : transform.position.y;
+        RefreshCameraHeight();
+    }
+
+    private void RefreshCameraHeight()
+    {
+        Camera mainCamera = Camera.main;
+        _cameraHeight = mainCamera != null && mainCamera.orthographic
+            ? mainCamera.orthographicSize * 2f
+            : 0f;
+    }
+
     private void ApplySpace(EGameplaySpace space)
     {
         if (_currentSpace == space && _activeTiles != null) return;
@@ -250,6 +262,14 @@ public class BackgroundMove : MonoBehaviour
 
     private void ApplyBackground()
     {
+        // 공간마다 화면 크기가 다르다. Start에서 잰 값을 계속 쓰면 장식장처럼
+        // 화면이 커진 곳에서 배경이 짧아져 위아래로 바깥이 드러난다.
+        //
+        // 높이만 다시 읽는다. 이 함수는 공간 전환 도중에도 불리는데 그때 카메라는
+        // 화면 밖으로 밀려 있어, 중심까지 읽으면 배경이 그만큼 어긋난 채로 굳는다.
+        // 카메라는 언제나 같은 자리로 돌아오므로 중심은 Start에서 잰 값이 맞다.
+        RefreshCameraHeight();
+
         CancelThemeTransition();
 
         SetAllThemeRootsActive(false);
