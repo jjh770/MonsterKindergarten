@@ -28,5 +28,5 @@ MonoBehaviour:
   - _theme: 2
     _displayName: "\uC6B0\uC8FC"
     _description: "\uBCC4\uC774 \uD750\uB974\uB294 \uBC30\uACBD\uC73C\uB85C \uBC14\uAFC9\uB2C8\uB2E4."
-    _icon: {fileID: 1217213805088430585, guid: 4282ec9aeb132ee4ba91ddec68c92332, type: 3}
+    _icon: {fileID: -5007935559008979631, guid: 325ffd2f470052e4ea56c8ed36257d05, type: 3}
     _price: 100000000

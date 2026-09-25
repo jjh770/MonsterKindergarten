@@ -1,5 +1,6 @@
 using System;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,8 +23,19 @@ public class LoginScene : MonoBehaviour
     [Tooltip("씬 전환 때 화면을 덮는 커튼입니다. 비워 두면 즉시 전환합니다.")]
     [SerializeField] private FadeCurtainUI _curtain;
 
+    [Header("Intro")]
+    [Tooltip("떨어지는 로고입니다. 비워 두면 연출 없이 바로 버튼을 엽니다.")]
+    [SerializeField] private RectTransform _titleTarget;
+
+    [Tooltip("로고가 출발하는 높이입니다. 도착점은 씬에 놓인 자리를 그대로 씁니다.")]
+    [SerializeField] private float _titleStartY;
+
+    [SerializeField, Min(0f)] private float _titleDropDuration = 1f;
+    [SerializeField] private Ease _titleDropEase = Ease.OutBounce;
+
     private string _popupText;
     private TMP_Text _loginButtonText;
+    private Tween _titleTween;
     private bool _isLoggingIn;
 
     private void Start()
@@ -36,9 +48,11 @@ public class LoginScene : MonoBehaviour
         CloudSaveGuard.Clear();
         // 계정이 바뀌면 이전 서버 시각 보정값은 의미가 없다.
         ServerClock.Clear();
+        // 버튼이 꺼져 있어도 찾도록 비활성까지 뒤진다. 연출이 끝나야 켜진다.
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = IdleLabel;
         _loginButton.onClick.AddListener(() => Login(true).Forget());
+        PlayIntro();
 
         if (_recoveryUI != null)
         {
@@ -67,10 +81,52 @@ public class LoginScene : MonoBehaviour
 
     private void OnDestroy()
     {
+        _titleTween?.Kill();
+
         if (_recoveryUI != null)
         {
             _recoveryUI.ConfirmRequested -= OnRecoveryConfirmed;
         }
+    }
+
+    // 로고를 위에서 떨어뜨리고, 내려앉은 뒤에 버튼을 연다.
+    //
+    // 도착점은 씬에 놓인 자리를 그대로 쓴다. 숫자를 여기에 한 번 더 적으면 로고를
+    // 옮길 때마다 둘이 어긋나고, 연출이 끝난 로고가 제자리를 벗어난다.
+    //
+    // 버튼은 화면 전체를 덮는 탭 판이다. 연출 중에 켜 두면 떨어지는 도중에 눌려
+    // 로그인이 시작되므로, 다 내려온 뒤에 켠다.
+    private void PlayIntro()
+    {
+        if (_titleTarget == null)
+        {
+            SetLoginButtonShown(true);
+            return;
+        }
+
+        SetLoginButtonShown(false);
+
+        float restY = _titleTarget.anchoredPosition.y;
+        Vector2 start = _titleTarget.anchoredPosition;
+        start.y = _titleStartY;
+        _titleTarget.anchoredPosition = start;
+
+        _titleTween?.Kill();
+        _titleTween = _titleTarget
+            .DOAnchorPosY(restY, _titleDropDuration)
+            .SetEase(_titleDropEase)
+            .OnComplete(() =>
+            {
+                _titleTween = null;
+                SetLoginButtonShown(true);
+            });
+    }
+
+    private void SetLoginButtonShown(bool isShown)
+    {
+        if (_loginButton == null) return;
+
+        _loginButton.gameObject.SetActive(isShown);
     }
 
     private void OnRecoveryConfirmed()
