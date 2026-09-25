@@ -236,46 +236,71 @@ public sealed class AutoMergeManager : MonoBehaviour
     {
         _presentation = null;
 
-        var activePairs = new List<MergeManager.MergeTargetPair>(_presentationPairs.Count);
+        // 모으는 동안 필드가 바뀐다. 한쪽이 손으로 합성되거나 장식장으로 갔으면
+        // 그 쌍은 이번에 시도하지 않는다.
+        var attempted = new List<PresentationPair>(_presentationPairs.Count);
+        var attemptedTargets =
+            new List<MergeManager.MergeTargetPair>(_presentationPairs.Count);
         foreach (PresentationPair pair in _presentationPairs)
         {
-            if (pair.Keeper != null && pair.Removed != null &&
-                pair.Keeper.gameObject.activeInHierarchy &&
-                pair.Removed.gameObject.activeInHierarchy)
+            if (pair.Keeper == null || pair.Removed == null ||
+                !pair.Keeper.gameObject.activeInHierarchy ||
+                !pair.Removed.gameObject.activeInHierarchy)
             {
-                activePairs.Add(new MergeManager.MergeTargetPair(pair.Keeper, pair.Removed));
+                continue;
+            }
+
+            attempted.Add(pair);
+            attemptedTargets.Add(
+                new MergeManager.MergeTargetPair(pair.Keeper, pair.Removed));
+        }
+
+        bool canMerge = MergeManager.Instance != null && attempted.Count > 0;
+        bool merged = canMerge && MergeManager.Instance.MergeBatch(attemptedTargets);
+
+        // 시도한 쌍마다의 결과. 저장이 실제로 거절한 쌍만 참이 된다.
+        //
+        // 오브젝트 상태로 짐작하면 안 된다. 시도조차 못 한 쌍도 "합성되지 않은" 상태로
+        // 보이는데, 그것까지 거절로 세면 멀쩡히 남은 짝이 이번 판 내내 자동 합성에서
+        // 빠진다. 제외 목록은 비우는 곳이 없어서 앱을 껐다 켜야 풀린다.
+        var isRefused = new bool[attempted.Count];
+        if (!merged && canMerge)
+        {
+            if (attempted.Count == 1)
+            {
+                // 한 쌍뿐이었으면 방금 그 시도가 곧 그 쌍의 결과다.
+                isRefused[0] = true;
+            }
+            else
+            {
+                // 묶음 저장은 한 쌍이라도 거절되면 전부 되돌린다. 한 쌍씩 다시 시도해
+                // 저장이 실제로 거절한 쌍만 가려낸다. 드문 경로라 쌍마다 저장해도 된다.
+                for (int i = 0; i < attempted.Count; i++)
+                {
+                    bool pairMerged =
+                        MergeManager.Instance.MergeBatch(new[] { attemptedTargets[i] });
+                    isRefused[i] = !pairMerged;
+                    merged |= pairMerged;
+                }
             }
         }
 
-        bool merged = MergeManager.Instance != null &&
-                      MergeManager.Instance.MergeBatch(activePairs);
-
-        // 묶음 저장은 한 쌍이라도 거절되면 전부 되돌린다. 그대로 두면 멀쩡한 쌍까지
-        // 거절 목록에 들어가 다시는 자동 합성되지 않으므로, 한 쌍씩 다시 시도해
-        // 저장이 실제로 거절한 쌍만 가려낸다. 드문 경로라 저장이 쌍마다 나가도 된다.
-        if (!merged && activePairs.Count > 1 && MergeManager.Instance != null)
-        {
-            foreach (MergeManager.MergeTargetPair pair in activePairs)
-            {
-                merged |= MergeManager.Instance.MergeBatch(new[] { pair });
-            }
-        }
-
         foreach (PresentationPair pair in _presentationPairs)
         {
-            bool pairMerged = pair.Keeper != null &&
-                              pair.Keeper.gameObject.activeInHierarchy &&
-                              pair.Keeper.Grade == pair.FromGrade + 1 &&
-                              pair.Removed != null &&
-                              !pair.Removed.gameObject.activeInHierarchy;
+            int index = attempted.IndexOf(pair);
+            bool wasAttempted = index >= 0;
+            bool pairMerged = wasAttempted && !isRefused[index];
+
             // 모이는 동안 장식장으로 넘어갔으면 그 쌍도 이펙트를 띄우지 않는다.
-            if (pairMerged && pair.IsPresented && pair.Keeper.IsMainFieldActive)
+            if (pairMerged && pair.IsPresented &&
+                pair.Keeper != null && pair.Keeper.IsMainFieldActive)
             {
                 PlayMergeEffect(
                     pair.Center,
                     pair.Keeper.GetComponent<SpriteRenderer>());
             }
-            else if (!pairMerged && pair.Keeper != null && pair.Removed != null)
+            else if (wasAttempted && isRefused[index] &&
+                     pair.Keeper != null && pair.Removed != null)
             {
                 _rejectedIds.Add(pair.Keeper.InstanceId);
                 _rejectedIds.Add(pair.Removed.InstanceId);
