@@ -13,7 +13,6 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
-    [SerializeField] private AudioClip _unlockSound;
     [SerializeField] private CanvasGroup _canvasGroup;
 
     private Sequence _sequence;
@@ -58,10 +57,7 @@ public class UnlockPopupUI : MonoBehaviour
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
-        if (AudioManager.Instance != null && _unlockSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_unlockSound);
-        }
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
 
         // 등급 숫자만으로는 무엇이 열렸는지 알 수 없다. 이름과 그림이 같은 스펙에서
         // 나오므로 한 번만 찾아 둘 다 쓴다.

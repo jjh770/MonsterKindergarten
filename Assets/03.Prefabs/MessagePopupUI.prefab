@@ -343,7 +343,6 @@ MonoBehaviour:
   _canvasGroup: {fileID: 481348251084307382}
   _popupRectTransform: {fileID: 9204472507545846117}
   _messageText: {fileID: 1764997794541599478}
-  _popupSound: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
   _fadeInDuration: 0.2
   _punchDuration: 0.5
   _displayDuration: 0.5

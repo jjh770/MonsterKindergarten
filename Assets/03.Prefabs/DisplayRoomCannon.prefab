@@ -90,8 +90,6 @@ MonoBehaviour:
   _loadDuration: 0.25
   _loadedScale: 0.15
   _aimSpins: 3
-  _loadSound: {fileID: 0}
-  _fireSound: {fileID: 0}
   _firePunchScale: 0.35
 --- !u!1 &3936902253180097884
 GameObject:

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public class ButtonSFX : MonoBehaviour
 {
-    [SerializeField] private AudioClip _clickSound;
+    [SerializeField] private EAudioSfx _cue = EAudioSfx.UIClick;
 
     private Button _button;
 
@@ -21,9 +21,6 @@ public class ButtonSFX : MonoBehaviour
 
     private void PlayClickSound()
     {
-        if (AudioManager.Instance != null && _clickSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_clickSound);
-        }
+        AudioManager.Instance?.PlaySFX(_cue);
     }
 }

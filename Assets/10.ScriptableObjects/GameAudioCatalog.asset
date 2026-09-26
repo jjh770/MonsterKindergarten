@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fb52c88aa5036d499539da64e1e1bec, type: 3}
+  m_Name: GameAudioCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::GameAudioCatalogSO
+  _startBgm: {fileID: 8300000, guid: e2dbe04ef101b504d80dcd777a6778fc, type: 3}
+  _groundBgms:
+  - {fileID: 8300000, guid: fe0017cca90c3bf49bc04267898218d1, type: 3}
+  - {fileID: 8300000, guid: 51a284f6db8c31f4292193016a5d5268, type: 3}
+  _skyBgms:
+  - {fileID: 8300000, guid: a0165b8dd297f5343858131f97e7f85e, type: 3}
+  - {fileID: 8300000, guid: ff007ffec9894ce4a854dee858b8e4e4, type: 3}
+  _additionalThemeBgms:
+  - _theme: 2
+    _clips:
+    - {fileID: 8300000, guid: 2e5a8e555c803634aa30287f3fdc9492, type: 3}
+    - {fileID: 8300000, guid: 48dad08fbfc6980408db3abf149b1b5b, type: 3}
+  _displayRoomBgms:
+  - {fileID: 8300000, guid: 953a147193ca2704ea9051ece4f29cd4, type: 3}
+  _uiClick: {fileID: 8300000, guid: ae07ab1fc9047a542857f36e03979dc0, type: 3}
+  _upgradeBuy: {fileID: 8300000, guid: 75dbd823ca837b7449c497d30a98d722, type: 3}
+  _insufficientCurrency: {fileID: 8300000, guid: 601bbf7ab436ea6469ee6fdd106cff1b, type: 3}
+  _featureUnlock: {fileID: 8300000, guid: 42b53dbdea3afc5489924beab357e255, type: 3}
+  _shopPurchase: {fileID: 8300000, guid: 80fcb1318a507854aa0194b0eef5538b, type: 3}
+  _ticketCollect: {fileID: 8300000, guid: 67e33b1e5d4201445921fe8b7d793c77, type: 3}
+  _offlineRewardOpen: {fileID: 8300000, guid: ce9c84f0a0a06cf46b77d1b57fe877a6, type: 3}
+  _offlineRewardCollect: {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
+  _offlineRewardArrival: {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
+  _slimeReactions:
+  - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
+  - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
+  - {fileID: 8300000, guid: 51312ce1fe3819c4c91a81ab398b61a2, type: 3}
+  - {fileID: 8300000, guid: 325983562d4737047bf416f0bbdf6405, type: 3}
+  - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
+  - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
+  - {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
+  _slimePromotes:
+  - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
+  - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
+  - {fileID: 8300000, guid: 51312ce1fe3819c4c91a81ab398b61a2, type: 3}
+  - {fileID: 8300000, guid: 325983562d4737047bf416f0bbdf6405, type: 3}
+  - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
+  - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
+  _slimeLand: {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
+  _slimeBump: {fileID: 0}
+  _playgroundBumperHit: {fileID: 8300000, guid: 1d575d65386574741bc84c9a4373cf0f, type: 3}
+  _playgroundCannonLoad: {fileID: 0}
+  _playgroundCannonFire: {fileID: 8300000, guid: acf970ba19b9ffd49b381989ac3ab30c, type: 3}

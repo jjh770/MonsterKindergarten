@@ -17,8 +17,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource _secondaryBgmSource;
     [SerializeField] private AudioSource _sfxSource;
 
-    [Header("BGM")]
-    [SerializeField] private AudioClip _startBGM;
+    [Header("Audio Catalog")]
+    [SerializeField] private GameAudioCatalogSO _catalog;
 
     [Header("Volume Settings")]
     [field: SerializeField, Range(0f, 1f)] public float MasterVolume { get; private set; } = 1f;
@@ -54,9 +54,9 @@ public class AudioManager : MonoBehaviour
     {
         ApplyVolumes();
 
-        if (_startBGM != null)
+        if (_catalog != null && _catalog.StartBgm != null)
         {
-            PlayBGM(_startBGM);
+            PlayBGM(_catalog.StartBgm);
         }
     }
 
@@ -105,9 +105,10 @@ public class AudioManager : MonoBehaviour
     {
         if (_bgmSource == null ||
             _secondaryBgmSource == null ||
-            _sfxSource == null)
+            _sfxSource == null ||
+            _catalog == null)
         {
-            Debug.LogError("AudioManager의 AudioSource 참조가 비어 있습니다.", this);
+            Debug.LogError("AudioManager의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -234,14 +235,47 @@ public class AudioManager : MonoBehaviour
 
     #region SFX
 
-    public void PlaySFX(AudioClip clip)
+    public AudioClip GetRandomThemeBgm(EBackgroundTheme theme)
+    {
+        return _catalog != null ? _catalog.GetRandomThemeBgm(theme) : null;
+    }
+
+    public AudioClip GetRandomDisplayRoomBgm()
+    {
+        return _catalog != null ? _catalog.GetRandomDisplayRoomBgm() : null;
+    }
+
+    public void PlaySFX(EAudioSfx cue)
+    {
+        PlaySFX(GetSfx(cue));
+    }
+
+    public void PlaySFXWithCooldown(EAudioSfx cue, float cooldown)
+    {
+        PlaySFXWithCooldown(GetSfx(cue), cooldown);
+    }
+
+    public void PlaySFXRandomPitch(
+        EAudioSfx cue,
+        float minPitch = 0.9f,
+        float maxPitch = 1.1f)
+    {
+        PlaySFXRandomPitch(GetSfx(cue), minPitch, maxPitch);
+    }
+
+    private AudioClip GetSfx(EAudioSfx cue)
+    {
+        return _catalog != null ? _catalog.GetSfx(cue) : null;
+    }
+
+    private void PlaySFX(AudioClip clip)
     {
         if (clip == null) return;
 
         _sfxSource.PlayOneShot(clip);
     }
 
-    public void PlaySFXWithCooldown(AudioClip clip, float cooldown)
+    private void PlaySFXWithCooldown(AudioClip clip, float cooldown)
     {
         if (clip == null) return;
 
@@ -256,7 +290,7 @@ public class AudioManager : MonoBehaviour
         _sfxSource.PlayOneShot(clip);
     }
 
-    public void PlaySFX(AudioClip clip, float pitch)
+    private void PlaySFX(AudioClip clip, float pitch)
     {
         if (clip == null) return;
 
@@ -265,7 +299,7 @@ public class AudioManager : MonoBehaviour
         _sfxSource.pitch = 1f;
     }
 
-    public void PlaySFXRandomPitch(AudioClip clip, float minPitch = 0.9f, float maxPitch = 1.1f)
+    private void PlaySFXRandomPitch(AudioClip clip, float minPitch, float maxPitch)
     {
         if (clip == null) return;
 

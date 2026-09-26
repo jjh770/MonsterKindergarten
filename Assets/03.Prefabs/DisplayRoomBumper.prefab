@@ -145,4 +145,3 @@ MonoBehaviour:
   _fallbackDirection: {x: 0, y: 1}
   _punchScale: 0.25
   _punchDuration: 0.2
-  _bumpSound: {fileID: 0}

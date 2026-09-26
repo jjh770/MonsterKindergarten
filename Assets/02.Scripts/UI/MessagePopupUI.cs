@@ -15,7 +15,6 @@ public class MessagePopupUI : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private RectTransform _popupRectTransform;
     [SerializeField] private TextMeshProUGUI _messageText;
-    [SerializeField] private AudioClip _popupSound;
 
     [Header("Animation")]
     [SerializeField] private float _fadeInDuration = 0.2f;
@@ -67,10 +66,7 @@ public class MessagePopupUI : MonoBehaviour
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
-        if (AudioManager.Instance != null && _popupSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_popupSound);
-        }
+        AudioManager.Instance?.PlaySFX(EAudioSfx.InsufficientCurrency);
 
         if (_messageText != null && message != null)
         {

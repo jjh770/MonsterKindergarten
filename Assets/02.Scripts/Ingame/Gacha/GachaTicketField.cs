@@ -61,6 +61,9 @@ public class GachaTicketField : MonoBehaviour
     [SerializeField, Min(0f)] private float _collectBurstLeadTime = 0.12f;
     [SerializeField, Min(0.1f)] private float _collectBurstDistanceScale = 0.85f;
 
+    [Header("Audio")]
+    [SerializeField, Min(0f)] private float _collectSoundCooldown = 0.06f;
+
     private readonly List<GameObject> _tickets = new();
     private readonly HashSet<GameObject> _collectingTickets = new();
     // 일괄 회수는 티켓이 거의 동시에 닿는다. 도착할 때마다 펀치를 새로 걸면
@@ -323,6 +326,12 @@ public class GachaTicketField : MonoBehaviour
         }
 
         CurrencyManager.Instance.Add(ECurrencyType.GachaTicket, 1d);
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFXWithCooldown(
+                EAudioSfx.TicketCollect,
+                _collectSoundCooldown);
+        }
 
         // 표시 상한에 걸려 못 만든 몫이 남아 있으면 빈 자리를 채운다.
         Restore();

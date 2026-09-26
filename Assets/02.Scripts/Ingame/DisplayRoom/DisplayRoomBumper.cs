@@ -20,7 +20,6 @@ public class DisplayRoomBumper : MonoBehaviour, IPlaygroundObject
     [Header("Feedback")]
     [SerializeField] private float _punchScale = 0.25f;
     [SerializeField, Min(0.05f)] private float _punchDuration = 0.2f;
-    [SerializeField] private AudioClip _bumpSound;
 
     private Collider2D _collider;
     private Tween _punchTween;
@@ -106,10 +105,10 @@ public class DisplayRoomBumper : MonoBehaviour, IPlaygroundObject
 
     private void PlayBumpFeedback()
     {
-        if (AudioManager.Instance != null && _bumpSound != null)
+        if (AudioManager.Instance != null)
         {
             // 여러 마리가 잇따라 맞으면 같은 소리가 겹쳐 기계처럼 들린다.
-            AudioManager.Instance.PlaySFXRandomPitch(_bumpSound);
+            AudioManager.Instance.PlaySFXRandomPitch(EAudioSfx.PlaygroundBumperHit);
         }
 
         if (_punchScale <= 0f) return;

@@ -3,13 +3,10 @@ using UnityEngine;
 [RequireComponent(typeof(SlimeController))]
 public sealed class SlimeAudioFeedback : MonoBehaviour
 {
-    [SerializeField] private AudioClip[] _levelUpSounds;
-    [SerializeField] private AudioClip _landSound;
     [SerializeField, Min(0f)] private float _landSoundCooldown = 0.1f;
 
     [Header("Bump")]
     [Tooltip("장식장에서 슬라임끼리 부딪힐 때 나는 소리입니다.")]
-    [SerializeField] private AudioClip _bumpSound;
     [SerializeField, Min(0f)] private float _bumpSoundCooldown = 0.08f;
 
     [Tooltip("이보다 느리게 스치면 소리를 내지 않습니다.")]
@@ -41,15 +38,12 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     private void PlayLevelUpSound()
     {
         if (!_slimeController.IsMainFieldActive ||
-            AudioManager.Instance == null ||
-            _levelUpSounds == null ||
-            _levelUpSounds.Length == 0)
+            AudioManager.Instance == null)
         {
             return;
         }
 
-        int soundIndex = Random.Range(0, _levelUpSounds.Length);
-        AudioManager.Instance.PlaySFX(_levelUpSounds[soundIndex]);
+        AudioManager.Instance.PlaySFX(EAudioSfx.SlimePromote);
     }
 
     // IsMainFieldActive를 묻지 않는다. 슬라임끼리 부딪히는 일은 장식장에서만
@@ -57,26 +51,26 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     private void PlayBumpSound(float impactSpeed)
     {
         if (impactSpeed < _bumpMinimumSpeed ||
-            AudioManager.Instance == null ||
-            _bumpSound == null)
-        {
-            return;
-        }
-
-        AudioManager.Instance.PlaySFXWithCooldown(_bumpSound, _bumpSoundCooldown);
-    }
-
-    private void PlayLandSound()
-    {
-        if (!_slimeController.IsMainFieldActive ||
-            AudioManager.Instance == null ||
-            _landSound == null)
+            AudioManager.Instance == null)
         {
             return;
         }
 
         AudioManager.Instance.PlaySFXWithCooldown(
-            _landSound,
+            EAudioSfx.SlimeBump,
+            _bumpSoundCooldown);
+    }
+
+    private void PlayLandSound()
+    {
+        if (!_slimeController.IsMainFieldActive ||
+            AudioManager.Instance == null)
+        {
+            return;
+        }
+
+        AudioManager.Instance.PlaySFXWithCooldown(
+            EAudioSfx.SlimeLand,
             _landSoundCooldown);
     }
 }

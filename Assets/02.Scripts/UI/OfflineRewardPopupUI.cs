@@ -27,10 +27,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private float _targetPunchScale = 0.12f;
     [SerializeField] private float _fadeDuration = 0.2f;
     [SerializeField] private float _punchDuration = 0.35f;
-    [Header("Audio")]
-    [SerializeField] private AudioClip _popupOpenSound;
-    [SerializeField] private AudioClip _collectSound;
-    [SerializeField] private AudioClip _arrivalSound;
     [SerializeField] private CanvasGroup _canvasGroup;
 
     private Sequence _currentSequence;
@@ -80,7 +76,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _doNotTouchPanel?.SetActive(true);
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
-        PlaySound(_popupOpenSound);
+        PlaySound(EAudioSfx.OfflineRewardOpen);
 
         if (_confirmButton != null)
         {
@@ -119,7 +115,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
             return 0f;
         }
 
-        PlaySound(_collectSound);
+        PlaySound(EAudioSfx.OfflineRewardCollect);
         _currentSequence?.Kill();
 
         if (_confirmButton != null)
@@ -255,7 +251,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
     private void ClosePopup()
     {
-        PlaySound(_arrivalSound);
+        PlaySound(EAudioSfx.OfflineRewardArrival);
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
 
@@ -267,12 +263,9 @@ public class OfflineRewardPopupUI : MonoBehaviour
         PresentationCompleted?.Invoke();
     }
 
-    private static void PlaySound(AudioClip clip)
+    private static void PlaySound(EAudioSfx cue)
     {
-        if (AudioManager.Instance != null && clip != null)
-        {
-            AudioManager.Instance.PlaySFX(clip);
-        }
+        AudioManager.Instance?.PlaySFX(cue);
     }
 
     private static string FormatElapsedTime(TimeSpan elapsedTime)

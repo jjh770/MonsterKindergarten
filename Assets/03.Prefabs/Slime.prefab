@@ -250,14 +250,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85faf185084fa804b9acdcdceb81abf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundFeedback
-  _clip:
-  - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
-  - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
-  - {fileID: 8300000, guid: 51312ce1fe3819c4c91a81ab398b61a2, type: 3}
-  - {fileID: 8300000, guid: 325983562d4737047bf416f0bbdf6405, type: 3}
-  - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
-  - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
-  - {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
   _minPitch: 0.4
   _maxPitch: 0.8
 --- !u!114 &5534279088202041158
@@ -354,16 +346,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a84cc0e3294143cbb3f5905b0d78df74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeAudioFeedback
-  _levelUpSounds:
-  - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
-  - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}
-  - {fileID: 8300000, guid: 51312ce1fe3819c4c91a81ab398b61a2, type: 3}
-  - {fileID: 8300000, guid: 325983562d4737047bf416f0bbdf6405, type: 3}
-  - {fileID: 8300000, guid: 28056aff9d7df58448deec85f5a87d13, type: 3}
-  - {fileID: 8300000, guid: 88cf6b61fafd4d048a8456b517c2b7aa, type: 3}
-  _landSound: {fileID: 8300000, guid: 1c7a92c9515e3344f88a81ab6f94e23a, type: 3}
   _landSoundCooldown: 0.1
-  _bumpSound: {fileID: 0}
   _bumpSoundCooldown: 0.08
   _bumpMinimumSpeed: 0.6
 --- !u!114 &2657138910400000000

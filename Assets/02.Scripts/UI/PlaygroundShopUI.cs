@@ -205,6 +205,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             return;
         }
 
+        PlayPurchaseSound();
         _toast?.Show($"{entry.DisplayName}을(를) 샀어요.");
     }
 
@@ -221,11 +222,17 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         if (!SlimeManager.Instance.TryAddBackgroundTheme(entry.Theme))
         {
             CurrencyManager.Instance.Add(ECurrencyType.Point, entry.Price);
-            _toast?.Show("이미 가지고 있어요.");
+            _toast?.Show(SoldOutLabel);
             return;
         }
 
+        PlayPurchaseSound();
         _toast?.Show($"{entry.DisplayName}을(를) 샀어요.");
+    }
+
+    private void PlayPurchaseSound()
+    {
+        AudioManager.Instance?.PlaySFX(EAudioSfx.ShopPurchase);
     }
 
     private PlaygroundShopItemView CreateItem()

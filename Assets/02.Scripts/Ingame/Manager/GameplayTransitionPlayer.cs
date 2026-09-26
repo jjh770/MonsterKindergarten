@@ -7,16 +7,6 @@ using UnityEngine.UI;
 // 배경 테마와 게임플레이 공간 전환 연출을 담당한다.
 public sealed class GameplayTransitionPlayer : MonoBehaviour
 {
-    [Serializable]
-    private sealed class ThemeAudioBinding
-    {
-        [SerializeField] private EBackgroundTheme _theme;
-        [SerializeField] private AudioClip[] _bgms = Array.Empty<AudioClip>();
-
-        public EBackgroundTheme Theme => _theme;
-        public AudioClip[] Bgms => _bgms;
-    }
-
     [Header("Scene References")]
     [SerializeField] private Camera _camera;
     [FormerlySerializedAs("_stageUI")]
@@ -30,22 +20,6 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     [Tooltip("두 배경이 부드럽게 교차되는 데 걸리는 시간입니다.")]
     [FormerlySerializedAs("_themeSlideDuration")]
     [SerializeField, Min(0.1f)] private float _themeDissolveDuration = 0.8f;
-
-    // 테마마다 여러 곡을 걸어 두고 고를 때마다 하나를 뽑는다. 배경 그림이 이미
-    // 같은 방식이라 한쪽만 무작위면 둘이 따로 노는 것처럼 보인다.
-    [Header("Background Audio")]
-    [Tooltip("땅 테마의 BGM입니다. 여러 개면 고를 때마다 무작위로 하나를 틉니다.")]
-    [SerializeField] private AudioClip[] _groundBgms = Array.Empty<AudioClip>();
-
-    [Tooltip("하늘 테마의 BGM입니다. 여러 개면 고를 때마다 무작위로 하나를 틉니다.")]
-    [SerializeField] private AudioClip[] _skyBgms = Array.Empty<AudioClip>();
-
-    [Tooltip("Ground와 Sky 이외에 추가할 테마의 BGM을 연결합니다.")]
-    [SerializeField] private ThemeAudioBinding[] _additionalThemeBgms =
-        Array.Empty<ThemeAudioBinding>();
-
-    [Tooltip("장식장에서 트는 BGM입니다. 비워 두면 스테이지 곡이 그대로 이어집니다.")]
-    [SerializeField] private AudioClip[] _displayRoomBgms = Array.Empty<AudioClip>();
 
     [Header("Camera Transition")]
     [SerializeField, Min(0.1f)] private float _cameraTransitionDuration = 1.2f;
@@ -326,11 +300,11 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         // 공간이 바뀌는 동안 음악도 함께 넘어간다.
         //
         // 나올 때는 듣던 곡으로 돌아간다. 여기서 다시 뽑으면 장식장을 잠깐 들여다본
-        // 것만으로 스테이지 음악이 갈린다. 장식장 곡이 비어 있으면 CrossFadeBGM이
-        // 아무것도 하지 않아 스테이지 곡이 그대로 이어진다.
+        // 것만으로 테마 음악이 갈린다. 장식장 곡이 비어 있으면 CrossFadeBGM이
+        // 아무것도 하지 않아 현재 테마 곡이 그대로 이어진다.
         AudioManager.Instance?.CrossFadeBGM(
             targetSpace == EGameplaySpace.DisplayRoom
-                ? PickRandom(_displayRoomBgms)
+                ? AudioManager.Instance.GetRandomDisplayRoomBgm()
                 : _currentThemeBgm,
             _cameraTransitionDuration);
 
@@ -471,7 +445,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     // 돌려보내므로, 여기서 뽑을 때마다 곡이 갈리는 걱정은 하지 않아도 된다.
     private AudioClip GetThemeBgm(EBackgroundTheme theme)
     {
-        AudioClip picked = PickThemeBgm(theme);
+        AudioClip picked = AudioManager.Instance?.GetRandomThemeBgm(theme);
 
         // 장식장에서 나올 때 되돌아갈 곡이다. 뽑지 못했으면 이전 기억을 지우지
         // 않는다. 지우면 장식장에서 나올 때 돌아갈 곳이 없어진다.
@@ -480,48 +454,4 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         return picked;
     }
 
-    private AudioClip PickThemeBgm(EBackgroundTheme theme)
-    {
-        if (theme == EBackgroundTheme.Ground) return PickRandom(_groundBgms);
-        if (theme == EBackgroundTheme.Sky) return PickRandom(_skyBgms);
-
-        if (_additionalThemeBgms != null)
-        {
-            foreach (ThemeAudioBinding binding in _additionalThemeBgms)
-            {
-                if (binding != null && binding.Theme == theme)
-                {
-                    return PickRandom(binding.Bgms);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // 빈 칸은 건너뛴다. 뽑은 자리가 비어 있으면 CrossFadeBGM이 아무것도 하지 않아
-    // 이전 테마의 곡이 그대로 흐르고, 바꾼 티가 절반만 난다.
-    private static AudioClip PickRandom(AudioClip[] clips)
-    {
-        if (clips == null || clips.Length == 0) return null;
-
-        int filled = 0;
-        foreach (AudioClip clip in clips)
-        {
-            if (clip != null) filled++;
-        }
-
-        if (filled == 0) return null;
-
-        int index = UnityEngine.Random.Range(0, filled);
-        foreach (AudioClip clip in clips)
-        {
-            if (clip == null) continue;
-            if (index == 0) return clip;
-
-            index--;
-        }
-
-        return null;
-    }
 }

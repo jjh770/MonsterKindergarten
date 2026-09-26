@@ -52,8 +52,6 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
     [SerializeField, Min(0f)] private float _aimSpins = 3f;
 
     [Header("Feedback")]
-    [SerializeField] private AudioClip _loadSound;
-    [SerializeField] private AudioClip _fireSound;
     [SerializeField, Min(0f)] private float _firePunchScale = 0.35f;
 
     private Collider2D _collider;
@@ -164,10 +162,7 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
         slime.transform.DOKill();
         _heldBaseScale = slime.transform.localScale;
 
-        if (AudioManager.Instance != null && _loadSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_loadSound);
-        }
+        AudioManager.Instance?.PlaySFX(EAudioSfx.PlaygroundCannonLoad);
 
         // 발사 방향을 먼저 정하고, 포신이 그 각도에 멈추도록 돌린다.
         // 3초를 기다리는 동안 어디로 갈지 보이는 편이 낫다.
@@ -296,9 +291,9 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
 
     private void PlayFireFeedback()
     {
-        if (AudioManager.Instance != null && _fireSound != null)
+        if (AudioManager.Instance != null)
         {
-            AudioManager.Instance.PlaySFXRandomPitch(_fireSound);
+            AudioManager.Instance.PlaySFXRandomPitch(EAudioSfx.PlaygroundCannonFire);
         }
 
         if (_firePunchScale <= 0f) return;

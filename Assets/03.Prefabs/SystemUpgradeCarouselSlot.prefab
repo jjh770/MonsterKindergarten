@@ -479,7 +479,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
-  _clickSound: {fileID: 8300000, guid: f6aacd47bcecaef4db38c86110c946a9, type: 3}
+  _cue: 1
 --- !u!1 &920100001
 GameObject:
   m_ObjectHideFlags: 0
