@@ -1,4 +1,4 @@
-// 재화를 글자 안에 그림으로 넣는 태그.
+﻿// 재화를 글자 안에 그림으로 넣는 태그.
 //
 // 포인트는 한때 최고 해금 등급 슬라임 그림으로 표시했다. 필드의 슬라임과 같은 그림이라
 // 재화인지 슬라임인지 헷갈렸고, 등급이 오를 때마다 그림이 바뀌어 같은 재화로 보이지
@@ -14,5 +14,8 @@
 public static class CurrencyIcon
 {
     public const string Point =
-        "<size=50%><voffset=0.2em><sprite name=\"PointIcon\"></voffset></size><space=0.15em>";
+        "<size=40%><voffset=0.2em><sprite name=\"PointIcon\"></voffset></size><space=0.15em>";
+
+    public const string GachaTicket =
+        "<size=40%><voffset=0.2em><sprite name=\"Ticket\"></voffset></size><space=0.15em>";
 }

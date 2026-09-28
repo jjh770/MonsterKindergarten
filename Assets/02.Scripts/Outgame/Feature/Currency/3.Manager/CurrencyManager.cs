@@ -44,10 +44,9 @@ public class CurrencyManager : MonoBehaviour
     }
 
     //public Currency Point { get; private set; }
-    // 다른 두 매니저와 같이 static으로 둔다. 인스턴스 이벤트는 매니저가 생긴 뒤에만
-    // 붙일 수 있고, 먼저 파괴되면 구독 해제마다 null 검사가 필요했다.
-    public static event Action<ECurrencyType, Currency> OnDataChanged;
-    public static event Action OnDataInitialized;
+    public event Action<ECurrencyType, Currency> DataChanged;
+    public event Action DataInitialized;
+    public bool IsInitialized { get; private set; }
 
 
     private async void Awake()
@@ -126,7 +125,8 @@ public class CurrencyManager : MonoBehaviour
             _currencies[i] = Math.Floor(stored);
         }
 
-        OnDataInitialized?.Invoke();
+        IsInitialized = true;
+        DataInitialized?.Invoke();
     }
 
     // 재화 조회
@@ -139,7 +139,8 @@ public class CurrencyManager : MonoBehaviour
     public void Add(ECurrencyType type, Currency amount)
     {
         _currencies[(int)type] += amount;
-        OnDataChanged?.Invoke(type, _currencies[(int)type]);
+        Currency updated = _currencies[(int)type];
+        DataChanged?.Invoke(type, updated);
         Save();
     }
 
@@ -149,7 +150,8 @@ public class CurrencyManager : MonoBehaviour
         if (_currencies[(int)type] >= amount)
         {
             _currencies[(int)type] -= amount;
-            OnDataChanged?.Invoke(type, _currencies[(int)type]);
+            Currency updated = _currencies[(int)type];
+            DataChanged?.Invoke(type, updated);
             Save();
             return true;
         }

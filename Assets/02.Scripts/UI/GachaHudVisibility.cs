@@ -20,10 +20,14 @@ using UnityEngine.Serialization;
 public sealed class GachaHudVisibility : MonoBehaviour
 {
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
+    [SerializeField] private SlimeManager _slimeManager;
 
     [FormerlySerializedAs("_roots")]
-    [Tooltip("가챠 해금과 함께 나타날 오브젝트들입니다.")]
+    [Tooltip("게임플레이가 활성화됐을 때 사용할 가챠 버튼들입니다.")]
     [SerializeField] private GameObject[] _gachaRoots;
+
+    [Tooltip("가챠 해금 뒤 상단에 항상 표시할 티켓 HUD입니다.")]
+    [SerializeField] private GameObject[] _ticketHudRoots;
 
     [Tooltip("자동 합성 해금과 함께 나타날 오브젝트들입니다.")]
     [SerializeField] private GameObject[] _autoMergeRoots;
@@ -32,6 +36,7 @@ public sealed class GachaHudVisibility : MonoBehaviour
     [SerializeField] private GameObject[] _ticketCollectRoots;
 
     private bool _areGachaRootsVisible = true;
+    private bool _areTicketHudRootsVisible = true;
     private bool _areAutoMergeRootsVisible = true;
     private bool _areTicketCollectRootsVisible = true;
 
@@ -39,7 +44,9 @@ public sealed class GachaHudVisibility : MonoBehaviour
     {
         // 대상은 씬에서 연결한다. 비어 있을 때 이름이나 타입으로 찾아 메우면 연결이
         // 빠진 것을 아무도 모른 채 넘어가므로, 에러로 드러내고 멈춘다.
-        if (_panelSwitcher == null || !HasRoot(_gachaRoots) ||
+        if (_panelSwitcher == null || _slimeManager == null ||
+            !HasRoot(_gachaRoots) ||
+            !HasRoot(_ticketHudRoots) ||
             !HasRoot(_autoMergeRoots) || !HasRoot(_ticketCollectRoots))
         {
             Debug.LogError("하단 기능 UI 노출 대상이 비어 있습니다.", this);
@@ -49,27 +56,33 @@ public sealed class GachaHudVisibility : MonoBehaviour
 
         // 판단할 근거가 아직 없다. 켜 두었다가 감추면 깜빡인다.
         Apply(_gachaRoots, false, ref _areGachaRootsVisible);
+        Apply(_ticketHudRoots, false, ref _areTicketHudRootsVisible);
         Apply(_autoMergeRoots, false, ref _areAutoMergeRootsVisible);
         Apply(_ticketCollectRoots, false, ref _areTicketCollectRootsVisible);
     }
 
     private void Update()
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
         bool isBaseAvailable = GameplayGate.IsMainFieldReady &&
                                _panelSwitcher.IsAreaVisible &&
-                               slimeManager != null;
+                               _slimeManager != null;
 
         bool isGachaAvailable = isBaseAvailable &&
-                                slimeManager.IsGachaUnlocked &&
+                                _slimeManager.IsGachaUnlocked &&
                                 (TutorialProgress.IsCompleted(TutorialIds.Gacha) ||
                                  TutorialManager.IsActive(TutorialIds.Gacha));
+        bool isTicketHudAvailable = _slimeManager.IsInitialized &&
+                                    _slimeManager.IsGachaUnlocked;
         bool isAutoMergeAvailable = isBaseAvailable &&
-                                    slimeManager.IsAutoMergeUnlocked;
+                                    _slimeManager.IsAutoMergeUnlocked;
         bool isTicketCollectAvailable = isBaseAvailable &&
-                                        slimeManager.IsTicketBulkCollectUnlocked;
+                                        _slimeManager.IsTicketBulkCollectUnlocked;
 
         Apply(_gachaRoots, isGachaAvailable, ref _areGachaRootsVisible);
+        Apply(
+            _ticketHudRoots,
+            isTicketHudAvailable,
+            ref _areTicketHudRootsVisible);
         Apply(_autoMergeRoots, isAutoMergeAvailable, ref _areAutoMergeRootsVisible);
         Apply(
             _ticketCollectRoots,

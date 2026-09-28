@@ -14,6 +14,11 @@ using Utility;
 public sealed class SystemUpgradePanel : MonoBehaviour
 {
     [SerializeField] private SystemUpgradeCarousel _carousel;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private MessagePopupUI _messagePopup;
 
     private readonly Dictionary<EUpgradeType, Upgrade> _upgrades = new();
     private readonly List<EUpgradeType> _orderedTypes = new();
@@ -37,7 +42,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
     private void Start()
     {
-        if (_carousel == null)
+        if (_carousel == null || _gameManager == null || _upgradeManager == null ||
+            _slimeManager == null || _spawnManager == null || _messagePopup == null)
         {
             Debug.LogError("시스템 업그레이드 캐러셀 참조가 비어 있습니다.", this);
             enabled = false;
@@ -50,21 +56,18 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         _carousel.CenterPressed += OnCenterPressed;
         _carousel.RotationCompleted += OnRotationCompleted;
 
-        GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        UpgradeManager.OnDataChanged += Refresh;
-        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
-        SlimeManager.OnNormalCollectionCountChanged += OnNormalCollectionCountChanged;
+        _gameManager.AllDataInitialized += OnAllDataInitialized;
+        _upgradeManager.DataChanged += Refresh;
+        _slimeManager.HighestGradeChanged += OnHighestGradeChanged;
+        _slimeManager.NormalCollectionCountChanged += OnNormalCollectionCountChanged;
         TutorialManager.Started += OnTutorialAvailabilityChanged;
         TutorialManager.Finished += OnTutorialAvailabilityChanged;
 
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.OnSpawnIntervalChanged += OnSpawnIntervalChanged;
-            SpawnManager.Instance.OnSpawnMaxChanged += OnSpawnMaxChanged;
-        }
+        _spawnManager.OnSpawnIntervalChanged += OnSpawnIntervalChanged;
+        _spawnManager.OnSpawnMaxChanged += OnSpawnMaxChanged;
 
 
-        if (GameManager.Instance != null && GameManager.Instance.IsAllDataInitialized)
+        if (_gameManager.IsAllDataInitialized)
         {
             OnAllDataInitialized();
         }
@@ -79,25 +82,23 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             _carousel.RotationCompleted -= OnRotationCompleted;
         }
 
-        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        UpgradeManager.OnDataChanged -= Refresh;
-        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
-        SlimeManager.OnNormalCollectionCountChanged -= OnNormalCollectionCountChanged;
+        _gameManager.AllDataInitialized -= OnAllDataInitialized;
+        _upgradeManager.DataChanged -= Refresh;
+        _slimeManager.HighestGradeChanged -= OnHighestGradeChanged;
+        _slimeManager.NormalCollectionCountChanged -= OnNormalCollectionCountChanged;
         TutorialManager.Started -= OnTutorialAvailabilityChanged;
         TutorialManager.Finished -= OnTutorialAvailabilityChanged;
 
-        if (SpawnManager.Instance != null)
+        if (_spawnManager != null)
         {
-            SpawnManager.Instance.OnSpawnIntervalChanged -= OnSpawnIntervalChanged;
-            SpawnManager.Instance.OnSpawnMaxChanged -= OnSpawnMaxChanged;
+            _spawnManager.OnSpawnIntervalChanged -= OnSpawnIntervalChanged;
+            _spawnManager.OnSpawnMaxChanged -= OnSpawnMaxChanged;
         }
 
     }
 
     private void OnAllDataInitialized()
     {
-        if (UpgradeManager.Instance == null || SlimeManager.Instance == null) return;
-
         _isInitialized = true;
         CacheSystemUpgrades();
         Refresh();
@@ -108,10 +109,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         _upgrades.Clear();
         _orderedTypes.Clear();
 
-        foreach (Upgrade upgrade in UpgradeManager.Instance.GetSystemUpgrades())
+        foreach (Upgrade upgrade in _upgradeManager.GetSystemUpgrades())
         {
             EUpgradeType type = upgrade.SpecData.Type;
-            if (!SystemUpgradeVisibility.IsShown(type)) continue;
+            if (!SystemUpgradeVisibility.IsShown(type, _slimeManager)) continue;
 
             _upgrades[type] = upgrade;
             _orderedTypes.Add(type);
@@ -123,7 +124,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
     private void Refresh()
     {
-        if (!_isInitialized || SpawnManager.Instance == null) return;
+        if (!_isInitialized) return;
 
         _carousel.Rebuild();
     }
@@ -138,7 +139,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         if (!_upgrades.TryGetValue(type, out Upgrade upgrade)) return;
 
-        bool isLocked = UpgradeManager.Instance.IsLockedByProgress(upgrade);
+        bool isLocked = _upgradeManager.IsLockedByProgress(upgrade);
         bool isMax = IsMax(upgrade);
         bool isDisabled = isMax || isLocked;
         item.Refresh(
@@ -160,12 +161,18 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void OnUpgradeRequested(EUpgradeType type)
     {
         if (!_upgrades.TryGetValue(type, out Upgrade upgrade)) return;
-        if (UpgradeManager.Instance.IsLockedByProgress(upgrade)) return;
+        if (_upgradeManager.IsLockedByProgress(upgrade)) return;
 
-        if (!UpgradeManager.Instance.TryLevelUp(type, ESlimeGrade.None) &&
-            !upgrade.IsMaxLevel)
+        bool upgraded = _upgradeManager.TryLevelUp(
+            type,
+            ESlimeGrade.None);
+        if (upgraded)
         {
-            MessagePopupUI.Instance?.Show();
+            _carousel.PlayCenterUpgradeEffect();
+        }
+        else if (!upgrade.IsMaxLevel)
+        {
+            _messagePopup.Show();
         }
     }
 
@@ -199,15 +206,15 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         Refresh();
     }
 
-    private static bool IsMax(Upgrade upgrade)
+    private bool IsMax(Upgrade upgrade)
     {
         if (upgrade.IsMaxLevel) return true;
 
         return upgrade.SpecData.Type == EUpgradeType.SpawnTimeSub &&
-               SpawnManager.Instance.SpawnInterval <= SpawnManager.Instance.MinSpawnInterval;
+               _spawnManager.SpawnInterval <= _spawnManager.MinSpawnInterval;
     }
 
-    private static string BuildValueText(
+    private string BuildValueText(
         Upgrade upgrade,
         bool isMax,
         bool isLocked)
@@ -237,11 +244,11 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         return upgrade.SpecData.Type switch
         {
             EUpgradeType.SpawnTimeSub =>
-                $"{icon}{SpawnManager.Instance.SpawnInterval:F1} → " +
-                $"{Mathf.Max(SpawnManager.Instance.MinSpawnInterval, SpawnManager.Instance.SpawnInterval - (float)modifierIncrease):F1}",
+                $"{icon}{_spawnManager.SpawnInterval:F1} → " +
+                $"{Mathf.Max(_spawnManager.MinSpawnInterval, _spawnManager.SpawnInterval - (float)modifierIncrease):F1}",
             EUpgradeType.MaxCountAdd =>
-                $"{icon}{SpawnManager.Instance.MaxActiveCount} → " +
-                $"{SpawnManager.Instance.MaxActiveCount + Mathf.RoundToInt((float)modifierIncrease)}",
+                $"{icon}{_spawnManager.MaxActiveCount} → " +
+                $"{_spawnManager.MaxActiveCount + Mathf.RoundToInt((float)modifierIncrease)}",
             EUpgradeType.HigherGradeSpawnWeightAdd =>
                 IsNextSpawnGradeUnlock(upgrade.Level)
                     ? $"{icon}상위 슬라임 추가!"
@@ -261,13 +268,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         return $"{icon}한 번에 {currentPairCount}쌍 → {nextPairCount}쌍";
     }
 
-    private static bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)
+    private bool IsNextSpawnGradeUnlock(int currentUpgradeLevel)
     {
-        return SlimeManager.Instance != null &&
-               SlimeManager.Instance.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
+        return _slimeManager.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
-    private static string BuildCostText(
+    private string BuildCostText(
         Upgrade upgrade,
         bool isMax,
         bool isLocked)
@@ -275,10 +281,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         if (isLocked)
         {
             if (upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd &&
-                SlimeManager.Instance != null)
+                _slimeManager != null)
             {
                 ESlimeGrade requiredGrade =
-                    SlimeManager.Instance.GetRequiredHighestGradeForSpawnTier(
+                    _slimeManager.GetRequiredHighestGradeForSpawnTier(
                         upgrade.Level);
                 return $"최고 Lv.{(int)requiredGrade} 해금 필요";
             }

@@ -60,6 +60,10 @@ public class SlimeManager : MonoBehaviour
     public bool IsHiddenFeverUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.HiddenFeverCount;
     public bool IsMainEndingSeen => _status?.MainEndingSeen ?? false;
+    public DateTime GameStartedAtUtc =>
+        _status?.GameStartedAtUtc ?? DateTime.MinValue;
+    public DateTime? MainEndingReachedAtUtc =>
+        _status?.MainEndingReachedAtUtc;
     public float SpecialGachaChance => SpecialGachaFever.GetChance(
         _status?.SpecialGachaMissCount ?? 0);
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
@@ -90,15 +94,14 @@ public class SlimeManager : MonoBehaviour
             : ESlimeGrade.Grade1;
     }
 
-    public static event Action OnDataInitialized;
-    public static event Action<ESlimeGrade> OnHighestGradeChanged;
-    public static event Action<ESlimeGrade> OnNormalCollectionRegistered;
-    public static event Action<int> OnNormalCollectionCountChanged;
-
-    // 상점과 배치 모드가 화면을 다시 그릴 때 쓴다. 놓인 것과 보유 수가 함께
-    // 바뀌므로 하나로 알린다.
-    public static event Action OnPlaygroundChanged;
-    public static event Action OnBackgroundThemesChanged;
+    public event Action DataInitialized;
+    public event Action<bool> AutoSpawnChanged;
+    public event Action<ESlimeGrade> HighestGradeChanged;
+    public event Action<int> NormalCollectionCountChanged;
+    public event Action<ESlimeGrade> NormalCollectionRegistered;
+    public event Action PlaygroundChanged;
+    public event Action BackgroundThemesChanged;
+    public bool IsInitialized { get; private set; }
 
     private void Awake()
     {
@@ -189,7 +192,7 @@ public class SlimeManager : MonoBehaviour
         // 복원할 수 없으면 세션을 차단하는 것까지는 기존과 같다.
         if (!SlimeStatusSaveMapper.TryRestore(
                 saveData,
-                DateTime.UtcNow,
+                ServerClock.TrustedUtcNow,
                 out SlimeStatus restoredStatus,
                 out NormalSlimeCollectionStats restoredStats,
                 out bool needsMigrationSave,
@@ -207,7 +210,8 @@ public class SlimeManager : MonoBehaviour
             await SaveMigratedAsync();
         }
 
-        OnDataInitialized?.Invoke();
+        IsInitialized = true;
+        DataInitialized?.Invoke();
     }
 
     public Slime Get(ESlimeGrade grade)
@@ -239,7 +243,7 @@ public class SlimeManager : MonoBehaviour
         if (newGrade <= _status.HighestGrade) return false;
 
         _status.UpdateHighestGrade(newGrade);
-        OnHighestGradeChanged?.Invoke(newGrade);
+        HighestGradeChanged?.Invoke(newGrade);
         Save();
         return true;
     }
@@ -279,7 +283,7 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.TryAddBackgroundTheme(theme)) return false;
 
         Save();
-        OnBackgroundThemesChanged?.Invoke();
+        BackgroundThemesChanged?.Invoke();
         return true;
     }
 
@@ -305,7 +309,7 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.TryBuyPlaygroundObject(type)) return false;
 
         Save();
-        OnPlaygroundChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
         return true;
     }
 
@@ -320,7 +324,7 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.TryPlacePlaygroundObject(type, x, y)) return false;
 
         Save();
-        OnPlaygroundChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
         return true;
     }
 
@@ -329,7 +333,7 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.TryMovePlacedObject(index, x, y)) return false;
 
         Save();
-        OnPlaygroundChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
         return true;
     }
 
@@ -338,7 +342,7 @@ public class SlimeManager : MonoBehaviour
         if (_status == null || !_status.TryRemovePlacedObject(index)) return false;
 
         Save();
-        OnPlaygroundChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
         return true;
     }
 
@@ -348,6 +352,7 @@ public class SlimeManager : MonoBehaviour
 
         _status.SetAutoSpawnEnabled(isEnabled);
         Save();
+        AutoSpawnChanged?.Invoke(isEnabled);
     }
 
     // 가챠권이 떨어졌을 때 호출한다.
@@ -381,7 +386,8 @@ public class SlimeManager : MonoBehaviour
         {
             _collectionStats.RecordRegistration(
                 registeredGrade.Value,
-                DateTime.UtcNow);
+                ServerClock.TrustedUtcNow);
+            _status.TryMarkMainEndingReached(ServerClock.TrustedUtcNow);
             MarkStatsDirty();
         }
 
@@ -391,8 +397,8 @@ public class SlimeManager : MonoBehaviour
             return;
         }
 
-        OnNormalCollectionRegistered?.Invoke(registeredGrade.Value);
-        OnNormalCollectionCountChanged?.Invoke(_status.NormalCollectionCount);
+        NormalCollectionRegistered?.Invoke(registeredGrade.Value);
+        NormalCollectionCountChanged?.Invoke(_status.NormalCollectionCount);
     }
 
     public bool IsNormalCollectionRegistered(ESlimeGrade grade)
@@ -511,7 +517,7 @@ public class SlimeManager : MonoBehaviour
         Save();
         if (highestChanged)
         {
-            OnHighestGradeChanged?.Invoke(highestCreated);
+            HighestGradeChanged?.Invoke(highestCreated);
         }
     }
 

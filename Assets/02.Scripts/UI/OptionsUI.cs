@@ -30,6 +30,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _cancelLabel;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private GameExitManager _gameExitManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField, Min(0f)] private float _fadeDuration = 0.15f;
 
     private bool _isOpen;
@@ -54,7 +56,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             _confirmationRoot == null || _confirmationPanel == null ||
             _confirmationMessage == null ||
             _confirmButton == null || _cancelButton == null || _confirmLabel == null ||
-            _cancelLabel == null || _clicker == null || _gameExitManager == null)
+            _cancelLabel == null || _clicker == null || _gameExitManager == null ||
+            _gameManager == null || _spaceManager == null)
         {
             Debug.LogError("옵션 UI의 필수 씬 참조가 비어 있습니다.", this);
             enabled = false;
@@ -71,8 +74,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _cancelButton.onClick.AddListener(CancelConfirmation);
         _bgmSlider.onValueChanged.AddListener(ChangeBgmVolume);
         _sfxSlider.onValueChanged.AddListener(ChangeSfxVolume);
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnGameplayActivated += RefreshAvailability;
+        _gameManager.OnGameplayActivated += RefreshAvailability;
         RefreshAvailability();
     }
 
@@ -87,8 +89,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _cancelButton?.onClick.RemoveListener(CancelConfirmation);
         _bgmSlider?.onValueChanged.RemoveListener(ChangeBgmVolume);
         _sfxSlider?.onValueChanged.RemoveListener(ChangeSfxVolume);
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnGameplayActivated -= RefreshAvailability;
+        if (_gameManager != null)
+            _gameManager.OnGameplayActivated -= RefreshAvailability;
         if (_clicker != null) _clicker.ReleaseMode(this);
         if (_gameExitManager != null) _gameExitManager.UnregisterBackHandler(this);
     }
@@ -102,7 +104,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     {
         if (_isOpen || _isClosing || AudioManager.Instance == null ||
             !GameplayGate.IsActive ||
-            (GameplaySpaceManager.Instance != null && GameplaySpaceManager.Instance.IsTransitioning)) return;
+            _spaceManager.IsTransitioning) return;
 
         _isOpen = true;
         _panelRoot.SetActive(true);
@@ -290,7 +292,9 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         AudioManager.Instance?.SaveVolumeSettings();
         AccountManager.Instance?.Logout();
         if (SceneManagerEx.Instance != null)
+        {
             SceneManagerEx.Instance.LoadLoginScene();
+        }
         else
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");

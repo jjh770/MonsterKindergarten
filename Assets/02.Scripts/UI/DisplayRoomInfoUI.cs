@@ -17,6 +17,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private ToastMessageUI _toast;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SpawnManager _spawnManager;
 
     [Header("Info Panel")]
     [SerializeField] private GameObject _infoRoot;
@@ -96,7 +98,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _closeButton.onClick.AddListener(Close);
         _takeOutButton.onClick.AddListener(OnTakeOutButtonClicked);
         _clicker.TargetClicked += OnTargetClicked;
-        GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
+        _spaceManager.SpaceChanged += OnSpaceChanged;
     }
 
     private void OnDestroy()
@@ -113,9 +115,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             _clicker.ReleaseMode(this);
         }
 
-        if (GameplaySpaceManager.Instance != null)
+        if (_spaceManager != null)
         {
-            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+            _spaceManager.SpaceChanged -= OnSpaceChanged;
         }
 
         _gameExitManager?.UnregisterBackHandler(this);
@@ -138,7 +140,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _observationInputRoot != null &&
                              _hudVisibility != null &&
                              _upgradeUI != null &&
-                             GameplaySpaceManager.Instance != null;
+                             _spaceManager != null &&
+                             _spawnManager != null;
         if (!hasReferences)
         {
             Debug.LogError("장식장 정보 UI의 필수 참조가 비어 있습니다.", this);
@@ -149,7 +152,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void OnTargetClicked(SlimeController target)
     {
-        GameplaySpaceManager spaceManager = GameplaySpaceManager.Instance;
+        GameplaySpaceManager spaceManager = _spaceManager;
         if (target == null ||
             _isTakeOutPlaying ||
             IsVisible ||
@@ -180,7 +183,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _numberText.text = $"No.{(int)target.Grade}";
         _descriptionText.text = specData?.Description ?? string.Empty;
 
-        GameplaySpaceManager.Instance.FocusDisplayRoomSlime(
+        _spaceManager.FocusDisplayRoomSlime(
             target,
             () => ShowInfo(target));
     }
@@ -237,9 +240,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             });
         // 카메라가 원래 자리로 돌아온 뒤에 입력을 돌려준다.
         // 즉시 해제하면 축소가 풀리는 동안 슬라임이 탭돼 패널이 다시 열린다.
-        if (GameplaySpaceManager.Instance != null)
+        if (_spaceManager != null)
         {
-            GameplaySpaceManager.Instance.RestoreDisplayRoomFocus(
+            _spaceManager.RestoreDisplayRoomFocus(
                 () => _clicker.ReleaseMode(this));
         }
         else
@@ -266,7 +269,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isObserving = true;
         _infoCanvasGroup.interactable = false;
         _infoCanvasGroup.blocksRaycasts = false;
-        GameplaySpaceManager.Instance?.BeginDisplayRoomObservation();
+        _spaceManager.BeginDisplayRoomObservation();
         _fadeTween?.Kill();
         _fadeTween = null;
         _observationSession.Enter(
@@ -282,7 +285,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
         _isObserving = false;
         _infoCanvasGroup.blocksRaycasts = true;
-        GameplaySpaceManager.Instance?.EndDisplayRoomObservation();
+        _spaceManager.EndDisplayRoomObservation();
         _observationSession.Exit(
             deactivateRootImmediately: true,
             onCompleted: () => _infoCanvasGroup.interactable = true);
@@ -293,8 +296,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         if (!IsVisible || _isTakeOutPlaying || IsTargetHeld) return;
 
         // 기획서 §7.5 - 메인 필드가 가득 차면 꺼낼 수 없다.
-        if (SpawnManager.Instance == null ||
-            !SpawnManager.Instance.HasMainFieldRoom())
+        if (!_spawnManager.HasMainFieldRoom())
         {
             _toast.Show("메인 필드가 가득 차서 꺼낼 수 없어요.");
             return;
@@ -304,7 +306,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isTakeOutPlaying = true;
         _takeOutStartPosition = target.transform.position;
         _infoCanvasGroup.interactable = false;
-        GameplaySpaceManager.Instance.PlayDisplayRoomTransfer(
+        _spaceManager.PlayDisplayRoomTransfer(
             target,
             () => CompleteTakeOut(target));
     }
@@ -313,7 +315,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     {
         _isTakeOutPlaying = false;
 
-        GameplaySpaceManager spaceManager = GameplaySpaceManager.Instance;
+        GameplaySpaceManager spaceManager = _spaceManager;
         if (target == null || spaceManager == null)
         {
             TryClose();

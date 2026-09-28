@@ -10,7 +10,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     [SerializeField, Min(0f)] private float _bumpSoundCooldown = 0.08f;
 
     [Tooltip("이보다 느리게 스치면 소리를 내지 않습니다.")]
-    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 0.6f;
+    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 2f;
 
     private SlimeController _slimeController;
 
@@ -57,7 +57,7 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
         }
 
         AudioManager.Instance.PlaySFXWithCooldown(
-            EAudioSfx.SlimeBump,
+            EAudioSfx.SlimeBounce,
             _bumpSoundCooldown);
     }
 

@@ -14,6 +14,7 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
     [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private SlimeManager _slimeManager;
 
     private Sequence _sequence;
     private Tween _glowScaleTween;
@@ -27,7 +28,8 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_popupPanel == null || _canvasGroup == null)
+        if (_popupPanel == null || _canvasGroup == null ||
+            _slimeManager == null)
         {
             Debug.LogError("해금 팝업의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -36,7 +38,7 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void Start()
     {
-        SlimeManager.OnHighestGradeChanged += ShowPopup;
+        _slimeManager.HighestGradeChanged += ShowPopup;
         _popupPanel.SetActive(false);
     }
 
@@ -47,7 +49,7 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        SlimeManager.OnHighestGradeChanged -= ShowPopup;
+        _slimeManager.HighestGradeChanged -= ShowPopup;
         CleanupTweens();
     }
 
@@ -61,9 +63,7 @@ public class UnlockPopupUI : MonoBehaviour
 
         // 등급 숫자만으로는 무엇이 열렸는지 알 수 없다. 이름과 그림이 같은 스펙에서
         // 나오므로 한 번만 찾아 둘 다 쓴다.
-        SlimeSpecData specData = SlimeManager.Instance != null
-            ? SlimeManager.Instance.Get(grade)?.SpecData
-            : null;
+        SlimeSpecData specData = _slimeManager.Get(grade)?.SpecData;
 
         if (_gradeText != null)
         {

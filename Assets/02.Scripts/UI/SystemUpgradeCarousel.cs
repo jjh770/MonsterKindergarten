@@ -139,6 +139,13 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
         return true;
     }
 
+    public void PlayCenterUpgradeEffect()
+    {
+        if (!IsReady) return;
+
+        _slots[CenterSlotIndex].Item.PlayUpgradeSuccessEffect();
+    }
+
     // 슬롯을 지금 선택 위치에 맞춰 다시 채우고 제자리에 놓는다.
     public void Rebuild()
     {

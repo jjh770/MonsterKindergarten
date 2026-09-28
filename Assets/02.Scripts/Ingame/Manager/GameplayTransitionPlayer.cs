@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -28,6 +31,12 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     [Tooltip("장식장에서 쓰는 화면 크기입니다. 메인 필드보다 키우면 같은 화면에 더 넓은 방이 들어갑니다.")]
     [SerializeField, Min(0.1f)] private float _displayRoomOrthographicSize = 6.5f;
 
+    [Header("Display Room Zoom")]
+    [SerializeField] private PlayAreaBounds _displayRoomArea;
+    [SerializeField, Min(0.1f)] private float _displayRoomMinZoomSize = 3.5f;
+    [SerializeField, Min(0f)] private float _displayRoomFitPadding = 0.35f;
+    [SerializeField, Min(0.05f)] private float _displayRoomMouseWheelStep = 0.75f;
+
     [Header("Display Room Focus")]
     [SerializeField, Min(0.1f)] private float _displayRoomFocusDuration = 0.35f;
     [SerializeField, Min(0.1f)] private float _displayRoomFocusSize = 2.5f;
@@ -52,13 +61,16 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     // 무엇을 듣고 있었는지 기억해야 한다.
     private AudioClip _currentThemeBgm;
     private SlimeController _displayRoomFocusTarget;
+    private bool _isPinching;
+    private float _previousPinchDistance;
+    private Vector2 _previousPinchMidpoint;
 
     public bool IsTransitioning { get; private set; }
 
     // 공간마다 쉬는 자리의 화면 크기가 다르다. 확대·복귀·경계 계산이 모두 이 값을
     // 기준으로 삼아야 장식장에서 확대했다가 돌아올 때 메인 필드 크기로 튀지 않는다.
     private float BaseOrthographicSize => _currentSpace == EGameplaySpace.DisplayRoom
-        ? _displayRoomOrthographicSize
+        ? GetDisplayRoomFitSize()
         : _cameraBaseOrthographicSize;
 
     private void Awake()
@@ -94,6 +106,20 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             _camera.transform.position,
             destination,
             followAmount);
+    }
+
+    private void Update()
+    {
+        if (!CanManuallyZoomDisplayRoom())
+        {
+            ResetPinch();
+            return;
+        }
+
+        if (TryHandlePinch()) return;
+
+        ResetPinch();
+        HandleMouseWheelZoom();
     }
 
     private void OnDestroy()
@@ -296,6 +322,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         IsTransitioning = true;
         _backgroundThemeUI.SetButtonInteractable(false);
         BeginOverlay();
+        AudioManager.Instance?.PlaySFX(EAudioSfx.AreaTransition);
 
         // 공간이 바뀌는 동안 음악도 함께 넘어간다.
         //
@@ -358,6 +385,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         if (target == null) return null;
 
         target.PreparePresentationTransfer();
+        AudioManager.Instance?.PlaySFX(EAudioSfx.DisplayRoomSlimeTransfer);
 
         float direction = target.transform.position.x >= 0f ? 1f : -1f;
         return target.transform
@@ -386,6 +414,140 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             _cameraBasePosition.y - verticalMargin,
             _cameraBasePosition.y + verticalMargin);
         return position;
+    }
+
+    private bool CanManuallyZoomDisplayRoom()
+    {
+        return _currentSpace == EGameplaySpace.DisplayRoom &&
+               !IsTransitioning &&
+               _focusSequence == null &&
+               _displayRoomFocusTarget == null &&
+               !DisplayRoomCameraInputGate.IsBlocked &&
+               GameplayGate.IsActive;
+    }
+
+    private bool TryHandlePinch()
+    {
+        Touchscreen touchscreen = Touchscreen.current;
+        if (touchscreen == null) return false;
+
+        TouchControl first = null;
+        TouchControl second = null;
+        foreach (TouchControl touch in touchscreen.touches)
+        {
+            if (!touch.press.isPressed) continue;
+
+            if (first == null) first = touch;
+            else
+            {
+                second = touch;
+                break;
+            }
+        }
+
+        if (first == null || second == null) return false;
+
+        Vector2 firstPosition = first.position.ReadValue();
+        Vector2 secondPosition = second.position.ReadValue();
+        Vector2 midpoint = (firstPosition + secondPosition) * 0.5f;
+        float distance = Vector2.Distance(firstPosition, secondPosition);
+
+        if (!_isPinching || distance <= Mathf.Epsilon)
+        {
+            _isPinching = true;
+            _previousPinchDistance = distance;
+            _previousPinchMidpoint = midpoint;
+            return true;
+        }
+
+        PanBetweenPinchMidpoints(_previousPinchMidpoint, midpoint);
+        float targetSize = _camera.orthographicSize *
+                           (_previousPinchDistance / distance);
+        ApplyManualZoom(targetSize, midpoint);
+
+        _previousPinchDistance = distance;
+        _previousPinchMidpoint = midpoint;
+        return true;
+    }
+
+    private void HandleMouseWheelZoom()
+    {
+        Mouse mouse = Mouse.current;
+        if (mouse == null) return;
+
+        float scroll = mouse.scroll.ReadValue().y;
+        if (Mathf.Approximately(scroll, 0f)) return;
+
+        ApplyManualZoom(
+            _camera.orthographicSize - Mathf.Sign(scroll) * _displayRoomMouseWheelStep,
+            mouse.position.ReadValue());
+    }
+
+    private void PanBetweenPinchMidpoints(Vector2 previous, Vector2 current)
+    {
+        Vector3 previousWorld = _camera.ScreenToWorldPoint(previous);
+        Vector3 currentWorld = _camera.ScreenToWorldPoint(current);
+        _camera.transform.position += previousWorld - currentWorld;
+    }
+
+    private void ApplyManualZoom(float targetSize, Vector2 anchorScreenPosition)
+    {
+        float maxSize = GetDisplayRoomFitSize();
+        float minSize = Mathf.Min(_displayRoomMinZoomSize, maxSize);
+        Vector3 anchorBefore = _camera.ScreenToWorldPoint(anchorScreenPosition);
+
+        _camera.orthographicSize = Mathf.Clamp(targetSize, minSize, maxSize);
+
+        Vector3 anchorAfter = _camera.ScreenToWorldPoint(anchorScreenPosition);
+        _camera.transform.position += anchorBefore - anchorAfter;
+        ClampDisplayRoomCamera();
+    }
+
+    private float GetDisplayRoomFitSize()
+    {
+        if (_displayRoomArea == null || !_displayRoomArea.HasWalls || _camera.aspect <= 0f)
+        {
+            return _displayRoomOrthographicSize;
+        }
+
+        Rect area = _displayRoomArea.WorldRect;
+        return Mathf.Max(
+            area.height * 0.5f + _displayRoomFitPadding,
+            (area.width * 0.5f + _displayRoomFitPadding) / _camera.aspect);
+    }
+
+    private void ClampDisplayRoomCamera()
+    {
+        if (_displayRoomArea == null || !_displayRoomArea.HasWalls) return;
+
+        Rect area = _displayRoomArea.WorldRect;
+        float halfHeight = _camera.orthographicSize;
+        float halfWidth = halfHeight * _camera.aspect;
+        Vector3 position = _camera.transform.position;
+
+        position.x = ClampAxis(
+            position.x,
+            area.xMin + halfWidth,
+            area.xMax - halfWidth,
+            area.center.x);
+        position.y = ClampAxis(
+            position.y,
+            area.yMin + halfHeight,
+            area.yMax - halfHeight,
+            area.center.y);
+        position.z = _cameraBasePosition.z;
+        _camera.transform.position = position;
+    }
+
+    private static float ClampAxis(float value, float minimum, float maximum, float center)
+    {
+        return minimum <= maximum ? Mathf.Clamp(value, minimum, maximum) : center;
+    }
+
+    private void ResetPinch()
+    {
+        _isPinching = false;
+        _previousPinchDistance = 0f;
     }
 
     // 추적 대상을 놓을 때 인터폴레이션도 함께 되돌린다.
@@ -454,4 +616,28 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         return picked;
     }
 
+}
+
+// 도감처럼 화면을 독점하거나 오브젝트를 직접 배치하는 동안에는 같은 포인터의
+// 휠·핀치 입력이 카메라까지 전달되지 않아야 한다. 소유자별 요청으로 관리해 한 UI가
+// 닫히면서 다른 UI의 잠금까지 풀지 않게 한다.
+public static class DisplayRoomCameraInputGate
+{
+    private static readonly HashSet<object> Owners = new();
+
+    public static bool IsBlocked => Owners.Count > 0;
+
+    public static void Push(object owner)
+    {
+        if (owner == null) throw new ArgumentNullException(nameof(owner));
+
+        Owners.Add(owner);
+    }
+
+    public static void Release(object owner)
+    {
+        if (owner == null) return;
+
+        Owners.Remove(owner);
+    }
 }

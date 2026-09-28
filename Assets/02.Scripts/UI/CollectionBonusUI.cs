@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -18,6 +18,8 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _bonusText;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private GameExitManager _gameExitManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameManager _gameManager;
     [SerializeField, Min(0f)] private float _fadeDuration = 0.15f;
 
     private Tween _fadeTween;
@@ -35,15 +37,12 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _popupRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
-        GameManager.OnAllDataInitialized += RefreshAvailability;
+        _gameManager.AllDataInitialized += RefreshAvailability;
         TutorialManager.Started += RefreshAvailability;
         TutorialManager.Finished += RefreshAvailability;
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated += RefreshAvailability;
-        }
+        _gameManager.OnGameplayActivated += RefreshAvailability;
 
-        SlimeManager.OnNormalCollectionCountChanged += OnCollectionCountChanged;
+        _slimeManager.NormalCollectionCountChanged += OnCollectionCountChanged;
         RefreshAvailability();
     }
 
@@ -52,15 +51,18 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _fadeTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
-        GameManager.OnAllDataInitialized -= RefreshAvailability;
+        _gameManager.AllDataInitialized -= RefreshAvailability;
         TutorialManager.Started -= RefreshAvailability;
         TutorialManager.Finished -= RefreshAvailability;
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameplayActivated -= RefreshAvailability;
+            _gameManager.OnGameplayActivated -= RefreshAvailability;
         }
 
-        SlimeManager.OnNormalCollectionCountChanged -= OnCollectionCountChanged;
+        if (_slimeManager != null)
+        {
+            _slimeManager.NormalCollectionCountChanged -= OnCollectionCountChanged;
+        }
         _clicker?.ReleaseMode(this);
         _gameExitManager?.UnregisterBackHandler(this);
     }
@@ -89,7 +91,9 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
                              _progressText != null &&
                              _bonusText != null &&
                              _clicker != null &&
-                             _gameExitManager != null;
+                             _gameExitManager != null &&
+                             _slimeManager != null &&
+                             _gameManager != null;
         if (!hasReferences)
         {
             Debug.LogError("도감 효과 UI의 필수 씬 참조가 비어 있습니다.", this);
@@ -164,16 +168,16 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
 
     private void RefreshContent()
     {
-        int count = SlimeManager.Instance?.NormalCollectionCount ?? 0;
+        int count = _slimeManager.NormalCollectionCount;
         _progressText.text = $"현재 도감  {count}/{SlimeStatusSaveData.NormalCollectionSize}";
 
         var builder = new StringBuilder();
         AppendBonus(builder, count, NormalCollectionRules.AutoMergeCount,
             "자동 합성", "버튼을 누르면 같은 등급 슬라임을 한 번에 합성해요.");
         AppendBonus(builder, count, NormalCollectionRules.TicketBulkCollectCount,
-            "티켓 회수", "필드에 떨어진 가챠권을 한 번에 회수해요.");
+            "티켓 회수", "필드에 떨어진 티켓을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
-            "오프라인 가챠권 보상", "접속하지 않은 시간에 가챠권도 모아줘요.");
+            "오프라인 티켓 회수", "접속하지 않은 시간에 티켓도 모아줘요.");
         AppendBonus(builder, count, NormalCollectionRules.HiddenFeverCount,
             "???", "???");
         _bonusText.text = builder.ToString();

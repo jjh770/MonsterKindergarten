@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -28,6 +28,8 @@ public class SpawnManager : MonoBehaviour
     private float _baseSpawnInterval;
     private int _baseMaxActiveCount;
     private float _timer;
+    private GameManager _gameManager;
+    private UpgradeManager _upgradeManager;
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
@@ -75,11 +77,20 @@ public class SpawnManager : MonoBehaviour
 
     private void Start()
     {
-        GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        UpgradeManager.OnUpgraded += OnUpgraded;
+        _gameManager = GameManager.Instance;
+        _upgradeManager = UpgradeManager.Instance;
+        if (_gameManager == null || _upgradeManager == null)
+        {
+            Debug.LogError("스폰 매니저가 게임/업그레이드 매니저를 찾지 못했습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _gameManager.AllDataInitialized += OnAllDataInitialized;
+        _upgradeManager.Upgraded += OnUpgraded;
 
         // 이미 초기화가 완료된 경우
-        if (GameManager.Instance.IsAllDataInitialized)
+        if (_gameManager.IsAllDataInitialized)
         {
             OnAllDataInitialized();
         }
@@ -87,8 +98,14 @@ public class SpawnManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        UpgradeManager.OnUpgraded -= OnUpgraded;
+        if (_gameManager != null)
+        {
+            _gameManager.AllDataInitialized -= OnAllDataInitialized;
+        }
+        if (_upgradeManager != null)
+        {
+            _upgradeManager.Upgraded -= OnUpgraded;
+        }
     }
 
     private void OnAllDataInitialized()
@@ -223,7 +240,7 @@ public class SpawnManager : MonoBehaviour
 #if UNITY_EDITOR
     // F1~F10을 Grade1~Grade10에 대응시킨다.
     // Key 열거형은 F1부터 F12까지만 연속이므로 12를 넘겨서는 안 된다.
-    private const int EditorSpawnShortcutCount = 10;
+    private const int EditorSpawnShortcutCount = 12;
 
     private void HandleEditorSpawnShortcuts()
     {

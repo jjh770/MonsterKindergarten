@@ -46,6 +46,9 @@ public static class GameplayInfoTextBuilder
     }
 
     public static string BuildSystemUpgradeText(
+        UpgradeManager upgradeManager,
+        SlimeManager slimeManager,
+        SpawnManager spawnManager,
         bool includeTitle = true,
         bool includeCloseHint = false)
     {
@@ -55,9 +58,9 @@ public static class GameplayInfoTextBuilder
             builder.Append("시스템 업그레이드 현황\n");
         }
 
-        if (UpgradeManager.Instance == null) return builder.ToString();
+        if (upgradeManager == null) return builder.ToString();
 
-        List<Upgrade> upgrades = UpgradeManager.Instance.GetSystemUpgrades();
+        List<Upgrade> upgrades = upgradeManager.GetSystemUpgrades();
         upgrades.Sort((left, right) =>
             ((int)left.SpecData.Type).CompareTo((int)right.SpecData.Type));
 
@@ -65,7 +68,7 @@ public static class GameplayInfoTextBuilder
         foreach (Upgrade upgrade in upgrades)
         {
             EUpgradeType type = upgrade.SpecData.Type;
-            if (!SystemUpgradeVisibility.IsShown(type)) continue;
+            if (!SystemUpgradeVisibility.IsShown(type, slimeManager)) continue;
 
             if (hasVisibleUpgrade)
             {
@@ -79,7 +82,7 @@ public static class GameplayInfoTextBuilder
                     : $"Lv.{upgrade.Level}/{upgrade.SpecData.MaxLevel}")
                 .Append('\n')
                 .Append("<size=92%>")
-                .Append(BuildEffect(type, upgrade))
+                .Append(BuildEffect(type, upgrade, spawnManager))
                 .Append("</size>");
 
             hasVisibleUpgrade = true;
@@ -93,9 +96,11 @@ public static class GameplayInfoTextBuilder
         return builder.ToString();
     }
 
-    private static string BuildEffect(EUpgradeType type, Upgrade upgrade)
+    private static string BuildEffect(
+        EUpgradeType type,
+        Upgrade upgrade,
+        SpawnManager spawnManager)
     {
-        SpawnManager spawnManager = SpawnManager.Instance;
         switch (type)
         {
             case EUpgradeType.SpawnTimeSub:

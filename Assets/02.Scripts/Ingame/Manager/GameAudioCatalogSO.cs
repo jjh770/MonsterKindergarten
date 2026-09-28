@@ -15,10 +15,15 @@ public enum EAudioSfx
     SlimeReaction,
     SlimePromote,
     SlimeLand,
-    SlimeBump,
+    SlimeBounce,
     PlaygroundBumperHit,
     PlaygroundCannonLoad,
     PlaygroundCannonFire,
+    DisplayRoomSlimeTransfer,
+    LoginButton,
+    AreaTransition,
+    GachaWait,
+    GachaResult,
 }
 
 [CreateAssetMenu(
@@ -26,6 +31,16 @@ public enum EAudioSfx
     menuName = "Monster Kindergarten/Game Audio Catalog")]
 public sealed class GameAudioCatalogSO : ScriptableObject
 {
+    [Serializable]
+    private sealed class ClipVolumeOverride
+    {
+        [SerializeField] private AudioClip _clip;
+        [SerializeField, Range(0f, 1f)] private float _volume = 1f;
+
+        public AudioClip Clip => _clip;
+        public float Volume => _volume;
+    }
+
     [Serializable]
     private sealed class ThemeBgmBinding
     {
@@ -37,12 +52,17 @@ public sealed class GameAudioCatalogSO : ScriptableObject
     }
 
     [Header("BGM")]
+    [SerializeField] private AudioClip _loginBgm;
     [SerializeField] private AudioClip _startBgm;
     [SerializeField] private AudioClip[] _groundBgms = Array.Empty<AudioClip>();
     [SerializeField] private AudioClip[] _skyBgms = Array.Empty<AudioClip>();
     [SerializeField] private ThemeBgmBinding[] _additionalThemeBgms =
         Array.Empty<ThemeBgmBinding>();
     [SerializeField] private AudioClip[] _displayRoomBgms = Array.Empty<AudioClip>();
+
+    [Header("Per-Clip Volume Overrides")]
+    [SerializeField] private ClipVolumeOverride[] _volumeOverrides =
+        Array.Empty<ClipVolumeOverride>();
 
     [Header("Common SFX")]
     [SerializeField] private AudioClip _uiClick;
@@ -52,22 +72,32 @@ public sealed class GameAudioCatalogSO : ScriptableObject
     [SerializeField] private AudioClip _shopPurchase;
     [SerializeField] private AudioClip _ticketCollect;
 
+    [Header("Transition SFX")]
+    [SerializeField] private AudioClip _displayRoomSlimeTransfer;
+    [SerializeField] private AudioClip _loginButton;
+    [SerializeField] private AudioClip _areaTransition;
+
     [Header("Offline Reward SFX")]
     [SerializeField] private AudioClip _offlineRewardOpen;
     [SerializeField] private AudioClip _offlineRewardCollect;
     [SerializeField] private AudioClip _offlineRewardArrival;
 
+    [Header("Gacha SFX")]
+    [SerializeField] private AudioClip _gachaWait;
+    [SerializeField] private AudioClip _gachaResult;
+
     [Header("Slime SFX")]
     [SerializeField] private AudioClip[] _slimeReactions = Array.Empty<AudioClip>();
     [SerializeField] private AudioClip[] _slimePromotes = Array.Empty<AudioClip>();
     [SerializeField] private AudioClip _slimeLand;
-    [SerializeField] private AudioClip _slimeBump;
+    [SerializeField] private AudioClip _slimeBounce;
 
     [Header("Playground SFX")]
     [SerializeField] private AudioClip _playgroundBumperHit;
     [SerializeField] private AudioClip _playgroundCannonLoad;
     [SerializeField] private AudioClip _playgroundCannonFire;
 
+    public AudioClip LoginBgm => _loginBgm;
     public AudioClip StartBgm => _startBgm;
 
     public AudioClip GetRandomThemeBgm(EBackgroundTheme theme)
@@ -93,6 +123,21 @@ public sealed class GameAudioCatalogSO : ScriptableObject
         return PickRandom(_displayRoomBgms);
     }
 
+    public float GetVolume(AudioClip clip)
+    {
+        if (clip == null || _volumeOverrides == null) return 1f;
+
+        foreach (ClipVolumeOverride volumeOverride in _volumeOverrides)
+        {
+            if (volumeOverride != null && volumeOverride.Clip == clip)
+            {
+                return Mathf.Clamp01(volumeOverride.Volume);
+            }
+        }
+
+        return 1f;
+    }
+
     public AudioClip GetSfx(EAudioSfx cue)
     {
         return cue switch
@@ -109,10 +154,15 @@ public sealed class GameAudioCatalogSO : ScriptableObject
             EAudioSfx.SlimeReaction => PickRandom(_slimeReactions),
             EAudioSfx.SlimePromote => PickRandom(_slimePromotes),
             EAudioSfx.SlimeLand => _slimeLand,
-            EAudioSfx.SlimeBump => _slimeBump,
+            EAudioSfx.SlimeBounce => _slimeBounce,
             EAudioSfx.PlaygroundBumperHit => _playgroundBumperHit,
             EAudioSfx.PlaygroundCannonLoad => _playgroundCannonLoad,
             EAudioSfx.PlaygroundCannonFire => _playgroundCannonFire,
+            EAudioSfx.DisplayRoomSlimeTransfer => _displayRoomSlimeTransfer,
+            EAudioSfx.LoginButton => _loginButton,
+            EAudioSfx.AreaTransition => _areaTransition,
+            EAudioSfx.GachaWait => _gachaWait,
+            EAudioSfx.GachaResult => _gachaResult,
             _ => null,
         };
     }

@@ -50,7 +50,8 @@ public sealed class AutoMergeManager : MonoBehaviour
     // 쿨타임보다 길면 연출이 끝나는 시점에 맞춘다.
     private float _remainingWait;
     private float _waitDuration;
-    // 합성이 거절된 개체. 기억해 두지 않으면 누를 때마다 같은 쌍을 집어 경고만 쌓는다.
+    // 이번 발동에서 저장 검증에 거절된 개체. 다음 발동 시작 때 비워 일시적으로만
+    // 제외한다. 영구 제외하면 일시적인 런타임 불일치가 정상 슬라임을 막아 버린다.
     private readonly HashSet<string> _rejectedIds = new();
     // 두 슬라임이 모이는 연출 중. 이때는 대기 시간이 끝나도 누를 수 없다.
     private bool _isPresenting;
@@ -138,7 +139,12 @@ public sealed class AutoMergeManager : MonoBehaviour
     {
         if (SpawnManager.Instance == null || MergeManager.Instance == null) return false;
 
+        // 이전 발동의 거부 결과는 다음 발동에서 다시 검증한다. 저장 상태가 화면과
+        // 잠깐 어긋났다가 회복된 경우에도 정상 슬라임이 계속 막히지 않게 한다.
+        _rejectedIds.Clear();
+
         var byGrade = new SortedDictionary<ESlimeGrade, List<SlimeController>>();
+        var seenInstanceIds = new HashSet<string>();
         foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
         {
             if (target == null || target.IsDragging || target.IsSpecial ||
@@ -150,6 +156,10 @@ public sealed class AutoMergeManager : MonoBehaviour
             {
                 continue;
             }
+
+            // 풀링·복원 과정에서 같은 저장 ID를 가진 화면 객체가 잠깐 겹쳐도 한
+            // 발동의 합성 요청에는 같은 ID를 한 번만 넣는다.
+            if (!seenInstanceIds.Add(target.InstanceId)) continue;
 
             if (!byGrade.TryGetValue(target.Grade, out List<SlimeController> targets))
             {
@@ -261,8 +271,8 @@ public sealed class AutoMergeManager : MonoBehaviour
         // 시도한 쌍마다의 결과. 저장이 실제로 거절한 쌍만 참이 된다.
         //
         // 오브젝트 상태로 짐작하면 안 된다. 시도조차 못 한 쌍도 "합성되지 않은" 상태로
-        // 보이는데, 그것까지 거절로 세면 멀쩡히 남은 짝이 이번 판 내내 자동 합성에서
-        // 빠진다. 제외 목록은 비우는 곳이 없어서 앱을 껐다 켜야 풀린다.
+        // 보이는데, 그것까지 거절로 세면 이번 발동 뒤에도 멀쩡히 남은 짝이 자동
+        // 합성에서 빠진다. 제외 목록은 다음 발동 시작 때 비워 다시 검증한다.
         var isRefused = new bool[attempted.Count];
         if (!merged && canMerge)
         {

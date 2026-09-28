@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 public class AudioManager : MonoBehaviour
 {
     private const string BgmVolumeKey = "Audio_BGMVolume";
@@ -16,6 +17,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource _bgmSource;
     [SerializeField] private AudioSource _secondaryBgmSource;
     [SerializeField] private AudioSource _sfxSource;
+    [SerializeField] private AudioSource _loopingSfxSource;
 
     [Header("Audio Catalog")]
     [SerializeField] private GameAudioCatalogSO _catalog;
@@ -30,8 +32,10 @@ public class AudioManager : MonoBehaviour
     private AudioSource _activeBgmSource;
     private AudioSource _inactiveBgmSource;
     private Coroutine _bgmFadeCoroutine;
+    private Coroutine _loopingSfxFadeCoroutine;
     private float _primaryBgmWeight = 1f;
     private float _secondaryBgmWeight;
+    private float _loopingSfxWeight = 1f;
     private readonly Dictionary<AudioClip, float> _lastSfxPlayedTimes =
         new Dictionary<AudioClip, float>();
 
@@ -44,6 +48,7 @@ public class AudioManager : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
 
         BGMVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(BgmVolumeKey, BGMVolume));
         SFXVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumeKey, SFXVolume));
@@ -54,9 +59,12 @@ public class AudioManager : MonoBehaviour
     {
         ApplyVolumes();
 
-        if (_catalog != null && _catalog.StartBgm != null)
+        AudioClip initialBgm = SceneManager.GetActiveScene().name == "LoginScene"
+            ? _catalog?.LoginBgm
+            : _catalog?.StartBgm;
+        if (initialBgm != null)
         {
-            PlayBGM(_catalog.StartBgm);
+            PlayBGM(initialBgm);
         }
     }
 
@@ -71,10 +79,7 @@ public class AudioManager : MonoBehaviour
         }
         ApplyBgmVolumes();
 
-        if (_sfxSource != null)
-        {
-            _sfxSource.volume = _audioMixer != null ? 1f : (_isPaused ? 0f : SFXVolume * MasterVolume);
-        }
+        ApplySfxVolumes();
     }
 
     private void OnApplicationPause(bool pause)
@@ -106,6 +111,7 @@ public class AudioManager : MonoBehaviour
         if (_bgmSource == null ||
             _secondaryBgmSource == null ||
             _sfxSource == null ||
+            _loopingSfxSource == null ||
             _catalog == null)
         {
             Debug.LogError("AudioManager의 필수 참조가 비어 있습니다.", this);
@@ -123,6 +129,7 @@ public class AudioManager : MonoBehaviour
         if (_sfxMixerGroup != null)
         {
             _sfxSource.outputAudioMixerGroup = _sfxMixerGroup;
+            _loopingSfxSource.outputAudioMixerGroup = _sfxMixerGroup;
             _audioMixer ??= _sfxMixerGroup.audioMixer;
         }
 
@@ -131,6 +138,11 @@ public class AudioManager : MonoBehaviour
     }
 
     #region BGM
+
+    public void PlayLoginBgm(float crossFadeDuration = 0.35f)
+    {
+        CrossFadeBGM(_catalog?.LoginBgm, crossFadeDuration);
+    }
 
     private void PlayBGM(AudioClip clip)
     {
@@ -221,13 +233,13 @@ public class AudioManager : MonoBehaviour
         float volume = _audioMixer != null ? 1f : (_isPaused ? 0f : BGMVolume * MasterVolume);
         if (_bgmSource != null)
         {
-            _bgmSource.volume = volume * _primaryBgmWeight;
+            _bgmSource.volume = volume * _primaryBgmWeight * GetClipVolume(_bgmSource.clip);
         }
 
         if (_secondaryBgmSource != null)
         {
             _secondaryBgmSource.volume =
-                volume * _secondaryBgmWeight;
+                volume * _secondaryBgmWeight * GetClipVolume(_secondaryBgmSource.clip);
         }
     }
 
@@ -247,12 +259,14 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySFX(EAudioSfx cue)
     {
-        PlaySFX(GetSfx(cue));
+        AudioClip clip = GetSfx(cue);
+        PlaySFX(clip, GetClipVolume(clip));
     }
 
     public void PlaySFXWithCooldown(EAudioSfx cue, float cooldown)
     {
-        PlaySFXWithCooldown(GetSfx(cue), cooldown);
+        AudioClip clip = GetSfx(cue);
+        PlaySFXWithCooldown(clip, cooldown, GetClipVolume(clip));
     }
 
     public void PlaySFXRandomPitch(
@@ -260,7 +274,37 @@ public class AudioManager : MonoBehaviour
         float minPitch = 0.9f,
         float maxPitch = 1.1f)
     {
-        PlaySFXRandomPitch(GetSfx(cue), minPitch, maxPitch);
+        AudioClip clip = GetSfx(cue);
+        PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip));
+    }
+
+    public void PlayLoopingSFX(EAudioSfx cue)
+    {
+        AudioClip clip = GetSfx(cue);
+        if (clip == null) return;
+
+        StopLoopingSfxFade();
+        _loopingSfxSource.Stop();
+        _loopingSfxSource.clip = clip;
+        _loopingSfxSource.loop = true;
+        _loopingSfxWeight = 1f;
+        ApplySfxVolumes();
+        _loopingSfxSource.Play();
+    }
+
+    public void StopLoopingSFX(float fadeDuration = 0f)
+    {
+        StopLoopingSfxFade();
+
+        if (!_loopingSfxSource.isPlaying) return;
+        if (fadeDuration <= 0f)
+        {
+            StopLoopingSfxNow();
+            return;
+        }
+
+        _loopingSfxFadeCoroutine = StartCoroutine(
+            FadeOutLoopingSfxRoutine(fadeDuration));
     }
 
     private AudioClip GetSfx(EAudioSfx cue)
@@ -268,14 +312,22 @@ public class AudioManager : MonoBehaviour
         return _catalog != null ? _catalog.GetSfx(cue) : null;
     }
 
-    private void PlaySFX(AudioClip clip)
+    private float GetClipVolume(AudioClip clip)
+    {
+        return _catalog != null ? _catalog.GetVolume(clip) : 1f;
+    }
+
+    private void PlaySFX(AudioClip clip, float volumeScale)
     {
         if (clip == null) return;
 
-        _sfxSource.PlayOneShot(clip);
+        _sfxSource.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
     }
 
-    private void PlaySFXWithCooldown(AudioClip clip, float cooldown)
+    private void PlaySFXWithCooldown(
+        AudioClip clip,
+        float cooldown,
+        float volumeScale)
     {
         if (clip == null) return;
 
@@ -287,24 +339,85 @@ public class AudioManager : MonoBehaviour
         }
 
         _lastSfxPlayedTimes[clip] = currentTime;
-        _sfxSource.PlayOneShot(clip);
+        _sfxSource.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
     }
 
-    private void PlaySFX(AudioClip clip, float pitch)
+    private void PlaySFXWithPitch(AudioClip clip, float pitch, float volumeScale)
     {
         if (clip == null) return;
 
         _sfxSource.pitch = pitch;
-        _sfxSource.PlayOneShot(clip);
+        _sfxSource.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
         _sfxSource.pitch = 1f;
     }
 
-    private void PlaySFXRandomPitch(AudioClip clip, float minPitch, float maxPitch)
+    private void PlaySFXRandomPitch(
+        AudioClip clip,
+        float minPitch,
+        float maxPitch,
+        float volumeScale)
     {
         if (clip == null) return;
 
         float randomPitch = Random.Range(minPitch, maxPitch);
-        PlaySFX(clip, randomPitch);
+        PlaySFXWithPitch(clip, randomPitch, volumeScale);
+    }
+
+    private IEnumerator FadeOutLoopingSfxRoutine(float duration)
+    {
+        float startWeight = _loopingSfxWeight;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (!_isPaused)
+            {
+                elapsed += Time.unscaledDeltaTime;
+            }
+
+            _loopingSfxWeight = Mathf.Lerp(
+                startWeight,
+                0f,
+                Mathf.Clamp01(elapsed / duration));
+            ApplySfxVolumes();
+            yield return null;
+        }
+
+        StopLoopingSfxNow();
+        _loopingSfxFadeCoroutine = null;
+    }
+
+    private void StopLoopingSfxFade()
+    {
+        if (_loopingSfxFadeCoroutine == null) return;
+
+        StopCoroutine(_loopingSfxFadeCoroutine);
+        _loopingSfxFadeCoroutine = null;
+    }
+
+    private void StopLoopingSfxNow()
+    {
+        _loopingSfxSource.Stop();
+        _loopingSfxSource.clip = null;
+        _loopingSfxWeight = 1f;
+        ApplySfxVolumes();
+    }
+
+    private void ApplySfxVolumes()
+    {
+        float volume = _audioMixer != null
+            ? 1f
+            : (_isPaused ? 0f : SFXVolume * MasterVolume);
+
+        if (_sfxSource != null)
+        {
+            _sfxSource.volume = volume;
+        }
+
+        if (_loopingSfxSource != null)
+        {
+            _loopingSfxSource.volume =
+                volume * _loopingSfxWeight * GetClipVolume(_loopingSfxSource.clip);
+        }
     }
 
     #endregion

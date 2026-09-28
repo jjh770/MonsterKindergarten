@@ -1,4 +1,4 @@
-using UnityEngine;
+using System;
 
 public static class NormalCollectionRules
 {
@@ -18,8 +18,8 @@ public static class SpecialGachaFever
 
     public static float GetChance(int missCount)
     {
-        return Mathf.Min(
+        return Math.Min(
             MaximumChance,
-            BaseChance + Mathf.Max(0, missCount) * ChanceIncreasePerMiss);
+            BaseChance + Math.Max(0, missCount) * ChanceIncreasePerMiss);
     }
 }

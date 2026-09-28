@@ -13,6 +13,10 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private GameExitManager _gameExitManager;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
 
     [Header("Presentation")]
     [SerializeField] private RectTransform _root;
@@ -57,13 +61,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_root == null || _sourceImage == null || _scholarImage == null ||
-            _scholarDestination == null || _portraitBackgroundGroup == null ||
-            _dialogueGroup == null ||
-            _menuRoot == null || _probabilityButton == null ||
-            _upgradeStatusButton == null || _closeButton == null ||
-            _detailRoot == null || _detailPanel == null || _detailTitle == null ||
-            _detailText == null || _backButton == null)
+        if (!HasRequiredReferences())
         {
             Debug.LogError("학자 안내 UI의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -75,6 +73,21 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _closeButton.onClick.AddListener(Close);
         _backButton.onClick.AddListener(ShowMenu);
         _root.gameObject.SetActive(false);
+    }
+
+    private bool HasRequiredReferences()
+    {
+        return _root != null && _sourceImage != null && _scholarImage != null &&
+            _scholarDestination != null && _portraitBackgroundGroup != null &&
+            _dialogueGroup != null && _menuRoot != null &&
+            _probabilityButton != null && _upgradeStatusButton != null &&
+            _closeButton != null && _detailRoot != null &&
+            _detailPanel != null && _detailTitle != null &&
+            _detailText != null && _backButton != null &&
+            _hudVisibility != null && _clicker != null &&
+            _upgradeUI != null && _gameExitManager != null &&
+            _spaceManager != null && _spawnManager != null &&
+            _slimeManager != null && _upgradeManager != null;
     }
 
     private void OnDestroy()
@@ -89,16 +102,16 @@ public sealed class ScholarGuideUI : MonoBehaviour
     public void Open()
     {
         if (!enabled || _isOpen || _isTransitioning || !GameplayGate.IsActive) return;
-        if (GameplaySpaceManager.Instance != null && GameplaySpaceManager.Instance.IsTransitioning) return;
+        if (_spaceManager.IsTransitioning) return;
 
         _isOpen = true;
         IsAnyOpen = true;
         _isTransitioning = true;
         _presentationRestored = false;
-        _upgradeUI?.PushStandDown(this);
-        _hudVisibility?.PushHide(this, EHudParts.All);
-        _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
-        _gameExitManager?.RegisterBackHandler(this, TryHandleBack);
+        _upgradeUI.PushStandDown(this);
+        _hudVisibility.PushHide(this, EHudParts.All);
+        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+        _gameExitManager.RegisterBackHandler(this, TryHandleBack);
 
         PrepareScholarImage();
         _root.gameObject.SetActive(true);
@@ -148,13 +161,12 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
     public void ShowProbability()
     {
-        if (!_isOpen || SpawnManager.Instance == null) return;
+        if (!_isOpen) return;
 
-        bool isUnlocked = SlimeManager.Instance != null &&
-                          SlimeManager.Instance.IsHigherGradeSpawnUnlocked;
+        bool isUnlocked = _slimeManager.IsHigherGradeSpawnUnlocked;
         _detailTitle.text = "자연생성 슬라임 확률";
         _detailText.text = GameplayInfoTextBuilder.BuildSpawnProbabilityText(
-            SpawnManager.Instance.GetCurrentSpawnProbabilities(),
+            _spawnManager.GetCurrentSpawnProbabilities(),
             isUnlocked ? SpawnManager.GetSpawnWeightUpgradeLevel() : -1,
             includeTitle: false);
         ShowDetail();
@@ -167,6 +179,9 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
         _detailTitle.text = "시스템 업그레이드 현황";
         _detailText.text = GameplayInfoTextBuilder.BuildSystemUpgradeText(
+            _upgradeManager,
+            _slimeManager,
+            _spawnManager,
             includeTitle: false);
         ShowDetail();
     }
@@ -238,8 +253,8 @@ public sealed class ScholarGuideUI : MonoBehaviour
         IsAnyOpen = false;
         if (_sourceImage != null) _sourceImage.enabled = true;
         if (_root != null) _root.gameObject.SetActive(false);
-        _gameExitManager?.UnregisterBackHandler(this);
-        _clicker?.ReleaseMode(this);
+        _gameExitManager.UnregisterBackHandler(this);
+        _clicker.ReleaseMode(this);
         RestorePresentation(animated);
 
         if (notify) Closed?.Invoke();
@@ -250,7 +265,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         if (_presentationRestored) return;
 
         _presentationRestored = true;
-        _hudVisibility?.Release(this, animated);
-        _upgradeUI?.ReleaseStandDown(this, animated);
+        _hudVisibility.Release(this, animated);
+        _upgradeUI.ReleaseStandDown(this, animated);
     }
 }

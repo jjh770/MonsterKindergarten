@@ -16,7 +16,7 @@ public class MergeManager : MonoBehaviour
     }
 
     public static MergeManager Instance { get; private set; }
-    public static event System.Action<SlimeController, ESlimeGrade, ESlimeGrade> Merged;
+    public event System.Action<SlimeController, ESlimeGrade, ESlimeGrade> Merged;
 
     private void Awake()
     {

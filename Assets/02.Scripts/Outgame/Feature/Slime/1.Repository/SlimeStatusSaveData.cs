@@ -126,6 +126,14 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public bool MainEndingSeen { get; set; }
 
+    // v11. 엔딩 크레딧에 표시할 여정의 시작과 졸업 시각이다.
+    // UTC round-trip 문자열로 저장해 기기 시간대가 달라도 같은 순간을 가리킨다.
+    [FirestoreProperty]
+    public string GameStartedAtUtc { get; set; }
+
+    [FirestoreProperty]
+    public string MainEndingReachedAtUtc { get; set; }
+
     // 스페셜 가챠에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
     // 이전 문서의 기본값 0은 기본 확률 3%를 뜻한다.
     [FirestoreProperty]

@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public static event Action OnAllDataInitialized;
+    public event Action AllDataInitialized;
     public event Action OnGameplayActivated;
 
     [Header("Loading")]
@@ -18,6 +18,9 @@ public class GameManager : MonoBehaviour
     private bool _isCurrencyInitialized;
     private bool _isAllInitialized;
     private bool _isReturningToLogin;
+    private UpgradeManager _upgradeManager;
+    private SlimeManager _slimeManager;
+    private CurrencyManager _currencyManager;
 
     // TODO : 데이터 초기화 고려사항
     // 1. 이렇게 전체 데이터를 이벤트 구독해서 확인하는 방법도 있지만
@@ -54,9 +57,19 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
-        SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
-        CurrencyManager.OnDataInitialized += OnCurrencyDataInitialized;
+        _upgradeManager = UpgradeManager.Instance;
+        _slimeManager = SlimeManager.Instance;
+        _currencyManager = CurrencyManager.Instance;
+        if (_upgradeManager == null || _slimeManager == null ||
+            _currencyManager == null)
+        {
+            Debug.LogError("게임 매니저가 데이터 매니저 참조를 찾지 못했습니다.", this);
+            return;
+        }
+
+        _upgradeManager.DataInitialized += OnUpgradeDataInitialized;
+        _slimeManager.DataInitialized += OnSlimeDataInitialized;
+        _currencyManager.DataInitialized += OnCurrencyDataInitialized;
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
         // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
         // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
@@ -81,9 +94,18 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
-        SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
-        CurrencyManager.OnDataInitialized -= OnCurrencyDataInitialized;
+        if (_upgradeManager != null)
+        {
+            _upgradeManager.DataInitialized -= OnUpgradeDataInitialized;
+        }
+        if (_slimeManager != null)
+        {
+            _slimeManager.DataInitialized -= OnSlimeDataInitialized;
+        }
+        if (_currencyManager != null)
+        {
+            _currencyManager.DataInitialized -= OnCurrencyDataInitialized;
+        }
 
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
         if (OfflineRewardManager.Instance != null)
@@ -96,7 +118,7 @@ public class GameManager : MonoBehaviour
     // 불러오기가 실패가 아니라 멈추면 아무도 신고하지 않는다.
     //
     // 각 매니저는 읽기에 실패했을 때만 신고한다. 응답이 아예 오지 않으면 실패도
-    // 아니어서 OnAllDataInitialized가 영영 발화하지 않고, 커튼이 걷히지 않은 채
+    // 아니어서 AllDataInitialized가 영영 발화하지 않고, 커튼이 걷히지 않은 채
     // 남는다. 그 상태에서는 뒤로 가기도 커튼에 가려 강제 종료 말고 나갈 길이 없다.
     //
     // 로그인은 이미 네트워크를 통과한 뒤이므로, 여기서 걸리는 것은 연결이 로그인
@@ -121,7 +143,7 @@ public class GameManager : MonoBehaviour
 
     // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.
     //
-    // 그냥 두면 OnAllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
+    // 그냥 두면 AllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
     // 기본값으로 진행시키면 첫 저장이 확인하지 못한 원본을 덮어써 복구할 수 없다.
     // 로그인 화면으로 돌려보내 다시 시도하게 한다.
     private void OnSaveDataLoadFailed()
@@ -171,7 +193,7 @@ public class GameManager : MonoBehaviour
             _isAllInitialized = true;
             InitializeTutorialProgress();
             OfflineRewardManager.Instance?.Grant();
-            OnAllDataInitialized?.Invoke();
+            AllDataInitialized?.Invoke();
         }
     }
 

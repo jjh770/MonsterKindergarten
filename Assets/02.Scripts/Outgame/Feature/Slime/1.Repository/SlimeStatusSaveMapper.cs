@@ -65,6 +65,29 @@ public static class SlimeStatusSaveMapper
             registeredNormalCollection);
         var restoredStats = new NormalSlimeCollectionStats(saveData);
 
+        var effectiveRegistered = new HashSet<ESlimeGrade>(
+            registeredNormalCollection);
+        foreach (SlimeInstance instance in activeSlimes)
+        {
+            if (instance.Location == ESlimeLocation.DisplayRoom &&
+                !instance.IsSpecial)
+            {
+                effectiveRegistered.Add(instance.Grade);
+            }
+        }
+
+        if (!TryResolveJourneyDates(
+                saveData,
+                restoredAtUtc,
+                effectiveRegistered.Count >= NormalCollectionRules.MainEndingCount,
+                out DateTime gameStartedAtUtc,
+                out DateTime? mainEndingReachedAtUtc,
+                out bool restoredJourneyDates,
+                out failureMessage))
+        {
+            return false;
+        }
+
         // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
         // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
         // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
@@ -80,6 +103,8 @@ public static class SlimeStatusSaveMapper
                 saveData.PendingTickets,
                 !saveData.AutoSpawnDisabled,
                 saveData.MainEndingSeen,
+                gameStartedAtUtc,
+                mainEndingReachedAtUtc,
                 saveData.SpecialGachaMissCount,
                 saveData.CompletedTutorials,
                 ToPlacedObjects(saveData.PlacedObjects),
@@ -112,8 +137,38 @@ public static class SlimeStatusSaveMapper
         needsMigrationSave = saveData.WasMigrated ||
                              restoredStatus.NormalCollectionCount >
                              registeredNormalCollection.Count ||
-                             restoredRegistrationStats;
+                             restoredRegistrationStats ||
+                             restoredJourneyDates ||
+                             ExceedsPlaygroundObjectLimit(saveData);
         return true;
+    }
+
+    // 오브젝트 상한을 낮춘 버전에서 예전 저장을 한 번만 정리해 다시 기록한다.
+    // 런타임 복원 자체는 SlimeStatus가 담당하고, 여기서는 그 정리가 저장에도
+    // 확정되어야 하는지만 판단한다.
+    private static bool ExceedsPlaygroundObjectLimit(SlimeStatusSaveData saveData)
+    {
+        if (saveData.OwnedPlaygroundObjects != null)
+        {
+            foreach (int owned in saveData.OwnedPlaygroundObjects)
+            {
+                if (owned > PlaygroundRules.MaxPerType) return true;
+            }
+        }
+
+        if (saveData.PlacedObjects == null) return false;
+
+        var placedCounts = new int[(int)EPlaygroundObjectType.Count];
+        foreach (PlacedObjectSaveData placed in saveData.PlacedObjects)
+        {
+            if (placed == null) continue;
+
+            var type = (EPlaygroundObjectType)placed.Type;
+            if (!PlaygroundRules.IsValid(type)) continue;
+            if (++placedCounts[(int)type] > PlaygroundRules.MaxPerType) return true;
+        }
+
+        return false;
     }
 
     // 저장의 정수를 도메인 값으로 옮긴다. 모르는 번호를 여기서 거르지 않는 것은
@@ -202,6 +257,8 @@ public static class SlimeStatusSaveMapper
             // Firestore 문서 호환을 위해 남기되 새 저장에는 항상 false를 쓴다.
             AutoMergeEnabled = false,
             MainEndingSeen = status.MainEndingSeen,
+            GameStartedAtUtc = status.GameStartedAtUtc.ToString("o"),
+            MainEndingReachedAtUtc = status.MainEndingReachedAtUtc?.ToString("o"),
             SpecialGachaMissCount = status.SpecialGachaMissCount,
             CompletedTutorials = new List<string>(status.CompletedTutorials),
             PlacedObjects = BuildPlacedObjects(status),
@@ -222,6 +279,115 @@ public static class SlimeStatusSaveMapper
         }
 
         return saveData;
+    }
+
+    private static bool TryResolveJourneyDates(
+        SlimeStatusSaveData saveData,
+        DateTime restoredAtUtc,
+        bool hasReachedEnding,
+        out DateTime gameStartedAtUtc,
+        out DateTime? mainEndingReachedAtUtc,
+        out bool wasRestored,
+        out string failureMessage)
+    {
+        gameStartedAtUtc = default;
+        mainEndingReachedAtUtc = null;
+        wasRestored = false;
+        failureMessage = null;
+
+        if (!TryParseOptionalUtc(
+                saveData.GameStartedAtUtc,
+                out DateTime? savedStartedAtUtc))
+        {
+            failureMessage = "SlimeStatus : 게임 시작 시각을 해석할 수 없습니다.";
+            return false;
+        }
+
+        if (!TryParseOptionalUtc(
+                saveData.MainEndingReachedAtUtc,
+                out DateTime? savedEndingAtUtc))
+        {
+            failureMessage = "SlimeStatus : 메인 엔딩 도달 시각을 해석할 수 없습니다.";
+            return false;
+        }
+
+        DateTime fallback = restoredAtUtc.Kind == DateTimeKind.Utc
+            ? restoredAtUtc
+            : restoredAtUtc.ToUniversalTime();
+        DateTime? earliestRegistration = FindRegistrationBoundary(
+            saveData.NormalFirstRegisteredAt,
+            findEarliest: true);
+        DateTime? latestRegistration = FindRegistrationBoundary(
+            saveData.NormalFirstRegisteredAt,
+            findEarliest: false);
+
+        gameStartedAtUtc = savedStartedAtUtc ?? earliestRegistration ?? fallback;
+        wasRestored |= !savedStartedAtUtc.HasValue;
+
+        if (savedEndingAtUtc.HasValue)
+        {
+            mainEndingReachedAtUtc = savedEndingAtUtc;
+        }
+        else if (hasReachedEnding)
+        {
+            mainEndingReachedAtUtc = latestRegistration ?? fallback;
+            wasRestored = true;
+        }
+
+        if (mainEndingReachedAtUtc.HasValue &&
+            mainEndingReachedAtUtc.Value < gameStartedAtUtc)
+        {
+            failureMessage = "SlimeStatus : 엔딩 도달 시각이 게임 시작 시각보다 빠릅니다.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryParseOptionalUtc(string value, out DateTime? parsedUtc)
+    {
+        parsedUtc = null;
+        if (string.IsNullOrWhiteSpace(value)) return true;
+
+        if (!DateTime.TryParse(
+                value,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind,
+                out DateTime parsed))
+        {
+            return false;
+        }
+
+        parsedUtc = parsed.Kind == DateTimeKind.Utc
+            ? parsed
+            : parsed.ToUniversalTime();
+        return true;
+    }
+
+    private static DateTime? FindRegistrationBoundary(
+        IReadOnlyList<string> registrations,
+        bool findEarliest)
+    {
+        if (registrations == null) return null;
+
+        DateTime? result = null;
+        foreach (string value in registrations)
+        {
+            if (!TryParseOptionalUtc(value, out DateTime? parsed) ||
+                !parsed.HasValue)
+            {
+                continue;
+            }
+
+            if (!result.HasValue ||
+                (findEarliest && parsed.Value < result.Value) ||
+                (!findEarliest && parsed.Value > result.Value))
+            {
+                result = parsed.Value;
+            }
+        }
+
+        return result;
     }
 
     private static IEnumerable<ESlimeGrade> GetRegisteredNormalCollection(

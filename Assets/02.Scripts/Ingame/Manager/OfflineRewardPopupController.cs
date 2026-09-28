@@ -74,7 +74,9 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
         }
 
         OfflineRewardResult result = _displayedReward.Value;
-        float duration = _view.PlayCollect(result.ElapsedTime);
+        float duration = _view.PlayCollect(
+            result.ElapsedTime,
+            result.TicketReward);
 
         if ((double)result.Reward > 0d)
         {

@@ -9,6 +9,8 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
 
     [Tooltip("합성할 쌍이 없을 때 띄우는 안내입니다.")]
     [SerializeField] private ToastMessageUI _toast;
+    [SerializeField] private AutoMergeManager _autoMergeManager;
+    [SerializeField] private SlimeManager _slimeManager;
 
     private const string NoPairMessage = "합성할 수 있는 슬라임이 없어요.";
 
@@ -28,7 +30,10 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
             _progressView = GetComponent<RadialProgressView>();
         }
 
-        if (_button == null || _progressView == null)
+        if (_button == null ||
+            _progressView == null ||
+            _autoMergeManager == null ||
+            _slimeManager == null)
         {
             Debug.LogError("자동 합성 버튼의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -40,8 +45,8 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
         if (!enabled) return;
 
         _button.onClick.AddListener(OnButtonClicked);
-        SlimeManager.OnDataInitialized += Refresh;
-        SlimeManager.OnNormalCollectionCountChanged += OnCollectionCountChanged;
+        _slimeManager.DataInitialized += Refresh;
+        _slimeManager.NormalCollectionCountChanged += OnCollectionCountChanged;
         Refresh();
     }
 
@@ -52,25 +57,22 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
             _button.onClick.RemoveListener(OnButtonClicked);
         }
 
-        SlimeManager.OnDataInitialized -= Refresh;
-        SlimeManager.OnNormalCollectionCountChanged -= OnCollectionCountChanged;
+        if (_slimeManager != null)
+        {
+            _slimeManager.DataInitialized -= Refresh;
+            _slimeManager.NormalCollectionCountChanged -= OnCollectionCountChanged;
+        }
     }
 
     private void Update()
     {
-        AutoMergeManager manager = AutoMergeManager.Instance;
-        if (manager == null) return;
-
-        _progressView.SetProgress(manager.Progress01);
+        _progressView.SetProgress(_autoMergeManager.Progress01);
         Refresh();
     }
 
     private void OnButtonClicked()
     {
-        AutoMergeManager manager = AutoMergeManager.Instance;
-        if (manager == null) return;
-
-        AutoMergeManager.EMergeFailure failure = manager.TryMerge();
+        AutoMergeManager.EMergeFailure failure = _autoMergeManager.TryMerge();
         Pressed?.Invoke(failure);
 
         // 쿨타임과 잠긴 상황은 게이지와 버튼 상태가 이미 보여 주므로 문구까지 띄우지
@@ -89,10 +91,8 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
     // 매 프레임 도니 상태가 바뀔 때만 손댄다.
     private void Refresh()
     {
-        AutoMergeManager manager = AutoMergeManager.Instance;
-        if (manager == null) return;
-
-        bool isInteractable = manager.IsReady && manager.IsAvailable();
+        bool isInteractable = _autoMergeManager.IsReady &&
+                              _autoMergeManager.IsAvailable();
         if (isInteractable == _lastInteractable) return;
 
         _lastInteractable = isInteractable;

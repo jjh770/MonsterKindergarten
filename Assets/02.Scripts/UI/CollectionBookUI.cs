@@ -14,6 +14,10 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private HudVisibility _hudVisibility;
     [SerializeField] private UpgradeUI _upgradeUI;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private MainEndingUI _mainEndingUI;
     [SerializeField] private Button _openButton;
 
     [Header("Book")]
@@ -46,8 +50,10 @@ public sealed class CollectionBookUI : MonoBehaviour
     private readonly List<CollectionBookEntryUI> _entries = new();
     private Tween _fadeTween;
     private Tween _scrollTween;
+    private Tween _replayDelayTween;
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
+    private UnityEngine.UI.Button _endingReplayButton;
 
     public bool IsOpen => _isOpen;
 
@@ -60,17 +66,18 @@ public sealed class CollectionBookUI : MonoBehaviour
         }
 
         CreateEntries();
+        CreateEndingReplayButton();
         _bookRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
         _previousButton.onClick.AddListener(ShowPrevious);
         _nextButton.onClick.AddListener(ShowNext);
-        GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
-        GameManager.OnAllDataInitialized += RefreshOpenButton;
-        GameManager.Instance.OnGameplayActivated += RefreshOpenButton;
+        _spaceManager.SpaceChanged += OnSpaceChanged;
+        _gameManager.AllDataInitialized += RefreshOpenButton;
+        _gameManager.OnGameplayActivated += RefreshOpenButton;
         TutorialManager.Started += RefreshOpenButton;
         TutorialManager.Finished += RefreshOpenButton;
-        SlimeManager.OnNormalCollectionRegistered += OnNormalCollectionRegistered;
+        _slimeManager.NormalCollectionRegistered += OnNormalCollectionRegistered;
         RefreshLayout();
         RefreshOpenButton();
     }
@@ -79,25 +86,31 @@ public sealed class CollectionBookUI : MonoBehaviour
     {
         _fadeTween?.Kill();
         _scrollTween?.Kill();
+        _replayDelayTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
         _previousButton?.onClick.RemoveListener(ShowPrevious);
         _nextButton?.onClick.RemoveListener(ShowNext);
 
-        if (GameplaySpaceManager.Instance != null)
+        if (_spaceManager != null)
         {
-            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+            _spaceManager.SpaceChanged -= OnSpaceChanged;
         }
 
-        GameManager.OnAllDataInitialized -= RefreshOpenButton;
+        _gameManager.AllDataInitialized -= RefreshOpenButton;
         TutorialManager.Started -= RefreshOpenButton;
         TutorialManager.Finished -= RefreshOpenButton;
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameplayActivated -= RefreshOpenButton;
+            _gameManager.OnGameplayActivated -= RefreshOpenButton;
         }
 
-        SlimeManager.OnNormalCollectionRegistered -= OnNormalCollectionRegistered;
+        if (_slimeManager != null)
+        {
+            _slimeManager.NormalCollectionRegistered -= OnNormalCollectionRegistered;
+        }
+        _endingReplayButton?.onClick.RemoveListener(ReplayEnding);
+        DisplayRoomCameraInputGate.Release(this);
         _gameExitManager?.UnregisterBackHandler(this);
         _clicker?.ReleaseMode(this);
         _hudVisibility?.Release(this, animated: false);
@@ -125,8 +138,10 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
                              _displayRoomBadge != null &&
-                             GameManager.Instance != null &&
-                             GameplaySpaceManager.Instance != null;
+                             _slimeManager != null &&
+                             _spaceManager != null &&
+                             _gameManager != null &&
+                             _mainEndingUI != null;
         if (!hasReferences)
         {
             Debug.LogError("도감 UI의 필수 참조가 비어 있습니다.", this);
@@ -162,6 +177,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (_isOpen || !CanOpen()) return;
 
         _isOpen = true;
+        DisplayRoomCameraInputGate.Push(this);
         transform.SetAsLastSibling();
         _bookRoot.SetActive(true);
         _bookCanvasGroup.alpha = 0f;
@@ -176,6 +192,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _gameExitManager.RegisterBackHandler(this, TryClose);
         RefreshOpenButton();
         RefreshEntries();
+        RefreshEndingReplayButton();
 
         _fadeTween?.Kill();
         _fadeTween = _bookCanvasGroup
@@ -194,6 +211,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (!_isOpen) return false;
 
         _isOpen = false;
+        DisplayRoomCameraInputGate.Release(this);
         _bookCanvasGroup.interactable = false;
         _gameExitManager.UnregisterBackHandler(this);
         _clicker.ReleaseMode(this);
@@ -217,6 +235,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (!_isOpen) return;
 
         _isOpen = false;
+        DisplayRoomCameraInputGate.Release(this);
         _fadeTween?.Kill();
         _fadeTween = null;
         _bookCanvasGroup.alpha = 0f;
@@ -231,7 +250,7 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void RefreshEntries()
     {
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
         if (manager == null) return;
 
         // 선택이 없으면 첫 장을 편다. 비워 두면 이전·다음이 둘 다 잠겨,
@@ -335,7 +354,7 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void ShowDetail(ESlimeGrade grade)
     {
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
         if (manager == null) return;
 
         SlimeSpecData specData = manager.Get(grade)?.SpecData;
@@ -358,7 +377,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _displayRoomBadge.SetActive(manager.IsDisplayedInDisplayRoom(grade));
     }
 
-    private static string BuildRegisteredDetail(
+    private string BuildRegisteredDetail(
         ESlimeGrade grade,
         SlimeSpecData specData)
     {
@@ -372,7 +391,7 @@ public sealed class CollectionBookUI : MonoBehaviour
             EClickType.Auto);
         float autoInterval = specData?.AutoClickInterval ?? 0f;
         NormalSlimeCollectionStatsSnapshot stats =
-            SlimeManager.Instance.GetNormalCollectionStats(grade);
+            _slimeManager.GetNormalCollectionStats(grade);
 
         return $"{specData?.Description ?? string.Empty}\n\n" +
                "현재 능력\n" +
@@ -406,7 +425,96 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (_isOpen)
         {
             RefreshEntries();
+            RefreshEndingReplayButton();
         }
+    }
+
+    private void CreateEndingReplayButton()
+    {
+        var buttonObject = new GameObject(
+            "EndingReplayButton",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(UnityEngine.UI.Image),
+            typeof(UnityEngine.UI.Button));
+        buttonObject.layer = gameObject.layer;
+        buttonObject.transform.SetParent(_safeAreaRoot, false);
+
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.72f, 0.9f);
+        rect.anchorMax = new Vector2(0.72f, 0.9f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(180f, 82f);
+
+        UnityEngine.UI.Image image =
+            buttonObject.GetComponent<UnityEngine.UI.Image>();
+        image.sprite = _closeButton.image != null
+            ? _closeButton.image.sprite
+            : null;
+        image.type = _closeButton.image != null
+            ? _closeButton.image.type
+            : UnityEngine.UI.Image.Type.Simple;
+        image.pixelsPerUnitMultiplier = _closeButton.image != null
+            ? _closeButton.image.pixelsPerUnitMultiplier
+            : 1f;
+
+        _endingReplayButton =
+            buttonObject.GetComponent<UnityEngine.UI.Button>();
+        _endingReplayButton.targetGraphic = image;
+        buttonObject.AddComponent<ButtonSFX>();
+
+        var labelObject = new GameObject(
+            "Label",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(TextMeshProUGUI));
+        labelObject.layer = gameObject.layer;
+        labelObject.transform.SetParent(buttonObject.transform, false);
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(10f, 8f);
+        labelRect.offsetMax = new Vector2(-10f, -8f);
+
+        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
+        label.font = _detailNameText.font;
+        label.text = "졸업식";
+        label.fontSize = 30f;
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 22f;
+        label.fontSizeMax = 30f;
+        label.alignment = TextAlignmentOptions.Center;
+        label.color = new Color(0.2f, 0.09f, 0.04f, 1f);
+        label.raycastTarget = false;
+
+        _endingReplayButton.onClick.AddListener(ReplayEnding);
+        RefreshEndingReplayButton();
+    }
+
+    private void RefreshEndingReplayButton()
+    {
+        if (_endingReplayButton == null) return;
+
+        _endingReplayButton.gameObject.SetActive(
+            _slimeManager != null &&
+            _slimeManager.IsMainEndingSeen);
+    }
+
+    private void ReplayEnding()
+    {
+        if (!_isOpen || _mainEndingUI == null) return;
+
+        MainEndingUI ending = _mainEndingUI;
+        if (!TryClose()) return;
+
+        _replayDelayTween?.Kill();
+        _replayDelayTween = DOVirtual.DelayedCall(
+            _fadeDuration,
+            () =>
+            {
+                _replayDelayTween = null;
+                ending.TryReplay();
+            });
     }
 
     private void OnSpaceChanged(EGameplaySpace space)
@@ -428,8 +536,7 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void RestoreUpgradeToggle(bool animated = true)
     {
-        bool isMainField = GameplaySpaceManager.Instance != null &&
-                           GameplaySpaceManager.Instance.IsMainFieldActive;
+        bool isMainField = _spaceManager.IsMainFieldActive;
         // 보이기는 공간이 정한다. 그 값을 먼저 세우고 연출을 물린다.
         _upgradeUI.SetToggleVisible(isMainField, animated);
         _upgradeUI.ReleaseStandDown(this, animated);

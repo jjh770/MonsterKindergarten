@@ -44,6 +44,7 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     [FormerlySerializedAs("_stageButton")]
     [SerializeField] private Button _backgroundButton;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
+    [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private Button _groundThemeButton;
     [SerializeField] private Button _skyThemeButton;
     [Tooltip("Ground와 Sky 이외에 추가할 테마의 선택 버튼을 연결합니다.")]
@@ -71,6 +72,7 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     {
         if (_backgroundButton == null ||
             _panelSwitcher == null ||
+            _slimeManager == null ||
             _groundThemeButton == null ||
             _skyThemeButton == null)
         {
@@ -98,8 +100,8 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     {
         if (!enabled) return;
 
-        SlimeManager.OnBackgroundThemesChanged += RefreshOwnership;
-        SlimeManager.OnDataInitialized += RefreshOwnership;
+        _slimeManager.BackgroundThemesChanged += RefreshOwnership;
+        _slimeManager.DataInitialized += RefreshOwnership;
         RefreshOwnership();
     }
 
@@ -107,22 +109,23 @@ public sealed class BackgroundThemeUI : MonoBehaviour
     // 늘 남는다. 데이터가 준비되기 전에는 기본 테마만 보인다.
     private void RefreshOwnership()
     {
-        SlimeManager manager = SlimeManager.Instance;
         foreach (ThemeButtonRuntime runtime in _themeButtons)
         {
             if (runtime.Button == null) continue;
 
             bool isOwned = BackgroundThemeRules.IsFree(runtime.Theme) ||
-                           (manager != null &&
-                            manager.IsBackgroundThemeOwned(runtime.Theme));
+                           _slimeManager.IsBackgroundThemeOwned(runtime.Theme);
             runtime.Button.gameObject.SetActive(isOwned);
         }
     }
 
     private void OnDestroy()
     {
-        SlimeManager.OnBackgroundThemesChanged -= RefreshOwnership;
-        SlimeManager.OnDataInitialized -= RefreshOwnership;
+        if (_slimeManager != null)
+        {
+            _slimeManager.BackgroundThemesChanged -= RefreshOwnership;
+            _slimeManager.DataInitialized -= RefreshOwnership;
+        }
 
         if (_backgroundButton != null)
         {

@@ -65,6 +65,12 @@ public class Clicker : MonoBehaviour
             return;
         }
 
+        if (PointerGestureUtility.HasMultipleActiveTouches())
+        {
+            CancelSelection();
+            return;
+        }
+
         Pointer pointer = Pointer.current;
         if (pointer == null || _mainCamera == null) return;
 

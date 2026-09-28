@@ -21,6 +21,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField] private ToastMessageUI _toast;
     // 보내기 모드와 같다. 자리를 고르는 동안에는 HUD가 자리를 비켜 준다.
     [SerializeField] private HudVisibility _hudVisibility;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SlimeManager _slimeManager;
 
     [Header("UI")]
     [SerializeField] private Button _enterButton;
@@ -59,7 +61,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         if (_field == null || _clicker == null || _upgradeUI == null ||
             _gameExitManager == null || _modeRoot == null ||
-            _modeCanvasGroup == null || _hudVisibility == null)
+            _modeCanvasGroup == null || _hudVisibility == null ||
+            _spaceManager == null || _slimeManager == null)
         {
             Debug.LogError("배치 모드의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -91,25 +94,21 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (_cannonButton != null)
             _cannonButton.onClick.AddListener(() => SelectType(EPlaygroundObjectType.Cannon));
 
-        SlimeManager.OnPlaygroundChanged += Refresh;
+        _slimeManager.PlaygroundChanged += Refresh;
 
-        if (GameplaySpaceManager.Instance != null)
-        {
-            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
-        }
+        _spaceManager.SpaceChanged += OnSpaceChanged;
 
         RefreshEnterButton();
     }
 
     private void OnDestroy()
     {
+        DisplayRoomCameraInputGate.Release(this);
         _modeSession?.Dispose();
-        SlimeManager.OnPlaygroundChanged -= Refresh;
+        _slimeManager.PlaygroundChanged -= Refresh;
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
-        if (GameplaySpaceManager.Instance == null) return;
-
-        GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+        if (_spaceManager != null) _spaceManager.SpaceChanged -= OnSpaceChanged;
     }
 
     private void OnSpaceChanged(EGameplaySpace space)
@@ -124,14 +123,13 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         if (_enterButton == null) return;
 
-        bool isDisplayRoom = GameplaySpaceManager.Instance != null &&
-                             !GameplaySpaceManager.Instance.IsMainFieldActive;
+        bool isDisplayRoom = !_spaceManager.IsMainFieldActive;
         _enterButton.gameObject.SetActive(isDisplayRoom);
     }
 
     private void Begin()
     {
-        GameplaySpaceManager spaceManager = GameplaySpaceManager.Instance;
+        GameplaySpaceManager spaceManager = _spaceManager;
         if (_isActive ||
             spaceManager == null ||
             spaceManager.IsMainFieldActive ||
@@ -141,6 +139,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         }
 
         _isActive = true;
+        DisplayRoomCameraInputGate.Push(this);
         _modeSession.Enter(
             ClickerInputMode.Blocked,
             ClickerInputPriority.Selection,
@@ -168,6 +167,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (!_isActive) return;
 
         _isActive = false;
+        DisplayRoomCameraInputGate.Release(this);
         _isDragging = false;
         _isPointerBlocked = false;
         _heldIndex = -1;
@@ -183,9 +183,9 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void SelectType(EPlaygroundObjectType type)
     {
-        if (RemainingCount(type) <= 0)
+        if (!CanPlace(type))
         {
-            _toast?.Show("남은 것이 없어요. 상점에서 살 수 있어요.");
+            _toast?.Show("지금은 배치할 수 없어요.");
             return;
         }
 
@@ -201,20 +201,20 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         _selectedIndex = -1;
     }
 
-    private static int RemainingCount(EPlaygroundObjectType type)
+    private bool CanPlace(EPlaygroundObjectType type)
     {
-        SlimeManager manager = SlimeManager.Instance;
-        if (manager == null) return 0;
+        SlimeManager manager = _slimeManager;
+        if (manager == null) return false;
 
-        return manager.GetOwnedPlaygroundObjectCount(type) -
-               manager.GetPlacedPlaygroundObjectCount(type);
+        return manager.GetOwnedPlaygroundObjectCount(type) > 0 &&
+               manager.GetPlacedPlaygroundObjectCount(type) == 0;
     }
 
     private void RemoveSelected()
     {
         if (_selectedIndex < 0) return;
 
-        SlimeManager.Instance?.TryRemovePlacedObject(_selectedIndex);
+        _slimeManager.TryRemovePlacedObject(_selectedIndex);
         ClearSelection();
     }
 
@@ -222,12 +222,22 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         if (_bumperText != null)
         {
-            _bumperText.text = $"범퍼 {RemainingCount(EPlaygroundObjectType.Bumper)}";
+            _bumperText.text = "범퍼";
         }
 
         if (_cannonText != null)
         {
-            _cannonText.text = $"대포 {RemainingCount(EPlaygroundObjectType.Cannon)}";
+            _cannonText.text = "대포";
+        }
+
+        if (_bumperButton != null)
+        {
+            _bumperButton.interactable = CanPlace(EPlaygroundObjectType.Bumper);
+        }
+
+        if (_cannonButton != null)
+        {
+            _cannonButton.interactable = CanPlace(EPlaygroundObjectType.Cannon);
         }
 
         if (_removeButton != null)
@@ -245,6 +255,15 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     private void Update()
     {
         if (!_isActive || _camera == null) return;
+
+        if (PointerGestureUtility.HasMultipleActiveTouches())
+        {
+            if (_isDragging || _heldIndex >= 0) _field.Rebuild();
+            _isPointerBlocked = false;
+            _isDragging = false;
+            _heldIndex = -1;
+            return;
+        }
 
         Pointer pointer = Pointer.current;
         if (pointer == null) return;
@@ -342,7 +361,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         float x = PlaygroundRules.ClampX(world.x);
         float y = PlaygroundRules.ClampY(world.y);
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
 
         if (manager != null &&
             !manager.IsPlaygroundPositionAvailable(x, y, index))
@@ -361,9 +380,15 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void Place(Vector2 world)
     {
+        if (!PlaygroundRules.Contains(world.x, world.y))
+        {
+            _toast?.Show("장식장 안쪽에 놓아 주세요.");
+            return;
+        }
+
         float x = PlaygroundRules.ClampX(world.x);
         float y = PlaygroundRules.ClampY(world.y);
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
 
         if (manager != null &&
             !manager.IsPlaygroundPositionAvailable(x, y))
@@ -379,8 +404,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
             return;
         }
 
-        // 남은 것이 없으면 고르기를 풀어 준다. 그대로 두면 눌러도 계속 거절된다.
-        if (RemainingCount(_selectedType) <= 0) ClearSelection();
+        // 하나를 놓으면 해당 종류는 더 배치할 수 없으므로 선택도 함께 해제한다.
+        if (!CanPlace(_selectedType)) ClearSelection();
 
         Refresh();
     }

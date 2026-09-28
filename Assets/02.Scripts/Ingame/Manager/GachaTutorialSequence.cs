@@ -25,6 +25,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
+    [SerializeField] private MergeManager _mergeManager;
 
     private Step _step;
     private bool _isGuideSubscribed;
@@ -138,7 +139,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         if (_autoSpawnToggle == null ||
             _gachaButton == null ||
             _clicker == null ||
-            _autoClicker == null)
+            _autoClicker == null ||
+            _mergeManager == null)
         {
             Debug.LogError("가챠 튜토리얼의 필수 참조가 비어 있습니다.", this);
             return;
@@ -359,9 +361,9 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void SubscribeMerge()
     {
-        if (_isMergeSubscribed) return;
+        if (_isMergeSubscribed || _mergeManager == null) return;
 
-        MergeManager.Merged += OnMerged;
+        _mergeManager.Merged += OnMerged;
         _isMergeSubscribed = true;
     }
 
@@ -369,7 +371,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     {
         if (!_isMergeSubscribed) return;
 
-        MergeManager.Merged -= OnMerged;
+        if (_mergeManager != null)
+        {
+            _mergeManager.Merged -= OnMerged;
+        }
         _isMergeSubscribed = false;
     }
 

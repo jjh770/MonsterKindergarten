@@ -24,6 +24,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private GameObject _reelViewport;
     [SerializeField] private Image _resultImage;
     [SerializeField] private Clicker _clicker;
+    [SerializeField] private SlimeManager _slimeManager;
 
     [Header("Portal")]
     [SerializeField] private RectTransform _portalRoot;
@@ -50,6 +51,9 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField, Min(0f)] private float _holdDuration = 0.7f;
     [SerializeField, Min(0.01f)] private float _moveDuration = 0.5f;
     [SerializeField, Min(0f)] private float _arrivalDuration = 0.45f;
+
+    [Header("Audio")]
+    [SerializeField, Min(0f)] private float _waitSfxFadeOutDuration = 0.75f;
 
     [Header("Look")]
     [SerializeField] private Color _silhouetteColor = Color.black;
@@ -78,7 +82,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             _shockwave == null || _flashImage == null ||
             _portalButton == null || _tapPrompt == null ||
             _resultNameText == null || _arrivalEffectRoot == null ||
-            _arrivalShockwave == null || _arrivalSparks == null)
+            _arrivalShockwave == null || _arrivalSparks == null ||
+            _slimeManager == null)
         {
             Debug.LogError("가챠 포털 연출의 필수 참조가 비어 있습니다.", this);
             return;
@@ -98,6 +103,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void OnDestroy()
     {
         if (_portalButton != null) _portalButton.onClick.RemoveListener(OnPortalTapped);
+        AudioManager.Instance?.StopLoopingSFX();
         _clicker?.ReleaseMode(this);
     }
 
@@ -124,12 +130,20 @@ public sealed class GachaResultDirector : MonoBehaviour
         CancellationToken token = this.GetCancellationTokenOnDestroy();
         target.SetLocationPresentationActive(false);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
-        bool isCancelled = await Present(
-            target,
-            rarity,
-            token);
-        _clicker?.ReleaseMode(this);
-        _isPlaying = false;
+        bool isCancelled = false;
+        try
+        {
+            isCancelled = await Present(
+                target,
+                rarity,
+                token);
+        }
+        finally
+        {
+            AudioManager.Instance?.StopLoopingSFX();
+            _clicker?.ReleaseMode(this);
+            _isPlaying = false;
+        }
 
         if (isCancelled) return;
         target.SetLocationPresentationActive(true);
@@ -144,6 +158,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         Vector2 center = new(Screen.width * 0.5f, Screen.height * 0.5f);
         PreparePortal(center, target.Grade);
         _root.SetActive(true);
+        AudioManager.Instance?.PlayLoopingSFX(EAudioSfx.GachaWait);
 
         if (await Fade(0f, 1f, _fadeDuration, token)) return true;
         if (await WaitForTap(token)) return true;
@@ -157,6 +172,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (await Wait(_holdDuration, token)) return true;
 
         Vector2 destination = GetFieldScreenPosition(target, center);
+        AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
         if (await MoveTo(destination, token)) return true;
         if (await PlayArrivalEffect(destination, resultColor, token)) return true;
         if (await Fade(1f, 0f, _fadeDuration, token)) return true;
@@ -295,6 +311,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         Color resultColor,
         CancellationToken token)
     {
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
         _resultImage.sprite = resultSprite;
         _resultImage.enabled = resultSprite != null;
         _resultImage.color = _silhouetteColor;
@@ -482,7 +499,10 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void OnPortalTapped()
     {
-        if (_isPlaying) _portalTapped = true;
+        if (!_isPlaying || _portalTapped) return;
+
+        _portalTapped = true;
+        AudioManager.Instance?.StopLoopingSFX(_waitSfxFadeOutDuration);
     }
 
     private static Color GetPortalColor(EGachaRarity rarity)
@@ -513,15 +533,15 @@ public sealed class GachaResultDirector : MonoBehaviour
     private static float Normalized(float elapsed, float duration) =>
         duration <= 0f ? 1f : Mathf.Clamp01(elapsed / duration);
 
-    private static Sprite GetSprite(ESlimeGrade grade)
+    private Sprite GetSprite(ESlimeGrade grade)
     {
-        Slime slime = SlimeManager.Instance != null ? SlimeManager.Instance.Get(grade) : null;
+        Slime slime = _slimeManager.Get(grade);
         return slime?.SpecData?.Sprite;
     }
 
-    private static string GetName(ESlimeGrade grade)
+    private string GetName(ESlimeGrade grade)
     {
-        Slime slime = SlimeManager.Instance != null ? SlimeManager.Instance.Get(grade) : null;
+        Slime slime = _slimeManager.Get(grade);
         return slime?.SpecData?.Name ?? grade.ToString();
     }
 

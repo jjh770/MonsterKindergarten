@@ -13,6 +13,7 @@ using UnityEngine;
 public sealed class LoadingOverlayRevealer : MonoBehaviour
 {
     [SerializeField] private FadeCurtainUI _curtain;
+    [SerializeField] private SpawnManager _spawnManager;
 
     private void Start()
     {
@@ -22,7 +23,7 @@ public sealed class LoadingOverlayRevealer : MonoBehaviour
             return;
         }
 
-        if (SpawnManager.Instance == null)
+        if (_spawnManager == null)
         {
             // 커튼을 남겨 두면 화면이 영영 덮인다. 신호를 못 받으면 바로 걷는다.
             Debug.LogError("SpawnManager가 없어 로딩 완료 시점을 알 수 없습니다.", this);
@@ -30,17 +31,17 @@ public sealed class LoadingOverlayRevealer : MonoBehaviour
             return;
         }
 
-        SpawnManager.Instance.Initialized += Reveal;
+        _spawnManager.Initialized += Reveal;
 
         // 이미 초기화가 끝난 경우
-        if (SpawnManager.Instance.IsInitialized) Reveal();
+        if (_spawnManager.IsInitialized) Reveal();
     }
 
     private void OnDestroy()
     {
-        if (SpawnManager.Instance != null)
+        if (_spawnManager != null)
         {
-            SpawnManager.Instance.Initialized -= Reveal;
+            _spawnManager.Initialized -= Reveal;
         }
     }
 

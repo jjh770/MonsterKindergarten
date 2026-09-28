@@ -9,11 +9,10 @@ public class UpgradeManager : MonoBehaviour
 
     public static UpgradeManager Instance { get; private set; }
 
-    // 이벤트는 도메인이 아닌 매니저가 가져야함.
-    public static event Action OnDataChanged;
-    public static event Action OnDataInitialized;
-    // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
-    public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
+    // 이벤트는 도메인이 아닌 매니저가 가져야 한다.
+    public event Action DataChanged;
+    public event Action DataInitialized;
+    public event Action<EUpgradeType, ESlimeGrade> Upgraded;
     [SerializeField] private UpgradeSpecTableSO _specTable;
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
@@ -118,8 +117,8 @@ public class UpgradeManager : MonoBehaviour
             _upgrades.Add(key, new Upgrade(specData, savedLevel));
         }
 
-        OnDataChanged?.Invoke();
-        OnDataInitialized?.Invoke();
+        DataChanged?.Invoke();
+        DataInitialized?.Invoke();
     }
 
     // 업그레이드를 가져오기
@@ -158,8 +157,8 @@ public class UpgradeManager : MonoBehaviour
             return false;
         }
         Save();
-        OnDataChanged?.Invoke();
-        OnUpgraded?.Invoke(type, grade);
+        DataChanged?.Invoke();
+        Upgraded?.Invoke(type, grade);
 
         return true;
     }

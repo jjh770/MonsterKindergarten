@@ -26,6 +26,7 @@ public sealed class PlaygroundObjectField : MonoBehaviour
     [SerializeField] private Transform _root;
 
     private readonly List<GameObject> _spawned = new();
+    private SlimeManager _slimeManager;
 
     // 배치 모드 동안은 꺼 둔다. 다시 세울 때도 이 값을 따라가야 한다. 안 그러면
     // 하나 놓을 때마다 방 전체가 되살아난다.
@@ -49,15 +50,26 @@ public sealed class PlaygroundObjectField : MonoBehaviour
     {
         if (!enabled) return;
 
-        SlimeManager.OnPlaygroundChanged += Rebuild;
-        SlimeManager.OnDataInitialized += Rebuild;
+        _slimeManager = SlimeManager.Instance;
+        if (_slimeManager == null)
+        {
+            Debug.LogError("놀이터 오브젝트 필드가 슬라임 매니저를 찾지 못했습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _slimeManager.PlaygroundChanged += Rebuild;
+        _slimeManager.DataInitialized += Rebuild;
         Rebuild();
     }
 
     private void OnDestroy()
     {
-        SlimeManager.OnPlaygroundChanged -= Rebuild;
-        SlimeManager.OnDataInitialized -= Rebuild;
+        if (_slimeManager != null)
+        {
+            _slimeManager.PlaygroundChanged -= Rebuild;
+            _slimeManager.DataInitialized -= Rebuild;
+        }
     }
 
     // 놀이터를 만지는 동안 기능을 세운다. 무엇이 왜 세우는지는 부르는 쪽이 안다.
@@ -90,7 +102,7 @@ public sealed class PlaygroundObjectField : MonoBehaviour
 
         Clear();
 
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
         if (manager == null) return;
 
         foreach (PlacedPlaygroundObject placed in manager.PlacedPlaygroundObjects)

@@ -348,7 +348,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SlimeAudioFeedback
   _landSoundCooldown: 0.1
   _bumpSoundCooldown: 0.08
-  _bumpMinimumSpeed: 0.6
+  _bumpMinimumSpeed: 2
 --- !u!114 &2657138910400000000
 MonoBehaviour:
   m_ObjectHideFlags: 0

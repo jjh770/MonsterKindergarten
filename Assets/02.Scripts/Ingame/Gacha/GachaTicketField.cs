@@ -73,6 +73,7 @@ public class GachaTicketField : MonoBehaviour
     private Vector3 _collectTargetBaseScale;
     private bool _isBulkCollecting;
     private bool _isBulkCollectScheduled;
+    private GameManager _gameManager;
 
     public event Action CollectionStateChanged;
 
@@ -123,15 +124,22 @@ public class GachaTicketField : MonoBehaviour
     {
         if (!enabled) return;
 
-        GameManager.OnAllDataInitialized += OnAllDataInitialized;
+        _gameManager = GameManager.Instance;
+        if (_gameManager == null)
+        {
+            Debug.LogError("가챠권 필드가 게임 매니저를 찾지 못했습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _gameManager.AllDataInitialized += OnAllDataInitialized;
         if (GameplaySpaceManager.Instance != null)
         {
             GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
         }
 
         // 이미 발화한 뒤에 붙었으면 이벤트를 다시 기다릴 수 없다.
-        if (GameManager.Instance != null &&
-            GameManager.Instance.IsAllDataInitialized)
+        if (_gameManager.IsAllDataInitialized)
         {
             OnAllDataInitialized();
         }
@@ -144,7 +152,10 @@ public class GachaTicketField : MonoBehaviour
             _dropper.Dropped -= OnDropped;
         }
 
-        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
+        if (_gameManager != null)
+        {
+            _gameManager.AllDataInitialized -= OnAllDataInitialized;
+        }
         if (GameplaySpaceManager.Instance != null)
         {
             GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;

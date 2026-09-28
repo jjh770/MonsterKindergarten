@@ -1,7 +1,5 @@
 using System;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 // 가챠권을 쓰는 버튼 하나만 담당한다. 실행 순서는 GachaService가 정한다.
 //
@@ -20,8 +18,7 @@ public sealed class GachaButtonUI : MonoBehaviour
     private const string NoRoomMessage =
         "유치원이 가득 찼어요.\n슬라임을 합쳐 자리를 만들어 주세요.";
 
-    [SerializeField] private Button _button;
-    [SerializeField] private TMP_Text _countLabel;
+    [SerializeField] private UnityEngine.UI.Button _button;
     [SerializeField] private ToastMessageUI _toast;
 
     [Tooltip("비워 두면 연출 없이 결과가 바로 필드에 나타납니다.")]
@@ -35,7 +32,7 @@ public sealed class GachaButtonUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_button == null || _countLabel == null || _toast == null)
+        if (_button == null || _toast == null)
         {
             Debug.LogError("가챠 버튼의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -43,9 +40,6 @@ public sealed class GachaButtonUI : MonoBehaviour
         }
 
         _button.onClick.AddListener(OnButtonClicked);
-        GameManager.OnAllDataInitialized += Refresh;
-        CurrencyManager.OnDataChanged += OnCurrencyChanged;
-        Refresh();
     }
 
     private void OnDestroy()
@@ -55,15 +49,6 @@ public sealed class GachaButtonUI : MonoBehaviour
             _button.onClick.RemoveListener(OnButtonClicked);
         }
 
-        GameManager.OnAllDataInitialized -= Refresh;
-        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
-    }
-
-    private void OnCurrencyChanged(ECurrencyType type, Currency amount)
-    {
-        if (type != ECurrencyType.GachaTicket) return;
-
-        Refresh();
     }
 
     private void OnButtonClicked()
@@ -75,7 +60,6 @@ public sealed class GachaButtonUI : MonoBehaviour
         EGachaFailure failure = GachaService.TryPull(
             out SlimeController spawned,
             out EGachaRarity rarity);
-        Refresh();
 
         if (failure == EGachaFailure.None && spawned != null)
         {
@@ -105,11 +89,4 @@ public sealed class GachaButtonUI : MonoBehaviour
         }
     }
 
-    private void Refresh()
-    {
-        if (CurrencyManager.Instance == null) return;
-
-        double count = (double)CurrencyManager.Instance.Get(ECurrencyType.GachaTicket);
-        _countLabel.text = count.ToString("0");
-    }
 }

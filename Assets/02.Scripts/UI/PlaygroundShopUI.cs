@@ -18,12 +18,16 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _titleText;
     [SerializeField] private TextMeshProUGUI _emptyText;
     [SerializeField] private ToastMessageUI _toast;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private CurrencyManager _currencyManager;
 
     // 다 산 것에 값을 그대로 두면 살 수 있어 보인다.
     private const string SoldOutLabel = "SOLD OUT";
 
     private readonly List<PlaygroundShopItemView> _items = new();
     private readonly List<AffordabilityBinding> _affordabilityBindings = new();
+    private PlaygroundShopPurchaseService _purchaseService;
 
     private sealed class AffordabilityBinding
     {
@@ -44,11 +48,18 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_table == null || _itemRoot == null || _itemPrefab == null)
+        if (_table == null || _itemRoot == null || _itemPrefab == null ||
+            _spaceManager == null || _slimeManager == null ||
+            _currencyManager == null)
         {
             Debug.LogError("장식장 상점의 필수 참조가 비어 있습니다.", this);
             enabled = false;
+            return;
         }
+
+        _purchaseService = new PlaygroundShopPurchaseService(
+            _currencyManager,
+            _slimeManager);
     }
 
     private void Start()
@@ -58,30 +69,25 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         // 세이브가 올라오기 전에 목록을 세우면 가진 것이 없는 것으로 읽힌다.
         // 그 뒤로는 사거나 놓을 때만 다시 세우므로, 이미 산 물건이 값이 붙은 채로
         // 남아 다시 살 수 있어 보인다. 값을 치르고 나서야 거절당한다.
-        SlimeManager.OnDataInitialized += Refresh;
-        SlimeManager.OnPlaygroundChanged += Refresh;
-        SlimeManager.OnBackgroundThemesChanged += Refresh;
-        CurrencyManager.OnDataChanged += OnCurrencyChanged;
+        _slimeManager.DataInitialized += Refresh;
+        _slimeManager.PlaygroundChanged += Refresh;
+        _slimeManager.BackgroundThemesChanged += Refresh;
+        _currencyManager.DataChanged += OnCurrencyChanged;
 
-        if (GameplaySpaceManager.Instance != null)
-        {
-            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
-        }
+        _spaceManager.SpaceChanged += OnSpaceChanged;
 
         Refresh();
     }
 
     private void OnDestroy()
     {
-        SlimeManager.OnDataInitialized -= Refresh;
-        SlimeManager.OnPlaygroundChanged -= Refresh;
-        SlimeManager.OnBackgroundThemesChanged -= Refresh;
-        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
+        _slimeManager.DataInitialized -= Refresh;
+        _slimeManager.PlaygroundChanged -= Refresh;
+        _slimeManager.BackgroundThemesChanged -= Refresh;
+        _currencyManager.DataChanged -= OnCurrencyChanged;
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
-        if (GameplaySpaceManager.Instance == null) return;
-
-        GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+        if (_spaceManager != null) _spaceManager.SpaceChanged -= OnSpaceChanged;
     }
 
     private void OnSpaceChanged(EGameplaySpace space)
@@ -102,8 +108,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     {
         if (!enabled) return;
 
-        bool isDisplayRoom = GameplaySpaceManager.Instance != null &&
-                             !GameplaySpaceManager.Instance.IsMainFieldActive;
+        bool isDisplayRoom = !_spaceManager.IsMainFieldActive;
 
         if (_titleText != null)
         {
@@ -125,7 +130,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private int BuildObjectItems()
     {
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
         if (manager == null) return 0;
 
         int shown = 0;
@@ -133,21 +138,19 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         {
             if (!PlaygroundRules.IsValid(entry.Type)) continue;
 
-            int owned = manager.GetOwnedPlaygroundObjectCount(entry.Type);
-            bool isSoldOut = owned >= PlaygroundRules.MaxPerType;
-            bool canAfford = CurrencyManager.Instance != null &&
-                             CurrencyManager.Instance.CanAfford(
+            bool isOwned = manager.GetOwnedPlaygroundObjectCount(entry.Type) > 0;
+            bool canAfford = _currencyManager.CanAfford(
                                  ECurrencyType.Point, entry.Price);
 
             PlaygroundShopItemView view = CreateItem();
             view.Bind(
                 entry.Icon,
-                $"{entry.DisplayName}  {owned}/{PlaygroundRules.MaxPerType}",
+                entry.DisplayName,
                 entry.Description,
-                isSoldOut ? SoldOutLabel : entry.Price.ToFormattedString(),
-                !isSoldOut && canAfford,
+                isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
+                !isOwned && canAfford,
                 () => BuyObject(entry));
-            TrackAffordability(view, entry.Price, !isSoldOut);
+            TrackAffordability(view, entry.Price, !isOwned);
             shown++;
         }
 
@@ -156,7 +159,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private int BuildThemeItems()
     {
-        SlimeManager manager = SlimeManager.Instance;
+        SlimeManager manager = _slimeManager;
         if (manager == null) return 0;
 
         int shown = 0;
@@ -167,8 +170,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             if (BackgroundThemeRules.IsFree(entry.Theme)) continue;
 
             bool isOwned = manager.IsBackgroundThemeOwned(entry.Theme);
-            bool canAfford = CurrencyManager.Instance != null &&
-                             CurrencyManager.Instance.CanAfford(
+            bool canAfford = _currencyManager.CanAfford(
                                  ECurrencyType.Point, entry.Price);
 
             PlaygroundShopItemView view = CreateItem();
@@ -186,48 +188,45 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         return shown;
     }
 
-    // 값을 먼저 치르고 상태를 바꾼다. 상태 변경이 거절되면 되돌려 준다.
-    // UpgradeManager.TryLevelUp과 같은 순서다.
     private void BuyObject(PlaygroundShopTableSO.ObjectEntry entry)
     {
-        if (CurrencyManager.Instance == null || SlimeManager.Instance == null) return;
-
-        if (!CurrencyManager.Instance.TrySpend(ECurrencyType.Point, entry.Price))
-        {
-            _toast?.Show("포인트가 모자라요.");
-            return;
-        }
-
-        if (!SlimeManager.Instance.TryBuyPlaygroundObject(entry.Type))
-        {
-            CurrencyManager.Instance.Add(ECurrencyType.Point, entry.Price);
-            _toast?.Show("더 살 수 없어요.");
-            return;
-        }
-
-        PlayPurchaseSound();
-        _toast?.Show($"{entry.DisplayName}을(를) 샀어요.");
+        EPlaygroundShopPurchaseResult result = _purchaseService.TryBuyObject(
+            entry.Type,
+            entry.Price);
+        PresentPurchaseResult(result, entry.DisplayName);
     }
 
     private void BuyTheme(PlaygroundShopTableSO.ThemeEntry entry)
     {
-        if (CurrencyManager.Instance == null || SlimeManager.Instance == null) return;
+        EPlaygroundShopPurchaseResult result = _purchaseService.TryBuyTheme(
+            entry.Theme,
+            entry.Price);
+        PresentPurchaseResult(result, entry.DisplayName);
+    }
 
-        if (!CurrencyManager.Instance.TrySpend(ECurrencyType.Point, entry.Price))
+    private void PresentPurchaseResult(
+        EPlaygroundShopPurchaseResult result,
+        string displayName)
+    {
+        switch (result)
         {
-            _toast?.Show("포인트가 모자라요.");
-            return;
-        }
+            case EPlaygroundShopPurchaseResult.Success:
+                PlayPurchaseSound();
+                _toast?.Show($"{displayName}을(를) 샀어요.");
+                break;
 
-        if (!SlimeManager.Instance.TryAddBackgroundTheme(entry.Theme))
-        {
-            CurrencyManager.Instance.Add(ECurrencyType.Point, entry.Price);
-            _toast?.Show(SoldOutLabel);
-            return;
-        }
+            case EPlaygroundShopPurchaseResult.InsufficientPoints:
+                _toast?.Show("포인트가 모자라요.");
+                break;
 
-        PlayPurchaseSound();
-        _toast?.Show($"{entry.DisplayName}을(를) 샀어요.");
+            case EPlaygroundShopPurchaseResult.Unavailable:
+                _toast?.Show(SoldOutLabel);
+                break;
+
+            default:
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(result), result, null);
+        }
     }
 
     private void PlayPurchaseSound()
@@ -254,7 +253,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private void RefreshAffordability()
     {
-        CurrencyManager currencyManager = CurrencyManager.Instance;
+        CurrencyManager currencyManager = _currencyManager;
         foreach (AffordabilityBinding binding in _affordabilityBindings)
         {
             if (binding.View == null) continue;

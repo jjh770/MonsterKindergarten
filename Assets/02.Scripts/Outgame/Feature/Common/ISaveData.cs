@@ -25,6 +25,8 @@ public static class SaveSchema
     // v10: 장식장에 놓은 놀이터 오브젝트, 사 둔 오브젝트 수, 사 둔 배경 테마를
     // 추가했다. 세 필드 모두 없으면 빈 목록으로 읽히고 그것이 "아무것도 사지 않은"
     // 정확한 상태라, 승격 함수에서 채울 것이 없다.
-    public const int SlimeCurrentVersion = 10;
+    // v11: 엔딩 크레딧에서 사용할 게임 시작일과 메인 엔딩 도달일을 추가했다.
+    // 이전 문서는 최초 도감 등록일을 우선 사용하고, 기록이 없으면 승격 시각으로 채운다.
+    public const int SlimeCurrentVersion = 11;
     public const int UpgradeCurrentVersion = 1;
 }

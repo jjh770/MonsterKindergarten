@@ -51,7 +51,8 @@ public class LoginScene : MonoBehaviour
         // 버튼이 꺼져 있어도 찾도록 비활성까지 뒤진다. 연출이 끝나야 켜진다.
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = IdleLabel;
-        _loginButton.onClick.AddListener(() => Login(true).Forget());
+        _loginButton.onClick.AddListener(OnLoginButtonClicked);
+        AudioManager.Instance?.PlayLoginBgm();
         PlayIntro();
 
         if (_recoveryUI != null)
@@ -82,11 +83,18 @@ public class LoginScene : MonoBehaviour
     private void OnDestroy()
     {
         _titleTween?.Kill();
+        _loginButton.onClick.RemoveListener(OnLoginButtonClicked);
 
         if (_recoveryUI != null)
         {
             _recoveryUI.ConfirmRequested -= OnRecoveryConfirmed;
         }
+    }
+
+    private void OnLoginButtonClicked()
+    {
+        AudioManager.Instance?.PlaySFX(EAudioSfx.LoginButton);
+        Login(true).Forget();
     }
 
     // 로고를 위에서 떨어뜨리고, 내려앉은 뒤에 버튼을 연다.

@@ -28,6 +28,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private bool _isInitializeStarted;
     private bool _isInitialized;
+    private GameManager _gameManager;
+    private MergeManager _mergeManager;
 
     public EBackgroundTheme CurrentBackgroundTheme => _currentBackgroundTheme;
     public EGameplaySpace CurrentSpace => _currentSpace;
@@ -67,8 +69,24 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _backgroundThemeUnlockDirector.InteractionEnableRequested +=
             SetInteractionEnabled;
 
-        GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        MergeManager.Merged += OnMerged;
+        _gameManager = GameManager.Instance;
+        if (_gameManager == null)
+        {
+            Debug.LogError("게임 공간 매니저가 게임 매니저를 찾지 못했습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _mergeManager = MergeManager.Instance;
+        if (_mergeManager == null)
+        {
+            Debug.LogError("게임 공간 매니저가 합성 매니저를 찾지 못했습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _gameManager.AllDataInitialized += OnAllDataInitialized;
+        _mergeManager.Merged += OnMerged;
         _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
 
         if (SlimeSpawner.Instance != null)
@@ -76,8 +94,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             SlimeSpawner.Instance.Spawned += OnSlimeSpawned;
         }
 
-        if (GameManager.Instance != null &&
-            GameManager.Instance.IsAllDataInitialized)
+        if (_gameManager.IsAllDataInitialized)
         {
             OnAllDataInitialized();
         }
@@ -90,8 +107,14 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             Instance = null;
         }
 
-        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        MergeManager.Merged -= OnMerged;
+        if (_gameManager != null)
+        {
+            _gameManager.AllDataInitialized -= OnAllDataInitialized;
+        }
+        if (_mergeManager != null)
+        {
+            _mergeManager.Merged -= OnMerged;
+        }
 
         if (_unlockPopupUI != null)
         {

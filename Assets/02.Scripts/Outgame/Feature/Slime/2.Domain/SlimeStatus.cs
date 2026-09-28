@@ -19,6 +19,8 @@ public class SlimeStatus
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
     public bool IsAutoSpawnEnabled { get; private set; }
     public bool MainEndingSeen { get; private set; }
+    public DateTime GameStartedAtUtc { get; }
+    public DateTime? MainEndingReachedAtUtc { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
 
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
@@ -44,6 +46,8 @@ public class SlimeStatus
         int pendingTickets,
         bool isAutoSpawnEnabled,
         bool mainEndingSeen,
+        DateTime gameStartedAtUtc,
+        DateTime? mainEndingReachedAtUtc,
         int specialGachaMissCount,
         IEnumerable<string> completedTutorials = null,
         IEnumerable<PlacedPlaygroundObject> placedObjects = null,
@@ -79,6 +83,10 @@ public class SlimeStatus
         PendingTickets = pendingTickets;
         IsAutoSpawnEnabled = isAutoSpawnEnabled;
         MainEndingSeen = mainEndingSeen;
+        GameStartedAtUtc = NormalizeUtc(gameStartedAtUtc);
+        MainEndingReachedAtUtc = mainEndingReachedAtUtc.HasValue
+            ? NormalizeUtc(mainEndingReachedAtUtc.Value)
+            : null;
 
         if (specialGachaMissCount < 0 ||
             specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
@@ -149,6 +157,17 @@ public class SlimeStatus
             NormalCollectionCount < NormalCollectionRules.MainEndingCount)
         {
             throw new ArgumentException("도감 완성 전에 메인 엔딩이 완료된 저장입니다.");
+        }
+
+        if (MainEndingReachedAtUtc.HasValue &&
+            NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        {
+            throw new ArgumentException("도감 완성 전에 메인 엔딩 도달 시각이 저장되어 있습니다.");
+        }
+
+        if (MainEndingSeen && !MainEndingReachedAtUtc.HasValue)
+        {
+            throw new ArgumentException("메인 엔딩 확인 기록에 도달 시각이 없습니다.");
         }
 
         if (SpecialGachaMissCount > 0 &&
@@ -225,6 +244,11 @@ public class SlimeStatus
     public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)
     {
         if (!PlaygroundRules.IsValid(type)) return false;
+        if (GetPlacedPlaygroundObjectCount(type) >= PlaygroundRules.MaxPerType)
+        {
+            return false;
+        }
+
         if (GetPlacedPlaygroundObjectCount(type) >= GetOwnedPlaygroundObjectCount(type))
         {
             return false;
@@ -429,6 +453,30 @@ public class SlimeStatus
 
         MainEndingSeen = true;
         return true;
+    }
+
+    public bool TryMarkMainEndingReached(DateTime reachedAtUtc)
+    {
+        if (MainEndingReachedAtUtc.HasValue ||
+            NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        {
+            return false;
+        }
+
+        MainEndingReachedAtUtc = NormalizeUtc(reachedAtUtc);
+        return true;
+    }
+
+    private static DateTime NormalizeUtc(DateTime value)
+    {
+        if (value == DateTime.MinValue)
+        {
+            throw new ArgumentException("게임 진행 시각이 비어 있습니다.");
+        }
+
+        return value.Kind == DateTimeKind.Utc
+            ? value
+            : value.ToUniversalTime();
     }
 
     public bool RecordSpecialGachaResult(bool wasSpecial)

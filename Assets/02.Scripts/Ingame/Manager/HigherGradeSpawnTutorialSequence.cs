@@ -217,9 +217,22 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void OnUpgradeFocused()
     {
-        if (_step != Step.Carousel ||
-            !_systemUpgradePanel.IsSelected(EUpgradeType.HigherGradeSpawnWeightAdd))
+        if (_step != Step.Carousel)
         {
+            return;
+        }
+
+        if (!_systemUpgradePanel.IsSelected(EUpgradeType.HigherGradeSpawnWeightAdd))
+        {
+            // TryFocus는 한 번에 한 칸만 이동한다. 목표 카드가 여러 칸 떨어져
+            // 있으면 다음 회전을 이어 가지 않는 한 중간 카드에서 멈춘다.
+            if (_systemUpgradePanel.TryFocus(EUpgradeType.HigherGradeSpawnWeightAdd))
+            {
+                return;
+            }
+
+            _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
+            Complete();
             return;
         }
 

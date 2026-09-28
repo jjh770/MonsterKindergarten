@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -36,7 +36,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     [SerializeField, Min(0f)] private float _compactMessageWidth = 240f;
 
     [Tooltip("안내창 안에서 글자 둘레에 두는 여백의 합(가로, 세로)입니다.")]
-    [SerializeField] private Vector2 _messagePadding = new Vector2(64f, 36f);
+    [SerializeField] private Vector2 _messagePadding = new Vector2(100f, 60f);
 
     private RectTransform _rootRect;
     private Canvas _canvas;
