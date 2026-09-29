@@ -5614,7 +5614,7 @@ MonoBehaviour:
   _scatterDistance: {x: 150, y: 100}
   _flyDuration: 0.65
   _targetPunchScale: 0.12
-  _fadeDuration: 0.2
+  _fadeDuration: 0.5
   _punchDuration: 0.35
   _canvasGroup: {fileID: 2099600002}
 --- !u!1 &557271771
@@ -29751,6 +29751,7 @@ MonoBehaviour:
   _nameSlideDistance: 180
   _moveArcRadius: 160
   _moveSpinTurns: 3
+  _emergeRise: 80
 --- !u!1 &2101000010
 GameObject:
   m_ObjectHideFlags: 0

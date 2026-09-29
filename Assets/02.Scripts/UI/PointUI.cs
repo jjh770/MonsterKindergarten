@@ -80,7 +80,7 @@ public class PointUI : MonoBehaviour
 
         if (_pointText != null)
         {
-            _pointText.text = $"{CurrencyIcon.Point}{(Currency)point}";
+            _pointText.text = $"{CurrencyIcon.Point} {(Currency)point}";
         }
     }
 

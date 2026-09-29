@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -397,24 +398,35 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
 
-        if (_gameManager != null)
+        try
         {
-            await _gameManager.CompleteTutorialAsync();
+            if (_gameManager != null)
+            {
+                await _gameManager.CompleteTutorialAsync();
+            }
+            else
+            {
+                Debug.LogError("GameManager가 없어 튜토리얼 완료 상태를 저장하지 못했습니다.");
+                GameplaySaveGate.SetSavingEnabled(true);
+            }
         }
-        else
+        catch (Exception e)
         {
-            Debug.LogError("GameManager가 없어 튜토리얼 완료 상태를 저장하지 못했습니다.");
-            GameplaySaveGate.SetSavingEnabled(true);
+            // 저장이 실패해도 아래 정리는 반드시 실행해 소프트락을 막는다. 메인 튜토리얼은
+            // 미완료로 남아 재시작 시 다시 시도된다.
+            Debug.LogError($"튜토리얼 완료 저장에 실패했습니다: {e}");
         }
-
-        survivingSlime?.SetMovementLocked(false);
-        _promotedTutorialSlime = null;
-        _mergeTutorialSlime = null;
-        _spawnManager?.SetSpawningPaused(false);
-        _autoClicker?.SetPaused(false);
-        _clicker.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        finally
+        {
+            survivingSlime?.SetMovementLocked(false);
+            _promotedTutorialSlime = null;
+            _mergeTutorialSlime = null;
+            _spawnManager?.SetSpawningPaused(false);
+            _autoClicker?.SetPaused(false);
+            _clicker.ReleaseMode(this);
+            CompleteTutorial();
+            _gameplaySpaceManager?.RefreshInteraction();
+        }
     }
 
     private void UnsubscribeGuide()

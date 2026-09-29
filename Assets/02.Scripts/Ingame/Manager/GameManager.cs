@@ -205,9 +205,23 @@ public class GameManager : MonoBehaviour
         if (!HasConsistentStoredSaveData()) return;
 
         _isAllInitialized = true;
-        InitializeTutorialProgress();
-        _offlineRewardManager.Grant();
-        AllDataInitialized?.Invoke();
+
+        // 후반 단계에서 예외가 나면 AllDataInitialized가 끝까지 발화하지 못해 로딩이 멈춘다.
+        // _isAllInitialized가 이미 true라 타임아웃 감시는 무력화되므로, 여기서 즉시
+        // 로드 실패를 신고해 로그인 화면으로 돌려보낸다.
+        try
+        {
+            InitializeTutorialProgress();
+            _offlineRewardManager.Grant();
+            AllDataInitialized?.Invoke();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"초기화 마무리 단계에서 예외가 발생했습니다: {e}");
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"초기화 마무리 단계 예외 : {e.Message}");
+        }
     }
 
     // 등록된 저장 문서는 함께 만들어지고 함께 지워진다. 튜토리얼을 마칠 때 전부

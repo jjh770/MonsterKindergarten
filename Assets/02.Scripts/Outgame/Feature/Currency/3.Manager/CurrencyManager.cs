@@ -59,74 +59,85 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
 
         Instance = this;
 
-        await UniTask.Yield();
+        // async void라 이 아래에서 던진 예외는 SynchronizationContext로 흘러가
+        // 호출부가 잡을 수 없다. 초기화 본문을 통째로 감싸는 것이 유일한 포착 수단이다.
+        try
+        {
+            await UniTask.Yield();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.UserId), new FirebaseCurrencyRepository());
+            _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.UserId), new FirebaseCurrencyRepository());
 #else
-        _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
+            _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
 #endif
 
-        SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
-        if (loadResult.IsFailed)
-        {
-            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
-            SaveDataLoadGuard.Report(
-                loadResult.Failure,
-                $"Currency : {loadResult.FailureMessage}");
-            return;
-        }
+            SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
+            if (loadResult.IsFailed)
+            {
+                // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+                SaveDataLoadGuard.Report(
+                    loadResult.Failure,
+                    $"Currency : {loadResult.FailureMessage}");
+                return;
+            }
 
-        HasStoredSaveData = loadResult.IsLoaded;
-        CurrencySaveData saveData = loadResult.IsLoaded
-            ? loadResult.Data
-            : CurrencySaveData.Default;
-        // 저장된 배열이 현재보다 짧은 것은 재화 종류를 늘리기 전에 저장된 문서다.
-        // 정상적으로 만들어질 수 있는 값이므로 차단하지 않고 흡수한다. 없는 자리는
-        // 아래에서 0으로 채운다.
-        //
-        // 반대로 현재보다 긴 배열은 이 앱이 모르는 재화가 들어 있다는 뜻이다. 상위
-        // 스키마 버전은 저장소가 이미 막으므로, 버전은 맞는데 길이만 긴 문서는 변조로
-        // 본다. 배열이 아예 없는 것도 해석할 수 없다. 0으로 채우면 재화가 조용히 사라진다.
-        double[] currencyValues = saveData.Currencies;
-        if (currencyValues == null || currencyValues.Length > _currencies.Length)
-        {
-            SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
-                $"Currency : 재화 배열을 해석할 수 없습니다. : " +
-                $"{currencyValues?.Length.ToString() ?? "없음"}");
-            return;
-        }
-
-        // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
-        // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
-        foreach (double value in currencyValues)
-        {
-            if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+            HasStoredSaveData = loadResult.IsLoaded;
+            CurrencySaveData saveData = loadResult.IsLoaded
+                ? loadResult.Data
+                : CurrencySaveData.Default;
+            // 저장된 배열이 현재보다 짧은 것은 재화 종류를 늘리기 전에 저장된 문서다.
+            // 정상적으로 만들어질 수 있는 값이므로 차단하지 않고 흡수한다. 없는 자리는
+            // 아래에서 0으로 채운다.
+            //
+            // 반대로 현재보다 긴 배열은 이 앱이 모르는 재화가 들어 있다는 뜻이다. 상위
+            // 스키마 버전은 저장소가 이미 막으므로, 버전은 맞는데 길이만 긴 문서는 변조로
+            // 본다. 배열이 아예 없는 것도 해석할 수 없다. 0으로 채우면 재화가 조용히 사라진다.
+            double[] currencyValues = saveData.Currencies;
+            if (currencyValues == null || currencyValues.Length > _currencies.Length)
             {
                 SaveDataLoadGuard.Report(
                     ESaveLoadFailure.Unreadable,
-                    $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                    $"Currency : 재화 배열을 해석할 수 없습니다. : " +
+                    $"{currencyValues?.Length.ToString() ?? "없음"}");
                 return;
             }
-        }
 
-        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
-        for (int i = 0; i < _currencies.Length; i++)
+            // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
+            // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
+            foreach (double value in currencyValues)
+            {
+                if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+                {
+                    SaveDataLoadGuard.Report(
+                        ESaveLoadFailure.Unreadable,
+                        $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                    return;
+                }
+            }
+
+            LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
+            for (int i = 0; i < _currencies.Length; i++)
+            {
+                // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
+                double stored = i < currencyValues.Length
+                    ? currencyValues[i]
+                    : 0d;
+
+                // 재화는 모두 정수 단위로 센다. 배율을 곱한 값이 소수로 남던 시절의
+                // 저장값이 그대로 올라오므로 여기서 한 번 내림한다. 1 미만을 버리는
+                // 것이라 진행에는 영향이 없고, 이후로는 더하는 쪽에서 정수만 넣는다.
+                _currencies[i] = Math.Floor(stored);
+            }
+
+            IsInitialized = true;
+            DataInitialized?.Invoke();
+        }
+        catch (Exception e)
         {
-            // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
-            double stored = i < currencyValues.Length
-                ? currencyValues[i]
-                : 0d;
-
-            // 재화는 모두 정수 단위로 센다. 배율을 곱한 값이 소수로 남던 시절의
-            // 저장값이 그대로 올라오므로 여기서 한 번 내림한다. 1 미만을 버리는
-            // 것이라 진행에는 영향이 없고, 이후로는 더하는 쪽에서 정수만 넣는다.
-            _currencies[i] = Math.Floor(stored);
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.Unreadable,
+                $"Currency : 초기화 중 예외 : {e.Message}");
         }
-
-        IsInitialized = true;
-        DataInitialized?.Invoke();
     }
 
     // 재화 조회
