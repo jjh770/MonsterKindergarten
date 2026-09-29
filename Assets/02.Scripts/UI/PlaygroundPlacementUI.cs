@@ -212,10 +212,17 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void RemoveSelected()
     {
-        if (_selectedIndex < 0) return;
+        int indexToRemove = _selectedIndex;
+        if (indexToRemove < 0) return;
 
-        _slimeManager.TryRemovePlacedObject(_selectedIndex);
+        // 선택을 먼저 해제한다. TryRemovePlacedObject가 성공하면 PlaygroundChanged로 Refresh가
+        // 도는데, 그때 _selectedIndex가 이미 -1이라야 치우기 버튼과 안내가 정리된다.
         ClearSelection();
+        if (!_slimeManager.TryRemovePlacedObject(indexToRemove))
+        {
+            // 실패 시엔 이벤트가 오지 않으므로 직접 화면을 정리한다.
+            Refresh();
+        }
     }
 
     private void Refresh()

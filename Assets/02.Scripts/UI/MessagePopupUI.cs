@@ -24,6 +24,7 @@ public class MessagePopupUI : MonoBehaviour
     [SerializeField] private float _punchStrength = 15f;
 
     private Sequence _currentSequence;
+    private Vector2 _basePosition;
 
     private void Awake()
     {
@@ -44,6 +45,8 @@ public class MessagePopupUI : MonoBehaviour
             return;
         }
 
+        _basePosition = _popupRectTransform.anchoredPosition;
+
         _popupPanel.SetActive(false);
     }
 
@@ -62,6 +65,9 @@ public class MessagePopupUI : MonoBehaviour
     {
         // 이전 애니메이션 취소
         _currentSequence?.Kill();
+
+        // 이전 펀치가 남긴 오프셋을 지우고 항상 기준 위치에서 시작
+        _popupRectTransform.anchoredPosition = _basePosition;
 
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
