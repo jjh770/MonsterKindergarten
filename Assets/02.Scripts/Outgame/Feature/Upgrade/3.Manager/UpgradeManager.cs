@@ -148,12 +148,14 @@ public class UpgradeManager : MonoBehaviour
 
         Currency cost = upgrade.Cost;
 
-        if (!CurrencyManager.Instance.TrySpend(ECurrencyType.Point, cost)) return false;
-
-        if (!upgrade.TryLevelUp())
+        EEconomyTransactionResult result =
+            EconomyTransactionService.TryPurchase(
+                CurrencyManager.Instance,
+                ECurrencyType.Point,
+                cost,
+                upgrade.TryLevelUp);
+        if (result != EEconomyTransactionResult.Success)
         {
-            // 레벨업 실패 시 포인트 환불
-            CurrencyManager.Instance.Add(ECurrencyType.Point, cost);
             return false;
         }
         Save();

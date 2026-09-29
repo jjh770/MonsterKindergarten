@@ -138,24 +138,92 @@ public class CurrencyManager : MonoBehaviour
     // 재화 추가
     public void Add(ECurrencyType type, Currency amount)
     {
-        _currencies[(int)type] += amount;
-        Currency updated = _currencies[(int)type];
-        DataChanged?.Invoke(type, updated);
-        Save();
+        TryApplyChange(CurrencyChange.Add(type, amount));
     }
 
     // 재화 소모
     public bool TrySpend(ECurrencyType type, Currency amount)
     {
-        if (_currencies[(int)type] >= amount)
+        return TryApplyChange(CurrencyChange.Spend(type, amount));
+    }
+
+    // 클릭과 자동 생산의 단일 재화 변경은 매우 자주 호출되므로 params 배열을 만들지 않는다.
+    private bool TryApplyChange(CurrencyChange change)
+    {
+        int index = ValidateType(change.Type);
+        if ((double)change.Amount == 0d) return true;
+
+        if (change.IsSpend)
         {
-            _currencies[(int)type] -= amount;
-            Currency updated = _currencies[(int)type];
-            DataChanged?.Invoke(type, updated);
-            Save();
-            return true;
+            if (_currencies[index] < change.Amount) return false;
+            _currencies[index] -= change.Amount;
         }
-        return false;
+        else
+        {
+            _currencies[index] += change.Amount;
+        }
+
+        DataChanged?.Invoke(change.Type, _currencies[index]);
+        Save();
+        return true;
+    }
+
+    // 한 보상이나 거래에 여러 재화가 참여해도 전부 검증한 뒤 한 번만 저장한다.
+    // 중간 변경은 외부에 보이지 않으며, 하나라도 부족하면 아무것도 바꾸지 않는다.
+    public bool TryApplyChanges(params CurrencyChange[] changes)
+    {
+        if (changes == null) throw new ArgumentNullException(nameof(changes));
+        if (changes.Length == 0) return true;
+
+        Currency[] next = (Currency[])_currencies.Clone();
+        bool[] changedTypes = new bool[next.Length];
+        bool hasChange = false;
+
+        foreach (CurrencyChange change in changes)
+        {
+            int index = ValidateType(change.Type);
+
+            if ((double)change.Amount == 0d) continue;
+
+            if (change.IsSpend)
+            {
+                if (next[index] < change.Amount) return false;
+                next[index] -= change.Amount;
+            }
+            else
+            {
+                next[index] += change.Amount;
+            }
+
+            changedTypes[index] = true;
+            hasChange = true;
+        }
+
+        if (!hasChange) return true;
+
+        _currencies = next;
+        for (int i = 0; i < changedTypes.Length; i++)
+        {
+            if (!changedTypes[i]) continue;
+            DataChanged?.Invoke((ECurrencyType)i, _currencies[i]);
+        }
+
+        Save();
+        return true;
+    }
+
+    private int ValidateType(ECurrencyType type)
+    {
+        int index = (int)type;
+        if (index < 0 || index >= _currencies.Length)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(type),
+                type,
+                "지원하지 않는 재화 종류입니다.");
+        }
+
+        return index;
     }
 
     // 재화 저장

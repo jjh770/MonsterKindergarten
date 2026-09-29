@@ -46,30 +46,20 @@ public sealed class PlaygroundShopPurchaseService
         Currency price,
         Func<bool> grantOwnership)
     {
-        if (!_currencyManager.TrySpend(ECurrencyType.Point, price))
+        EEconomyTransactionResult result =
+            EconomyTransactionService.TryPurchase(
+                _currencyManager,
+                ECurrencyType.Point,
+                price,
+                grantOwnership);
+
+        if (result == EEconomyTransactionResult.InsufficientCurrency)
         {
             return EPlaygroundShopPurchaseResult.InsufficientPoints;
         }
 
-        try
-        {
-            if (grantOwnership())
-            {
-                return EPlaygroundShopPurchaseResult.Success;
-            }
-        }
-        catch
-        {
-            Refund(price);
-            throw;
-        }
-
-        Refund(price);
-        return EPlaygroundShopPurchaseResult.Unavailable;
-    }
-
-    private void Refund(Currency price)
-    {
-        _currencyManager.Add(ECurrencyType.Point, price);
+        return result == EEconomyTransactionResult.Success
+            ? EPlaygroundShopPurchaseResult.Success
+            : EPlaygroundShopPurchaseResult.Unavailable;
     }
 }

@@ -52,20 +52,30 @@ public static class GachaService
             return EGachaFailure.NoCandidate;
         }
 
-        if (!currencyManager.TrySpend(ECurrencyType.GachaTicket, 1d))
-        {
-            return EGachaFailure.NoTicket;
-        }
+        SlimeController pulledSlime = null;
+        EEconomyTransactionResult transactionResult =
+            EconomyTransactionService.TryPurchase(
+                currencyManager,
+                ECurrencyType.GachaTicket,
+                1d,
+                () =>
+                {
+                    pulledSlime = spawnManager.Spawn(result.Grade);
+                    return pulledSlime != null;
+                });
 
-        spawned = spawnManager.Spawn(result.Grade);
-        if (spawned != null)
+        if (transactionResult == EEconomyTransactionResult.Success)
         {
+            spawned = pulledSlime;
             rarity = result.Rarity;
             return EGachaFailure.None;
         }
 
-        // 티켓만 사라지는 것이 가장 나쁘다. 되돌린다.
-        currencyManager.Add(ECurrencyType.GachaTicket, 1d);
+        if (transactionResult == EEconomyTransactionResult.InsufficientCurrency)
+        {
+            return EGachaFailure.NoTicket;
+        }
+
         Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {result.Grade}");
         return EGachaFailure.SpawnFailed;
     }

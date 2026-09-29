@@ -327,7 +327,12 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
-        if (!SlimeManager.Instance.TryConsumePendingTicket())
+        if (!EconomyTransactionService.TryGrantAfterConsume(
+                CurrencyManager.Instance,
+                ECurrencyType.GachaTicket,
+                1d,
+                SlimeManager.Instance.TryConsumePendingTicket,
+                SlimeManager.Instance.AddPendingTicket))
         {
             _isBulkCollecting = false;
             Restore();
@@ -336,7 +341,6 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
-        CurrencyManager.Instance.Add(ECurrencyType.GachaTicket, 1d);
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlaySFXWithCooldown(

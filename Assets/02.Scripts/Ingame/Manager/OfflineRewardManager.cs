@@ -239,17 +239,11 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         OfflineRewardResult result = _pendingReward.Value;
-        if ((double)result.Reward > 0d)
-        {
-            CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
-        }
-
-        if (result.TicketReward > 0)
-        {
-            CurrencyManager.Instance.Add(
+        CurrencyManager.Instance.TryApplyChanges(
+            CurrencyChange.Add(ECurrencyType.Point, result.Reward),
+            CurrencyChange.Add(
                 ECurrencyType.GachaTicket,
-                result.TicketReward);
-        }
+                result.TicketReward));
         _isClaimed = true;
         return true;
     }

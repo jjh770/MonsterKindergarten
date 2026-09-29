@@ -29,13 +29,13 @@ public readonly struct Currency
 
     public Currency(double value)
     {
-        // 1. 음수 유효성 검사 
-        if (value < 0)
+        // 음수뿐 아니라 NaN과 무한대도 비교와 저장을 망가뜨린다.
+        if (value < 0 || double.IsNaN(value) || double.IsInfinity(value))
         {
             // 이런 잘못된 데이터가 들어왔다는 것은 여러가지 부작용이 생길 수 있음.
             // 게임 플레이 도중에 그 부작용을 느끼는 것보다
             // 시작단계에서 에러를 뱉어버리는 것이 유지보수 면에서 편함.
-            throw new Exception("Currency 값은 0보다 작을 수 없습니다.");
+            throw new Exception($"Currency 값이 올바르지 않습니다. : {value}");
         }
         Value = value;
     }
