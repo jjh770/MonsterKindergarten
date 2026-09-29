@@ -84,3 +84,6 @@ crashlytics-build.properties
 # Firebase CLI 캐시
 /.firebase/
 firebase-debug.log
+
+# Kiro 스펙 작업 문서 (로컬 전용)
+/.kiro/

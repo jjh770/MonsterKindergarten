@@ -205,7 +205,14 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         _status = restoredStatus;
         _collectionStats = restoredStats;
 
-        if (needsMigrationSave)
+        // 문서가 없던 신규 계정은 승격할 원본이 없다. 기본값에서 채운 시작 시각은
+        // 메모리에만 두고, 튜토리얼을 마칠 때 세 문서와 함께 기록한다. 여기서 저장하면
+        // SlimeStatus 문서만 먼저 생겨 다음 진입의 교차 검사가 결손으로 본다.
+        // 다른 도메인이 이미 로드 실패를 신고한 세션도 저장하지 않는다. 원본은 그대로
+        // 남으므로 다음 정상 세션에서 같은 승격이 다시 판정된다.
+        if (needsMigrationSave &&
+            loadResult.IsLoaded &&
+            !SaveDataLoadGuard.HasFailure)
         {
             await SaveMigratedAsync();
         }
