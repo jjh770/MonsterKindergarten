@@ -26,6 +26,8 @@ public class SlimeController : MonoBehaviour, IClickable
     // 연출이 이 슬라임을 쓰는 중인지. 대포가 물고 있는 동안 정보창이 이 값을 보고
     // 버튼을 내린다.
     private bool _isPresentationLocked;
+    // 현재 공간에서 이 슬라임(Location)이 보여야 하는지. SetLocationPresentationActive가 소유.
+    private bool _isSpaceVisible;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
@@ -96,6 +98,14 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         SetDragging(false);
         _hasLanded = false;
+        // 풀에서 재사용된 오브젝트가 이전 연출 잠금이나 보간 설정을 물려받지 않게 한다.
+        // 스폰된 슬라임은 기본적으로 메인 필드에 보이는 상태다. 장식장 복원은 직후
+        // SetLocationPresentationActive(false)가 명시적으로 끈다. 합성으로 살아남는
+        // 슬라임처럼 SetLocationPresentationActive를 다시 거치지 않는 경로도 있으므로
+        // 기본값을 보임(true)으로 두어야 만질 수 있는 상태가 유지된다.
+        _isPresentationLocked = false;
+        _isSpaceVisible = true;
+        SetDisplayRoomCameraFocus(false);
         ResetAutoProductionPhase();
         OnSpawned?.Invoke();
     }
@@ -190,11 +200,17 @@ public class SlimeController : MonoBehaviour, IClickable
             _scaleFeedback?.StopAndReset();
         }
 
-        // 풀 때는 공간이 정해 둔 표시 상태를 따른다. 그림이 꺼진 슬라임은 지금 화면에 없는
-        // 쪽에 있는 것이라, 콜라이더와 물리만 되살아나면 보이지 않는 채로 터치를 가로채고
-        // 보이는 슬라임을 밀어낸다. 공간 전환 중 판정은 흔들리므로 그림 상태를 기준으로 삼는다.
-        bool isInteractive = !isLocked &&
-                             (_spriteRenderer == null || _spriteRenderer.enabled);
+        // 렌더러는 건드리지 않는다. 그림은 공간 가시성 축이 정한다.
+        ApplyInteractionState();
+    }
+
+    // 콜라이더·물리·이동 잠금·슬라임끼리 충돌을 정하는 유일한 지점이다. 두 축을 AND한다.
+    // 공간에 보이면서(_isSpaceVisible) 연출이 점유하지 않을 때(!_isPresentationLocked)만 만질 수 있다.
+    private void ApplyInteractionState()
+    {
+        bool isInteractive = _isSpaceVisible && !_isPresentationLocked;
+
+        ApplySlimeToSlimeCollision();
 
         foreach (Collider2D targetCollider in _colliders)
         {
@@ -231,7 +247,7 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void SetLocationPresentationActive(bool isActive)
     {
-        ApplySlimeToSlimeCollision();
+        _isSpaceVisible = isActive;
 
         if (!isActive)
         {
@@ -241,38 +257,13 @@ public class SlimeController : MonoBehaviour, IClickable
             _hasLanded = true;
         }
 
+        // 그림은 공간 가시성 축이 정한다. 연출 잠금은 그림을 끄지 않는다.
         if (_spriteRenderer != null)
         {
             _spriteRenderer.enabled = isActive;
         }
 
-        foreach (Collider2D targetCollider in _colliders)
-        {
-            if (targetCollider != null)
-            {
-                targetCollider.enabled = isActive;
-            }
-        }
-
-        if (!isActive)
-        {
-            _slimeMove?.SetMovementLocked(true);
-        }
-
-        if (_rigidbody != null)
-        {
-            if (!isActive)
-            {
-                _rigidbody.linearVelocity = Vector2.zero;
-            }
-
-            _rigidbody.simulated = isActive;
-        }
-
-        if (isActive)
-        {
-            _slimeMove?.SetMovementLocked(false);
-        }
+        ApplyInteractionState();
     }
 
     // 슬라임끼리는 레이어 충돌 행렬에서 서로 부딪히지 않게 꺼 두었다(Clickable 대 Clickable).
