@@ -48,6 +48,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     private RectTransform _secondaryUiTarget;
     private Vector2 _holeCenter;
     private Vector2 _currentHoleSize;
+    private Vector2 _passThroughHoleSize;
     private Vector2 _secondHoleCenter;
     private Vector2 _secondHoleSize;
     private bool _hasSecondHole;
@@ -288,7 +289,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         return IsInsideHole(
             localPoint,
             _holeCenter,
-            _currentHoleSize,
+            _passThroughHoleSize,
             _useRectangularHole);
     }
 
@@ -310,6 +311,26 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
             : normalized.sqrMagnitude <= 1f;
     }
 
+    // 통과/전진 판정용 실제 대상 영역 크기. 자식(라벨/아이콘)을 제외하고 _uiTarget 자체
+    // rect만 사용한다. 대상의 월드 모서리를 _rootRect 로컬로 변환한 뒤 축 정렬 bounding으로
+    // 크기만 취해, 회전이 없는 하단 HUD 등에서 안전하게 대상 영역을 좁힌다. padding은 더하지 않는다.
+    private Vector2 CalculateTargetRectSize(RectTransform target)
+    {
+        Vector3[] worldCorners = new Vector3[4];
+        target.GetWorldCorners(worldCorners);
+
+        Vector2 min = _rootRect.InverseTransformPoint(worldCorners[0]);
+        Vector2 max = min;
+        for (int i = 1; i < 4; i++)
+        {
+            Vector2 local = _rootRect.InverseTransformPoint(worldCorners[i]);
+            min = Vector2.Min(min, local);
+            max = Vector2.Max(max, local);
+        }
+
+        return max - min;
+    }
+
     private void UpdateTargetPosition()
     {
         if (_canvas == null || _runtimeMaterial == null)
@@ -323,16 +344,25 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
                 _rootRect,
                 _uiTarget);
             _holeCenter = bounds.center;
+            // 표시용 크기: 자식 포함 bounds + padding. 시각 강조는 여유 있게 유지한다.
             _currentHoleSize = new Vector2(bounds.size.x, bounds.size.y) +
                                _uiHolePadding * 2f;
+            // 판정용 크기: 옵션 (a) 자식 제외 + padding 미포함. 하단 HUD 버튼은 라벨 자식이
+            // 버튼 rect보다 넓게 배치되므로, 자식 포함 bounds를 판정에 쓰면 이웃까지 오통과된다.
+            // _uiTarget 자체 rect를 _rootRect 로컬 좌표계로 변환해 실제 대상 영역만 취한다.
+            _passThroughHoleSize = CalculateTargetRectSize(_uiTarget);
         }
         else if (!TryGetWorldTargetCenter(_worldTarget, out _holeCenter))
         {
             return;
         }
 
+        // 월드 대상은 padding이 없어 표시=판정. UI 대상은 위에서 각각 확정했으므로 유지한다.
         _currentHoleSize = _uiTarget != null
             ? _currentHoleSize
+            : _holeSize;
+        _passThroughHoleSize = _uiTarget != null
+            ? _passThroughHoleSize
             : _holeSize;
 
         if (_secondaryUiTarget != null)
