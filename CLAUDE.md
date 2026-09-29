@@ -17,7 +17,7 @@ The current content supports 20 slime grades: 1–10 on Ground and 11–20 on Sk
 - Gameplay scene: `Assets/01.Scenes/GameScene.unity`
 - Release profile: `Assets/Settings/Build Profiles/Android_Release.asset`
 - Development profile: `Assets/Settings/Build Profiles/Android™.asset`
-- Release profile version: `0.1.13` (Android Version Code `15`)
+- Release profile version: `0.1.14` (Android Version Code `16`)
 - Development profile version: `0.1.13` (Android Version Code `15`)
 - Version snapshot: 2026-09-26. `0.1.11` remains in the Play Console closed testing track. `0.1.12` carried the Phase 8 playground and the v8-to-v10 promotion, and `0.1.13` followed it with the background and BGM replacement. The user reported the full `0.1.13` verification checklist passing. Profile-specific Player Settings override the project-wide version.
 
