@@ -140,29 +140,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         }
     }
 
-    private void OnApplicationPause(bool pauseStatus)
-    {
-        if (pauseStatus && _statsDirty)
-        {
-            Save();
-        }
-
-        if (pauseStatus)
-        {
-            FlushPendingSave();
-        }
-    }
-
-    private void OnApplicationQuit()
-    {
-        if (_statsDirty)
-        {
-            Save();
-        }
-
-        FlushPendingSave();
-    }
-
     private async UniTaskVoid InitAsync()
     {
         try

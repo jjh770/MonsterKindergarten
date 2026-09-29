@@ -341,21 +341,51 @@ public class GameManager : MonoBehaviour
 
         if (pauseStatus)
         {
-            // 받지 않은 보상이 있으면 마지막 저장 시간을 유지해 다음 실행에서 누적한다.
-            if (!HasPendingOfflineReward)
-            {
-                _currencyManager.SaveCurrent();
-                // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
-                _currencyManager.FlushPendingSave();
-            }
-
-            // 위 조건은 재화의 마지막 저장 시각을 지키는 규칙이라 업그레이드와는 무관하다.
-            // 보상이 미뤄진 튜토리얼 중에도 업그레이드는 구매되므로 따로 내보낸다.
-            _upgradeManager?.FlushPendingSave();
+            FlushAllDomainsForAppLifecycle();
         }
         else
         {
             _offlineRewardManager.GrantAfterResync().Forget();
+        }
+    }
+
+    // 종료 경로에서도 세 도메인 flush를 보장한다. Android처럼 종료 시
+    // OnApplicationPause(true)가 오지 않을 수 있어, pause와 동일한 가드로
+    // 같은 단일 진입점을 호출해 Currency·Upgrade flush 누락을 막는다.
+    private void OnApplicationQuit()
+    {
+        if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
+
+        FlushAllDomainsForAppLifecycle();
+    }
+
+    // pause(true)와 quit이 공유하는 앱 수명 flush 단일 진입점.
+    //
+    // 등록된 세 도메인(Currency·SlimeStatus·Upgrade)을 _dataManagers 순회로
+    // 균일하게 처리한다. 새 도메인도 TryBindDataManagers에 등록되기만 하면
+    // 자동으로 포함된다.
+    //
+    // 오프라인 보상 예외: 받지 않은 보상이 대기 중이면(HasPendingOfflineReward)
+    // Currency의 SaveCurrentAsync만 건너뛴다. SaveCurrentAsync가 LastSaveTime을
+    // 현재 시각으로 갱신하는데, 보상 대기 중에 갱신하면 다음 실행의 누적 기준
+    // 시각이 틀어지기 때문이다. FlushPendingSave는 LastSaveTime과 무관하게
+    // 미뤄 둔 쓰기만 밀어내므로 예외와 상관없이 모든 도메인에서 항상 호출한다.
+    private void FlushAllDomainsForAppLifecycle()
+    {
+        for (int i = 0; i < _dataManagers.Count; i++)
+        {
+            IGameDataDomainManager manager = _dataManagers[i];
+
+            bool skipSave =
+                ReferenceEquals(manager, _currencyManager) && HasPendingOfflineReward;
+
+            // 저장은 최신 상태를 큐에 넣고, flush는 간격을 기다리다 프로세스가
+            // 멈추면 클라우드에 못 올라가는 미뤄 둔 쓰기를 지금 내보낸다.
+            if (!skipSave)
+            {
+                manager.SaveCurrentAsync().Forget();
+            }
+            manager.FlushPendingSave();
         }
     }
 
