@@ -536,9 +536,8 @@ public sealed class CollectionBookUI : MonoBehaviour
 
     private void RestoreUpgradeToggle(bool animated = true)
     {
-        bool isMainField = _spaceManager.IsMainFieldActive;
-        // 보이기는 공간이 정한다. 그 값을 먼저 세우고 연출을 물린다.
-        _upgradeUI.SetToggleVisible(isMainField, animated);
+        // 상점 토글 보이기는 공간(DisplayRoomUI)이 소유한다. 도감은 자신이 물었던
+        // 스탠드다운만 풀고, 보이기 값은 건드리지 않는다.
         _upgradeUI.ReleaseStandDown(this, animated);
     }
 

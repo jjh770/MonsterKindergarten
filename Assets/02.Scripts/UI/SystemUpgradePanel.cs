@@ -106,6 +106,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
     private void CacheSystemUpgrades()
     {
+        // 재구성 전 선택 타입을 기억한다. 위치 인덱스는 목록이 바뀌면 다른 타입을 가리킨다.
+        EUpgradeType? previousType =
+            _orderedTypes.Count > 0
+                ? _orderedTypes[_carousel.SelectedIndex]
+                : (EUpgradeType?)null;
+
         _upgrades.Clear();
         _orderedTypes.Clear();
 
@@ -120,6 +126,25 @@ public sealed class SystemUpgradePanel : MonoBehaviour
 
         _orderedTypes.Sort((left, right) => ((int)left).CompareTo((int)right));
         _carousel.SetDataCount(_orderedTypes.Count);
+
+        int restored = ResolveRestoredIndex(
+            previousType, _orderedTypes, _carousel.SelectedIndex);
+        _carousel.SetSelectedIndexImmediate(restored);
+    }
+
+    // 선택 타입 보존 규칙. 순수 로직이라 List<EUpgradeType>와 인덱스만으로 검증 가능하다.
+    private static int ResolveRestoredIndex(
+        EUpgradeType? previousType,
+        List<EUpgradeType> orderedTypes,
+        int clampedIndex)
+    {
+        if (previousType.HasValue)
+        {
+            int found = orderedTypes.IndexOf(previousType.Value);
+            if (found >= 0) return found;
+        }
+
+        return clampedIndex;
     }
 
     private void Refresh()

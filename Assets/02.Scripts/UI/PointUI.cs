@@ -11,6 +11,7 @@ public class PointUI : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isCountUpPlaying;
+    private bool _isPresentationBlocking;
     private Tween _countUpTween;
 
     private void Start()
@@ -25,6 +26,7 @@ public class PointUI : MonoBehaviour
 
         _gameManager.AllDataInitialized += OnAllDataInitialized;
         _currencyManager.DataChanged += OnPointChanged;
+        _offlineRewardManager.PresentationBlockChanged += OnPresentationBlockChanged;
         PointCountUpEvents.OnRequested += PlayPointCountUp;
 
         // 이미 초기화가 완료된 경우
@@ -40,6 +42,11 @@ public class PointUI : MonoBehaviour
         if (_currencyManager != null)
         {
             _currencyManager.DataChanged -= OnPointChanged;
+        }
+
+        if (_offlineRewardManager != null)
+        {
+            _offlineRewardManager.PresentationBlockChanged -= OnPresentationBlockChanged;
         }
 
         PointCountUpEvents.OnRequested -= PlayPointCountUp;
@@ -63,8 +70,18 @@ public class PointUI : MonoBehaviour
     private void OnPointChanged(ECurrencyType type, Currency point)
     {
         if (!_isInitialized || _isCountUpPlaying) return;
-        if (_offlineRewardManager.TryGetCurrent(out _)) return;
+        if (_isPresentationBlocking) return;
         UpdateUI();
+    }
+
+    private void OnPresentationBlockChanged(bool isBlocking)
+    {
+        _isPresentationBlocking = isBlocking;
+        // 발표가 끝나 막힘이 풀리면 최신 통화값으로 한 번 맞춘다.
+        if (!isBlocking && !_isCountUpPlaying)
+        {
+            UpdateUI();
+        }
     }
 
     private void UpdateUI()

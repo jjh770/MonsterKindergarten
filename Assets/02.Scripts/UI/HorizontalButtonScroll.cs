@@ -17,7 +17,7 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
 
     private static readonly List<RaycastResult> _raycastResults = new();
     private Vector2[] _basePositions;
-    private bool[] _buttonInteractableStates;
+    private CanvasGroup _viewportCanvasGroup;
     private readonly Vector3[] _worldCorners = new Vector3[4];
     private Vector2 _pressScreenPosition;
     private Vector2 _previousLocalPosition;
@@ -41,7 +41,12 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
         }
 
         _basePositions = new Vector2[_items.Length];
-        _buttonInteractableStates = new bool[_buttons.Length];
+
+        _viewportCanvasGroup = _viewport.GetComponent<CanvasGroup>();
+        if (_viewportCanvasGroup == null)
+        {
+            _viewportCanvasGroup = _viewport.gameObject.AddComponent<CanvasGroup>();
+        }
     }
 
     private void OnEnable()
@@ -254,13 +259,11 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
 
     private void SuspendButtonInput()
     {
-        for (int i = 0; i < _buttons.Length; i++)
+        // interactable(다른 소유자의 상태)은 건드리지 않는다. 이 드래그 시퀀스 동안
+        // 자식 버튼의 클릭 raycast만 막아 드래그가 유발한 클릭을 취소한다.
+        if (_viewportCanvasGroup != null)
         {
-            Button button = _buttons[i];
-            if (button == null) continue;
-
-            _buttonInteractableStates[i] = button.interactable;
-            button.interactable = false;
+            _viewportCanvasGroup.blocksRaycasts = false;
         }
     }
 
@@ -268,12 +271,9 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
     {
         if (_restoreButtonsAfterFrame < 0 && !_isDragging) return;
 
-        for (int i = 0; i < _buttons.Length; i++)
+        if (_viewportCanvasGroup != null)
         {
-            if (_buttons[i] != null)
-            {
-                _buttons[i].interactable = _buttonInteractableStates[i];
-            }
+            _viewportCanvasGroup.blocksRaycasts = true;
         }
 
         _restoreButtonsAfterFrame = -1;

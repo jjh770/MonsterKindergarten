@@ -139,6 +139,22 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
         return true;
     }
 
+    // 목록이 재구성될 때 선택을 특정 인덱스로 즉시 맞춘다. 회전 연출을 쓰지 않으므로
+    // 커진 목록에서 가운데 카드가 튀지 않는다. 회전/드래그 중에는 사용자가 진행 중인
+    // 조작을 존중해 무시한다.
+    public void SetSelectedIndexImmediate(int dataIndex)
+    {
+        if (_dataCount == 0 || IsBusy) return;
+        if (dataIndex < 0 || dataIndex >= _dataCount) return;
+
+        _selectedIndex = dataIndex;
+        if (IsReady)
+        {
+            Rebuild();
+        }
+        SelectionChanged?.Invoke();
+    }
+
     public void PlayCenterUpgradeEffect()
     {
         if (!IsReady) return;
