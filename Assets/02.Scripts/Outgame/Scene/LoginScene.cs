@@ -246,6 +246,8 @@ public class LoginScene : MonoBehaviour
                 return "저장된 진행도가 현재 앱 버전보다 최신이에요.\n스토어에서 앱을 업데이트한 뒤\n다시 로그인해 주세요.";
             case ESaveLoadFailure.Unreadable:
                 return "저장된 진행도를 읽지 못했어요.\n다시 로그인해 주세요.\n\n진행도를 덮어쓰지 않으려고\n게임을 시작하지 않았어요.";
+            case ESaveLoadFailure.InitializationFailed:
+                return "게임을 시작하는 중 문제가 생겼어요.\n다시 로그인해 주세요.\n\n계속되면 앱을 다시 실행해 주세요.\n진행도는 지워지지 않았어요.";
             default:
                 return "저장된 진행도를 불러오지 못했어요.\n인터넷 연결을 확인하고\n다시 로그인해 주세요.\n\n진행도를 덮어쓰지 않으려고\n게임을 시작하지 않았어요.";
         }

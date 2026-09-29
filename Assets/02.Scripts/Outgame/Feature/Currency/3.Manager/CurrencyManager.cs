@@ -61,6 +61,9 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
 
         // async void라 이 아래에서 던진 예외는 SynchronizationContext로 흘러가
         // 호출부가 잡을 수 없다. 초기화 본문을 통째로 감싸는 것이 유일한 포착 수단이다.
+        // 예외가 난 자리가 신고할 종류를 정한다. 읽어 온 문서를 해석하는 구간의 예외만 저장
+        // 문제(Unreadable)이고, 그 밖은 앱 코드의 결함이라 초기화 수단을 열면 안 된다.
+        ESaveLoadFailure exceptionFailure = ESaveLoadFailure.InitializationFailed;
         try
         {
             await UniTask.Yield();
@@ -82,6 +85,8 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
             }
 
             HasStoredSaveData = loadResult.IsLoaded;
+            // 여기서부터는 읽어 온 문서를 해석한다. 이 구간의 예외는 저장 문제다.
+            exceptionFailure = ESaveLoadFailure.Unreadable;
             CurrencySaveData saveData = loadResult.IsLoaded
                 ? loadResult.Data
                 : CurrencySaveData.Default;
@@ -129,13 +134,15 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
                 _currencies[i] = Math.Floor(stored);
             }
 
+            // 복원이 끝났다. 이제 호출되는 것은 구독자 코드라 저장과 무관하다.
+            exceptionFailure = ESaveLoadFailure.InitializationFailed;
             IsInitialized = true;
             DataInitialized?.Invoke();
         }
         catch (Exception e)
         {
             SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
+                exceptionFailure,
                 $"Currency : 초기화 중 예외 : {e.Message}");
         }
     }

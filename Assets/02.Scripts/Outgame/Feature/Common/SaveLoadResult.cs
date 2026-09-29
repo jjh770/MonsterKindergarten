@@ -25,6 +25,9 @@ public enum ESaveLoadFailure
     UnsupportedVersion,
     // 저장소에 닿지 못했다.
     Unreachable,
+    // 저장은 읽었지만 그 뒤의 초기화 코드가 예외를 던졌다. 저장된 진행도는 멀쩡하므로
+    // 초기화 수단을 열지 않는다. 앱의 결함이라 재시도가 답이다.
+    InitializationFailed,
 }
 
 public readonly struct SaveLoadResult<T> where T : class, ISaveData

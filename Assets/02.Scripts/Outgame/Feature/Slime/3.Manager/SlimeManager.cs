@@ -142,6 +142,9 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
     private async UniTaskVoid InitAsync()
     {
+        // 예외가 난 자리가 신고할 종류를 정한다. 읽어 온 문서를 해석하는 구간의 예외만 저장
+        // 문제(Unreadable)이고, 그 밖은 앱 코드의 결함이라 초기화 수단을 열면 안 된다.
+        ESaveLoadFailure exceptionFailure = ESaveLoadFailure.InitializationFailed;
         try
         {
             await UniTask.Yield();
@@ -163,6 +166,8 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             }
 
             HasStoredSaveData = loadResult.IsLoaded;
+            // 여기서부터는 읽어 온 문서를 해석한다. 이 구간의 예외는 저장 문제다.
+            exceptionFailure = ESaveLoadFailure.Unreadable;
             SlimeStatusSaveData saveData = loadResult.IsLoaded
                 ? loadResult.Data
                 : SlimeStatusSaveData.Default;
@@ -196,13 +201,15 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
                 await SaveMigratedAsync();
             }
 
+            // 복원이 끝났다. 이제 호출되는 것은 구독자 코드라 저장과 무관하다.
+            exceptionFailure = ESaveLoadFailure.InitializationFailed;
             IsInitialized = true;
             DataInitialized?.Invoke();
         }
         catch (Exception e)
         {
             SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
+                exceptionFailure,
                 $"SlimeStatus : 초기화 중 예외 : {e.Message}");
         }
     }
