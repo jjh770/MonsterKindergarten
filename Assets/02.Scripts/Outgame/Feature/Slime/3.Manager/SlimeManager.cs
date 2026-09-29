@@ -15,6 +15,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     private NormalSlimeCollectionStats _collectionStats;
+    private SpecialSlimeCollectionStats _specialStats;
     private bool _statsDirty;
     private float _statsSaveTimer;
     // 도메인 객체를 통째로 내주면 저장을 거치지 않고 상태를 바꿀 수 있다.
@@ -182,6 +183,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
                     ServerClock.TrustedUtcNow,
                     out SlimeStatus restoredStatus,
                     out NormalSlimeCollectionStats restoredStats,
+                    out SpecialSlimeCollectionStats restoredSpecialStats,
                     out bool needsMigrationSave,
                     out string failureMessage))
             {
@@ -191,6 +193,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
             _status = restoredStatus;
             _collectionStats = restoredStats;
+            _specialStats = restoredSpecialStats;
 
             // 문서가 없던 신규 계정은 승격할 원본이 없다. 기본값에서 채운 시작 시각은
             // 메모리에만 두고, 튜토리얼을 마칠 때 세 문서와 함께 기록한다. 여기서 저장하면
@@ -400,6 +403,10 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         Save();
         if (registeredSpecialGrade.HasValue)
         {
+            _specialStats?.RecordRegistration(
+                registeredSpecialGrade.Value,
+                ServerClock.TrustedUtcNow);
+            MarkStatsDirty();
             SpecialCollectionRegistered?.Invoke(registeredSpecialGrade.Value);
         }
 
@@ -472,6 +479,23 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             : default;
     }
 
+    public SpecialSlimeCollectionStatsSnapshot GetSpecialCollectionStats(
+        ESlimeGrade grade)
+    {
+        return _specialStats != null
+            ? _specialStats.Get(grade)
+            : default;
+    }
+
+    // 가챠로 특별한 슬라임을 얻었을 때 부른다. 특별한 슬라임은 다른 경로로 태어나지 않는다.
+    public void RecordSpecialObtained(ESlimeGrade grade)
+    {
+        if (_specialStats == null) return;
+
+        _specialStats.RecordObtained(grade);
+        MarkStatsDirty();
+    }
+
     public void RecordNaturalSpawn(ESlimeGrade grade)
     {
         if (_collectionStats == null) return;
@@ -483,8 +507,18 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public void RecordProduction(
         ESlimeGrade grade,
         EClickType clickType,
-        double point)
+        double point,
+        bool isSpecial = false)
     {
+        if (isSpecial)
+        {
+            if (_specialStats == null) return;
+
+            _specialStats.RecordProduction(grade, clickType, point);
+            MarkStatsDirty();
+            return;
+        }
+
         if (_collectionStats == null) return;
 
         _collectionStats.RecordProduction(grade, clickType, point);
@@ -577,7 +611,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
     private SlimeStatusSaveData BuildSaveData()
     {
-        return SlimeStatusSaveMapper.Build(_status, _collectionStats);
+        return SlimeStatusSaveMapper.Build(_status, _collectionStats, _specialStats);
     }
 
     private void MarkStatsDirty()

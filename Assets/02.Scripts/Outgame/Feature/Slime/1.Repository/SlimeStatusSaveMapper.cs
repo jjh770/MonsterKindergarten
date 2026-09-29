@@ -15,11 +15,13 @@ public static class SlimeStatusSaveMapper
         DateTime restoredAtUtc,
         out SlimeStatus status,
         out NormalSlimeCollectionStats collectionStats,
+        out SpecialSlimeCollectionStats specialStats,
         out bool needsMigrationSave,
         out string failureMessage)
     {
         status = null;
         collectionStats = null;
+        specialStats = null;
         needsMigrationSave = false;
         failureMessage = null;
 
@@ -64,6 +66,9 @@ public static class SlimeStatusSaveMapper
         var registeredBeforeRestore = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
         var restoredStats = new NormalSlimeCollectionStats(saveData);
+        var restoredSpecialStats = new SpecialSlimeCollectionStats(saveData);
+        var specialRegisteredBeforeRestore = new HashSet<ESlimeGrade>(
+            GetRegisteredCollection(saveData.SpecialCollectionRegistered));
 
         var effectiveRegistered = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
@@ -133,8 +138,24 @@ public static class SlimeStatusSaveMapper
             }
         }
 
+        // 장식장에 있는 특별 슬라임이 등록 목록에 없던 저장(등록 목록이 생기기 전 문서)은
+        // 이번 복원에서 등록되므로 그 시각을 첫 등록으로 남긴다.
+        for (int gradeValue = (int)ESlimeGrade.Grade1;
+             gradeValue < (int)ESlimeGrade.Count;
+             gradeValue++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)gradeValue;
+            if (restoredStatus.IsSpecialCollectionRegistered(grade) &&
+                !specialRegisteredBeforeRestore.Contains(grade))
+            {
+                restoredRegistrationStats |=
+                    restoredSpecialStats.RecordRegistration(grade, restoredAtUtc);
+            }
+        }
+
         status = restoredStatus;
         collectionStats = restoredStats;
+        specialStats = restoredSpecialStats;
         needsMigrationSave = saveData.WasMigrated ||
                              restoredStatus.NormalCollectionCount >
                              registeredNormalCollection.Count ||
@@ -243,7 +264,8 @@ public static class SlimeStatusSaveMapper
 
     public static SlimeStatusSaveData Build(
         SlimeStatus status,
-        NormalSlimeCollectionStats collectionStats)
+        NormalSlimeCollectionStats collectionStats,
+        SpecialSlimeCollectionStats specialStats)
     {
         var saveData = new SlimeStatusSaveData
         {
@@ -272,6 +294,10 @@ public static class SlimeStatusSaveMapper
             NormalMergeCreatedCounts = collectionStats.BuildMergeCreatedCounts(),
             NormalManualTouchCounts = collectionStats.BuildManualTouchCounts(),
             NormalProducedPointTotals = collectionStats.BuildProducedPointTotals(),
+            SpecialFirstRegisteredAt = specialStats.BuildFirstRegisteredAt(),
+            SpecialObtainedCounts = specialStats.BuildObtainedCounts(),
+            SpecialManualTouchCounts = specialStats.BuildManualTouchCounts(),
+            SpecialProducedPointTotals = specialStats.BuildProducedPointTotals(),
         };
 
         foreach (SlimeInstance instance in status.ActiveSlimes)

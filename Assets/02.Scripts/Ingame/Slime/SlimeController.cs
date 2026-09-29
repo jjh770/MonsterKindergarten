@@ -428,13 +428,11 @@ public class SlimeController : MonoBehaviour, IClickable
             OnInteracted?.Invoke();
         }
 
-        if (!IsSpecial)
-        {
-            SlimeManager.Instance?.RecordProduction(
-                clickInfo.Grade,
-                clickInfo.ClickType,
-                clickInfo.Point);
-        }
+        SlimeManager.Instance?.RecordProduction(
+            clickInfo.Grade,
+            clickInfo.ClickType,
+            clickInfo.Point,
+            IsSpecial);
 
         // 포인트 적립
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);

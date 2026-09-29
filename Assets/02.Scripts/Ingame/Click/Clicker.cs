@@ -218,7 +218,8 @@ public class Clicker : MonoBehaviour
                     Point = PointCalculator.Calculate(
                         _selectedTarget.Point,
                         _selectedTarget.Grade,
-                        EClickType.Manual),
+                        EClickType.Manual,
+                        _selectedTarget.IsSpecial),
                     Position = _mouseDownPos,
                     Grade = _selectedTarget.Grade
                 };

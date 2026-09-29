@@ -190,7 +190,8 @@ public sealed class OfflineRewardManager : MonoBehaviour
             double point = PointCalculator.Calculate(
                 slime.SpecData.Point,
                 grade,
-                EClickType.Auto);
+                EClickType.Auto,
+                instance.IsSpecial);
 
             total += point / slime.SpecData.AutoClickInterval;
         }

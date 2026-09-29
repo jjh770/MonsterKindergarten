@@ -40,10 +40,11 @@ public static class GameDataDomains
 
     // v11: 엔딩 크레딧용 게임 시작일과 메인 엔딩 도달일을 추가했다.
     // v12: 특별한 슬라임 도감 등록 상태를 추가했다.
+    // v13: 특별한 슬라임 도감의 등급별 기록을 추가했다.
     public static readonly GameDataDomainDefinition SlimeStatus = new(
         displayName: "슬라임",
         cloudCollectionName: "SlimeStatus",
-        currentSchemaVersion: 12,
+        currentSchemaVersion: 13,
         localDataDeleter: userId =>
             new PlayerPrefsSlimeStatusRepository(userId).Delete());
 

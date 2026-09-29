@@ -77,6 +77,7 @@ public static class GachaService
 
             // 실패 횟수는 결과가 실제로 생긴 뒤에만 센다. 환불된 가챠가 피버를 올리면 안 된다.
             if (!isTutorialPull) slimeManager.RecordSpecialGachaResult(isSpecial);
+            if (isSpecial) slimeManager.RecordSpecialObtained(pickedGrade);
             LogPull(pickedGrade, isSpecial, specialChance);
             return EGachaFailure.None;
         }

@@ -170,6 +170,22 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public List<bool> SpecialCollectionRegistered { get; set; } = new();
 
+    // v13. 특별 도감의 등급별 기록이다. 일반 도감 기록과 같은 모양이고, 자연 출현과 합성
+    // 탄생 대신 가챠 획득 횟수를 둔다. 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙으므로
+    // 빈 목록으로 두고, 읽을 때 SpecialSlimeCollectionStats가 스무 칸으로 맞춘다.
+    // 필드가 없는 이전 문서는 빈 목록, 곧 "기록 없음"으로 읽힌다.
+    [FirestoreProperty]
+    public List<string> SpecialFirstRegisteredAt { get; set; } = new();
+
+    [FirestoreProperty]
+    public List<long> SpecialObtainedCounts { get; set; } = new();
+
+    [FirestoreProperty]
+    public List<long> SpecialManualTouchCounts { get; set; } = new();
+
+    [FirestoreProperty]
+    public List<double> SpecialProducedPointTotals { get; set; } = new();
+
     [FirestoreProperty]
     public List<string> NormalFirstRegisteredAt { get; set; } =
         CreateEmptyStringStats();

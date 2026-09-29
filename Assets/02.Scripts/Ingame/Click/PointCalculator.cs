@@ -2,7 +2,11 @@
 
 public static class PointCalculator
 {
-    public static double Calculate(double basePoint, ESlimeGrade grade, EClickType clickType)
+    public static double Calculate(
+        double basePoint,
+        ESlimeGrade grade,
+        EClickType clickType,
+        bool isSpecial = false)
     {
         double flatBonus = GetFlatBonus(grade, clickType);
         double percentBonus = GetPercentBonus(grade, clickType);
@@ -13,8 +17,14 @@ public static class PointCalculator
         // 버리지 않고 반올림하는 이유는 버림이 매번 1점 미만을 깎아, 한 번에 얻는
         // 값이 작은 낮은 등급일수록 배율이 실제보다 낮게 동작하기 때문이다.
         return Math.Round(
-            (basePoint + flatBonus) * (1 + percentBonus),
+            (basePoint + flatBonus) * (1 + percentBonus) * GetSpecialMultiplier(isSpecial),
             MidpointRounding.AwayFromZero);
+    }
+
+    // 특별한 슬라임은 같은 등급의 일반보다 더 번다. 반올림은 배율을 곱한 뒤에 한 번만 한다.
+    private static double GetSpecialMultiplier(bool isSpecial)
+    {
+        return isSpecial ? SpecialSlimeRules.PointMultiplier : 1d;
     }
 
     private static double GetFlatBonus(ESlimeGrade grade, EClickType clickType)

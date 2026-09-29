@@ -410,9 +410,10 @@ public sealed class CollectionBookUI : MonoBehaviour
         _detailIcon.color = isRegistered
             ? Color.white
             : new Color(0.08f, 0.08f, 0.1f, 0.92f);
+        string numberPrefix = _isSpecialCategory ? "Special " : string.Empty;
         _detailNumberText.text = isRegistered
-            ? $"No.{(int)grade:00}"
-            : "No.??";
+            ? $"{numberPrefix}No.{(int)grade:00}"
+            : $"{numberPrefix}No.??";
         _detailNameText.text = BuildDetailName(grade, specData, isRegistered);
         _detailDescriptionText.text = BuildDetailDescription(grade, specData, isRegistered);
 
@@ -444,40 +445,60 @@ public sealed class CollectionBookUI : MonoBehaviour
         SlimeSpecData specData,
         bool isRegistered)
     {
-        if (_isSpecialCategory)
+        if (isRegistered)
         {
-            return isRegistered
-                ? $"{specData?.Description ?? string.Empty}\n\n특별한 모습으로 태어난 아이예요."
-                : "장식장에 특별한 모습을\n데려오면 도감에 자동 등록돼요.";
+            return BuildRegisteredDetail(grade, specData, _isSpecialCategory);
         }
 
-        return isRegistered
-            ? BuildRegisteredDetail(grade, specData)
+        return _isSpecialCategory
+            ? "장식장에 특별한 모습을\n데려오면 도감에 자동 등록돼요."
             : "장식장에 데려오면\n도감에 자동 등록돼요.";
     }
 
+    // 능력은 일반과 같은 표를 쓰되 특별한 슬라임은 배율이 곱해진 값을 보인다. 실제로 버는
+    // 포인트와 같은 PointCalculator를 거치므로 화면의 숫자와 어긋나지 않는다.
+    //
+    // 기록은 출처만 다르다. 특별한 슬라임은 자연 스폰이나 합성으로 태어나지 않으므로 그
+    // 자리에 가챠 획득 횟수를 둔다.
     private string BuildRegisteredDetail(
         ESlimeGrade grade,
-        SlimeSpecData specData)
+        SlimeSpecData specData,
+        bool isSpecial)
     {
         double manualPoint = PointCalculator.Calculate(
             specData?.Point ?? 0,
             grade,
-            EClickType.Manual);
+            EClickType.Manual,
+            isSpecial);
         double autoPoint = PointCalculator.Calculate(
             specData?.Point ?? 0,
             grade,
-            EClickType.Auto);
+            EClickType.Auto,
+            isSpecial);
         float autoInterval = specData?.AutoClickInterval ?? 0f;
+
+        string abilities =
+            $"{specData?.Description ?? string.Empty}\n\n" +
+            "현재 능력\n" +
+            $"터치 포인트 {manualPoint.ToFormattedString()}\n" +
+            $"자동 포인트 {autoPoint.ToFormattedString()} | " +
+            $"{autoInterval:0.#}초\n\n" +
+            "나의 기록\n";
+
+        if (isSpecial)
+        {
+            SpecialSlimeCollectionStatsSnapshot special =
+                _slimeManager.GetSpecialCollectionStats(grade);
+            return abilities +
+                   $"최초 등록 {FormatRegisteredAt(special.FirstRegisteredAt)}\n" +
+                   $"가챠 획득 {special.ObtainedCount:N0}\n" +
+                   $"유효 터치 {special.ManualTouchCount:N0} | " +
+                   $"누적 생산 {special.ProducedPointTotal.ToFormattedString()}";
+        }
+
         NormalSlimeCollectionStatsSnapshot stats =
             _slimeManager.GetNormalCollectionStats(grade);
-
-        return $"{specData?.Description ?? string.Empty}\n\n" +
-               "현재 능력\n" +
-               $"터치 포인트 {manualPoint.ToFormattedString()}\n" +
-               $"자동 포인트 {autoPoint.ToFormattedString()} | " +
-               $"{autoInterval:0.#}초\n\n" +
-               "나의 기록\n" +
+        return abilities +
                $"최초 등록 {FormatRegisteredAt(stats.FirstRegisteredAt)}\n" +
                $"자연 출현 {stats.NaturalSpawnCount:N0} | " +
                $"합성 탄생 {stats.MergeCreatedCount:N0}\n" +
