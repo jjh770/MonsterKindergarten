@@ -190,9 +190,13 @@ public class OfflineRewardPopupUI : MonoBehaviour
             flyingCanvasGroup.blocksRaycasts = false;
 
             Vector2 randomDirection = UnityEngine.Random.insideUnitCircle;
+            // _scatterDistance는 캔버스(로컬) 단위다. world position에 그대로 더하면
+            // CanvasScaler가 켜진 해상도에서 흩뿌림 폭이 어긋나므로, 캔버스 스케일을
+            // 곱해 world 거리로 환산한 뒤 더한다.
+            Vector3 canvasScale = flyingVisual.lossyScale;
             Vector3 scatterPosition = flyingVisual.position + new Vector3(
-                randomDirection.x * _scatterDistance.x,
-                randomDirection.y * _scatterDistance.y,
+                randomDirection.x * _scatterDistance.x * canvasScale.x,
+                randomDirection.y * _scatterDistance.y * canvasScale.y,
                 0f);
 
             float flyDuration = _flyDuration * UnityEngine.Random.Range(0.85f, 1.15f);

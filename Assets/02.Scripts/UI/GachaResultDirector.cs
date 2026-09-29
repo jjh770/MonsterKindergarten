@@ -64,7 +64,11 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField, Min(0f)] private float _moveArcRadius = 160f;
     [SerializeField, Min(0f)] private float _moveSpinTurns = 1f;
 
+    // 결과 슬라임이 솟아오르는 세로 이동 거리. 캔버스 좌표(anchoredPosition) 단위다.
+    [SerializeField, Min(0f)] private float _emergeRise = 80f;
+
     private RectTransform _resultRect;
+    private RectTransform _resultParentRect;
     private RectTransform _resultNameRect;
     private Vector2 _resultNameRestPosition;
     private bool _isReady;
@@ -90,8 +94,11 @@ public sealed class GachaResultDirector : MonoBehaviour
         }
 
         _resultRect = _resultImage.transform as RectTransform;
+        _resultParentRect = _resultRect != null
+            ? _resultRect.parent as RectTransform
+            : null;
         _resultNameRect = _resultNameText.transform as RectTransform;
-        _isReady = _resultRect != null && _resultNameRect != null;
+        _isReady = _resultRect != null && _resultParentRect != null && _resultNameRect != null;
         if (_resultNameRect != null)
         {
             _resultNameRestPosition = _resultNameRect.anchoredPosition;
@@ -155,7 +162,9 @@ public sealed class GachaResultDirector : MonoBehaviour
         EGachaRarity rarity,
         CancellationToken token)
     {
-        Vector2 center = new(Screen.width * 0.5f, Screen.height * 0.5f);
+        // 포털·결과물은 결과 이미지의 부모 캔버스 로컬 좌표로만 움직인다. 화면 픽셀을
+        // 그대로 position에 넣으면 CanvasScaler가 켜진 해상도에서 좌표계가 어긋난다.
+        Vector2 center = GetLocalCenter();
         PreparePortal(center, target.Grade);
         _root.SetActive(true);
         AudioManager.Instance?.PlayLoopingSFX(EAudioSfx.GachaWait);
@@ -171,7 +180,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (await Reveal(resultColor, token)) return true;
         if (await Wait(_holdDuration, token)) return true;
 
-        Vector2 destination = GetFieldScreenPosition(target, center);
+        Vector2 destination = GetFieldLocalPosition(target, center);
         AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
         if (await MoveTo(destination, token)) return true;
         if (await PlayArrivalEffect(destination, resultColor, token)) return true;
@@ -181,7 +190,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         return false;
     }
 
-    private void PreparePortal(Vector2 center, ESlimeGrade grade)
+    private void PreparePortal(Vector2 centerLocal, ESlimeGrade grade)
     {
         _portalTapped = false;
         _canvasGroup.alpha = 0f;
@@ -196,8 +205,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _tapPrompt.text = PortalTapMessage;
         _tapPrompt.alpha = 1f;
 
-        _resultRect.position = center;
-        _resultRect.anchoredPosition += Vector2.down * 80f;
+        _resultRect.anchoredPosition = centerLocal + Vector2.down * _emergeRise;
         _resultRect.localScale = Vector3.one * 0.2f;
         _resultImage.enabled = false;
         _resultImage.color = _silhouetteColor;
@@ -316,7 +324,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultImage.enabled = resultSprite != null;
         _resultImage.color = _silhouetteColor;
         Vector2 start = _resultRect.anchoredPosition;
-        Vector2 end = start + Vector2.up * 80f;
+        Vector2 end = start + Vector2.up * _emergeRise;
         float elapsed = 0f;
 
         while (elapsed < _emergeDuration)
@@ -545,15 +553,47 @@ public sealed class GachaResultDirector : MonoBehaviour
         return slime?.SpecData?.Name ?? grade.ToString();
     }
 
-    private static Vector2 GetFieldScreenPosition(SlimeController target, Vector2 fallback)
+    // 부모 rect의 중앙 로컬 좌표. pivot이 가운데가 아니어도 맞도록 rect.center를 쓴다.
+    private Vector2 GetLocalCenter()
     {
-        Camera camera = Camera.main;
-        return camera != null ? (Vector2)camera.WorldToScreenPoint(target.transform.position) : fallback;
+        return _resultParentRect != null ? _resultParentRect.rect.center : Vector2.zero;
     }
 
+    // 슬라임의 월드 위치를 화면 좌표로 옮긴 뒤 결과 이미지 부모의 로컬 좌표로 되돌린다.
+    // 정상 파일들이 쓰는 표준 경로(WorldToScreenPoint -> ScreenPointToLocalPointInRectangle)다.
+    private Vector2 GetFieldLocalPosition(SlimeController target, Vector2 fallbackLocal)
+    {
+        Camera camera = Camera.main;
+        if (camera == null || _resultParentRect == null) return fallbackLocal;
+
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
+            camera, target.transform.position);
+
+        // 오버레이 캔버스면 카메라를 넘기지 않는다. 카메라 캔버스면 그 캔버스 카메라를 쓴다.
+        Camera uiCamera = ResolveUiCamera();
+        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            _resultParentRect, screenPoint, uiCamera, out Vector2 local)
+            ? local
+            : fallbackLocal;
+    }
+
+    private Camera ResolveUiCamera()
+    {
+        Canvas canvas = _resultParentRect != null
+            ? _resultParentRect.GetComponentInParent<Canvas>()
+            : null;
+        if (canvas == null) return null;
+
+        return canvas.renderMode == RenderMode.ScreenSpaceOverlay
+            ? null
+            : canvas.worldCamera;
+    }
+
+    // destination은 결과 이미지 부모의 로컬 좌표다. 시작점도 anchoredPosition을 써서
+    // 두 끝점이 같은 좌표계 위에 놓이게 한다.
     private async UniTask<bool> MoveTo(Vector2 destination, CancellationToken token)
     {
-        Vector2 start = _resultRect.position;
+        Vector2 start = _resultRect.anchoredPosition;
         Vector2 path = destination - start;
         Vector2 forward = path.sqrMagnitude > 0.01f ? path.normalized : Vector2.up;
         Vector2 perpendicular = new(-forward.y, forward.x);
@@ -570,7 +610,7 @@ public sealed class GachaResultDirector : MonoBehaviour
                 (perpendicular * Mathf.Sin(angle) +
                  forward * (1f - Mathf.Cos(angle)) * 0.45f) *
                 (_moveArcRadius * envelope);
-            _resultRect.position = Vector2.Lerp(start, destination, ratio) + orbit;
+            _resultRect.anchoredPosition = Vector2.Lerp(start, destination, ratio) + orbit;
             _resultRect.localScale = Vector3.one * Mathf.Lerp(startScale, _endScale, ratio);
             _resultRect.localRotation = Quaternion.Euler(
                 0f,
@@ -582,7 +622,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         }
 
 
-        _resultRect.position = destination;
+        _resultRect.anchoredPosition = destination;
         _resultRect.localScale = Vector3.one * _endScale;
         _resultRect.localRotation = Quaternion.identity;
         _resultNameText.alpha = 0f;
@@ -594,7 +634,8 @@ public sealed class GachaResultDirector : MonoBehaviour
         Color color,
         CancellationToken token)
     {
-        _arrivalEffectRoot.position = destination;
+        // 도착 이펙트 루트는 결과 이미지와 같은 부모를 공유하므로 로컬 좌표를 그대로 쓴다.
+        _arrivalEffectRoot.anchoredPosition = destination;
         _arrivalEffectRoot.localScale = Vector3.one;
         _arrivalEffectRoot.gameObject.SetActive(true);
         HideArrivalSparks();
