@@ -246,7 +246,7 @@ public static class SlimeStatusSaveMapper
     {
         var saveData = new SlimeStatusSaveData
         {
-            SchemaVersion = SaveSchema.SlimeCurrentVersion,
+            SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
             HighestGrade = (int)status.HighestGrade,
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             SelectedBackgroundTheme = (int)status.SelectedBackgroundTheme,

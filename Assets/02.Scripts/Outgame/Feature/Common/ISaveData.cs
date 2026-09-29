@@ -6,12 +6,11 @@
 
 public static class SaveSchema
 {
-    // 저장 구조를 변경할 때 해당 도메인의 버전을 올리고, 이전 버전의 승격 로직을 함께 추가한다.
-    // 각 저장소는 CurrentVersion보다 높은 데이터를 로드하거나 덮어쓰지 않도록 차단한다.
+    // 저장 구조를 변경할 때 GameDataDomains의 해당 버전을 올리고, 이전 버전의
+    // 승격 로직을 함께 추가한다. 각 저장소는 등록된 현재 버전보다 높은 데이터를
+    // 로드하거나 덮어쓰지 않도록 차단한다.
     // SchemaVersion 필드가 없는 기존 저장 데이터는 LegacyVersion으로 로드된다.
     public const int LegacyVersion = 0;
-    // v2: ECurrencyType에 가챠권을 추가해 재화 배열 길이가 늘었다.
-    public const int CurrencyCurrentVersion = 2;
     // v2: ActiveSlimes를 등급별 개수에서 SlimeInstance 목록으로 전환했다.
     public const int SlimeInstanceVersion = 2;
     // v3: 일반 슬라임 도감 등록 상태를 추가했다.
@@ -25,8 +24,6 @@ public static class SaveSchema
     // v10: 장식장에 놓은 놀이터 오브젝트, 사 둔 오브젝트 수, 사 둔 배경 테마를
     // 추가했다. 세 필드 모두 없으면 빈 목록으로 읽히고 그것이 "아무것도 사지 않은"
     // 정확한 상태라, 승격 함수에서 채울 것이 없다.
-    // v11: 엔딩 크레딧에서 사용할 게임 시작일과 메인 엔딩 도달일을 추가했다.
-    // 이전 문서는 최초 도감 등록일을 우선 사용하고, 기록이 없으면 승격 시각으로 채운다.
-    public const int SlimeCurrentVersion = 11;
-    public const int UpgradeCurrentVersion = 1;
+    // v11의 이전 문서는 최초 도감 등록일을 우선 사용하고, 기록이 없으면
+    // 승격 시각으로 게임 시작일을 채운다.
 }

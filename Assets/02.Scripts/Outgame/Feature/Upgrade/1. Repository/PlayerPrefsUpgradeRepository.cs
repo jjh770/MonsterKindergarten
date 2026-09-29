@@ -62,7 +62,7 @@ public class PlayerPrefsUpgradeRepository : IUpgradeRepository
 
             // 상위 버전은 현재 앱이 해석할 수 없다. 그대로 로드하면 다음 저장이
             // 최신 데이터를 낮은 버전으로 덮어쓴다.
-            if (saveData.SchemaVersion > SaveSchema.UpgradeCurrentVersion)
+            if (saveData.SchemaVersion > GameDataDomains.Upgrade.CurrentSchemaVersion)
             {
                 return UniTask.FromResult(
                     SaveLoadResult<UpgradeSaveData>.Failed(
@@ -70,7 +70,7 @@ public class PlayerPrefsUpgradeRepository : IUpgradeRepository
                         UnsupportedSaveVersionException.BuildMessage(
                             "Upgrade",
                             saveData.SchemaVersion,
-                            SaveSchema.UpgradeCurrentVersion)));
+                            GameDataDomains.Upgrade.CurrentSchemaVersion)));
             }
 
             saveData.Entries ??= new List<UpgradeEntry>();

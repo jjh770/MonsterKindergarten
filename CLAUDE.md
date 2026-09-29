@@ -70,9 +70,10 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 **Game data**
 
 - `CurrencyManager`, `SlimeManager`, and `UpgradeManager` own their domains and repository selection.
-- `GameManager` waits for all three managers, then raises `OnAllDataInitialized` for gameplay systems.
+- `GameDataDomains` is the single registration list for save-domain managers, current schema versions, cloud collections, and local deletion. A new save domain must implement `IGameDataDomainManager` and be added there; `GameManager` and `GameDataResetService` consume that list instead of maintaining their own copies.
+- `GameManager` waits for every manager registered in `GameDataDomains`, then raises `OnAllDataInitialized` for gameplay systems.
 - Repository interfaces separate local PlayerPrefs storage from Firebase Firestore storage.
-- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 2, SlimeStatus 10, and Upgrade 1. Preserve deterministic legacy migration IDs. All six repositories reject a stored version higher than the app supports.
+- SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 2, SlimeStatus 11, and Upgrade 1. Preserve deterministic legacy migration IDs. All six repositories reject a stored version higher than the app supports.
 - `IRepository<T>.Load()` returns `SaveLoadResult<T>`: `Loaded`, `NotFound`, or `Failed` with a reason. Never collapse a read failure into a default value - a session that starts from defaults overwrites the progress it could not read. Repositories decide whether the document was read faithfully; managers decide whether it can become a valid domain state, and report anything unusable the same way.
 - `SaveDataLoadGuard.Report()` locks saving and returns to LoginScene with per-reason guidance; `LoginScene` clears the lock. Managers must not raise `OnDataInitialized` after reporting, and must never leave initialization hanging instead.
 - Values that the writer cannot produce are treated as tampering and block the session: unrestorable or duplicate slime entries, an out-of-range `HighestGrade`, negative/NaN/infinite currency, a currency array longer than the app knows about or missing entirely, and upgrade entries outside their enum range. Values that a balance change can legitimately produce are absorbed instead: an upgrade level above the spec's `MaxLevel` is clamped, and a saved entry whose upgrade is no longer in the spec table is ignored.

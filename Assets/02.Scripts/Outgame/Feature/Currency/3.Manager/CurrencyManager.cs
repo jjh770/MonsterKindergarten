@@ -9,7 +9,7 @@ using UnityEngine;
 // 일방향 의존성
 // 상위 폴더(Manager)는 하위 폴더의 내용을 알 수 있지만
 // 하위 폴더(Repository)는 상위 폴더의 내용을 몰라도 개발할 수 있게 하기
-public class CurrencyManager : MonoBehaviour
+public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
 {
     // 재화에 대한 CRUD 생성 조회 사용 소모 + 재화에 대한 이벤트 추가
     // 비즈니스 로직 - 데이터를 어떻게 다룰 것인가에 대한 핵심 규칙
@@ -253,7 +253,7 @@ public class CurrencyManager : MonoBehaviour
         LastSaveTime = ServerClock.TrustedUtcNow;
         return _repository.Save(new CurrencySaveData()
         {
-            SchemaVersion = SaveSchema.CurrencyCurrentVersion,
+            SchemaVersion = GameDataDomains.Currency.CurrentSchemaVersion,
             Currencies = ToSaveData(),
             LastSaveTime = LastSaveTime.ToString("O")
         });

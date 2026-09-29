@@ -100,7 +100,7 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
             // 상위 버전은 현재 앱이 해석할 수 없다. 그대로 로드하면 다음 저장이
             // 최신 데이터를 낮은 버전으로 덮어쓴다.
-            if (data.SchemaVersion > SaveSchema.CurrencyCurrentVersion)
+            if (data.SchemaVersion > GameDataDomains.Currency.CurrentSchemaVersion)
             {
                 return UniTask.FromResult(
                     SaveLoadResult<CurrencySaveData>.Failed(
@@ -108,7 +108,7 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
                         UnsupportedSaveVersionException.BuildMessage(
                             "Currency",
                             data.SchemaVersion,
-                            SaveSchema.CurrencyCurrentVersion)));
+                            GameDataDomains.Currency.CurrentSchemaVersion)));
             }
 
             data.LastSaveTime = PlayerPrefs.GetString($"{_userId}_{LAST_SAVE_TIME_KEY}", null);

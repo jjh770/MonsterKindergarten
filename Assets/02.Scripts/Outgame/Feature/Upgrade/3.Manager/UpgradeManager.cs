@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-public class UpgradeManager : MonoBehaviour
+public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
 {
     private const int GroundMaxCountUpgradeLevel = 20;
 
@@ -19,6 +19,7 @@ public class UpgradeManager : MonoBehaviour
     public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }
+    public bool IsInitialized { get; private set; }
 
     private void Awake()
     {
@@ -117,6 +118,7 @@ public class UpgradeManager : MonoBehaviour
             _upgrades.Add(key, new Upgrade(specData, savedLevel));
         }
 
+        IsInitialized = true;
         DataChanged?.Invoke();
         DataInitialized?.Invoke();
     }
@@ -212,7 +214,7 @@ public class UpgradeManager : MonoBehaviour
 
         var data = new UpgradeSaveData
         {
-            SchemaVersion = SaveSchema.UpgradeCurrentVersion,
+            SchemaVersion = GameDataDomains.Upgrade.CurrentSchemaVersion,
         };
         foreach (var pair in _upgrades)
         {

@@ -7,7 +7,6 @@ using UnityEngine;
 
 public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
 {
-    private const string COLLECTION_NAME = "SlimeStatus";
     private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
     private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
 
@@ -21,7 +20,8 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
     public async UniTask Save(SlimeStatusSaveData saveData)
     {
         string userId = _auth.CurrentUser.UserId;
-        await _db.Collection(COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
+        await _db.Collection(GameDataDomains.SlimeStatus.CloudCollectionName)
+            .Document(userId).SetAsync(saveData).AsUniTask();
     }
 
     // 즉시 저장하므로 미뤄 둔 쓰기가 없다.
@@ -34,7 +34,9 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
         try
         {
             string userId = _auth.CurrentUser.UserId;
-            DocumentSnapshot snapshot = await _db.Collection(COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
+            DocumentSnapshot snapshot = await _db
+                .Collection(GameDataDomains.SlimeStatus.CloudCollectionName)
+                .Document(userId).GetSnapshotAsync().AsUniTask();
 
             if (!snapshot.Exists)
             {
@@ -49,14 +51,14 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                 schemaVersion = (int)storedSchemaVersion;
             }
 
-            if (schemaVersion > SaveSchema.SlimeCurrentVersion)
+            if (schemaVersion > GameDataDomains.SlimeStatus.CurrentSchemaVersion)
             {
                 return SaveLoadResult<SlimeStatusSaveData>.Failed(
                     ESaveLoadFailure.UnsupportedVersion,
                     UnsupportedSaveVersionException.BuildMessage(
                         "SlimeStatus",
                         schemaVersion,
-                        SaveSchema.SlimeCurrentVersion));
+                        GameDataDomains.SlimeStatus.CurrentSchemaVersion));
             }
 
             if (schemaVersion < SaveSchema.SlimeInstanceVersion)
@@ -75,7 +77,7 @@ public class FirebaseSlimeStatusRepository : ISlimeStatusRepository
                     "SlimeStatus 문서를 변환하지 못했습니다.");
             }
 
-            if (schemaVersion < SaveSchema.SlimeCurrentVersion ||
+            if (schemaVersion < GameDataDomains.SlimeStatus.CurrentSchemaVersion ||
                 SlimeStatusSaveMigration.HasLegacyPendingTickets(data))
             {
                 data = SlimeStatusSaveMigration.UpgradeInstanceData(

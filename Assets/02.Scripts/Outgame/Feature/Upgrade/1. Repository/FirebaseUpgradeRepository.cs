@@ -7,7 +7,6 @@ using UnityEngine;
 
 public class FirebaseUpgradeRepository : IUpgradeRepository
 {
-    private string UPGRADE_COLLECTION_NAME = "Upgrade";
     private FirebaseAuth _auth = FirebaseAuth.DefaultInstance;
     private FirebaseFirestore _db = FirebaseFirestore.DefaultInstance;
 
@@ -21,7 +20,8 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
     public async UniTask Save(UpgradeSaveData saveData)
     {
         string userId = _auth.CurrentUser.UserId;
-        await _db.Collection(UPGRADE_COLLECTION_NAME).Document(userId).SetAsync(saveData).AsUniTask();
+        await _db.Collection(GameDataDomains.Upgrade.CloudCollectionName)
+            .Document(userId).SetAsync(saveData).AsUniTask();
     }
 
     // 즉시 저장하므로 미뤄 둔 쓰기가 없다.
@@ -34,7 +34,9 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
         try
         {
             string userId = _auth.CurrentUser.UserId;
-            DocumentSnapshot snapshot = await _db.Collection(UPGRADE_COLLECTION_NAME).Document(userId).GetSnapshotAsync().AsUniTask();
+            DocumentSnapshot snapshot = await _db
+                .Collection(GameDataDomains.Upgrade.CloudCollectionName)
+                .Document(userId).GetSnapshotAsync().AsUniTask();
 
             if (!snapshot.Exists)
             {
@@ -51,14 +53,14 @@ public class FirebaseUpgradeRepository : IUpgradeRepository
 
             // 상위 버전은 현재 앱이 해석할 수 없다. 그대로 로드하면 다음 저장이
             // 최신 데이터를 낮은 버전으로 덮어쓴다.
-            if (schemaVersion > SaveSchema.UpgradeCurrentVersion)
+            if (schemaVersion > GameDataDomains.Upgrade.CurrentSchemaVersion)
             {
                 return SaveLoadResult<UpgradeSaveData>.Failed(
                     ESaveLoadFailure.UnsupportedVersion,
                     UnsupportedSaveVersionException.BuildMessage(
                         "Upgrade",
                         schemaVersion,
-                        SaveSchema.UpgradeCurrentVersion));
+                        GameDataDomains.Upgrade.CurrentSchemaVersion));
             }
 
             UpgradeSaveData data = snapshot.ConvertTo<UpgradeSaveData>();

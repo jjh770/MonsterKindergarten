@@ -194,7 +194,7 @@ public sealed class SlimeStatusSaveData : ISaveData
 
     public static SlimeStatusSaveData Default => new SlimeStatusSaveData
     {
-        SchemaVersion = SaveSchema.SlimeCurrentVersion,
+        SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeInstanceSaveData>(),
         SelectedBackgroundTheme = (int)EBackgroundTheme.Ground,
@@ -359,7 +359,7 @@ public static class SlimeStatusSaveMigration
 
         return new SlimeStatusSaveData
         {
-            SchemaVersion = SaveSchema.SlimeCurrentVersion,
+            SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
             HighestGrade = legacyData.HighestGrade,
             ActiveSlimes = activeSlimes,
             SelectedBackgroundTheme = legacyData.CurrentStage,
@@ -406,7 +406,7 @@ public static class SlimeStatusSaveMigration
                 : (int)combinedTickets;
         }
 
-        saveData.SchemaVersion = SaveSchema.SlimeCurrentVersion;
+        saveData.SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion;
         saveData.ActiveSlimes ??= new List<SlimeInstanceSaveData>();
         saveData.CompletedTutorials ??= new List<string>();
         saveData.NormalCollectionRegistered =

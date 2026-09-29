@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SlimeManager : MonoBehaviour
+public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 {
     public static SlimeManager Instance { get; private set; }
 
