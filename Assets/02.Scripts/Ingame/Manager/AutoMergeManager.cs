@@ -61,6 +61,10 @@ public sealed class AutoMergeManager : MonoBehaviour
     private bool _isPresenting;
     private Sequence _presentation;
     private readonly List<PresentationPair> _presentationPairs = new();
+    // 자동합성이 SetPresentationLocked(true)로 실제 잠근 슬라임을 추적한다. 캐시된
+    // IsPresented가 아니라 이 목록을 해제 근거로 삼아, 연출이 어떤 경로로 끝나든
+    // 잠금이 남지 않게 한다.
+    private readonly List<SlimeController> _lockedSlimes = new();
 
     private sealed class PresentationPair
     {
@@ -109,6 +113,9 @@ public sealed class AutoMergeManager : MonoBehaviour
     {
         _presentation?.Kill();
         _presentation = null;
+        // Kill()은 OnComplete(CompletePresentation)를 부르지 않으므로, 연출 중단·파괴
+        // 경로에서는 여기서 명시적으로 잠금을 해제해야 한다.
+        ReleaseAllPresentationLocks();
         if (Instance == this) Instance = null;
     }
 
@@ -213,6 +220,9 @@ public sealed class AutoMergeManager : MonoBehaviour
     {
         _isPresenting = true;
         _presentationPairs.Clear();
+        // 이전 연출이 어떤 이유로 목록을 비우지 못했다면 새로 잠그기 전에 정리한다.
+        // 정상 경로에서는 목록이 비어 있어 무해하다.
+        ReleaseAllPresentationLocks();
 
         _presentation?.Kill();
         _presentation = DOTween.Sequence();
@@ -226,6 +236,10 @@ public sealed class AutoMergeManager : MonoBehaviour
             hasPresentedPair = true;
             pair.Keeper.SetPresentationLocked(true);
             pair.Removed.SetPresentationLocked(true);
+            // 잠근 시점과 등록 시점을 동일 지점으로 묶는다. IsPresented가 false라
+            // 잠그지 않는 쌍은 목록에도 넣지 않아 화면 밖 쌍을 보존한다.
+            _lockedSlimes.Add(pair.Keeper);
+            _lockedSlimes.Add(pair.Removed);
             _presentation
                 .Join(pair.Keeper.transform
                     .DOMove(presentationPair.Center, _gatherDuration)
@@ -325,15 +339,12 @@ public sealed class AutoMergeManager : MonoBehaviour
                 _rejectedIds.Add(pair.Keeper.InstanceId);
                 _rejectedIds.Add(pair.Removed.InstanceId);
             }
-
-            if (!pair.IsPresented) continue;
-
-            // 사라진 쪽도 풀로 돌아가 다시 쓰이므로 잠금을 되돌린다.
-            pair.Keeper?.SetPresentationLocked(false);
-            pair.Removed?.SetPresentationLocked(false);
         }
 
         _presentationPairs.Clear();
+        // 실제로 잠근 대상(_lockedSlimes)을 근거로 한 번에 해제한다. 정상 완료 경로가
+        // 이 지점을 지나므로, 잠근 쌍이 없어 즉시 완료되는 경로도 여기서 함께 커버된다.
+        ReleaseAllPresentationLocks();
         _isPresenting = false;
 
         // 저장이 모든 쌍을 거절해 아무것도 합쳐지지 않았다면 기다리게 할 이유가 없으므로
@@ -342,6 +353,23 @@ public sealed class AutoMergeManager : MonoBehaviour
         {
             _remainingWait = 0f;
         }
+    }
+
+    // 자동합성이 SetPresentationLocked(true)로 잠근 슬라임을 여기서 한 번에 되돌린다.
+    // 캐시된 IsPresented가 아니라 실제로 잠근 목록을 근거로 해제해, 연출이 어떤
+    // 경로로 끝나든(정상 완료·합성으로 despawn·연출 중단·오브젝트 파괴) 잠금이 남지 않게 한다.
+    // 이미 despawn되어 다른 슬라임으로 재사용된 오브젝트는 잠금이 풀려 있으므로 가드로 건너뛴다.
+    private void ReleaseAllPresentationLocks()
+    {
+        foreach (SlimeController slime in _lockedSlimes)
+        {
+            if (slime != null && slime.IsPresentationLocked)
+            {
+                slime.SetPresentationLocked(false);
+            }
+        }
+
+        _lockedSlimes.Clear();
     }
 
     // 레벨 하나에 한 쌍씩 늘어난다. 레벨 0이 1쌍이고 최대 레벨이 10쌍이다.

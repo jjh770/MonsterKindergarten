@@ -139,6 +139,8 @@ public class SlimeController : MonoBehaviour, IClickable
     public void OnDespawn()
     {
         SetDragging(false);
+        // 자동합성 등 연출이 잠근 채 despawn되면 그 잠금이 풀로 유입되므로, 반환 전에 해제한다.
+        _isPresentationLocked = false;
         Instance = null;
     }
 

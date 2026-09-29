@@ -39,7 +39,6 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     private SlimeController _mergeTutorialSlime;
     private SlimeController _promotedTutorialSlime;
     private Step _step;
-    private bool _isGuideSubscribed;
 
     private void Start()
     {
@@ -112,11 +111,9 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         }
 
         _tutorialSlime = tutorialSlime;
-        Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
-        _isGuideSubscribed = true;
+        SubscribeGuideAdvance(OnGuideAdvanceRequested);
 
-        _spawnManager.PushSpawnPause(this);
-        _autoClicker?.PushPause(this);
+        AcquireGameplayHold(_spawnManager, _autoClicker);
         RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
         if (scholarSlimeTarget != null)
         {
@@ -421,20 +418,13 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             survivingSlime?.SetMovementLocked(false);
             _promotedTutorialSlime = null;
             _mergeTutorialSlime = null;
-            _spawnManager?.ReleaseSpawnPause(this);
-            _autoClicker?.ReleasePause(this);
-            _clicker.ReleaseMode(this);
-            CompleteTutorial();
-            _gameplaySpaceManager?.RefreshInteraction();
+            FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
         }
     }
 
     private void UnsubscribeGuide()
     {
-        if (!_isGuideSubscribed || Spotlight == null) return;
-
-        Spotlight.AdvanceRequested -= OnGuideAdvanceRequested;
-        _isGuideSubscribed = false;
+        UnsubscribeGuideAdvance();
     }
 
     private void UnsubscribeMergeEvents()

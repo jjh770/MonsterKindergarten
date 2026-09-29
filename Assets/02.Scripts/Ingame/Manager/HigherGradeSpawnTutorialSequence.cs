@@ -37,8 +37,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        TutorialManager.Finished += TryStart;
-
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
@@ -50,16 +48,13 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
         }
 
-        _gameManager.OnGameplayActivated += TryStart;
-        _spawnManager.Initialized += TryStart;
+        SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         TryStart();
     }
 
     private void OnDestroy()
     {
-        TutorialManager.Finished -= TryStart;
-
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
@@ -71,8 +66,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
         }
 
-        if (_gameManager != null) _gameManager.OnGameplayActivated -= TryStart;
-        if (_spawnManager != null) _spawnManager.Initialized -= TryStart;
+        UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_systemUpgradePanel != null)
         {
@@ -94,17 +88,13 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void TryStart()
     {
-        if (_step != Step.None ||
-            !GameplayGate.IsActive ||
-            _spawnManager == null ||
-            !_spawnManager.IsInitialized ||
-            _slimeManager == null ||
-            !_slimeManager.IsHigherGradeSpawnUnlocked ||
-            !TutorialProgress.CanStart(TutorialIds.HigherGradeSpawn) ||
-            _gameplaySpaceManager == null ||
-            !_gameplaySpaceManager.IsMainFieldActive ||
-            _gameplaySpaceManager.IsTransitioning ||
-            (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
+        if (_step != Step.None) return;
+        if (_slimeManager == null || !_slimeManager.IsHigherGradeSpawnUnlocked) return;
+        if (!IsCommonStartGateOpen(
+                _spawnManager,
+                _gameplaySpaceManager,
+                _unlockPopupUI,
+                TutorialIds.HigherGradeSpawn))
         {
             return;
         }
@@ -117,8 +107,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         if (!TryBeginTutorial()) return;
 
         _step = Step.Dialogue;
-        _spawnManager?.PushSpawnPause(this);
-        _autoClicker?.PushPause(this);
+        AcquireGameplayHold(_spawnManager, _autoClicker);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
@@ -254,10 +243,6 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
         TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Complete;
-        _spawnManager?.ReleaseSpawnPause(this);
-        _autoClicker?.ReleasePause(this);
-        _clicker?.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 }

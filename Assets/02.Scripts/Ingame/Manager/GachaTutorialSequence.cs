@@ -33,7 +33,6 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private Step _step;
-    private bool _isGuideSubscribed;
     private bool _isMergeSubscribed;
 
     // 자리를 만들 수 없어 위치만 알리는 중인지. 이때는 버튼을 누르게 하지 않는다.
@@ -49,7 +48,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        TutorialManager.Finished += TryStart;
+        SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_unlockPopupUI != null)
         {
@@ -66,15 +65,12 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _gachaButton.PullSucceeded += OnGachaPullSucceeded;
         }
 
-        _gameManager.OnGameplayActivated += TryStart;
-        _spawnManager.Initialized += TryStart;
-
         TryStart();
     }
 
     private void OnDestroy()
     {
-        TutorialManager.Finished -= TryStart;
+        UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_unlockPopupUI != null)
         {
@@ -90,9 +86,6 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         {
             _gachaButton.PullSucceeded -= OnGachaPullSucceeded;
         }
-
-        if (_gameManager != null) _gameManager.OnGameplayActivated -= TryStart;
-        if (_spawnManager != null) _spawnManager.Initialized -= TryStart;
 
         UnsubscribeGuide();
         UnsubscribeMerge();
@@ -120,17 +113,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void TryStart()
     {
         if (_step != Step.None ||
-            !GameplayGate.IsActive ||
-            _spawnManager == null ||
-            !_spawnManager.IsInitialized ||
-            !TutorialProgress.CanStart(TutorialIds.Gacha) ||
+            !IsCommonStartGateOpen(_spawnManager, _gameplaySpaceManager, _unlockPopupUI, TutorialIds.Gacha) ||
             _slimeManager == null ||
             !_slimeManager.IsGachaUnlocked ||
-            _currencyManager == null ||
-            _gameplaySpaceManager == null ||
-            !_gameplaySpaceManager.IsMainFieldActive ||
-            _gameplaySpaceManager.IsTransitioning ||
-            (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
+            _currencyManager == null)
         {
             return;
         }
@@ -153,8 +139,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _gachaButton.gameObject.SetActive(true);
 
         _step = Step.Dialogue;
-        _spawnManager.PushSpawnPause(this);
-        _autoClicker.PushPause(this);
+        AcquireGameplayHold(_spawnManager, _autoClicker);
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
@@ -341,21 +326,12 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void SubscribeGuide()
     {
-        if (_isGuideSubscribed) return;
-
-        Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
-        _isGuideSubscribed = true;
+        SubscribeGuideAdvance(OnGuideAdvanceRequested);
     }
 
     private void UnsubscribeGuide()
     {
-        if (!_isGuideSubscribed) return;
-
-        _isGuideSubscribed = false;
-        if (Spotlight != null)
-        {
-            Spotlight.AdvanceRequested -= OnGuideAdvanceRequested;
-        }
+        UnsubscribeGuideAdvance();
     }
 
     private void SubscribeMerge()
@@ -385,11 +361,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         UnsubscribeMerge();
         TutorialProgress.MarkCompleted(TutorialIds.Gacha);
         _step = Step.Complete;
-        _spawnManager?.ReleaseSpawnPause(this);
-        _autoClicker?.ReleasePause(this);
-        _clicker?.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 
     private void Abort(string message)
@@ -399,11 +371,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         UnsubscribeMerge();
         _step = Step.Complete;
-        _spawnManager?.ReleaseSpawnPause(this);
-        _autoClicker?.ReleasePause(this);
-        _clicker?.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 
     private bool TryFindMergePair(

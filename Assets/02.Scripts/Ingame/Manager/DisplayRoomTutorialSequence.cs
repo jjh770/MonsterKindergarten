@@ -37,7 +37,6 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private SlimeController _tutorialSlime;
     private Step _step;
-    private bool _isGuideSubscribed;
 
     private void Start()
     {
@@ -49,7 +48,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        TutorialManager.Finished += TryStart;
+        SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_unlockPopupUI != null)
         {
@@ -77,15 +76,13 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
         _gameplaySpaceManager.SpaceChanged += OnSpaceChanged;
         _gameplaySpaceManager.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
-        _gameManager.OnGameplayActivated += TryStart;
-        _spawnManager.Initialized += TryStart;
 
         TryStart();
     }
 
     private void OnDestroy()
     {
-        TutorialManager.Finished -= TryStart;
+        UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_unlockPopupUI != null)
         {
@@ -117,16 +114,6 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _gameplaySpaceManager.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
         }
 
-        if (_gameManager != null)
-        {
-            _gameManager.OnGameplayActivated -= TryStart;
-        }
-
-        if (_spawnManager != null)
-        {
-            _spawnManager.Initialized -= TryStart;
-        }
-
         UnsubscribeGuide();
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
@@ -144,16 +131,13 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     private void TryStart()
     {
         if ((_step != Step.None && _step != Step.Complete) ||
-            !GameplayGate.IsActive ||
-            _spawnManager == null ||
-            !_spawnManager.IsInitialized ||
-            !TutorialProgress.CanStart(TutorialIds.DisplayRoom) ||
+            !IsCommonStartGateOpen(
+                _spawnManager,
+                _gameplaySpaceManager,
+                _unlockPopupUI,
+                TutorialIds.DisplayRoom) ||
             _slimeManager == null ||
-            !_slimeManager.IsDisplayRoomUnlocked ||
-            _gameplaySpaceManager == null ||
-            !_gameplaySpaceManager.IsMainFieldActive ||
-            _gameplaySpaceManager.IsTransitioning ||
-            (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
+            !_slimeManager.IsDisplayRoomUnlocked)
         {
             return;
         }
@@ -172,10 +156,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         if (!TryBeginTutorial()) return;
 
         _tutorialSlime = FindFirstDisplayRoomSlime();
-        Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
-        _isGuideSubscribed = true;
-        _spawnManager?.PushSpawnPause(this);
-        _autoClicker?.PushPause(this);
+        SubscribeGuideAdvance(OnGuideAdvanceRequested);
+        AcquireGameplayHold(_spawnManager, _autoClicker);
         _upgradeUI.SetToggleInputEnabled(false);
 
         // 입고 결과가 저장돼 있으면 추가 입고 없이 장식장 안내를 재개한다.
@@ -492,11 +474,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        _spawnManager?.ReleaseSpawnPause(this);
-        _autoClicker?.ReleasePause(this);
-        _clicker.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 
     private void Abort(string message)
@@ -506,11 +484,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        _spawnManager?.ReleaseSpawnPause(this);
-        _autoClicker?.ReleasePause(this);
-        _clicker?.ReleaseMode(this);
-        CompleteTutorial();
-        _gameplaySpaceManager?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 
     private SlimeController FindTransferCandidate()
@@ -553,9 +527,6 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void UnsubscribeGuide()
     {
-        if (!_isGuideSubscribed || Spotlight == null) return;
-
-        Spotlight.AdvanceRequested -= OnGuideAdvanceRequested;
-        _isGuideSubscribed = false;
+        UnsubscribeGuideAdvance();
     }
 }
