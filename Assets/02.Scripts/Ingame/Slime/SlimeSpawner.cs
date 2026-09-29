@@ -30,10 +30,14 @@ public class SlimeSpawner : MonoBehaviour
         }
     }
 
-    public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position, bool shouldSave = true)
+    public SlimeController Spawn(
+        ESlimeGrade slimeGrade,
+        Vector2 position,
+        bool shouldSave = true,
+        bool isSpecial = false)
     {
         return Spawn(
-            SlimeInstance.Create(slimeGrade),
+            SlimeInstance.Create(slimeGrade, isSpecial),
             position,
             shouldSave);
     }

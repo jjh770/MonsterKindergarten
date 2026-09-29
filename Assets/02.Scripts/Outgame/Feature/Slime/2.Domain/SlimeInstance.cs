@@ -4,7 +4,7 @@ public sealed class SlimeInstance
 {
     public string InstanceId { get; }
     public ESlimeGrade Grade { get; private set; }
-    public bool IsSpecial { get; }
+    public bool IsSpecial { get; private set; }
     public ESlimeLocation Location { get; private set; }
 
     public SlimeInstance(
@@ -46,6 +46,8 @@ public sealed class SlimeInstance
         }
 
         Grade = grade;
+        // 합성 결과는 언제나 일반 슬라임이다. 특별한 모습은 이어받지 않는다.
+        IsSpecial = false;
     }
 
     internal void MoveTo(ESlimeLocation location)

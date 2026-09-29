@@ -53,6 +53,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
             : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
+    public int SpecialCollectionCount => _status?.SpecialCollectionCount ?? 0;
     public bool IsTicketBulkCollectUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.TicketBulkCollectCount;
     public bool IsOfflineTicketRewardUnlocked =>
@@ -99,6 +100,8 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public event Action<ESlimeGrade> HighestGradeChanged;
     public event Action<int> NormalCollectionCountChanged;
     public event Action<ESlimeGrade> NormalCollectionRegistered;
+    // 특별 슬라임을 장식장에 처음 넣어 등록했을 때. 도감 카테고리 연출이 구독한다.
+    public event Action<ESlimeGrade> SpecialCollectionRegistered;
     public event Action PlaygroundChanged;
     public event Action BackgroundThemesChanged;
     public bool IsInitialized { get; private set; }
@@ -381,7 +384,10 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     // 이동 검증과 저장을 한 경계에서 처리해 UI가 개체를 직접 변경하지 않게 한다.
     public void MoveSlime(string instanceId, ESlimeLocation location)
     {
-        ESlimeGrade? registeredGrade = _status.MoveSlime(instanceId, location);
+        ESlimeGrade? registeredGrade = _status.MoveSlime(
+            instanceId,
+            location,
+            out ESlimeGrade? registeredSpecialGrade);
         if (registeredGrade.HasValue)
         {
             _collectionStats.RecordRegistration(
@@ -392,6 +398,11 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         }
 
         Save();
+        if (registeredSpecialGrade.HasValue)
+        {
+            SpecialCollectionRegistered?.Invoke(registeredSpecialGrade.Value);
+        }
+
         if (!registeredGrade.HasValue)
         {
             return;
@@ -405,6 +416,12 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     {
         return _status != null &&
                _status.IsNormalCollectionRegistered(grade);
+    }
+
+    public bool IsSpecialCollectionRegistered(ESlimeGrade grade)
+    {
+        return _status != null &&
+               _status.IsSpecialCollectionRegistered(grade);
     }
 
     public bool IsTutorialCompleted(string tutorialId)

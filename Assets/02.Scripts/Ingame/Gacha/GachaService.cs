@@ -21,7 +21,8 @@ public static class GachaService
 {
     public static EGachaFailure TryPull(
         out SlimeController spawned,
-        out EGachaRarity rarity)
+        out EGachaRarity rarity,
+        bool isTutorialPull = false)
     {
         spawned = null;
         rarity = EGachaRarity.Common;
@@ -45,9 +46,14 @@ public static class GachaService
         // 실제로 태어나므로, 자리가 없으면 놓을 곳이 없다.
         if (!spawnManager.HasMainFieldRoom()) return EGachaFailure.NoRoom;
 
-        if (!NormalGachaPool.TryPick(
-                slimeManager.HighestGrade,
-                out NormalGachaResult result))
+        float specialChance = slimeManager.SpecialGachaChance;
+        if (!TryPick(
+                slimeManager,
+                specialChance,
+                isTutorialPull,
+                out ESlimeGrade pickedGrade,
+                out EGachaRarity pickedRarity,
+                out bool isSpecial))
         {
             return EGachaFailure.NoCandidate;
         }
@@ -60,14 +66,18 @@ public static class GachaService
                 1d,
                 () =>
                 {
-                    pulledSlime = spawnManager.Spawn(result.Grade);
+                    pulledSlime = spawnManager.Spawn(pickedGrade, isSpecial: isSpecial);
                     return pulledSlime != null;
                 });
 
         if (transactionResult == EEconomyTransactionResult.Success)
         {
             spawned = pulledSlime;
-            rarity = result.Rarity;
+            rarity = pickedRarity;
+
+            // 실패 횟수는 결과가 실제로 생긴 뒤에만 센다. 환불된 가챠가 피버를 올리면 안 된다.
+            if (!isTutorialPull) slimeManager.RecordSpecialGachaResult(isSpecial);
+            LogPull(pickedGrade, isSpecial, specialChance);
             return EGachaFailure.None;
         }
 
@@ -76,7 +86,66 @@ public static class GachaService
             return EGachaFailure.NoTicket;
         }
 
-        Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {result.Grade}");
+        Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {pickedGrade}");
         return EGachaFailure.SpawnFailed;
+    }
+
+    // 기획서 §15.2: 특별 여부를 가장 먼저 판정한다. 성공하면 특별 풀에서 종류를 고르고,
+    // 실패하면 일반 풀로 간다. 특별 종류를 고르지 못하는 경우는 후보가 없을 때뿐이라
+    // 그때도 일반 결과로 이어 가챠가 아무것도 못 주는 일이 없게 한다.
+    private static bool TryPick(
+        SlimeManager slimeManager,
+        float specialChance,
+        bool isTutorialPull,
+        out ESlimeGrade grade,
+        out EGachaRarity rarity,
+        out bool isSpecial)
+    {
+        grade = ESlimeGrade.None;
+        rarity = EGachaRarity.Common;
+        isSpecial = false;
+
+        // 튜토리얼의 무료 한 장은 특별 판정도 하지 않는다. 고정된 좋은 결과로 시작해야
+        // 하고, 규칙 밖의 한 장이 피버 실패 횟수를 올리지도 않아야 한다.
+        if (isTutorialPull)
+        {
+            if (!NormalGachaPool.TryPickTutorial(slimeManager.HighestGrade, out NormalGachaResult tutorialResult))
+            {
+                return false;
+            }
+
+            grade = tutorialResult.Grade;
+            rarity = tutorialResult.Rarity;
+            return true;
+        }
+
+        if (Random.value < specialChance &&
+            SpecialGachaPool.TryPick(
+                slimeManager.HighestGrade,
+                slimeManager.SpecialCollectionCount,
+                slimeManager.IsSpecialCollectionRegistered,
+                out grade))
+        {
+            rarity = EGachaRarity.Special;
+            isSpecial = true;
+            return true;
+        }
+
+        if (!NormalGachaPool.TryPick(slimeManager.HighestGrade, out NormalGachaResult result))
+        {
+            return false;
+        }
+
+        grade = result.Grade;
+        rarity = result.Rarity;
+        return true;
+    }
+
+    // 확률과 결과를 에디터 콘솔에만 남긴다. 확률 표시가 게임에 없는 규칙(기획서 §16)이라
+    // 시뮬레이션과 수동 확인은 이 로그가 유일한 근거다.
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    private static void LogPull(ESlimeGrade grade, bool isSpecial, float specialChance)
+    {
+        Debug.Log($"[Gacha] {(isSpecial ? "특별" : "일반")} Lv.{(int)grade} (특별 확률 {specialChance:P1})");
     }
 }

@@ -6,6 +6,8 @@ public enum EGachaRarity
     Uncommon,
     Rare,
     Jackpot,
+    // 특별한 슬라임 결과. 등급과 별개의 축이라 최고 등급과의 거리로는 나오지 않는다.
+    Special,
 }
 
 public readonly struct NormalGachaResult
@@ -20,86 +22,69 @@ public readonly struct NormalGachaResult
     }
 }
 
-// 기획서 §14 - 일반 가챠 결과의 후보와 가중치.
+// 일반 가챠 결과의 후보와 가중치.
 //
-// 최고 해금 등급 자신은 후보에 없다. 합성으로 새 등급을 처음 만나는 경험을 가챠가
-// 앞질러 가져가지 않게 하려는 규칙이다. 그래서 후보는 최고 -1부터 -4까지다.
+// 후보는 Lv.1부터 최고 해금 등급까지 전부다. 최고 등급 자신도 나올 수 있고, 그 위는
+// 절대 나오지 않는다. 가챠가 아직 만나지 못한 등급의 슬라임을 만들어 주면 안 된다.
 //
-// 값은 기획서에서 확정된 것이라 에셋으로 빼지 않았다. 조정이 필요해지면 그때
-// SpawnWeightTable처럼 ScriptableObject로 옮긴다.
+// 낮은 등급일수록 무겁다. Lv.n의 무게는 (최고 - n + 1)이라 Lv.1이 가장 잘 나오고
+// 최고 등급이 가장 드물다. 값은 확정된 밸런스라 에셋으로 빼지 않았다. 조정이 필요해지면
+// 그때 SpawnWeightTable처럼 ScriptableObject로 옮긴다.
 public static class NormalGachaPool
 {
-    // 최고 해금 등급에서 몇 단계 아래인지와 그 가중치. 합계 110.
-    private static readonly int[] Offsets = { 1, 2, 3, 4 };
-    private static readonly int[] Weights = { 10, 20, 30, 50 };
+    // 포털 색은 최고 등급과의 거리로 정한다. 후보가 몇 개든 "얼마나 좋은 결과인지"가
+    // 같은 뜻으로 남는다. 거리 0은 최고 등급 자신이다.
+    private const int JackpotMaxDistance = 1;
+    private const int RareMaxDistance = 3;
+    private const int UncommonMaxDistance = 6;
 
-    // 후보가 Grade1 아래로 내려가면 그 자리는 빼고 남은 것끼리 다시 정규화한다.
-    // 가챠는 Lv.7에서 열리므로 정상 경로에서는 넷이 모두 있지만, 해금 등급을
-    // 낮추는 밸런스 변경이 곧바로 예외가 되지 않도록 열어 둔다.
     public static bool TryPick(ESlimeGrade highestGrade, out NormalGachaResult result)
     {
         result = default;
+        if (highestGrade < ESlimeGrade.Grade1) return false;
 
+        int highest = (int)highestGrade;
         int totalWeight = 0;
-        for (int i = 0; i < Offsets.Length; i++)
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
         {
-            if (GetCandidate(highestGrade, i) == ESlimeGrade.None) continue;
-
-            totalWeight += Weights[i];
+            totalWeight += GetWeight(highest, grade);
         }
 
-        if (totalWeight <= 0) return false;
-
         int roll = Random.Range(0, totalWeight);
-        for (int i = 0; i < Offsets.Length; i++)
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
         {
-            ESlimeGrade candidate = GetCandidate(highestGrade, i);
-            if (candidate == ESlimeGrade.None) continue;
-
-            roll -= Weights[i];
+            roll -= GetWeight(highest, grade);
             if (roll >= 0) continue;
 
-            result = new NormalGachaResult(
-                candidate,
-                GetRarity(highestGrade, i));
+            result = new NormalGachaResult((ESlimeGrade)grade, GetRarity(highest, grade));
             return true;
         }
 
         return false;
     }
 
-    // 실제 후보 가중치의 상대 순위로 희귀도를 정한다. 가중치가 작을수록 드물며,
-    // 같은 가중치에는 같은 희귀도를 준다. 따라서 Weights를 바꾸면 포탈 색도
-    // 별도 수정 없이 함께 바뀐다.
-    private static EGachaRarity GetRarity(ESlimeGrade highestGrade, int selectedIndex)
+    // 가챠 튜토리얼의 무료 한 장. 첫 경험이 시시하지 않도록 최고 -1과 최고 중에서만
+    // 같은 확률로 뽑는다. 최고 -1이 Lv.1 아래로 내려가면 그 자리는 뺀다.
+    public static bool TryPickTutorial(ESlimeGrade highestGrade, out NormalGachaResult result)
     {
-        int moreCommonCandidateCount = 0;
-        int selectedWeight = Weights[selectedIndex];
-        for (int i = 0; i < Weights.Length; i++)
-        {
-            if (GetCandidate(highestGrade, i) == ESlimeGrade.None ||
-                Weights[i] <= selectedWeight)
-            {
-                continue;
-            }
+        result = default;
+        if (highestGrade < ESlimeGrade.Grade1) return false;
 
-            moreCommonCandidateCount++;
-        }
-
-        return moreCommonCandidateCount switch
-        {
-            >= 3 => EGachaRarity.Jackpot,
-            2 => EGachaRarity.Rare,
-            1 => EGachaRarity.Uncommon,
-            _ => EGachaRarity.Common,
-        };
+        int highest = (int)highestGrade;
+        int lowest = System.Math.Max((int)ESlimeGrade.Grade1, highest - 1);
+        int grade = Random.Range(lowest, highest + 1);
+        result = new NormalGachaResult((ESlimeGrade)grade, GetRarity(highest, grade));
+        return true;
     }
 
-    private static ESlimeGrade GetCandidate(ESlimeGrade highestGrade, int index)
+    public static int GetWeight(int highest, int grade) => highest - grade + 1;
+
+    public static EGachaRarity GetRarity(int highest, int grade)
     {
-        int grade = (int)highestGrade - Offsets[index];
-        return grade >= (int)ESlimeGrade.Grade1
-            ? (ESlimeGrade)grade
-            : ESlimeGrade.None;
+        int distance = highest - grade;
+        if (distance <= JackpotMaxDistance) return EGachaRarity.Jackpot;
+        if (distance <= RareMaxDistance) return EGachaRarity.Rare;
+        if (distance <= UncommonMaxDistance) return EGachaRarity.Uncommon;
+        return EGachaRarity.Common;
     }
 }

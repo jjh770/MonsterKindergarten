@@ -60,7 +60,7 @@ public static class SlimeStatusSaveMapper
         }
 
         var registeredNormalCollection = new List<ESlimeGrade>(
-            GetRegisteredNormalCollection(saveData.NormalCollectionRegistered));
+            GetRegisteredCollection(saveData.NormalCollectionRegistered));
         var registeredBeforeRestore = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
         var restoredStats = new NormalSlimeCollectionStats(saveData);
@@ -109,7 +109,8 @@ public static class SlimeStatusSaveMapper
                 saveData.CompletedTutorials,
                 ToPlacedObjects(saveData.PlacedObjects),
                 saveData.OwnedPlaygroundObjects,
-                ToBackgroundThemes(saveData.OwnedBackgroundThemes));
+                ToBackgroundThemes(saveData.OwnedBackgroundThemes),
+                GetRegisteredCollection(saveData.SpecialCollectionRegistered));
         }
         catch (ArgumentException e)
         {
@@ -265,6 +266,7 @@ public static class SlimeStatusSaveMapper
             OwnedPlaygroundObjects = BuildOwnedPlaygroundObjects(status),
             OwnedBackgroundThemes = BuildOwnedBackgroundThemes(status),
             NormalCollectionRegistered = BuildNormalCollectionSaveData(status),
+            SpecialCollectionRegistered = BuildSpecialCollectionSaveData(status),
             NormalFirstRegisteredAt = collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = collectionStats.BuildNaturalSpawnCounts(),
             NormalMergeCreatedCounts = collectionStats.BuildMergeCreatedCounts(),
@@ -390,7 +392,7 @@ public static class SlimeStatusSaveMapper
         return result;
     }
 
-    private static IEnumerable<ESlimeGrade> GetRegisteredNormalCollection(
+    private static IEnumerable<ESlimeGrade> GetRegisteredCollection(
         IReadOnlyList<bool> registered)
     {
         if (registered == null)
@@ -420,6 +422,20 @@ public static class SlimeStatusSaveMapper
             ESlimeGrade grade = (ESlimeGrade)(
                 (int)ESlimeGrade.Grade1 + i);
             registered[i] = status.IsNormalCollectionRegistered(grade);
+        }
+
+        return registered;
+    }
+
+    private static List<bool> BuildSpecialCollectionSaveData(SlimeStatus status)
+    {
+        List<bool> registered =
+            SlimeStatusSaveData.CreateEmptyNormalCollection();
+        for (int i = 0; i < registered.Count; i++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)(
+                (int)ESlimeGrade.Grade1 + i);
+            registered[i] = status.IsSpecialCollectionRegistered(grade);
         }
 
         return registered;

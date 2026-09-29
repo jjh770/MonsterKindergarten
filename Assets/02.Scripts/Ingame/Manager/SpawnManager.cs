@@ -301,13 +301,13 @@ public class SpawnManager : MonoBehaviour
         return upgrade?.Level ?? 0;
     }
 
-    public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
+    public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true, bool isSpecial = false)
     {
         if (_slimeSpawner == null) return null;
 
         Vector2 randomPos = GetRandomSpawnPosition();
 
-        return _slimeSpawner.Spawn(grade, randomPos, shouldSave);
+        return _slimeSpawner.Spawn(grade, randomPos, shouldSave, isSpecial);
     }
 
     public Vector2 GetRandomSpawnPosition()

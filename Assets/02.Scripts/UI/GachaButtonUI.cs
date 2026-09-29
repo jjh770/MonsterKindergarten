@@ -57,9 +57,11 @@ public sealed class GachaButtonUI : MonoBehaviour
         // 티켓 소비만 발생하고 연출은 거절된다. 서비스 호출 전에 막는다.
         if (_resultDirector != null && _resultDirector.IsPlaying) return;
 
+        // 가챠 튜토리얼이 끝나기 전의 첫 뽑기는 튜토리얼이 준 무료 한 장이다.
         EGachaFailure failure = GachaService.TryPull(
             out SlimeController spawned,
-            out EGachaRarity rarity);
+            out EGachaRarity rarity,
+            isTutorialPull: !TutorialProgress.IsCompleted(TutorialIds.Gacha));
 
         if (failure == EGachaFailure.None && spawned != null)
         {

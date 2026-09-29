@@ -164,6 +164,12 @@ public sealed class SlimeStatusSaveData : ISaveData
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();
 
+    // v12. 특별한 슬라임 도감 등록 상태다. 일반 도감과 달리 미리 채운 목록을 두지 않는다.
+    // 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙고, 필드가 없는 이전 문서는 빈
+    // 목록으로 읽히는데 그것이 "등록한 특별 슬라임이 없는" 정확한 상태다.
+    [FirestoreProperty]
+    public List<bool> SpecialCollectionRegistered { get; set; } = new();
+
     [FirestoreProperty]
     public List<string> NormalFirstRegisteredAt { get; set; } =
         CreateEmptyStringStats();
@@ -409,6 +415,7 @@ public static class SlimeStatusSaveMigration
         saveData.SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion;
         saveData.ActiveSlimes ??= new List<SlimeInstanceSaveData>();
         saveData.CompletedTutorials ??= new List<string>();
+        saveData.SpecialCollectionRegistered ??= new List<bool>();
         saveData.NormalCollectionRegistered =
             SlimeStatusSaveData.NormalizeNormalCollection(
                 saveData.NormalCollectionRegistered);
