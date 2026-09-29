@@ -19,6 +19,13 @@ public sealed class GachaResultDirector : MonoBehaviour
     private static readonly Color RareColor = new(0.67f, 0.42f, 1f, 1f);
     private static readonly Color JackpotColor = new(1f, 0.76f, 0.22f, 1f);
 
+    // 특별한 결과의 무지개. 색상환을 한 바퀴 도는 데 걸리는 시간의 역수다.
+    private const float RainbowCyclesPerSecond = 0.9f;
+    private const float RainbowSaturation = 0.6f;
+    private const string SpecialSubtitle = "뭔가 특별해 보여요...!";
+    // 특별한 결과는 터지는 순간의 빛과 충격파를 더 세게 준다.
+    private const float SpecialBurstBoost = 1.35f;
+
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private GameObject _reelViewport;
@@ -74,6 +81,9 @@ public sealed class GachaResultDirector : MonoBehaviour
     private bool _isReady;
     private bool _isPlaying;
     private bool _portalTapped;
+    private bool _isSpecialResult;
+    // 결과 그림이 다 드러난 뒤에만 무지개 광택을 입힌다. 드러나는 중에는 실루엣 색이 먼저다.
+    private bool _isResultImageShimmering;
 
     public bool IsPlaying => _isPlaying;
 
@@ -149,6 +159,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             AudioManager.Instance?.StopLoopingSFX();
             _clicker?.ReleaseMode(this);
+            _isResultImageShimmering = false;
             _isPlaying = false;
         }
 
@@ -164,6 +175,8 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         // 포털·결과물은 결과 이미지의 부모 캔버스 로컬 좌표로만 움직인다. 화면 픽셀을
         // 그대로 position에 넣으면 CanvasScaler가 켜진 해상도에서 좌표계가 어긋난다.
+        _isSpecialResult = rarity == EGachaRarity.Special;
+        _isResultImageShimmering = false;
         Vector2 center = GetLocalCenter();
         PreparePortal(center, target.Grade);
         _root.SetActive(true);
@@ -210,7 +223,9 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultImage.enabled = false;
         _resultImage.color = _silhouetteColor;
 
-        _resultNameText.text = GetName(grade);
+        _resultNameText.text = _isSpecialResult
+            ? GetName(grade) + "\n<size=65%>" + SpecialSubtitle + "</size>"
+            : GetName(grade);
         _resultNameText.alpha = 0f;
         _resultNameText.gameObject.SetActive(true);
         _resultNameRect.anchoredPosition =
@@ -262,7 +277,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             if (await NextFrame(token)) return true;
             elapsed += Time.unscaledDeltaTime;
             float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _chargeDuration));
-            Color current = Color.Lerp(InitialColor, color, ratio);
+            Color current = Color.Lerp(InitialColor, Tint(color), ratio);
             SetPortalColor(current, 1f);
             RotateRings(elapsed * Mathf.Lerp(90f, 360f, ratio));
             AnimateOrbit(elapsed * 2.2f, current, Mathf.Lerp(1f, 1.45f, ratio));
@@ -282,7 +297,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _collapseDuration));
             _portalRoot.localScale = Vector3.Lerp(startScale, Vector3.one * 0.58f, ratio);
             RotateRings(360f + elapsed * 720f);
-            AnimateOrbit(elapsed * 3f, color, Mathf.Lerp(1.45f, 0.45f, ratio));
+            AnimateOrbit(elapsed * 3f, Tint(color), Mathf.Lerp(1.45f, 0.45f, ratio));
         }
         return false;
     }
@@ -301,11 +316,11 @@ public sealed class GachaResultDirector : MonoBehaviour
             _portalRoot.anchoredPosition = portalStart + new Vector2(
                 Mathf.Sin(elapsed * 135f) * 11f * inverse,
                 Mathf.Cos(elapsed * 117f) * 8f * inverse);
-            SetImageColor(_flashImage, color, inverse * 0.82f);
-            SetImageColor(_shockwave, color, inverse * 0.9f);
+            SetImageColor(_flashImage, Tint(color), inverse * 0.82f * BurstBoost);
+            SetImageColor(_shockwave, Tint(color), inverse * 0.9f * BurstBoost);
             _shockwave.rectTransform.localScale =
                 Vector3.one * Mathf.Lerp(0.35f, 2.15f, ratio);
-            AnimateBurst(ratio, color);
+            AnimateBurst(ratio, Tint(color));
         }
 
         _portalRoot.anchoredPosition = portalStart;
@@ -337,7 +352,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             _portalRoot.localScale = Vector3.one * Mathf.Lerp(1.28f, 0.72f, ratio);
             SetPortalAlpha(1f - ratio * 0.45f);
             RotateRings(720f + elapsed * 250f);
-            AnimateSustainedBurst(elapsed, resultColor);
+            AnimateSustainedBurst(elapsed, Tint(resultColor));
         }
         return false;
     }
@@ -370,10 +385,11 @@ public sealed class GachaResultDirector : MonoBehaviour
             _portalRoot.localScale = Vector3.one * Mathf.Lerp(0.72f, 0f, portalCollapse);
             SetPortalAlpha(0.55f * (1f - portalCollapse));
             RotateRings(970f + elapsed * 210f);
-            AnimateSustainedBurst(_emergeDuration + elapsed, resultColor);
+            AnimateSustainedBurst(_emergeDuration + elapsed, Tint(resultColor));
         }
 
         _resultImage.color = Color.white;
+        _isResultImageShimmering = _isSpecialResult;
         _resultRect.localScale = Vector3.one * _revealScale;
         _resultNameText.alpha = 1f;
         _resultNameRect.anchoredPosition = _resultNameRestPosition;
@@ -513,10 +529,32 @@ public sealed class GachaResultDirector : MonoBehaviour
         AudioManager.Instance?.StopLoopingSFX(_waitSfxFadeOutDuration);
     }
 
+    private float BurstBoost => _isSpecialResult ? SpecialBurstBoost : 1f;
+
+    // 특별한 결과는 정해진 색 대신 색상환을 도는 색을 쓴다. 나머지는 그대로 돌려준다.
+    private Color Tint(Color color)
+    {
+        if (!_isSpecialResult) return color;
+
+        return Color.HSVToRGB(
+            Mathf.Repeat(Time.unscaledTime * RainbowCyclesPerSecond, 1f),
+            RainbowSaturation,
+            1f);
+    }
+
+    private void Update()
+    {
+        if (!_isResultImageShimmering) return;
+
+        _resultImage.color = Color.Lerp(Color.white, Tint(Color.white), 0.4f);
+    }
+
     private static Color GetPortalColor(EGachaRarity rarity)
     {
         return rarity switch
         {
+            // 색은 Tint가 프레임마다 무지개로 덮는다. 여기서는 시작 색만 정한다.
+            EGachaRarity.Special => Color.white,
             EGachaRarity.Jackpot => JackpotColor,
             EGachaRarity.Rare => RareColor,
             EGachaRarity.Uncommon => UncommonColor,
@@ -649,8 +687,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             float inverse = 1f - ratio;
             _arrivalShockwave.rectTransform.localScale =
                 Vector3.one * Mathf.Lerp(0.35f, 2.1f, ratio);
-            SetImageColor(_arrivalShockwave, color, inverse * 0.85f);
-            AnimateArrivalSparks(ratio, color);
+            SetImageColor(_arrivalShockwave, Tint(color), inverse * 0.85f);
+            AnimateArrivalSparks(ratio, Tint(color));
             _resultRect.localScale = Vector3.one *
                                      (_endScale * (1f + Mathf.Sin(ratio * Mathf.PI) * 0.28f));
         }

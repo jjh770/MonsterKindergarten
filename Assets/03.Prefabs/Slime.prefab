@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 6828179282409805443}
   - component: {fileID: 1449321985000000000}
   - component: {fileID: 2657138910400000000}
+  - component: {fileID: 6714693021214994988}
   m_Layer: 7
   m_Name: Slime
   m_TagString: Untagged
@@ -92,7 +93,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5a6db85ebb9466f4b90af9ebdd3c4fdc, type: 2}
+  - {fileID: 2100000, guid: 6d5d6a2fdf5b2304ea251427a045d56c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -364,3 +365,15 @@ MonoBehaviour:
   _dropHeight: 8
   _dropDuration: 0.5
   _dropEase: 30
+--- !u!114 &6714693021214994988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3227736551508964039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41b06805e76ae194abd20d23ce55fc09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlimeSpriteMaterialDriver
