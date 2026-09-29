@@ -82,8 +82,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
-            _spawnManager?.SetSpawningPaused(false);
-            _autoClicker?.SetPaused(false);
+            _spawnManager?.ReleaseSpawnPause(this);
+            _autoClicker?.ReleasePause(this);
         }
     }
 
@@ -117,8 +117,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         if (!TryBeginTutorial()) return;
 
         _step = Step.Dialogue;
-        _spawnManager?.SetSpawningPaused(true);
-        _autoClicker?.SetPaused(true);
+        _spawnManager?.PushSpawnPause(this);
+        _autoClicker?.PushPause(this);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
@@ -254,8 +254,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
         TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Complete;
-        _spawnManager?.SetSpawningPaused(false);
-        _autoClicker?.SetPaused(false);
+        _spawnManager?.ReleaseSpawnPause(this);
+        _autoClicker?.ReleasePause(this);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
         _gameplaySpaceManager?.RefreshInteraction();

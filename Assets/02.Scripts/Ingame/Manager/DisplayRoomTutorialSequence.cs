@@ -131,8 +131,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
-            _spawnManager?.SetSpawningPaused(false);
-            _autoClicker?.SetPaused(false);
+            _spawnManager?.ReleaseSpawnPause(this);
+            _autoClicker?.ReleasePause(this);
         }
     }
 
@@ -174,8 +174,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _tutorialSlime = FindFirstDisplayRoomSlime();
         Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         _isGuideSubscribed = true;
-        _spawnManager?.SetSpawningPaused(true);
-        _autoClicker?.SetPaused(true);
+        _spawnManager?.PushSpawnPause(this);
+        _autoClicker?.PushPause(this);
         _upgradeUI.SetToggleInputEnabled(false);
 
         // 입고 결과가 저장돼 있으면 추가 입고 없이 장식장 안내를 재개한다.
@@ -492,8 +492,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        _spawnManager?.SetSpawningPaused(false);
-        _autoClicker?.SetPaused(false);
+        _spawnManager?.ReleaseSpawnPause(this);
+        _autoClicker?.ReleasePause(this);
         _clicker.ReleaseMode(this);
         CompleteTutorial();
         _gameplaySpaceManager?.RefreshInteraction();
@@ -506,8 +506,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        _spawnManager?.SetSpawningPaused(false);
-        _autoClicker?.SetPaused(false);
+        _spawnManager?.ReleaseSpawnPause(this);
+        _autoClicker?.ReleasePause(this);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
         _gameplaySpaceManager?.RefreshInteraction();

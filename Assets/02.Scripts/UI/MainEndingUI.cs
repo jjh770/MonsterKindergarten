@@ -200,8 +200,8 @@ public sealed class MainEndingUI : MonoBehaviour
             ClickerInputMode.Blocked,
             ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, HandleBack);
-        _spawnManager.SetSpawningPaused(true);
-        _autoClicker?.SetPaused(true);
+        _spawnManager.PushSpawnPause(this);
+        _autoClicker?.PushPause(this);
         _ownsGameplayPause = true;
 
         transform.SetAsLastSibling();
@@ -359,8 +359,8 @@ public sealed class MainEndingUI : MonoBehaviour
 
         if (_ownsGameplayPause)
         {
-            _spawnManager.SetSpawningPaused(false);
-            _autoClicker?.SetPaused(false);
+            _spawnManager.ReleaseSpawnPause(this);
+            _autoClicker?.ReleasePause(this);
             _ownsGameplayPause = false;
         }
     }

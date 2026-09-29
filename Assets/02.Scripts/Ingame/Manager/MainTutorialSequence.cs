@@ -77,7 +77,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         if (_spawnManager != null)
         {
             _spawnManager.OnTutorialSlimeReady -= Begin;
-            _spawnManager.SetSpawningPaused(false);
+            _spawnManager.ReleaseSpawnPause(this);
         }
 
         if (_unlockPopupUI != null)
@@ -92,7 +92,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
         UnsubscribeGuide();
         UnsubscribeMergeEvents();
-        _autoClicker?.SetPaused(false);
+        _autoClicker?.ReleasePause(this);
     }
 
     private void Begin(SlimeController tutorialSlime)
@@ -115,8 +115,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         _isGuideSubscribed = true;
 
-        _spawnManager.SetSpawningPaused(true);
-        _autoClicker?.SetPaused(true);
+        _spawnManager.PushSpawnPause(this);
+        _autoClicker?.PushPause(this);
         RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
         if (scholarSlimeTarget != null)
         {
@@ -421,8 +421,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             survivingSlime?.SetMovementLocked(false);
             _promotedTutorialSlime = null;
             _mergeTutorialSlime = null;
-            _spawnManager?.SetSpawningPaused(false);
-            _autoClicker?.SetPaused(false);
+            _spawnManager?.ReleaseSpawnPause(this);
+            _autoClicker?.ReleasePause(this);
             _clicker.ReleaseMode(this);
             CompleteTutorial();
             _gameplaySpaceManager?.RefreshInteraction();

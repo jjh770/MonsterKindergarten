@@ -36,7 +36,7 @@ public class SpawnManager : MonoBehaviour
     private float _timer;
 
     private bool _isInitialized;
-    private bool _isSpawningPaused;
+    private readonly OwnerPauseSet _spawnPauses = new OwnerPauseSet();
     public bool IsInitialized => _isInitialized;
     public float SpawnProgress => Mathf.Clamp01(_timer / _spawnInterval);
     public float RemainingTime => Mathf.Max(0f, _spawnInterval - _timer);
@@ -205,14 +205,14 @@ public class SpawnManager : MonoBehaviour
     {
         if (!_isInitialized) return;
         if (!GameplayGate.IsActive) return;
-        if (_isSpawningPaused) return;
+        if (_spawnPauses.IsPaused) return;
 
 #if UNITY_EDITOR
         HandleEditorSpawnShortcuts();
 #endif
 
         // 플레이어가 끈 자동 스폰. 튜토리얼의 일시정지와 다른 축이라 따로 본다.
-        // 한 플래그로 합치면 튜토리얼이 끝나면서 SetSpawningPaused(false)를 부를 때
+        // 한 플래그로 합치면 튜토리얼이 끝나면서 정지 요청을 해제(ReleaseSpawnPause)할 때
         // 플레이어가 꺼 둔 설정까지 조용히 켜진다.
         //
         // 타이머 누적보다 앞에서 돌아가므로 다시 켜면 멈춘 지점부터 이어간다.
@@ -349,10 +349,8 @@ public class SpawnManager : MonoBehaviour
         MaxActiveCount = _baseMaxActiveCount + Mathf.RoundToInt((float)upgrade.Point);
     }
 
-    public void SetSpawningPaused(bool isPaused)
-    {
-        _isSpawningPaused = isPaused;
-    }
+    public void PushSpawnPause(object owner) => _spawnPauses.Push(owner);
+    public void ReleaseSpawnPause(object owner) => _spawnPauses.Release(owner);
 
     // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
     public int GetMainFieldSlimeCount() =>

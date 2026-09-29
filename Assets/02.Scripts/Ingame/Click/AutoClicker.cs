@@ -10,7 +10,7 @@ public class AutoClicker : MonoBehaviour
 {
     [SerializeField] private SpawnManager _spawnManager;
 
-    private bool _isPaused;
+    private readonly OwnerPauseSet _pauses = new OwnerPauseSet();
 
     private void Awake()
     {
@@ -22,7 +22,7 @@ public class AutoClicker : MonoBehaviour
 
     private void Update()
     {
-        if (_isPaused) return;
+        if (_pauses.IsPaused) return;
         if (!GameplayGate.IsActive) return;
         if (_spawnManager == null) return;
 
@@ -56,8 +56,6 @@ public class AutoClicker : MonoBehaviour
         target.OnClick(clickInfo);
     }
 
-    public void SetPaused(bool isPaused)
-    {
-        _isPaused = isPaused;
-    }
+    public void PushPause(object owner) => _pauses.Push(owner);
+    public void ReleasePause(object owner) => _pauses.Release(owner);
 }
