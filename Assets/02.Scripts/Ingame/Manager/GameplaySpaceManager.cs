@@ -519,6 +519,12 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         target.SetLocationPresentationActive(isVisible);
     }
 
+    // 대포처럼 슬라임을 잠시 점유했던 연출이 점유를 끝낸 뒤, 최종 표시를 다시 공간
+    // 규칙으로 되돌리기 위해 부른다. 표시 규칙의 최종 결정은 이 클래스가 소유한다는
+    // 불변식을 지키기 위한 좁은 경계다. ApplyAllSlimeVisibility 전체는 공개하지 않는다.
+    public void RestoreSlimeToSpaceRule(SlimeController target)
+        => RefreshSlimePresentation(target);
+
     private void SetCurrentSpace(EGameplaySpace space)
     {
         if (_currentSpace == space) return;

@@ -258,6 +258,11 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
         slime.transform.localScale = _heldBaseScale;
         slime.transform.position = position;
         slime.SetPresentationLocked(false);
+
+        // 대포는 크기·위치·잠금만 되돌리고, 렌더러·콜라이더·물리의 최종 표시는 공간
+        // 규칙에 맡긴다. 물고 있는 동안 공간이 바뀌었으면(장식장→메인 필드) 이 슬라임은
+        // 다른 공간 소속이라 규칙이 표시를 끈다. 그렇지 않으면 규칙이 보임을 돌려줘 기존과 같다.
+        GameplaySpaceManager.Instance?.RestoreSlimeToSpaceRule(slime);
     }
 
     private void HideHeld(SlimeController slime)
