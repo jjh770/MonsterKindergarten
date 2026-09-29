@@ -28,6 +28,7 @@ Shader "Slime/Outline"
 
         [Header(Set Per Renderer)]
         _SpriteUV ("Sprite Rect In Texture (xy min, zw size)", Vector) = (0,0,1,1)
+        _ArtRect ("Art Rect In Sprite (xy min, zw max)", Vector) = (0,0,1,1)
         _Special ("Special (0 or 1)", Float) = 0
     }
 
@@ -79,6 +80,7 @@ Shader "Slime/Outline"
             float _OutlineSpeed;
             float _RainbowBody;
             float4 _SpriteUV;
+            float4 _ArtRect;
             float _Special;
 
             // 바깥 고리와 안쪽 고리. 안쪽 고리는 반지름 안에 통째로 들어가는 작은 조각
@@ -147,6 +149,16 @@ Shader "Slime/Outline"
                 // 완전히 불투명한 곳에는 외곽선이 없다. 가장자리의 반투명 픽셀은 외곽선 위에
                 // 겹쳐 그려 테두리에 틈이 생기지 않게 한다.
                 if (c.a >= 0.999 || _Thickness <= 0.0)
+                {
+                    return body;
+                }
+
+                // 그림이 있는 사각형에서 아웃라인 반지름보다 먼 픽셀은 탐색해도 닿을 것이 없다.
+                // 사각형의 대부분이 이런 픽셀이라 이 검사가 계산량의 대부분을 덜어 낸다.
+                float2 artMin = (_ArtRect.xy - 0.5) * (1.0 / scale) + 0.5;
+                float2 artMax = (_ArtRect.zw - 0.5) * (1.0 / scale) + 0.5;
+                float2 outside = max(max(artMin - local, local - artMax), 0.0) * texels;
+                if (dot(outside, outside) > _Thickness * _Thickness)
                 {
                     return body;
                 }

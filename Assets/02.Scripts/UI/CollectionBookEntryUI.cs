@@ -30,6 +30,8 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
     private Color _boundIconColor = Color.white;
     private bool _isReady;
     private bool _hasSelectionState;
+    // 특별 도감의 등록된 항목. 선택돼 그림이 보이는 동안 무지개 광택을 입힌다.
+    private bool _isShimmering;
     private bool _isSelected;
 
     public RectTransform RectTransform => transform as RectTransform;
@@ -51,6 +53,14 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
+    // 선택 애니메이션이 끝난 뒤에 색을 덮는다. 진행 중에는 애니메이션이 색을 쥐고 있다.
+    private void Update()
+    {
+        if (!_isShimmering || !_isSelected || _selectionTween != null) return;
+
+        _icon.color = RainbowTint.Shimmer();
+    }
+
     private void OnDestroy()
     {
         _selectionTween?.Kill();
@@ -60,13 +70,15 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         ESlimeGrade grade,
         SlimeSpecData specData,
         bool isRegistered,
-        Action clicked)
+        Action clicked,
+        bool shimmer = false)
     {
         if (!_isReady) return;
 
         _clicked = clicked;
         _icon.sprite = specData?.Sprite;
         _boundIconColor = isRegistered ? Color.white : LockedIconColor;
+        _isShimmering = shimmer && isRegistered;
         if (_isSelected)
         {
             _icon.color = _boundIconColor;

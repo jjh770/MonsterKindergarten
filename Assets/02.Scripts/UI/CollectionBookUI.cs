@@ -44,6 +44,14 @@ public sealed class CollectionBookUI : MonoBehaviour
     [Tooltip("장식장에 전시 중일 때만 켜지는 표식입니다. 상세 이미지 위에 둡니다.")]
     [SerializeField] private GameObject _displayRoomBadge;
 
+    [Header("Category")]
+    [Tooltip("제목 배경입니다. 눌러서 일반 도감과 특별 도감을 오갑니다.")]
+    [SerializeField] private Button _titleButton;
+    [Tooltip("돌리는 대상입니다. 배경과 글자를 함께 돌립니다.")]
+    [SerializeField] private RectTransform _titleRoot;
+    [SerializeField] private TextMeshProUGUI _titleText;
+    [SerializeField, Min(0f)] private float _categorySpinDuration = 0.7f;
+
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
 
@@ -54,8 +62,26 @@ public sealed class CollectionBookUI : MonoBehaviour
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
     private UnityEngine.UI.Button _endingReplayButton;
+    private Sequence _categorySpin;
+    private bool _isSpecialCategory;
+    private bool _isSwitchingCategory;
+    // 특별 도감으로 넘어가면 선택이 바뀌므로, 돌아올 때 보던 자리를 기억해 둔다.
+    private ESlimeGrade? _normalSelection;
 
     public bool IsOpen => _isOpen;
+    public bool IsSpecialCategory => _isSpecialCategory;
+    public RectTransform OpenButtonTarget => _openButton != null
+        ? _openButton.transform as RectTransform
+        : null;
+    public RectTransform TitleTarget => _titleRoot;
+
+    // 튜토리얼이 단계를 넘기는 근거다. 도감이 열림·닫힘·카테고리 전환을 끝낸 시점에 알린다.
+    public event Action Opened;
+    public event Action Closed;
+    public event Action CategoryChanged;
+
+    private const string NormalTitle = "슬라임 도감";
+    private const string SpecialTitle = "특별 슬라임 도감";
 
     private void Start()
     {
@@ -72,18 +98,23 @@ public sealed class CollectionBookUI : MonoBehaviour
         _closeButton.onClick.AddListener(Close);
         _previousButton.onClick.AddListener(ShowPrevious);
         _nextButton.onClick.AddListener(ShowNext);
+        _titleButton.onClick.AddListener(OnTitleClicked);
         _spaceManager.SpaceChanged += OnSpaceChanged;
         _gameManager.AllDataInitialized += RefreshOpenButton;
         _gameManager.OnGameplayActivated += RefreshOpenButton;
         TutorialManager.Started += RefreshOpenButton;
         TutorialManager.Finished += RefreshOpenButton;
         _slimeManager.NormalCollectionRegistered += OnNormalCollectionRegistered;
+        _slimeManager.SpecialCollectionRegistered += OnSpecialCollectionRegistered;
+        TutorialManager.Started += RefreshTitleButton;
+        TutorialManager.Finished += RefreshTitleButton;
         RefreshLayout();
         RefreshOpenButton();
     }
 
     private void OnDestroy()
     {
+        _categorySpin?.Kill();
         _fadeTween?.Kill();
         _scrollTween?.Kill();
         _replayDelayTween?.Kill();
@@ -91,6 +122,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _closeButton?.onClick.RemoveListener(Close);
         _previousButton?.onClick.RemoveListener(ShowPrevious);
         _nextButton?.onClick.RemoveListener(ShowNext);
+        _titleButton?.onClick.RemoveListener(OnTitleClicked);
 
         if (_spaceManager != null)
         {
@@ -100,6 +132,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         _gameManager.AllDataInitialized -= RefreshOpenButton;
         TutorialManager.Started -= RefreshOpenButton;
         TutorialManager.Finished -= RefreshOpenButton;
+        TutorialManager.Started -= RefreshTitleButton;
+        TutorialManager.Finished -= RefreshTitleButton;
         if (_gameManager != null)
         {
             _gameManager.OnGameplayActivated -= RefreshOpenButton;
@@ -108,6 +142,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (_slimeManager != null)
         {
             _slimeManager.NormalCollectionRegistered -= OnNormalCollectionRegistered;
+            _slimeManager.SpecialCollectionRegistered -= OnSpecialCollectionRegistered;
         }
         _endingReplayButton?.onClick.RemoveListener(ReplayEnding);
         DisplayRoomCameraInputGate.Release(this);
@@ -138,6 +173,9 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _detailNameText != null &&
                              _detailDescriptionText != null &&
                              _displayRoomBadge != null &&
+                             _titleButton != null &&
+                             _titleRoot != null &&
+                             _titleText != null &&
                              _slimeManager != null &&
                              _spaceManager != null &&
                              _gameManager != null &&
@@ -191,6 +229,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _hudVisibility.PushHide(this, EHudParts.All);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         RefreshOpenButton();
+        ResetCategory();
         RefreshEntries();
         RefreshEndingReplayButton();
 
@@ -198,6 +237,9 @@ public sealed class CollectionBookUI : MonoBehaviour
         _fadeTween = _bookCanvasGroup
             .DOFade(1f, _fadeDuration)
             .OnComplete(() => _fadeTween = null);
+
+        RefreshTitleButton();
+        Opened?.Invoke();
 
     }
 
@@ -227,6 +269,8 @@ public sealed class CollectionBookUI : MonoBehaviour
                 _bookRoot.SetActive(false);
                 RefreshOpenButton();
             });
+        ResetCategoryMotion();
+        Closed?.Invoke();
         return true;
     }
 
@@ -246,6 +290,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         RestoreUpgradeToggle(animated: false);
         _hudVisibility.Release(this, animated: false);
         RefreshOpenButton();
+        ResetCategoryMotion();
+        Closed?.Invoke();
     }
 
     private void RefreshEntries()
@@ -262,13 +308,14 @@ public sealed class CollectionBookUI : MonoBehaviour
             ESlimeGrade grade = (ESlimeGrade)(
                 (int)ESlimeGrade.Grade1 + i);
             SlimeSpecData specData = manager.Get(grade)?.SpecData;
-            bool isRegistered = manager.IsNormalCollectionRegistered(grade);
+            bool isRegistered = IsRegistered(manager, grade);
             CollectionBookEntryUI entry = _entries[i];
             entry.Bind(
                 grade,
                 specData,
                 isRegistered,
-                () => OnEntryClicked(grade));
+                () => OnEntryClicked(grade),
+                shimmer: _isSpecialCategory);
             entry.SetSelected(_selectedGrade == grade);
         }
 
@@ -358,7 +405,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         if (manager == null) return;
 
         SlimeSpecData specData = manager.Get(grade)?.SpecData;
-        bool isRegistered = manager.IsNormalCollectionRegistered(grade);
+        bool isRegistered = IsRegistered(manager, grade);
         _detailIcon.sprite = specData?.Sprite;
         _detailIcon.color = isRegistered
             ? Color.white
@@ -366,15 +413,47 @@ public sealed class CollectionBookUI : MonoBehaviour
         _detailNumberText.text = isRegistered
             ? $"No.{(int)grade:00}"
             : "No.??";
-        _detailNameText.text = isRegistered
-            ? specData?.Name ?? string.Empty
-            : "??? 슬라임";
-        _detailDescriptionText.text = isRegistered
-            ? BuildRegisteredDetail(grade, specData)
-            : "장식장에 데려오면\n도감에 자동 등록돼요.";
+        _detailNameText.text = BuildDetailName(grade, specData, isRegistered);
+        _detailDescriptionText.text = BuildDetailDescription(grade, specData, isRegistered);
 
         // 등록 여부가 아니라 지금 전시 중인지를 본다. 꺼내면 등록은 남고 표식만 꺼진다.
-        _displayRoomBadge.SetActive(manager.IsDisplayedInDisplayRoom(grade));
+        _displayRoomBadge.SetActive(manager.IsDisplayedInDisplayRoom(grade, _isSpecialCategory));
+    }
+
+    private bool IsRegistered(SlimeManager manager, ESlimeGrade grade)
+    {
+        return _isSpecialCategory
+            ? manager.IsSpecialCollectionRegistered(grade)
+            : manager.IsNormalCollectionRegistered(grade);
+    }
+
+    private string BuildDetailName(
+        ESlimeGrade grade,
+        SlimeSpecData specData,
+        bool isRegistered)
+    {
+        if (!isRegistered) return "??? 슬라임";
+
+        string name = specData?.Name ?? string.Empty;
+        return _isSpecialCategory ? $"특별한 {name}" : name;
+    }
+
+    // 특별한 슬라임은 생산 기록을 남기지 않으므로 능력과 기록 칸이 없다.
+    private string BuildDetailDescription(
+        ESlimeGrade grade,
+        SlimeSpecData specData,
+        bool isRegistered)
+    {
+        if (_isSpecialCategory)
+        {
+            return isRegistered
+                ? $"{specData?.Description ?? string.Empty}\n\n특별한 모습으로 태어난 아이예요."
+                : "장식장에 특별한 모습을\n데려오면 도감에 자동 등록돼요.";
+        }
+
+        return isRegistered
+            ? BuildRegisteredDetail(grade, specData)
+            : "장식장에 데려오면\n도감에 자동 등록돼요.";
     }
 
     private string BuildRegisteredDetail(
@@ -427,6 +506,129 @@ public sealed class CollectionBookUI : MonoBehaviour
             RefreshEntries();
             RefreshEndingReplayButton();
         }
+    }
+
+    // 특별 도감에서 고른 슬라임의 큰 그림에 무지개 광택을 입힌다. 항목의 작은 그림은
+    // 항목이 스스로 입힌다.
+    private void Update()
+    {
+        if (!_isOpen || !_isSpecialCategory || !_selectedGrade.HasValue) return;
+        if (!_slimeManager.IsSpecialCollectionRegistered(_selectedGrade.Value)) return;
+
+        _detailIcon.color = RainbowTint.Shimmer();
+    }
+
+    // 제목을 눌러 두 도감을 오가는 것은 특별한 슬라임을 등록한 뒤에, 그것을 알려 주는
+    // 튜토리얼이 진행 중이거나 끝난 경우에만 연다. 튜토리얼 전에 열면 안내 없이 기능이
+    // 먼저 드러난다.
+    private bool CanToggleCategory()
+    {
+        return _slimeManager != null &&
+               _slimeManager.SpecialCollectionCount > 0 &&
+               (TutorialProgress.IsCompleted(TutorialIds.SpecialCollection) ||
+                TutorialManager.IsActive(TutorialIds.SpecialCollection));
+    }
+
+    private void RefreshTitleButton()
+    {
+        if (_titleButton == null) return;
+
+        _titleButton.interactable =
+            _isOpen && !_isSwitchingCategory && CanToggleCategory();
+    }
+
+    private void OnTitleClicked()
+    {
+        if (!_isOpen || _isSwitchingCategory || !CanToggleCategory()) return;
+
+        StartCategorySwitch(!_isSpecialCategory);
+    }
+
+    // 제목이 한 바퀴 도는 동안 절반쯤에서 내용을 통째로 바꾼다. 뒤집히는 순간이라
+    // 바뀌는 것이 눈에 띄지 않고, 돌아오면 이미 다른 도감이다.
+    private void StartCategorySwitch(bool special)
+    {
+        _isSwitchingCategory = true;
+        RefreshTitleButton();
+
+        _categorySpin?.Kill();
+        _categorySpin = DOTween.Sequence()
+            .Append(_titleRoot
+                .DOLocalRotate(
+                    new Vector3(0f, 360f, 0f),
+                    _categorySpinDuration,
+                    RotateMode.FastBeyond360)
+                .SetEase(Ease.InOutCubic))
+            .InsertCallback(_categorySpinDuration * 0.5f, () => ApplyCategory(special))
+            .OnComplete(() =>
+            {
+                _categorySpin = null;
+                _titleRoot.localRotation = Quaternion.identity;
+                _isSwitchingCategory = false;
+                RefreshTitleButton();
+                CategoryChanged?.Invoke();
+            });
+    }
+
+    private void ApplyCategory(bool special)
+    {
+        if (_isSpecialCategory == special) return;
+
+        if (special)
+        {
+            _normalSelection = _selectedGrade;
+            _isSpecialCategory = true;
+            _selectedGrade = FindFirstRegisteredSpecial();
+        }
+        else
+        {
+            _isSpecialCategory = false;
+            _selectedGrade = _normalSelection ?? ESlimeGrade.Grade1;
+        }
+
+        _titleText.text = special ? SpecialTitle : NormalTitle;
+        RefreshEntries();
+        ScrollToSelected();
+    }
+
+    // 특별 도감을 처음 펼치면 등록한 슬라임 중 가장 낮은 등급부터 보여 준다.
+    private ESlimeGrade FindFirstRegisteredSpecial()
+    {
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)((int)ESlimeGrade.Grade1 + i);
+            if (_slimeManager.IsSpecialCollectionRegistered(grade)) return grade;
+        }
+
+        return ESlimeGrade.Grade1;
+    }
+
+    // 도감을 열 때는 언제나 일반 도감이다. 닫은 채로 두었던 특별 도감이 남아 있으면
+    // 되돌린다.
+    private void ResetCategory()
+    {
+        ResetCategoryMotion();
+        if (!_isSpecialCategory) return;
+
+        _isSpecialCategory = false;
+        _selectedGrade = _normalSelection ?? ESlimeGrade.Grade1;
+        _titleText.text = NormalTitle;
+    }
+
+    private void ResetCategoryMotion()
+    {
+        _categorySpin?.Kill();
+        _categorySpin = null;
+        _isSwitchingCategory = false;
+        if (_titleRoot != null) _titleRoot.localRotation = Quaternion.identity;
+    }
+
+    private void OnSpecialCollectionRegistered(ESlimeGrade grade)
+    {
+        if (!_isOpen) return;
+
+        if (_isSpecialCategory) RefreshEntries();
+        RefreshTitleButton();
     }
 
     private void CreateEndingReplayButton()

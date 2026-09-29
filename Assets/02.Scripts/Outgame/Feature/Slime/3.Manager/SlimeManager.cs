@@ -495,10 +495,10 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     //
     // 등록은 한 번 들어가면 꺼내도 남는 영구 기록이고, 이쪽은 현재 상태다.
     // 도감이 전시 중인 개체에만 표식을 붙이는 데 쓴다.
-    public bool IsDisplayedInDisplayRoom(ESlimeGrade grade)
+    public bool IsDisplayedInDisplayRoom(ESlimeGrade grade, bool isSpecial = false)
     {
         return _status != null &&
-               _status.HasDisplayRoomSlime(grade, isSpecial: false);
+               _status.HasDisplayRoomSlime(grade, isSpecial);
     }
 
     public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)

@@ -19,9 +19,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     private static readonly Color RareColor = new(0.67f, 0.42f, 1f, 1f);
     private static readonly Color JackpotColor = new(1f, 0.76f, 0.22f, 1f);
 
-    // 특별한 결과의 무지개. 색상환을 한 바퀴 도는 데 걸리는 시간의 역수다.
-    private const float RainbowCyclesPerSecond = 0.9f;
-    private const float RainbowSaturation = 0.6f;
     private const string SpecialSubtitle = "뭔가 특별해 보여요...!";
     // 특별한 결과는 터지는 순간의 빛과 충격파를 더 세게 준다.
     private const float SpecialBurstBoost = 1.35f;
@@ -536,17 +533,14 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         if (!_isSpecialResult) return color;
 
-        return Color.HSVToRGB(
-            Mathf.Repeat(Time.unscaledTime * RainbowCyclesPerSecond, 1f),
-            RainbowSaturation,
-            1f);
+        return RainbowTint.Pure();
     }
 
     private void Update()
     {
         if (!_isResultImageShimmering) return;
 
-        _resultImage.color = Color.Lerp(Color.white, Tint(Color.white), 0.4f);
+        _resultImage.color = RainbowTint.Shimmer();
     }
 
     private static Color GetPortalColor(EGachaRarity rarity)

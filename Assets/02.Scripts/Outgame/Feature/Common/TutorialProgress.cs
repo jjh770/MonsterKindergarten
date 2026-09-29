@@ -9,6 +9,7 @@ public static class TutorialIds
     public const string Gacha = "GachaTutorial";
     public const string CollectionAutoMerge = "CollectionAutoMergeTutorial";
     public const string CollectionTicketCollect = "CollectionTicketCollectTutorial";
+    public const string SpecialCollection = "SpecialCollectionTutorial";
 
     // 등록과 삭제가 같은 목록을 본다. 튜토리얼을 추가하면 여기만 늘린다.
     // 저장 키 형식이 바뀌는 변경을 할 때 해당 항목의 버전을 올린다.
@@ -20,6 +21,7 @@ public static class TutorialIds
         (Gacha, 1),
         (CollectionAutoMerge, 1),
         (CollectionTicketCollect, 1),
+        (SpecialCollection, 1),
     };
 }
 
@@ -33,6 +35,8 @@ public static class TutorialProgress
         public string CloudId;
         public bool IsCompleted;
         public int Order;
+        // 순서 규칙에 넣지 않는 안내. 다른 안내를 막지도, 다른 안내에 막히지도 않는다.
+        public bool IsIndependent;
     }
 
     private static readonly Dictionary<string, TutorialState> s_stateById =
@@ -53,7 +57,8 @@ public static class TutorialProgress
         string tutorialId,
         int order,
         bool completeByDefault,
-        bool completeStoredIncomplete = true)
+        bool completeStoredIncomplete = true,
+        bool isIndependent = false)
     {
         int version = GetVersion(tutorialId);
         if (!IsInitialized)
@@ -83,6 +88,7 @@ public static class TutorialProgress
                 CloudId = cloudId,
                 IsCompleted = isCompleted,
                 Order = order,
+                IsIndependent = isIndependent,
             };
 
             if (!wasCompleted && isCompleted)
@@ -100,6 +106,7 @@ public static class TutorialProgress
             CloudId = cloudId,
             IsCompleted = isCompletedByDefault,
             Order = order,
+                IsIndependent = isIndependent,
         };
         SaveCompletionFlag(completionKey, isCompletedByDefault);
     }
@@ -149,9 +156,12 @@ public static class TutorialProgress
             return false;
         }
 
+        // 독립 안내는 순서에 묶이지 않는다. 시작할 수 있는지는 그 안내를 보여 줄 쪽이 정한다.
+        if (target.IsIndependent) return true;
+
         foreach (TutorialState state in s_stateById.Values)
         {
-            if (!state.IsCompleted && state.Order < target.Order)
+            if (!state.IsCompleted && !state.IsIndependent && state.Order < target.Order)
             {
                 return false;
             }

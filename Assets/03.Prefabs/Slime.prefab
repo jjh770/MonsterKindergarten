@@ -377,3 +377,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41b06805e76ae194abd20d23ce55fc09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpriteMaterialDriver
+  _artBounds: {fileID: 11400000, guid: 70be36e8a3bb85a4598fb0e3f96518bc, type: 2}

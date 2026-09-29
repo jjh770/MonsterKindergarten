@@ -64,6 +64,17 @@ public sealed class DialoguePresentation : IDisposable
         ShowCurrentLine();
     }
 
+    // 진행 중인 대화를 끝맺음 콜백 없이 접는다. 시퀀스가 도중에 물러날 때 쓴다. 접지 않으면
+    // 튜토리얼은 끝났는데 대화창만 화면에 남는다.
+    public void CancelDialogue()
+    {
+        _dialogueView.Hide();
+        _activeDialogue = null;
+        _dialogueIndex = 0;
+        _onDialogueComplete = null;
+        _keepSpotlightVisible = false;
+    }
+
     public void Dispose()
     {
         if (_isDisposed) return;

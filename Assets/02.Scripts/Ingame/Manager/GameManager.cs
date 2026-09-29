@@ -305,6 +305,14 @@ public class GameManager : MonoBehaviour
             order: NormalCollectionRules.TicketBulkCollectCount,
             completeByDefault: false,
             completeStoredIncomplete: false);
+        // 특별 도감 안내는 특별한 슬라임을 처음 장식장에 넣은 뒤에만 뜨므로, 나머지 안내의
+        // 순서에 묶으면 아직 보지도 못한 이 안내가 뒤 순서 전부를 막는다.
+        TutorialProgress.Register(
+            TutorialIds.SpecialCollection,
+            order: 0,
+            completeByDefault: false,
+            completeStoredIncomplete: false,
+            isIndependent: true);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
 
