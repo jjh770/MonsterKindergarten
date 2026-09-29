@@ -23,13 +23,16 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     [FormerlySerializedAs("_skyIntroDirector")]
     [SerializeField] private BackgroundThemeUnlockDirector _backgroundThemeUnlockDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private MergeManager _mergeManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SlimeSpawner _slimeSpawner;
+    [SerializeField] private SpawnManager _spawnManager;
 
     private EBackgroundTheme _currentBackgroundTheme = EBackgroundTheme.Ground;
     private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private bool _isInitializeStarted;
     private bool _isInitialized;
-    private GameManager _gameManager;
-    private MergeManager _mergeManager;
 
     public EBackgroundTheme CurrentBackgroundTheme => _currentBackgroundTheme;
     public EGameplaySpace CurrentSpace => _currentSpace;
@@ -69,30 +72,11 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _backgroundThemeUnlockDirector.InteractionEnableRequested +=
             SetInteractionEnabled;
 
-        _gameManager = GameManager.Instance;
-        if (_gameManager == null)
-        {
-            Debug.LogError("게임 공간 매니저가 게임 매니저를 찾지 못했습니다.", this);
-            enabled = false;
-            return;
-        }
-
-        _mergeManager = MergeManager.Instance;
-        if (_mergeManager == null)
-        {
-            Debug.LogError("게임 공간 매니저가 합성 매니저를 찾지 못했습니다.", this);
-            enabled = false;
-            return;
-        }
-
         _gameManager.AllDataInitialized += OnAllDataInitialized;
         _mergeManager.Merged += OnMerged;
         _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
 
-        if (SlimeSpawner.Instance != null)
-        {
-            SlimeSpawner.Instance.Spawned += OnSlimeSpawned;
-        }
+        _slimeSpawner.Spawned += OnSlimeSpawned;
 
         if (_gameManager.IsAllDataInitialized)
         {
@@ -121,9 +105,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
         }
 
-        if (SlimeSpawner.Instance != null)
+        if (_slimeSpawner != null)
         {
-            SlimeSpawner.Instance.Spawned -= OnSlimeSpawned;
+            _slimeSpawner.Spawned -= OnSlimeSpawned;
         }
 
         if (_backgroundThemeUI != null)
@@ -147,10 +131,10 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             !IsMainFieldActive ||
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsDisplayRoomUnlocked ||
-            (SlimeManager.Instance.IsBackgroundThemeUnlocked &&
-             !SlimeManager.Instance.BackgroundUnlockCompleted))
+            _slimeManager == null ||
+            !_slimeManager.IsDisplayRoomUnlocked ||
+            (_slimeManager.IsBackgroundThemeUnlocked &&
+             !_slimeManager.BackgroundUnlockCompleted))
         {
             return false;
         }
@@ -249,7 +233,12 @@ public sealed class GameplaySpaceManager : MonoBehaviour
                              _backgroundThemeUnlockDirector != null &&
                              _backgroundThemeUI != null &&
                              _unlockPopupUI != null &&
-                             _transitionPlayer != null;
+                             _transitionPlayer != null &&
+                             _gameManager != null &&
+                             _mergeManager != null &&
+                             _slimeManager != null &&
+                             _slimeSpawner != null &&
+                             _spawnManager != null;
         if (!hasReferences)
         {
             Debug.LogError("게임플레이 공간 매니저의 필수 참조가 비어 있습니다.", this);
@@ -268,14 +257,14 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
     private async UniTaskVoid InitializeAfterDataAsync(CancellationToken token)
     {
-        if (SlimeManager.Instance == null)
+        if (_slimeManager == null)
         {
             _isInitializeStarted = false;
             return;
         }
 
-        _currentBackgroundTheme = SlimeManager.Instance.IsBackgroundThemeUnlocked
-            ? SlimeManager.Instance.SelectedBackgroundTheme
+        _currentBackgroundTheme = _slimeManager.IsBackgroundThemeUnlocked
+            ? _slimeManager.SelectedBackgroundTheme
             : EBackgroundTheme.Ground;
         _isInitialized = true;
         _transitionPlayer.ApplyEnvironment(_currentBackgroundTheme, 0f);
@@ -292,8 +281,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         // 하늘 안내를 아직 못 본 계정만 여기서 인트로를 띄운다. 버튼 노출은
         // 규칙 하나가 정하므로 분기마다 따로 켜고 끄지 않는다.
         RefreshBackgroundButton();
-        if (SlimeManager.Instance.IsBackgroundThemeUnlocked &&
-            !SlimeManager.Instance.BackgroundUnlockCompleted)
+        if (_slimeManager.IsBackgroundThemeUnlocked &&
+            !_slimeManager.BackgroundUnlockCompleted)
         {
             SlimeController skyTarget = FindFirstSkySlime();
             if (skyTarget != null)
@@ -303,7 +292,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             }
             else
             {
-                SlimeManager.Instance.UpdateBackgroundProgress(
+                _slimeManager.UpdateBackgroundProgress(
                     EBackgroundTheme.Ground,
                     backgroundUnlockCompleted: true);
                 RefreshBackgroundButton();
@@ -312,9 +301,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     }
 
     // 오프라인 보상 팝업 등으로 게임플레이가 잠겨 있으면 활성화 이벤트를 기다린다.
-    private static async UniTask WaitForGameplayActiveAsync(CancellationToken token)
+    private async UniTask WaitForGameplayActiveAsync(CancellationToken token)
     {
-        GameManager gameManager = GameManager.Instance;
+        GameManager gameManager = _gameManager;
         if (gameManager == null || gameManager.IsGameplayActive) return;
 
         var completionSource = new UniTaskCompletionSource();
@@ -349,8 +338,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             return;
         }
 
-        if (SlimeManager.Instance != null &&
-            !SlimeManager.Instance.BackgroundUnlockCompleted)
+        if (_slimeManager != null &&
+            !_slimeManager.BackgroundUnlockCompleted)
         {
             target.PreparePresentationTransfer();
             _backgroundThemeUnlockDirector.Prepare(target);
@@ -395,8 +384,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             !IsMainFieldActive ||
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsBackgroundThemeUnlocked)
+            _slimeManager == null ||
+            !_slimeManager.IsBackgroundThemeUnlocked)
         {
             return;
         }
@@ -418,10 +407,10 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             !IsMainFieldActive ||
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsBackgroundThemeUnlocked ||
+            _slimeManager == null ||
+            !_slimeManager.IsBackgroundThemeUnlocked ||
             !BackgroundThemeRules.IsValid(theme) ||
-            !SlimeManager.Instance.IsBackgroundThemeOwned(theme) ||
+            !_slimeManager.IsBackgroundThemeOwned(theme) ||
             // 지금 보고 있는 배경을 다시 고른 것이라 바꿀 것이 없다. 그냥 두면
             // 밀 자리가 없어 화면을 덮는 쪽으로 떨어져, 같은 버튼이 다른 연출을 낸다.
             theme == _currentBackgroundTheme)
@@ -458,11 +447,11 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             },
             onCompleted: () =>
             {
-                if (saveTheme && SlimeManager.Instance != null)
+                if (saveTheme && _slimeManager != null)
                 {
-                    SlimeManager.Instance.UpdateBackgroundProgress(
+                    _slimeManager.UpdateBackgroundProgress(
                         _currentBackgroundTheme,
-                        SlimeManager.Instance.BackgroundUnlockCompleted);
+                        _slimeManager.BackgroundUnlockCompleted);
                 }
 
                 SetInteractionEnabled(true);
@@ -473,9 +462,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
     private void ApplyAllSlimeVisibility()
     {
-        if (SlimeSpawner.Instance == null) return;
+        if (_slimeSpawner == null) return;
 
-        foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
+        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
         {
             if (target == null) continue;
 
@@ -493,13 +482,13 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         ESlimeLocation destination,
         Vector3 fallbackPosition)
     {
-        if (target == null || SlimeManager.Instance == null) return false;
+        if (target == null || _slimeManager == null) return false;
 
         try
         {
-            SlimeManager.Instance.MoveSlime(target.InstanceId, destination);
-            Vector2 spawnPoint = SpawnManager.Instance != null
-                ? SpawnManager.Instance.GetRandomSpawnPosition()
+            _slimeManager.MoveSlime(target.InstanceId, destination);
+            Vector2 spawnPoint = _spawnManager != null
+                ? _spawnManager.GetRandomSpawnPosition()
                 : Vector2.zero;
             target.transform.position = new Vector3(
                 spawnPoint.x,
@@ -542,9 +531,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
     private SlimeController FindFirstSkySlime()
     {
-        if (SlimeSpawner.Instance == null) return null;
+        if (_slimeSpawner == null) return null;
 
-        foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
+        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
         {
             if (target != null &&
                 target.Grade >= UnlockGrades.BackgroundTheme)
@@ -594,9 +583,9 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _backgroundThemeUI.SetButtonVisible(
             _isInitialized &&
             IsMainFieldActive &&
-            SlimeManager.Instance != null &&
-            SlimeManager.Instance.IsBackgroundThemeUnlocked &&
-            SlimeManager.Instance.BackgroundUnlockCompleted);
+            _slimeManager != null &&
+            _slimeManager.IsBackgroundThemeUnlocked &&
+            _slimeManager.BackgroundUnlockCompleted);
     }
 
     public void RefreshInteraction()

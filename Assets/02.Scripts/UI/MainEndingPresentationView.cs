@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -474,7 +474,7 @@ public sealed class MainEndingPresentationView
         text.alignment = alignment;
         text.color = color;
         text.raycastTarget = false;
-        text.enableWordWrapping = true;
+        text.textWrappingMode = TextWrappingModes.Normal;
         return text;
     }
 

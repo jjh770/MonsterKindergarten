@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -264,6 +264,6 @@ public class SpawnSliderUI : MonoBehaviour
 
         _spawnPoolPopup.Show(
             _spawnManager.GetCurrentSpawnProbabilities(),
-            isUnlocked ? SpawnManager.GetSpawnWeightUpgradeLevel() : -1);
+            isUnlocked ? _spawnManager.GetSpawnWeightUpgradeLevel() : -1);
     }
 }

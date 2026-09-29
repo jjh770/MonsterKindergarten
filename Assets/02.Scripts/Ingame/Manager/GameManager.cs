@@ -15,12 +15,16 @@ public class GameManager : MonoBehaviour
     [Tooltip("이 시간 안에 저장 데이터를 불러오지 못하면 로그인 화면으로 돌려보냅니다.")]
     [SerializeField, Min(1f)] private float _initializationTimeoutSeconds = 30f;
 
+    [Header("Scene References")]
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
+    [SerializeField] private OfflineRewardManager _offlineRewardManager;
+
     private bool _isAllInitialized;
     private bool _isReturningToLogin;
     private readonly List<IGameDataDomainManager> _dataManagers = new();
-    private UpgradeManager _upgradeManager;
-    private SlimeManager _slimeManager;
-    private CurrencyManager _currencyManager;
+    private readonly List<GameDataDomainDefinition> _dataDomains = new();
 
     public bool IsAllDataInitialized => _isAllInitialized;
 
@@ -55,6 +59,7 @@ public class GameManager : MonoBehaviour
     {
         if (!TryBindDataManagers())
         {
+            enabled = false;
             return;
         }
 
@@ -63,17 +68,8 @@ public class GameManager : MonoBehaviour
             manager.DataInitialized += OnDataInitialized;
         }
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
-        // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
-        // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
-        if (OfflineRewardManager.Instance == null)
-        {
-            Debug.LogError("오프라인 보상 매니저가 씬에 없습니다.", this);
-        }
-        else
-        {
-            OfflineRewardManager.Instance.PresentationBlockChanged +=
-                OnOfflineRewardBlockChanged;
-        }
+        _offlineRewardManager.PresentationBlockChanged +=
+            OnOfflineRewardBlockChanged;
 
         WatchInitializationTimeout().Forget();
 
@@ -96,46 +92,50 @@ public class GameManager : MonoBehaviour
         }
 
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
-        if (OfflineRewardManager.Instance != null)
+        if (_offlineRewardManager != null)
         {
-            OfflineRewardManager.Instance.PresentationBlockChanged -=
+            _offlineRewardManager.PresentationBlockChanged -=
                 OnOfflineRewardBlockChanged;
         }
     }
 
     private bool TryBindDataManagers()
     {
-        foreach (GameDataDomainDefinition domain in GameDataDomains.All)
+        if (!TryAddDataManager(GameDataDomains.Currency, _currencyManager) ||
+            !TryAddDataManager(GameDataDomains.SlimeStatus, _slimeManager) ||
+            !TryAddDataManager(GameDataDomains.Upgrade, _upgradeManager))
         {
-            IGameDataDomainManager manager = domain.ResolveManager();
-            // 인터페이스로 비교하면 UnityEngine.Object의 파괴된 객체 null 판정을
-            // 우회하므로 실제 C# null과 Unity 가짜 null을 모두 확인한다.
-            if (manager == null ||
-                (manager is UnityEngine.Object managerObject &&
-                 managerObject == null))
-            {
-                Debug.LogError(
-                    $"게임 매니저가 {domain.DisplayName} 데이터 매니저를 찾지 못했습니다.",
-                    this);
-                _dataManagers.Clear();
-                return false;
-            }
-
-            _dataManagers.Add(manager);
-            switch (manager)
-            {
-                case CurrencyManager currencyManager:
-                    _currencyManager = currencyManager;
-                    break;
-                case SlimeManager slimeManager:
-                    _slimeManager = slimeManager;
-                    break;
-                case UpgradeManager upgradeManager:
-                    _upgradeManager = upgradeManager;
-                    break;
-            }
+            _dataManagers.Clear();
+            _dataDomains.Clear();
+            return false;
         }
 
+        if (_offlineRewardManager == null)
+        {
+            Debug.LogError("게임 매니저의 오프라인 보상 매니저 참조가 비어 있습니다.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryAddDataManager(
+        GameDataDomainDefinition domain,
+        IGameDataDomainManager manager)
+    {
+        // 인터페이스로 비교하면 UnityEngine.Object의 파괴된 객체 null 판정을
+        // 우회하므로 실제 C# null과 Unity 가짜 null을 모두 확인한다.
+        if (manager == null ||
+            (manager is UnityEngine.Object managerObject && managerObject == null))
+        {
+            Debug.LogError(
+                $"게임 매니저의 {domain.DisplayName} 데이터 매니저 참조가 비어 있습니다.",
+                this);
+            return false;
+        }
+
+        _dataDomains.Add(domain);
+        _dataManagers.Add(manager);
         return true;
     }
 
@@ -206,7 +206,7 @@ public class GameManager : MonoBehaviour
 
         _isAllInitialized = true;
         InitializeTutorialProgress();
-        OfflineRewardManager.Instance?.Grant();
+        _offlineRewardManager.Grant();
         AllDataInitialized?.Invoke();
     }
 
@@ -231,7 +231,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < _dataManagers.Count; i++)
         {
             if (i > 0) details.Append(", ");
-            details.Append(GameDataDomains.All[i].DisplayName);
+            details.Append(_dataDomains[i].DisplayName);
             details.Append(' ');
             details.Append(Describe(_dataManagers[i].HasStoredSaveData));
         }
@@ -341,13 +341,11 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            OfflineRewardManager.Instance?.GrantAfterResync().Forget();
+            _offlineRewardManager.GrantAfterResync().Forget();
         }
     }
 
-    private static bool HasPendingOfflineReward =>
-        OfflineRewardManager.Instance != null &&
-        OfflineRewardManager.Instance.HasPending;
+    private bool HasPendingOfflineReward => _offlineRewardManager.HasPending;
 
     // 보상 팝업이 화면을 잡는 동안에는 플레이를 멈춘다. 판단은 보상 쪽이 하고
     // 실제로 끄고 켜는 것은 여기서 한다. IsGameplayActive는 초기화·진행도

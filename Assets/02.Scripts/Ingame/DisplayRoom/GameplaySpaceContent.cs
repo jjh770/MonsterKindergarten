@@ -19,6 +19,8 @@ using UnityEngine;
 // 이유로 같은 모양을 하고 있다.
 public class GameplaySpaceContent : MonoBehaviour
 {
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
+
     [Tooltip("장식장에서만 켜집니다.")]
     [SerializeField] private GameObject[] _displayRoomObjects;
 
@@ -27,6 +29,13 @@ public class GameplaySpaceContent : MonoBehaviour
 
     private void Awake()
     {
+        if (_gameplaySpaceManager == null)
+        {
+            Debug.LogError("공간 콘텐츠의 GameplaySpaceManager 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
         if (!HasValidTargets()) return;
 
         // 장식장에 있는지는 저장하지 않는 런타임 상태라 앱은 항상 메인 필드에서
@@ -37,21 +46,19 @@ public class GameplaySpaceContent : MonoBehaviour
     private void Start()
     {
         if (!enabled) return;
-        if (GameplaySpaceManager.Instance == null) return;
-
-        GameplaySpaceManager.Instance.SpaceChanged += Apply;
+        _gameplaySpaceManager.SpaceChanged += Apply;
 
         // 이미 장식장에 들어간 뒤에 붙었을 수 있다. 이벤트를 다시 기다릴 수 없으므로
         // 지금 상태를 한 번 반영한다.
-        Apply(GameplaySpaceManager.Instance.CurrentSpace);
+        Apply(_gameplaySpaceManager.CurrentSpace);
     }
 
     private void OnDestroy()
     {
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
-        if (GameplaySpaceManager.Instance == null) return;
+        if (_gameplaySpaceManager == null) return;
 
-        GameplaySpaceManager.Instance.SpaceChanged -= Apply;
+        _gameplaySpaceManager.SpaceChanged -= Apply;
     }
 
     private void Apply(EGameplaySpace space)

@@ -13,6 +13,10 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
     public event Action DataChanged;
     public event Action DataInitialized;
     public event Action<EUpgradeType, ESlimeGrade> Upgraded;
+    [Header("Scene References")]
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+
     [SerializeField] private UpgradeSpecTableSO _specTable;
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
@@ -30,6 +34,13 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
         }
 
         Instance = this;
+
+        if (_currencyManager == null || _slimeManager == null)
+        {
+            Debug.LogError("업그레이드 매니저의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
 
         _ = InitAsync();
     }
@@ -139,7 +150,7 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
         // 문제 : 왜 도메인에서 Currency 관련 유효성 검사를 하지 않는가.?
         // 도메인 단에서 Currency를 가져오는건 도메인끼리 침범하는 문제가 발생함.
         // 도메인끼리 협력해서 유효성 검사를 하는 곳은 매니저 단에서 실행.
-        return CurrencyManager.Instance.CanAfford(ECurrencyType.Point, upgrade.Cost);
+        return _currencyManager.CanAfford(ECurrencyType.Point, upgrade.Cost);
     }
 
     // EUpgradeType + ESlimeGrade 키로 직접 레벨업 시도
@@ -152,7 +163,7 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
 
         EEconomyTransactionResult result =
             EconomyTransactionService.TryPurchase(
-                CurrencyManager.Instance,
+                _currencyManager,
                 ECurrencyType.Point,
                 cost,
                 upgrade.TryLevelUp);
@@ -172,15 +183,15 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
         if (upgrade != null &&
             upgrade.SpecData.Type == EUpgradeType.AutoMergePairAdd)
         {
-            return SlimeManager.Instance == null ||
-                   !SlimeManager.Instance.IsAutoMergeUnlocked;
+            return _slimeManager == null ||
+                   !_slimeManager.IsAutoMergeUnlocked;
         }
 
         if (upgrade != null &&
             upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd)
         {
-            return SlimeManager.Instance == null ||
-                   SlimeManager.Instance.IsHigherGradeSpawnTierLocked(upgrade.Level);
+            return _slimeManager == null ||
+                   _slimeManager.IsHigherGradeSpawnTierLocked(upgrade.Level);
         }
 
         if (upgrade == null ||
@@ -190,8 +201,8 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
             return false;
         }
 
-        return SlimeManager.Instance == null ||
-               !SlimeManager.Instance.IsBackgroundThemeUnlocked;
+        return _slimeManager == null ||
+               !_slimeManager.IsBackgroundThemeUnlocked;
     }
 
     private void Save()

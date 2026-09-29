@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -167,7 +167,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _detailTitle.text = "자연생성 슬라임 확률";
         _detailText.text = GameplayInfoTextBuilder.BuildSpawnProbabilityText(
             _spawnManager.GetCurrentSpawnProbabilities(),
-            isUnlocked ? SpawnManager.GetSpawnWeightUpgradeLevel() : -1,
+            isUnlocked ? _spawnManager.GetSpawnWeightUpgradeLevel() : -1,
             includeTitle: false);
         ShowDetail();
         ProbabilityOpened?.Invoke();

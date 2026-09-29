@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // 가챠 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
 //
@@ -26,6 +26,11 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private MergeManager _mergeManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private Step _step;
     private bool _isGuideSubscribed;
@@ -36,6 +41,14 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        if (_gameManager == null || _spawnManager == null || _slimeManager == null ||
+            _currencyManager == null || _gameplaySpaceManager == null)
+        {
+            Debug.LogError("가챠 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
         TutorialManager.Finished += TryStart;
 
         if (_unlockPopupUI != null)
@@ -53,15 +66,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _gachaButton.PullSucceeded += OnGachaPullSucceeded;
         }
 
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated += TryStart;
-        }
-
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.Initialized += TryStart;
-        }
+        _gameManager.OnGameplayActivated += TryStart;
+        _spawnManager.Initialized += TryStart;
 
         TryStart();
     }
@@ -85,22 +91,15 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _gachaButton.PullSucceeded -= OnGachaPullSucceeded;
         }
 
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated -= TryStart;
-        }
-
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.Initialized -= TryStart;
-        }
+        if (_gameManager != null) _gameManager.OnGameplayActivated -= TryStart;
+        if (_spawnManager != null) _spawnManager.Initialized -= TryStart;
 
         UnsubscribeGuide();
         UnsubscribeMerge();
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
-            SpawnManager.Instance?.SetSpawningPaused(false);
+            _spawnManager?.SetSpawningPaused(false);
             _autoClicker?.SetPaused(false);
         }
     }
@@ -108,8 +107,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void OnUnlockPresentationCompleted(ESlimeGrade grade)
     {
         if (_step == Step.MakeRoom &&
-            SpawnManager.Instance != null &&
-            SpawnManager.Instance.HasMainFieldRoom())
+            _spawnManager != null &&
+            _spawnManager.HasMainFieldRoom())
         {
             ShowGachaButtonStep();
             return;
@@ -122,15 +121,15 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.None ||
             !GameplayGate.IsActive ||
-            SpawnManager.Instance == null ||
-            !SpawnManager.Instance.IsInitialized ||
+            _spawnManager == null ||
+            !_spawnManager.IsInitialized ||
             !TutorialProgress.CanStart(TutorialIds.Gacha) ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsGachaUnlocked ||
-            CurrencyManager.Instance == null ||
-            GameplaySpaceManager.Instance == null ||
-            !GameplaySpaceManager.Instance.IsMainFieldActive ||
-            GameplaySpaceManager.Instance.IsTransitioning ||
+            _slimeManager == null ||
+            !_slimeManager.IsGachaUnlocked ||
+            _currencyManager == null ||
+            _gameplaySpaceManager == null ||
+            !_gameplaySpaceManager.IsMainFieldActive ||
+            _gameplaySpaceManager.IsTransitioning ||
             (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
@@ -154,14 +153,14 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _gachaButton.gameObject.SetActive(true);
 
         _step = Step.Dialogue;
-        SpawnManager.Instance.SetSpawningPaused(true);
+        _spawnManager.SetSpawningPaused(true);
         _autoClicker.SetPaused(true);
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
-        if ((double)CurrencyManager.Instance.Get(ECurrencyType.GachaTicket) <= 0d)
+        if ((double)_currencyManager.Get(ECurrencyType.GachaTicket) <= 0d)
         {
-            CurrencyManager.Instance.Add(ECurrencyType.GachaTicket, 1d);
+            _currencyManager.Add(ECurrencyType.GachaTicket, 1d);
         }
 
         ShowDialogue(Content.GetDialogue(DialogueId.Gacha), ShowAutoSpawnStep);
@@ -179,7 +178,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _step = Step.AutoSpawn;
         SubscribeGuide();
 
-        bool isEnabled = SlimeManager.Instance.IsAutoSpawnEnabled;
+        bool isEnabled = _slimeManager.IsAutoSpawnEnabled;
         Spotlight.ShowUiTarget(
             Content.AutoSpawnToggleMessage,
             target,
@@ -198,7 +197,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void ShowMakeRoomStep()
     {
         UnsubscribeGuide();
-        if (SpawnManager.Instance.HasMainFieldRoom())
+        if (_spawnManager.HasMainFieldRoom())
         {
             ShowGachaButtonStep();
             return;
@@ -235,8 +234,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         ESlimeGrade toGrade)
     {
         if (_step != Step.MakeRoom ||
-            SpawnManager.Instance == null ||
-            !SpawnManager.Instance.HasMainFieldRoom())
+            _spawnManager == null ||
+            !_spawnManager.HasMainFieldRoom())
         {
             return;
         }
@@ -253,7 +252,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     private void ShowGachaButtonStep()
     {
         UnsubscribeMerge();
-        if (SpawnManager.Instance == null || !SpawnManager.Instance.HasMainFieldRoom())
+        if (_spawnManager == null || !_spawnManager.HasMainFieldRoom())
         {
             ShowMakeRoomStep();
             return;
@@ -331,8 +330,8 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         }
 
         if (_step != Step.AutoSpawn ||
-            SlimeManager.Instance == null ||
-            SlimeManager.Instance.IsAutoSpawnEnabled)
+            _slimeManager == null ||
+            _slimeManager.IsAutoSpawnEnabled)
         {
             return;
         }
@@ -386,11 +385,11 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         UnsubscribeMerge();
         TutorialProgress.MarkCompleted(TutorialIds.Gacha);
         _step = Step.Complete;
-        SpawnManager.Instance?.SetSpawningPaused(false);
+        _spawnManager?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        GameplaySpaceManager.Instance?.RefreshInteraction();
+        _gameplaySpaceManager?.RefreshInteraction();
     }
 
     private void Abort(string message)
@@ -400,23 +399,23 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         UnsubscribeMerge();
         _step = Step.Complete;
-        SpawnManager.Instance?.SetSpawningPaused(false);
+        _spawnManager?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        GameplaySpaceManager.Instance?.RefreshInteraction();
+        _gameplaySpaceManager?.RefreshInteraction();
     }
 
-    private static bool TryFindMergePair(
+    private bool TryFindMergePair(
         out SlimeController first,
         out SlimeController second)
     {
         first = null;
         second = null;
-        if (SpawnManager.Instance == null) return false;
+        if (_spawnManager == null) return false;
 
         ESlimeGrade bestGrade = ESlimeGrade.Count;
-        var targets = SpawnManager.Instance.GetActiveTargets();
+        var targets = _spawnManager.GetActiveTargets();
         for (int i = 0; i < targets.Count; i++)
         {
             SlimeController candidate = targets[i];

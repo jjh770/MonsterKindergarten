@@ -14,6 +14,8 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _tutorialContent;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     [Header("Intro")]
     [SerializeField, Min(0f)] private float _chargeDuration = 0.8f;
@@ -37,7 +39,9 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
             _backgroundThemeUI == null ||
             _panelSwitcher == null ||
             _dialoguePresentationPrefab == null ||
-            _tutorialContent == null)
+            _tutorialContent == null ||
+            _slimeManager == null ||
+            _gameplaySpaceManager == null)
         {
             Debug.LogError("하늘 인트로 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -126,7 +130,7 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
 
     private void OnArrived()
     {
-        SlimeManager.Instance?.UpdateBackgroundProgress(
+        _slimeManager.UpdateBackgroundProgress(
             EBackgroundTheme.Sky,
             backgroundUnlockCompleted: true);
         _pendingTarget = null;
@@ -134,7 +138,7 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
 
         // 버튼을 직접 켜지 않는다. 인트로 완료를 저장한 뒤 규칙에 다시 묻는다.
         // 여기서 켜 두면 그 조건이 늘어날 때 이 자리만 규칙을 모른 채 남는다.
-        GameplaySpaceManager.Instance?.RefreshBackgroundButton();
+        _gameplaySpaceManager.RefreshBackgroundButton();
 
         if (_presentation == null)
         {
@@ -197,10 +201,10 @@ public sealed class BackgroundThemeUnlockDirector : MonoBehaviour
 
     private void CompleteWithoutTarget()
     {
-        SlimeManager.Instance?.UpdateBackgroundProgress(
+        _slimeManager.UpdateBackgroundProgress(
             EBackgroundTheme.Ground,
             backgroundUnlockCompleted: true);
-        GameplaySpaceManager.Instance?.RefreshBackgroundButton();
+        _gameplaySpaceManager.RefreshBackgroundButton();
         Complete();
     }
 }

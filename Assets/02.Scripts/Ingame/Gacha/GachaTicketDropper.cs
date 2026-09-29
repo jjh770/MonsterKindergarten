@@ -16,6 +16,10 @@ using UnityEngine;
 // 한 장만 보여 줘야, 설명을 듣기도 전에 정체 모를 티켓이 필드에 생기지 않는다.
 public class GachaTicketDropper : MonoBehaviour
 {
+    [Header("Scene References")]
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+
     [Tooltip("판정 주기(초).")]
     [SerializeField, Min(1f)] private float _judgeInterval = 60f;
 
@@ -27,11 +31,19 @@ public class GachaTicketDropper : MonoBehaviour
     // 판정에 성공한 슬라임을 넘긴다. 티켓을 어디에 놓을지는 받는 쪽이 정한다.
     public event Action<SlimeController> Dropped;
 
+    private void Awake()
+    {
+        if (_spawnManager != null && _slimeManager != null) return;
+
+        Debug.LogError("가챠권 드랍 판정기의 GameScene 참조가 비어 있습니다.", this);
+        enabled = false;
+    }
+
     private void Update()
     {
         if (!GameplayGate.IsActive) return;
-        if (SpawnManager.Instance == null) return;
-        if (SlimeManager.Instance == null || !SlimeManager.Instance.IsGachaUnlocked) return;
+        if (_spawnManager == null) return;
+        if (_slimeManager == null || !_slimeManager.IsGachaUnlocked) return;
         if (!TutorialProgress.IsCompleted(TutorialIds.Gacha) || TutorialManager.IsRunning) return;
 
         _timer += Time.deltaTime;
@@ -45,7 +57,7 @@ public class GachaTicketDropper : MonoBehaviour
     {
         // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 예외가 난다.
         // 구독자가 티켓을 만드는 것은 슬라임 목록을 건드리지 않으므로 괜찮다.
-        foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
+        foreach (SlimeController target in _spawnManager.GetActiveTargets())
         {
             if (target == null || target.Location != ESlimeLocation.MainField) continue;
             if (UnityEngine.Random.value >= _dropChancePerSlime) continue;

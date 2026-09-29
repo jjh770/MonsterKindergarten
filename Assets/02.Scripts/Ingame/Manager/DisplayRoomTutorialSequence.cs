@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 {
@@ -29,6 +29,11 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     [SerializeField] private DisplayRoomInfoUI _displayRoomInfoUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
+    [SerializeField] private SlimeSpawner _slimeSpawner;
 
     private SlimeController _tutorialSlime;
     private Step _step;
@@ -36,6 +41,14 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        if (_gameManager == null || _spawnManager == null || _slimeManager == null ||
+            _gameplaySpaceManager == null || _slimeSpawner == null)
+        {
+            Debug.LogError("장식장 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
         TutorialManager.Finished += TryStart;
 
         if (_unlockPopupUI != null)
@@ -62,21 +75,10 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _displayRoomInfoUI.InfoClosed += OnInfoClosed;
         }
 
-        if (GameplaySpaceManager.Instance != null)
-        {
-            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
-            GameplaySpaceManager.Instance.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
-        }
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated += TryStart;
-        }
-
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.Initialized += TryStart;
-        }
+        _gameplaySpaceManager.SpaceChanged += OnSpaceChanged;
+        _gameplaySpaceManager.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
+        _gameManager.OnGameplayActivated += TryStart;
+        _spawnManager.Initialized += TryStart;
 
         TryStart();
     }
@@ -109,27 +111,27 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _displayRoomInfoUI.InfoClosed -= OnInfoClosed;
         }
 
-        if (GameplaySpaceManager.Instance != null)
+        if (_gameplaySpaceManager != null)
         {
-            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
-            GameplaySpaceManager.Instance.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
+            _gameplaySpaceManager.SpaceChanged -= OnSpaceChanged;
+            _gameplaySpaceManager.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
         }
 
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameplayActivated -= TryStart;
+            _gameManager.OnGameplayActivated -= TryStart;
         }
 
-        if (SpawnManager.Instance != null)
+        if (_spawnManager != null)
         {
-            SpawnManager.Instance.Initialized -= TryStart;
+            _spawnManager.Initialized -= TryStart;
         }
 
         UnsubscribeGuide();
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
-            SpawnManager.Instance?.SetSpawningPaused(false);
+            _spawnManager?.SetSpawningPaused(false);
             _autoClicker?.SetPaused(false);
         }
     }
@@ -143,14 +145,14 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     {
         if ((_step != Step.None && _step != Step.Complete) ||
             !GameplayGate.IsActive ||
-            SpawnManager.Instance == null ||
-            !SpawnManager.Instance.IsInitialized ||
+            _spawnManager == null ||
+            !_spawnManager.IsInitialized ||
             !TutorialProgress.CanStart(TutorialIds.DisplayRoom) ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsDisplayRoomUnlocked ||
-            GameplaySpaceManager.Instance == null ||
-            !GameplaySpaceManager.Instance.IsMainFieldActive ||
-            GameplaySpaceManager.Instance.IsTransitioning ||
+            _slimeManager == null ||
+            !_slimeManager.IsDisplayRoomUnlocked ||
+            _gameplaySpaceManager == null ||
+            !_gameplaySpaceManager.IsMainFieldActive ||
+            _gameplaySpaceManager.IsTransitioning ||
             (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
         {
             return;
@@ -172,7 +174,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _tutorialSlime = FindFirstDisplayRoomSlime();
         Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         _isGuideSubscribed = true;
-        SpawnManager.Instance?.SetSpawningPaused(true);
+        _spawnManager?.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
         _upgradeUI.SetToggleInputEnabled(false);
 
@@ -359,8 +361,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     private void OnSpaceTransitionCompleted()
     {
         if (_step != Step.EnterTransition ||
-            GameplaySpaceManager.Instance == null ||
-            GameplaySpaceManager.Instance.CurrentSpace != EGameplaySpace.DisplayRoom)
+            _gameplaySpaceManager == null ||
+            _gameplaySpaceManager.CurrentSpace != EGameplaySpace.DisplayRoom)
         {
             return;
         }
@@ -490,11 +492,11 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        SpawnManager.Instance?.SetSpawningPaused(false);
+        _spawnManager?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
         _clicker.ReleaseMode(this);
         CompleteTutorial();
-        GameplaySpaceManager.Instance?.RefreshInteraction();
+        _gameplaySpaceManager?.RefreshInteraction();
     }
 
     private void Abort(string message)
@@ -504,26 +506,26 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
         _tutorialSlime = null;
-        SpawnManager.Instance?.SetSpawningPaused(false);
+        _spawnManager?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
         _clicker?.ReleaseMode(this);
         CompleteTutorial();
-        GameplaySpaceManager.Instance?.RefreshInteraction();
+        _gameplaySpaceManager?.RefreshInteraction();
     }
 
-    private static SlimeController FindTransferCandidate()
+    private SlimeController FindTransferCandidate()
     {
-        if (SlimeSpawner.Instance == null || SlimeManager.Instance == null)
+        if (_slimeSpawner == null || _slimeManager == null)
         {
             return null;
         }
 
-        foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
+        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
         {
             if (target != null &&
                 target.Location == ESlimeLocation.MainField &&
                 target.IsMainFieldActive &&
-                SlimeManager.Instance.CanMoveToDisplayRoom(
+                _slimeManager.CanMoveToDisplayRoom(
                     target.Grade,
                     target.IsSpecial))
             {
@@ -534,11 +536,11 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         return null;
     }
 
-    private static SlimeController FindFirstDisplayRoomSlime()
+    private SlimeController FindFirstDisplayRoomSlime()
     {
-        if (SlimeSpawner.Instance == null) return null;
+        if (_slimeSpawner == null) return null;
 
-        foreach (SlimeController target in SlimeSpawner.Instance.GetActiveTargets())
+        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
         {
             if (target != null && target.Location == ESlimeLocation.DisplayRoom)
             {

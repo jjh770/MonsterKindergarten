@@ -5,7 +5,6 @@ using System.Collections.Generic;
 // 저장과 GameDataResetService의 로컬/클라우드 삭제가 모두 이 목록을 사용한다.
 public sealed class GameDataDomainDefinition
 {
-    private readonly Func<IGameDataDomainManager> _managerResolver;
     private readonly Action<string> _localDataDeleter;
 
     public string DisplayName { get; }
@@ -16,19 +15,12 @@ public sealed class GameDataDomainDefinition
         string displayName,
         string cloudCollectionName,
         int currentSchemaVersion,
-        Func<IGameDataDomainManager> managerResolver,
         Action<string> localDataDeleter)
     {
         DisplayName = displayName;
         CloudCollectionName = cloudCollectionName;
         CurrentSchemaVersion = currentSchemaVersion;
-        _managerResolver = managerResolver;
         _localDataDeleter = localDataDeleter;
-    }
-
-    public IGameDataDomainManager ResolveManager()
-    {
-        return _managerResolver();
     }
 
     public void DeleteLocalData(string userId)
@@ -44,7 +36,6 @@ public static class GameDataDomains
         displayName: "재화",
         cloudCollectionName: "Currency",
         currentSchemaVersion: 2,
-        managerResolver: () => CurrencyManager.Instance,
         localDataDeleter: userId => new LocalCurrencyRepository(userId).Delete());
 
     // v11: 엔딩 크레딧용 게임 시작일과 메인 엔딩 도달일을 추가했다.
@@ -52,7 +43,6 @@ public static class GameDataDomains
         displayName: "슬라임",
         cloudCollectionName: "SlimeStatus",
         currentSchemaVersion: 11,
-        managerResolver: () => SlimeManager.Instance,
         localDataDeleter: userId =>
             new PlayerPrefsSlimeStatusRepository(userId).Delete());
 
@@ -61,7 +51,6 @@ public static class GameDataDomains
         displayName: "업그레이드",
         cloudCollectionName: "Upgrade",
         currentSchemaVersion: 1,
-        managerResolver: () => UpgradeManager.Instance,
         localDataDeleter: userId =>
             new PlayerPrefsUpgradeRepository(userId).Delete());
 

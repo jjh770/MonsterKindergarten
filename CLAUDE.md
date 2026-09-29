@@ -70,8 +70,8 @@ Third-party and generated assets live under `Assets/Firebase/`, `Assets/GooglePl
 **Game data**
 
 - `CurrencyManager`, `SlimeManager`, and `UpgradeManager` own their domains and repository selection.
-- `GameDataDomains` is the single registration list for save-domain managers, current schema versions, cloud collections, and local deletion. A new save domain must implement `IGameDataDomainManager` and be added there; `GameManager` and `GameDataResetService` consume that list instead of maintaining their own copies.
-- `GameManager` waits for every manager registered in `GameDataDomains`, then raises `OnAllDataInitialized` for gameplay systems.
+- `GameDataDomains` is the single metadata list for current schema versions, cloud collections, and local deletion. A new save domain must be added there and its manager must implement `IGameDataDomainManager`.
+- `GameManager` receives the three GameScene domain managers through serialized scene references, waits for all of them, then raises `OnAllDataInitialized` for gameplay systems. GameScene-only managers use serialized references to one another; only cross-scene services such as `AccountManager`, `SceneManagerEx`, and `AudioManager` are obtained through their persistent singleton.
 - Repository interfaces separate local PlayerPrefs storage from Firebase Firestore storage.
 - SlimeInstance is a domain object; SlimeInstanceSaveData owns persistence mapping. Save schemas are Currency 2, SlimeStatus 11, and Upgrade 1. Preserve deterministic legacy migration IDs. All six repositories reject a stored version higher than the app supports.
 - `IRepository<T>.Load()` returns `SaveLoadResult<T>`: `Loaded`, `NotFound`, or `Failed` with a reason. Never collapse a read failure into a default value - a session that starts from defaults overwrites the progress it could not read. Repositories decide whether the document was read faithfully; managers decide whether it can become a valid domain state, and report anything unusable the same way.

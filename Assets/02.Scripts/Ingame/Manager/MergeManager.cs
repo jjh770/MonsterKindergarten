@@ -18,6 +18,10 @@ public class MergeManager : MonoBehaviour
     public static MergeManager Instance { get; private set; }
     public event System.Action<SlimeController, ESlimeGrade, ESlimeGrade> Merged;
 
+    [Header("Scene References")]
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SpawnManager _spawnManager;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -27,6 +31,12 @@ public class MergeManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (_slimeManager == null || _spawnManager == null)
+        {
+            Debug.LogError("합성 매니저의 필수 씬 참조가 비어 있습니다.", this);
+            enabled = false;
+        }
     }
 
     // 저장 상태를 먼저 옮기고, 성공한 뒤에만 최고 등급과 화면을 따라가게 한다.
@@ -46,20 +56,20 @@ public class MergeManager : MonoBehaviour
     public bool MergeBatch(
         System.Collections.Generic.IReadOnlyList<MergeTargetPair> pairs)
     {
-        if (pairs == null || pairs.Count == 0 || SlimeManager.Instance == null) return false;
+        if (pairs == null || pairs.Count == 0 || _slimeManager == null) return false;
 
         var validPairs = new System.Collections.Generic.List<MergeTargetPair>(pairs.Count);
         var requests = new System.Collections.Generic.List<SlimeMergeRequest>(pairs.Count);
         foreach (MergeTargetPair pair in pairs)
         {
             if (pair.Keeper == null || pair.Removed == null ||
-                !SlimeManager.Instance.CanMerge(pair.Keeper.Slime, pair.Removed.Slime))
+                !_slimeManager.CanMerge(pair.Keeper.Slime, pair.Removed.Slime))
             {
                 continue;
             }
 
             ESlimeGrade toGrade = pair.Keeper.Grade + 1;
-            if (SlimeManager.Instance.Get(toGrade) == null) continue;
+            if (_slimeManager.Get(toGrade) == null) continue;
 
             validPairs.Add(pair);
             requests.Add(new SlimeMergeRequest(
@@ -72,7 +82,7 @@ public class MergeManager : MonoBehaviour
 
         try
         {
-            SlimeManager.Instance.MergeSlimesBatch(requests);
+            _slimeManager.MergeSlimesBatch(requests);
         }
         catch (Exception e) when (e is InvalidOperationException ||
                                   e is ArgumentException)
@@ -85,9 +95,9 @@ public class MergeManager : MonoBehaviour
         {
             ESlimeGrade fromGrade = pair.Keeper.Grade;
             ESlimeGrade toGrade = fromGrade + 1;
-            Slime nextSlime = SlimeManager.Instance.Get(toGrade);
+            Slime nextSlime = _slimeManager.Get(toGrade);
             pair.Keeper.PromoteTo(nextSlime);
-            SpawnManager.Instance.Despawn(pair.Removed);
+            _spawnManager.Despawn(pair.Removed);
             Merged?.Invoke(pair.Keeper, fromGrade, toGrade);
         }
 

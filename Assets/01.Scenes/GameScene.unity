@@ -559,6 +559,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5a026679c698e3479d0b55a0413e949, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomPlaygroundRoot
+  _gameplaySpaceManager: {fileID: 954826973}
   _displayRoomObjects:
   - {fileID: 1924317548}
   - {fileID: 92302706}
@@ -596,6 +597,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3668d4d54207d144bd25d068a837e2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlaygroundObjectField
+  _slimeManager: {fileID: 376498428}
   _prefabs:
   - _type: 0
     _prefab: {fileID: 9055479844971582619, guid: 179061b3d7fa93a4092324a50db05356, type: 3}
@@ -1176,6 +1178,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14ec784389eb0a845abcc55667231eef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeManager_Domain
+  _currencyManager: {fileID: 1577494349}
+  _slimeManager: {fileID: 376498428}
   _specTable: {fileID: 11400000, guid: d9fa7dc73d3165943a5624d1700d7ee1, type: 2}
 --- !u!4 &90763874
 Transform:
@@ -3300,6 +3304,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48cc658f936542eda741f788bab19231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameExitManager
+  _gameplaySpaceManager: {fileID: 954826973}
   _popup: {fileID: 2099200002}
   _upgradeUI: {fileID: 1526959884}
   _clicker: {fileID: 115063078}
@@ -11448,6 +11453,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0affdb23347347579d87d180ffb5e70f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameplaySpaceManager
+  _gameManager: {fileID: 1237951049}
+  _mergeManager: {fileID: 1919398862}
+  _slimeManager: {fileID: 376498428}
+  _slimeSpawner: {fileID: 1712991167}
+  _spawnManager: {fileID: 1271333080}
   _clicker: {fileID: 115063078}
   _upgradeUI: {fileID: 1526959884}
   _backgroundThemeUI: {fileID: 1324579906}
@@ -11513,6 +11523,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d27893e306905d40a49ff350f7acf06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUnlockDirector
+  _slimeManager: {fileID: 376498428}
+  _gameplaySpaceManager: {fileID: 954826973}
   _canvas: {fileID: 457349916}
   _backgroundThemeUI: {fileID: 1324579906}
   _panelSwitcher: {fileID: 998300001}
@@ -15294,6 +15306,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2e5a83d0c4f4791b6182d3e7f049c51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainTutorialSequence
+  _spawnManager: {fileID: 1271333080}
+  _gameManager: {fileID: 1237951049}
+  _gameplaySpaceManager: {fileID: 954826973}
   _spawnSliderUI: {fileID: 2116618833}
   _pointTarget: {fileID: 734613838}
   _spawnGaugeTarget: {fileID: 282534616}
@@ -15314,6 +15329,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3f6b94e1d5048a2c7293e4f805abd62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HigherGradeSpawnTutorialSequence
+  _gameManager: {fileID: 1237951049}
+  _spawnManager: {fileID: 1271333080}
+  _slimeManager: {fileID: 376498428}
+  _gameplaySpaceManager: {fileID: 954826973}
   _spawnSliderUI: {fileID: 2116618833}
   _systemUpgradePanel: {fileID: 920019899}
   _panelSwitcher: {fileID: 998300001}
@@ -15332,6 +15351,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d407ca5f2e6149b3d83a4f50916bce73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomTutorialSequence
+  _gameManager: {fileID: 1237951049}
+  _spawnManager: {fileID: 1271333080}
+  _slimeManager: {fileID: 376498428}
+  _gameplaySpaceManager: {fileID: 954826973}
+  _slimeSpawner: {fileID: 1712991167}
   _unlockPopupUI: {fileID: 1432576204}
   _upgradeUI: {fileID: 1526959884}
   _displayRoomUI: {fileID: 990000001}
@@ -15352,6 +15376,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fce97b64841402ab9c49e53f314f76a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GachaTutorialSequence
+  _gameManager: {fileID: 1237951049}
+  _spawnManager: {fileID: 1271333080}
+  _slimeManager: {fileID: 376498428}
+  _currencyManager: {fileID: 1577494349}
+  _gameplaySpaceManager: {fileID: 954826973}
   _autoSpawnToggle: {fileID: 1163591913}
   _gachaButton: {fileID: 1977863041}
   _unlockPopupUI: {fileID: 1432576204}
@@ -15370,6 +15399,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bef06340c173ac42ac181c98a379b28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollectionMilestoneGuideSequence
+  _slimeManager: {fileID: 376498428}
+  _spawnManager: {fileID: 1271333080}
+  _gameplaySpaceManager: {fileID: 954826973}
   _autoMergeButton: {fileID: 558640589}
   _ticketCollectButton: {fileID: 975735617}
   _panelSwitcher: {fileID: 998300001}
@@ -16193,6 +16225,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87f13f7247e542941b00a120667df08c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoMergeManager
+  _slimeManager: {fileID: 376498428}
+  _spawnManager: {fileID: 1271333080}
+  _mergeManager: {fileID: 1919398862}
+  _upgradeManager: {fileID: 90763873}
   _displayRoomUI: {fileID: 990000001}
   _gachaResultDirector: {fileID: 2101000003}
   _cooldown: 0.5
@@ -17210,6 +17246,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dd38978c7fba6a4a9e26a4ea625c50a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OfflineRewardManager
+  _gameManager: {fileID: 1237951049}
+  _currencyManager: {fileID: 1577494349}
+  _slimeManager: {fileID: 376498428}
   _minimumOfflineSeconds: 60
   _maximumOfflineHours: 8
   _offlineRewardEfficiency: 0.5
@@ -19472,6 +19511,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 444d413f39212b9488992cb24552e982, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  _currencyManager: {fileID: 1577494349}
+  _slimeManager: {fileID: 376498428}
+  _upgradeManager: {fileID: 90763873}
+  _offlineRewardManager: {fileID: 1107698928}
   _initializationTimeoutSeconds: 30
 --- !u!4 &1237951050
 Transform:
@@ -19639,6 +19682,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6f18ee9af4396646a646b5a0f7ac536, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnManager
+  _gameManager: {fileID: 1237951049}
+  _upgradeManager: {fileID: 90763873}
+  _slimeManager: {fileID: 376498428}
+  _slimeSpawner: {fileID: 1712991167}
   _spawnInterval: 10
   _maxActiveCount: 10
   _spawnAreaMin: {x: -1, y: -2}
@@ -23989,6 +24036,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4afa27259a52614ab7c70c01b5d9e9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GachaTicketDropper
+  _spawnManager: {fileID: 1271333080}
+  _slimeManager: {fileID: 376498428}
   _judgeInterval: 60
   _dropChancePerSlime: 0.00167
 --- !u!4 &1701297960
@@ -24018,6 +24067,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af691aa43d4b8d64cb6f405901dea580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GachaTicketField
+  _gameManager: {fileID: 1237951049}
+  _gameplaySpaceManager: {fileID: 954826973}
+  _slimeManager: {fileID: 376498428}
+  _currencyManager: {fileID: 1577494349}
+  _spawnManager: {fileID: 1271333080}
   _dropper: {fileID: 1701297959}
   _ticketPrefab: {fileID: 8841647161610654949, guid: 1ed4364af03f67b4a9c942712a322199, type: 3}
   _collectTarget: {fileID: 1291526711}
@@ -24106,6 +24160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 729c5b11229abed4fb5a07a34241ed36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlimeSpawner
+  _slimeManager: {fileID: 376498428}
 --- !u!1 &1722046939
 GameObject:
   m_ObjectHideFlags: 0
@@ -26463,6 +26518,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d97a1cce2d544ef4897cd3e4dd38fe86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MergeManager
+  _slimeManager: {fileID: 376498428}
+  _spawnManager: {fileID: 1271333080}
 --- !u!4 &1919398863
 Transform:
   m_ObjectHideFlags: 0
@@ -28530,6 +28587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98284bde01034ed42b82686e427e356e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoClicker
+  _spawnManager: {fileID: 1271333080}
 --- !u!4 &2033355241
 Transform:
   m_ObjectHideFlags: 0
@@ -29257,6 +29315,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OfflineRewardPopupController
   _view: {fileID: 547806006}
+  _offlineRewardManager: {fileID: 1107698928}
 --- !u!225 &2099600002
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -30355,6 +30414,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 155314bdb4638714b95714fe82169c2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _spaceManager: {fileID: 954826973}
   _groundBackgrounds:
   - {fileID: 5227922357937593577, guid: 21f5df97fad5bbd4c88e8d1ca3e8080b, type: 3}
   - {fileID: 4816496335368918252, guid: b46087b47a8d82747835b0a3ae931e31, type: 3}

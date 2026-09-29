@@ -30,6 +30,9 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     [Header("Input")]
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private SlimeController _tutorialSlime;
     private SlimeController _mergeTutorialSlime;
@@ -39,20 +42,25 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
     private void Start()
     {
+        if (_spawnManager == null || _gameManager == null || _gameplaySpaceManager == null)
+        {
+            Debug.LogError("메인 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
         _clicker.TargetClicked += OnTargetClicked;
         _clicker.TargetDragCompleted += OnTargetDragCompleted;
 
-        if (SpawnManager.Instance == null) return;
-
-        SpawnManager.Instance.OnTutorialSlimeReady += Begin;
+        _spawnManager.OnTutorialSlimeReady += Begin;
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
         }
 
-        if (SpawnManager.Instance.TutorialSlime != null)
+        if (_spawnManager.TutorialSlime != null)
         {
-            Begin(SpawnManager.Instance.TutorialSlime);
+            Begin(_spawnManager.TutorialSlime);
         }
     }
 
@@ -65,10 +73,10 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             _clicker.ReleaseMode(this);
         }
 
-        if (SpawnManager.Instance != null)
+        if (_spawnManager != null)
         {
-            SpawnManager.Instance.OnTutorialSlimeReady -= Begin;
-            SpawnManager.Instance.SetSpawningPaused(false);
+            _spawnManager.OnTutorialSlimeReady -= Begin;
+            _spawnManager.SetSpawningPaused(false);
         }
 
         if (_unlockPopupUI != null)
@@ -106,7 +114,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.AdvanceRequested += OnGuideAdvanceRequested;
         _isGuideSubscribed = true;
 
-        SpawnManager.Instance.SetSpawningPaused(true);
+        _spawnManager.SetSpawningPaused(true);
         _autoClicker?.SetPaused(true);
         RectTransform scholarSlimeTarget = _spawnSliderUI?.SpawnPoolButtonTarget;
         if (scholarSlimeTarget != null)
@@ -195,7 +203,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
     private void ShowMergeStep()
     {
-        _mergeTutorialSlime = SpawnManager.Instance.SpawnTutorialSlimeNear(
+        _mergeTutorialSlime = _spawnManager.SpawnTutorialSlimeNear(
             _tutorialSlime,
             _mergeSlimeDistance);
 
@@ -389,9 +397,9 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         UnsubscribeGuide();
         _step = Step.Complete;
 
-        if (GameManager.Instance != null)
+        if (_gameManager != null)
         {
-            await GameManager.Instance.CompleteTutorialAsync();
+            await _gameManager.CompleteTutorialAsync();
         }
         else
         {
@@ -402,11 +410,11 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         survivingSlime?.SetMovementLocked(false);
         _promotedTutorialSlime = null;
         _mergeTutorialSlime = null;
-        SpawnManager.Instance?.SetSpawningPaused(false);
+        _spawnManager?.SetSpawningPaused(false);
         _autoClicker?.SetPaused(false);
         _clicker.ReleaseMode(this);
         CompleteTutorial();
-        GameplaySpaceManager.Instance?.RefreshInteraction();
+        _gameplaySpaceManager?.RefreshInteraction();
     }
 
     private void UnsubscribeGuide()

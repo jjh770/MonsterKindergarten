@@ -47,6 +47,9 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
     [SerializeField] private GachaResultDirector _gachaResultDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private Clicker _clicker;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private Milestone[] _milestones;
     private Milestone _active;
@@ -65,7 +68,9 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         if (!enabled) return;
 
         if (_autoMergeButton == null || _ticketCollectButton == null ||
-            _panelSwitcher == null || _clicker == null)
+            _panelSwitcher == null || _clicker == null ||
+            _slimeManager == null || _spawnManager == null ||
+            _gameplaySpaceManager == null)
         {
             Debug.LogError("도감 마일스톤 안내의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -113,12 +118,11 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
     // 도감 수가 모자라거나 이미 본 안내는 건너뛴다. 남은 것 중 낮은 쪽부터 고른다.
     private Milestone FindPending()
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
-        if (slimeManager == null || !TutorialProgress.IsInitialized) return null;
+        if (_slimeManager == null || !TutorialProgress.IsInitialized) return null;
 
         foreach (Milestone milestone in _milestones)
         {
-            if (slimeManager.NormalCollectionCount >= milestone.RequiredCount &&
+            if (_slimeManager.NormalCollectionCount >= milestone.RequiredCount &&
                 TutorialProgress.CanStart(milestone.TutorialId))
             {
                 return milestone;
@@ -151,11 +155,9 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
     {
         return GameplayGate.IsMainFieldReady &&
                _panelSwitcher.IsAreaVisible &&
-               SpawnManager.Instance != null &&
-               SpawnManager.Instance.IsInitialized &&
-               GameplaySpaceManager.Instance != null &&
-               GameplaySpaceManager.Instance.IsMainFieldActive &&
-               !GameplaySpaceManager.Instance.IsTransitioning &&
+               _spawnManager.IsInitialized &&
+               _gameplaySpaceManager.IsMainFieldActive &&
+               !_gameplaySpaceManager.IsTransitioning &&
                (_unlockPopupUI == null || !_unlockPopupUI.IsPresenting) &&
                (_gachaResultDirector == null || !_gachaResultDirector.IsPlaying);
     }

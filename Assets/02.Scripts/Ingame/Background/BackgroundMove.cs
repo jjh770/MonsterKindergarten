@@ -37,7 +37,7 @@ public class BackgroundMove : MonoBehaviour
     [SerializeField, Range(0f, 2f)] private float _seamOverlapPixels = 1f;
 
     private SpriteRenderer[] _activeTiles;
-    private GameplaySpaceManager _spaceManager;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
     private EBackgroundTheme _currentTheme = EBackgroundTheme.Ground;
     private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
     private float _tileWidth;
@@ -97,6 +97,7 @@ public class BackgroundMove : MonoBehaviour
             !HasTwoTiles(_groundTiles) ||
             !HasTwoTiles(_skyTiles) ||
             !HasTwoTiles(_displayRoomTiles) ||
+            _spaceManager == null ||
             !AreAdditionalThemesValid())
         {
             Debug.LogError("배경 테마 참조가 비어 있습니다.", this);
@@ -106,14 +107,10 @@ public class BackgroundMove : MonoBehaviour
 
         RefreshCameraMetrics();
 
-        _spaceManager = GameplaySpaceManager.Instance;
-        if (_spaceManager != null)
-        {
-            _spaceManager.BackgroundThemeChanged += ApplyTheme;
-            _spaceManager.SpaceChanged += ApplySpace;
-            _currentTheme = _spaceManager.CurrentBackgroundTheme;
-            _currentSpace = _spaceManager.CurrentSpace;
-        }
+        _spaceManager.BackgroundThemeChanged += ApplyTheme;
+        _spaceManager.SpaceChanged += ApplySpace;
+        _currentTheme = _spaceManager.CurrentBackgroundTheme;
+        _currentSpace = _spaceManager.CurrentSpace;
 
         ApplyBackground();
     }

@@ -25,8 +25,9 @@ public sealed class PlaygroundObjectField : MonoBehaviour
     [Tooltip("만든 오브젝트를 담을 자리입니다. 장식장에서만 켜지는 곳이어야 합니다.")]
     [SerializeField] private Transform _root;
 
+    [SerializeField] private SlimeManager _slimeManager;
+
     private readonly List<GameObject> _spawned = new();
-    private SlimeManager _slimeManager;
 
     // 배치 모드 동안은 꺼 둔다. 다시 세울 때도 이 값을 따라가야 한다. 안 그러면
     // 하나 놓을 때마다 방 전체가 되살아난다.
@@ -39,9 +40,9 @@ public sealed class PlaygroundObjectField : MonoBehaviour
 
     private void Awake()
     {
-        if (_root == null)
+        if (_root == null || _slimeManager == null)
         {
-            Debug.LogError("놀이터 오브젝트를 담을 자리가 비어 있습니다.", this);
+            Debug.LogError("놀이터 오브젝트 필드의 GameScene 참조가 비어 있습니다.", this);
             enabled = false;
         }
     }
@@ -49,14 +50,6 @@ public sealed class PlaygroundObjectField : MonoBehaviour
     private void Start()
     {
         if (!enabled) return;
-
-        _slimeManager = SlimeManager.Instance;
-        if (_slimeManager == null)
-        {
-            Debug.LogError("놀이터 오브젝트 필드가 슬라임 매니저를 찾지 못했습니다.", this);
-            enabled = false;
-            return;
-        }
 
         _slimeManager.PlaygroundChanged += Rebuild;
         _slimeManager.DataInitialized += Rebuild;

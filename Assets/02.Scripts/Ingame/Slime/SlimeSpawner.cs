@@ -6,6 +6,8 @@ public class SlimeSpawner : MonoBehaviour
 {
     public static SlimeSpawner Instance { get; private set; }
 
+    [SerializeField] private SlimeManager _slimeManager;
+
     private LeanGameObjectPool _pool;
     private List<SlimeController> _activeTargets = new List<SlimeController>();
     public event System.Action<SlimeController> Spawned;
@@ -21,6 +23,11 @@ public class SlimeSpawner : MonoBehaviour
         Instance = this;
 
         _pool = GetComponent<LeanGameObjectPool>();
+        if (_slimeManager == null || _pool == null)
+        {
+            Debug.LogError("슬라임 스포너의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+        }
     }
 
     public SlimeController Spawn(ESlimeGrade slimeGrade, Vector2 position, bool shouldSave = true)
@@ -44,14 +51,14 @@ public class SlimeSpawner : MonoBehaviour
         if (instance == null) return null;
 
         ESlimeGrade slimeGrade = instance.Grade;
-        Slime startSlime = SlimeManager.Instance.Get(slimeGrade);
+        Slime startSlime = _slimeManager.Get(slimeGrade);
         if (startSlime == null) return null;
 
         GameObject slimeObject = _pool.Spawn(position, Quaternion.identity);
 
         SlimeController slimeController = slimeObject.GetComponent<SlimeController>();
         slimeController.Bind(startSlime, instance);
-        SlimeManager.Instance.TryUpdateHighestLevel(startSlime.SpecData.Grade);
+        _slimeManager.TryUpdateHighestLevel(startSlime.SpecData.Grade);
         slimeController.OnSpawn();
 
         _activeTargets.Add(slimeController);
@@ -59,7 +66,7 @@ public class SlimeSpawner : MonoBehaviour
         // 새로 스폰된 슬라임만 저장 (초기 로드 시에는 저장하지 않음)
         if (shouldSave)
         {
-            SlimeManager.Instance.AddSlime(instance);
+            _slimeManager.AddSlime(instance);
         }
 
         Spawned?.Invoke(slimeController);

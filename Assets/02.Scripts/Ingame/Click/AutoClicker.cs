@@ -8,16 +8,26 @@ using UnityEngine;
 // GameManager의 오프라인 보상이 같은 대상 규칙을 재현하기 때문이다.
 public class AutoClicker : MonoBehaviour
 {
+    [SerializeField] private SpawnManager _spawnManager;
+
     private bool _isPaused;
+
+    private void Awake()
+    {
+        if (_spawnManager != null) return;
+
+        Debug.LogError("자동 생산기의 SpawnManager 참조가 비어 있습니다.", this);
+        enabled = false;
+    }
 
     private void Update()
     {
         if (_isPaused) return;
         if (!GameplayGate.IsActive) return;
-        if (SpawnManager.Instance == null) return;
+        if (_spawnManager == null) return;
 
         // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 예외가 난다.
-        foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
+        foreach (SlimeController target in _spawnManager.GetActiveTargets())
         {
             if (target == null ||
                 target.IsDragging ||

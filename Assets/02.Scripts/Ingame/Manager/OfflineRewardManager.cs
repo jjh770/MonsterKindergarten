@@ -14,6 +14,11 @@ public sealed class OfflineRewardManager : MonoBehaviour
 {
     public static OfflineRewardManager Instance { get; private set; }
 
+    [Header("Scene References")]
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+
     [SerializeField] private float _minimumOfflineSeconds = 60f;
     [SerializeField] private float _maximumOfflineHours = 8f;
     [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
@@ -46,6 +51,12 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (_gameManager == null || _currencyManager == null || _slimeManager == null)
+        {
+            Debug.LogError("오프라인 보상 매니저의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+        }
     }
 
     private void Start()
@@ -68,8 +79,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         await ServerClock.TrySync(AccountManager.Instance?.UserId, force: true);
 
         if (this == null || GameplaySaveGate.IsResetting) return;
-        if (GameManager.Instance == null ||
-            !GameManager.Instance.IsAllDataInitialized) return;
+        if (_gameManager == null || !_gameManager.IsAllDataInitialized) return;
         if (IsPresentingClaimedReward) return;
 
         Grant();
@@ -77,7 +87,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
     public void Grant()
     {
-        DateTime lastSaveTime = CurrencyManager.Instance.LastSaveTime;
+        DateTime lastSaveTime = _currencyManager.LastSaveTime;
         DateTime currentTime = ServerClock.TrustedUtcNow;
 
         if (lastSaveTime == DateTime.MinValue || currentTime <= lastSaveTime)
@@ -123,8 +133,8 @@ public sealed class OfflineRewardManager : MonoBehaviour
                 TimeSpan.FromSeconds(elapsedSeconds),
                 reward,
                 ticketReward,
-                CurrencyManager.Instance.Point,
-                CurrencyManager.Instance.Point + (Currency)reward);
+                _currencyManager.Point,
+                _currencyManager.Point + (Currency)reward);
         }
 
         TryPresent();
@@ -139,7 +149,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
         // 미뤄 둔 사이 포인트가 늘었을 수 있다. 카운트업 시작값은 발표 시점에 잡는다.
         OfflineRewardResult pendingReward = _pendingReward.Value;
-        Currency pointBeforeReward = CurrencyManager.Instance.Point;
+        Currency pointBeforeReward = _currencyManager.Point;
         _pendingReward = new OfflineRewardResult(
             pendingReward.ElapsedTime,
             pendingReward.Reward,
@@ -156,17 +166,17 @@ public sealed class OfflineRewardManager : MonoBehaviour
     // 게임플레이가 켜지는 경로이기도 하다.
     private void SettleWithoutReward()
     {
-        CurrencyManager.Instance.SaveCurrent();
+        _currencyManager.SaveCurrent();
         if (_pendingReward.HasValue) return;
 
         PresentationBlockChanged?.Invoke(false);
     }
 
-    private static double CalculateAutoPointPerSecond()
+    private double CalculateAutoPointPerSecond()
     {
         double total = 0d;
 
-        foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
+        foreach (SlimeInstance instance in _slimeManager.ActiveSlimes)
         {
             if (instance.Location != ESlimeLocation.MainField)
             {
@@ -174,7 +184,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
             }
 
             ESlimeGrade grade = instance.Grade;
-            Slime slime = SlimeManager.Instance.Get(grade);
+            Slime slime = _slimeManager.Get(grade);
             if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
 
             double point = PointCalculator.Calculate(
@@ -190,8 +200,8 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
     private int CalculateOfflineTickets(double elapsedSeconds, double maximumSeconds)
     {
-        if (SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsOfflineTicketRewardUnlocked ||
+        if (_slimeManager == null ||
+            !_slimeManager.IsOfflineTicketRewardUnlocked ||
             maximumSeconds <= 0d ||
             _maximumOfflineTickets <= 0)
         {
@@ -239,7 +249,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         OfflineRewardResult result = _pendingReward.Value;
-        CurrencyManager.Instance.TryApplyChanges(
+        _currencyManager.TryApplyChanges(
             CurrencyChange.Add(ECurrencyType.Point, result.Reward),
             CurrencyChange.Add(
                 ECurrencyType.GachaTicket,

@@ -26,6 +26,10 @@ public sealed class AutoMergeManager : MonoBehaviour
 
     [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private GachaResultDirector _gachaResultDirector;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private MergeManager _mergeManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
 
     [Tooltip("다시 누를 수 있기까지의 시간입니다. 누른 순간부터 흐릅니다.")]
     [SerializeField, Min(0f)] private float _cooldown = 0.5f;
@@ -92,6 +96,13 @@ public sealed class AutoMergeManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (_slimeManager == null || _spawnManager == null ||
+            _mergeManager == null || _upgradeManager == null)
+        {
+            Debug.LogError("자동 합성 매니저의 필수 씬 참조가 비어 있습니다.", this);
+            enabled = false;
+        }
     }
 
     private void OnDestroy()
@@ -121,14 +132,13 @@ public sealed class AutoMergeManager : MonoBehaviour
     // 지금 눌러도 되는 상황인가. 쿨타임과 연출은 따로 본다.
     public bool IsAvailable()
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
         return GameplayGate.IsMainFieldReady &&
                // 도감 10종 안내는 이 버튼을 직접 눌러 보게 한다. 다른 튜토리얼은
                // 여전히 막는다.
                (!TutorialManager.IsRunning ||
                 TutorialManager.IsActive(TutorialIds.CollectionAutoMerge)) &&
-               slimeManager != null &&
-               slimeManager.IsAutoMergeUnlocked &&
+               _slimeManager != null &&
+               _slimeManager.IsAutoMergeUnlocked &&
                (_displayRoomUI == null || !_displayRoomUI.IsSendMode) &&
                (_gachaResultDirector == null || !_gachaResultDirector.IsPlaying);
     }
@@ -137,7 +147,7 @@ public sealed class AutoMergeManager : MonoBehaviour
     // 한 슬라임은 한 번만 고르므로 이번 결과가 같은 발동에서 다시 합성되지 않는다.
     private bool ExecuteMerge()
     {
-        if (SpawnManager.Instance == null || MergeManager.Instance == null) return false;
+        if (_spawnManager == null || _mergeManager == null) return false;
 
         // 이전 발동의 거부 결과는 다음 발동에서 다시 검증한다. 저장 상태가 화면과
         // 잠깐 어긋났다가 회복된 경우에도 정상 슬라임이 계속 막히지 않게 한다.
@@ -145,7 +155,7 @@ public sealed class AutoMergeManager : MonoBehaviour
 
         var byGrade = new SortedDictionary<ESlimeGrade, List<SlimeController>>();
         var seenInstanceIds = new HashSet<string>();
-        foreach (SlimeController target in SpawnManager.Instance.GetActiveTargets())
+        foreach (SlimeController target in _spawnManager.GetActiveTargets())
         {
             if (target == null || target.IsDragging || target.IsSpecial ||
                 !target.HasLanded ||
@@ -265,8 +275,8 @@ public sealed class AutoMergeManager : MonoBehaviour
                 new MergeManager.MergeTargetPair(pair.Keeper, pair.Removed));
         }
 
-        bool canMerge = MergeManager.Instance != null && attempted.Count > 0;
-        bool merged = canMerge && MergeManager.Instance.MergeBatch(attemptedTargets);
+        bool canMerge = _mergeManager != null && attempted.Count > 0;
+        bool merged = canMerge && _mergeManager.MergeBatch(attemptedTargets);
 
         // 시도한 쌍마다의 결과. 저장이 실제로 거절한 쌍만 참이 된다.
         //
@@ -288,7 +298,7 @@ public sealed class AutoMergeManager : MonoBehaviour
                 for (int i = 0; i < attempted.Count; i++)
                 {
                     bool pairMerged =
-                        MergeManager.Instance.MergeBatch(new[] { attemptedTargets[i] });
+                        _mergeManager.MergeBatch(new[] { attemptedTargets[i] });
                     isRefused[i] = !pairMerged;
                     merged |= pairMerged;
                 }
@@ -340,10 +350,10 @@ public sealed class AutoMergeManager : MonoBehaviour
         return Mathf.Max(1, level + 1);
     }
 
-    private static int GetUpgradeLevel()
+    private int GetUpgradeLevel()
     {
-        Upgrade upgrade = UpgradeManager.Instance != null
-            ? UpgradeManager.Instance.Get(EUpgradeType.AutoMergePairAdd, ESlimeGrade.None)
+        Upgrade upgrade = _upgradeManager != null
+            ? _upgradeManager.Get(EUpgradeType.AutoMergePairAdd, ESlimeGrade.None)
             : null;
         return upgrade?.Level ?? 0;
     }

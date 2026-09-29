@@ -13,6 +13,12 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private float _spawnInterval = 3f;
     [SerializeField] private int _maxActiveCount = 10;
 
+    [Header("Scene References")]
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private SlimeSpawner _slimeSpawner;
+
     [Header("Spawn Area")]
     [SerializeField] private Vector2 _spawnAreaMin = new Vector2(-3f, -2f);
     [SerializeField] private Vector2 _spawnAreaMax = new Vector2(3f, 2f);
@@ -28,8 +34,6 @@ public class SpawnManager : MonoBehaviour
     private float _baseSpawnInterval;
     private int _baseMaxActiveCount;
     private float _timer;
-    private GameManager _gameManager;
-    private UpgradeManager _upgradeManager;
 
     private bool _isInitialized;
     private bool _isSpawningPaused;
@@ -77,11 +81,10 @@ public class SpawnManager : MonoBehaviour
 
     private void Start()
     {
-        _gameManager = GameManager.Instance;
-        _upgradeManager = UpgradeManager.Instance;
-        if (_gameManager == null || _upgradeManager == null)
+        if (_gameManager == null || _upgradeManager == null ||
+            _slimeManager == null || _slimeSpawner == null)
         {
-            Debug.LogError("스폰 매니저가 게임/업그레이드 매니저를 찾지 못했습니다.", this);
+            Debug.LogError("스폰 매니저의 필수 씬 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -114,7 +117,7 @@ public class SpawnManager : MonoBehaviour
         InitSlimeSpawns();
 
         // 복원할 슬라임이 없을 때 튜토리얼 여부에 맞는 최초 슬라임을 생성한다.
-        if (SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField) == 0)
+        if (_slimeSpawner.GetActiveCount(ESlimeLocation.MainField) == 0)
         {
             if (TutorialProgress.ShouldRun(TutorialIds.Main))
             {
@@ -156,9 +159,9 @@ public class SpawnManager : MonoBehaviour
 
     private SlimeController SpawnTutorialSlimeAt(Vector2 position)
     {
-        if (SlimeSpawner.Instance == null) return null;
+        if (_slimeSpawner == null) return null;
 
-        SlimeController target = SlimeSpawner.Instance.Spawn(
+        SlimeController target = _slimeSpawner.Spawn(
             ESlimeGrade.Grade1,
             position);
         target?.SetMovementLocked(true);
@@ -173,9 +176,9 @@ public class SpawnManager : MonoBehaviour
 
     private void InitSlimeSpawns()
     {
-        foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
+        foreach (SlimeInstance instance in _slimeManager.ActiveSlimes)
         {
-            SlimeController target = SlimeSpawner.Instance.Restore(
+            SlimeController target = _slimeSpawner.Restore(
                 instance,
                 GetRandomSpawnPosition());
             if (target != null && instance.Location == ESlimeLocation.DisplayRoom)
@@ -213,8 +216,8 @@ public class SpawnManager : MonoBehaviour
         // 플레이어가 꺼 둔 설정까지 조용히 켜진다.
         //
         // 타이머 누적보다 앞에서 돌아가므로 다시 켜면 멈춘 지점부터 이어간다.
-        if (SlimeManager.Instance != null &&
-            !SlimeManager.Instance.IsAutoSpawnEnabled)
+        if (_slimeManager != null &&
+            !_slimeManager.IsAutoSpawnEnabled)
         {
             return;
         }
@@ -230,7 +233,7 @@ public class SpawnManager : MonoBehaviour
             SlimeController spawned = Spawn(grade);
             if (spawned != null)
             {
-                SlimeManager.Instance.RecordNaturalSpawn(grade);
+                _slimeManager.RecordNaturalSpawn(grade);
             }
 
             OnSpawned?.Invoke();
@@ -264,19 +267,19 @@ public class SpawnManager : MonoBehaviour
     // 테이블이 비어 있으면 기존 동작대로 Grade1만 스폰한다.
     private ESlimeGrade PickSpawnGrade()
     {
-        if (_spawnWeightTable == null || SlimeManager.Instance == null)
+        if (_spawnWeightTable == null || _slimeManager == null)
         {
             return ESlimeGrade.Grade1;
         }
 
         return _spawnWeightTable.PickSpawnGrade(
-            SlimeManager.Instance.HighestGrade,
+            _slimeManager.HighestGrade,
             GetSpawnWeightUpgradeLevel());
     }
 
     public List<SpawnProbability> GetCurrentSpawnProbabilities()
     {
-        if (_spawnWeightTable == null || SlimeManager.Instance == null)
+        if (_spawnWeightTable == null || _slimeManager == null)
         {
             var probabilities = new List<SpawnProbability>();
             probabilities.Add(new SpawnProbability(ESlimeGrade.Grade1, 1));
@@ -284,15 +287,15 @@ public class SpawnManager : MonoBehaviour
         }
 
         return _spawnWeightTable.GetSpawnProbabilities(
-            SlimeManager.Instance.HighestGrade,
+            _slimeManager.HighestGrade,
             GetSpawnWeightUpgradeLevel());
     }
 
     // 확률 계산에 쓰는 값이자 학자 안내가 함께 보여 주는 값이다.
     // 업그레이드 종류와 등급 짝을 아는 곳을 여기 하나로 둔다.
-    public static int GetSpawnWeightUpgradeLevel()
+    public int GetSpawnWeightUpgradeLevel()
     {
-        Upgrade upgrade = UpgradeManager.Instance?.Get(
+        Upgrade upgrade = _upgradeManager?.Get(
             EUpgradeType.HigherGradeSpawnWeightAdd,
             ESlimeGrade.None);
         return upgrade?.Level ?? 0;
@@ -300,11 +303,11 @@ public class SpawnManager : MonoBehaviour
 
     public SlimeController Spawn(ESlimeGrade grade, bool shouldSave = true)
     {
-        if (SlimeSpawner.Instance == null) return null;
+        if (_slimeSpawner == null) return null;
 
         Vector2 randomPos = GetRandomSpawnPosition();
 
-        return SlimeSpawner.Instance.Spawn(grade, randomPos, shouldSave);
+        return _slimeSpawner.Spawn(grade, randomPos, shouldSave);
     }
 
     public Vector2 GetRandomSpawnPosition()
@@ -316,19 +319,19 @@ public class SpawnManager : MonoBehaviour
 
     public void Despawn(SlimeController target)
     {
-        if (SlimeSpawner.Instance == null) return;
+        if (_slimeSpawner == null) return;
 
         if (target == TutorialSlime)
         {
             TutorialSlime = null;
         }
 
-        SlimeSpawner.Instance.Despawn(target);
+        _slimeSpawner.Despawn(target);
     }
 
     private void ApplySpawnIntervalUpgrade()
     {
-        Upgrade upgrade = UpgradeManager.Instance?.Get(
+        Upgrade upgrade = _upgradeManager?.Get(
             EUpgradeType.SpawnTimeSub,
             ESlimeGrade.None);
         if (upgrade == null) return;
@@ -338,7 +341,7 @@ public class SpawnManager : MonoBehaviour
 
     private void ApplySpawnMaxCountUpgrade()
     {
-        Upgrade upgrade = UpgradeManager.Instance?.Get(
+        Upgrade upgrade = _upgradeManager?.Get(
             EUpgradeType.MaxCountAdd,
             ESlimeGrade.None);
         if (upgrade == null) return;
@@ -353,16 +356,17 @@ public class SpawnManager : MonoBehaviour
 
     // 장식장 슬라임은 제외한 메인 필드 개체 수. 최대 개체 수 판정과 짝을 이룬다.
     public int GetMainFieldSlimeCount() =>
-        SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField);
+        _slimeSpawner.GetActiveCount(ESlimeLocation.MainField);
 
     // 메인 필드에 개체를 더 놓을 자리가 있는지 판정한다.
     // 자연 스폰과 장식장 꺼내기(기획서 §7.5)가 같은 기준을 쓰도록 한곳에 둔다.
     public bool HasMainFieldRoom()
     {
-        return SlimeSpawner.Instance != null &&
-               SlimeSpawner.Instance.GetActiveCount(ESlimeLocation.MainField) <
+        return _slimeSpawner != null &&
+               _slimeSpawner.GetActiveCount(ESlimeLocation.MainField) <
                _maxActiveCount;
     }
 
-    public IReadOnlyList<SlimeController> GetActiveTargets() => SlimeSpawner.Instance.GetActiveTargets();
+    public IReadOnlyList<SlimeController> GetActiveTargets() =>
+        _slimeSpawner.GetActiveTargets();
 }

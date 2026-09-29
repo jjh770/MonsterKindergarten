@@ -23,6 +23,13 @@ using UnityEngine.UI;
 // 필드 아무 곳에나 놓인다.
 public class GachaTicketField : MonoBehaviour
 {
+    [Header("Scene References")]
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SpawnManager _spawnManager;
+
     [SerializeField] private GachaTicketDropper _dropper;
     [SerializeField] private GameObject _ticketPrefab;
 
@@ -73,7 +80,6 @@ public class GachaTicketField : MonoBehaviour
     private Vector3 _collectTargetBaseScale;
     private bool _isBulkCollecting;
     private bool _isBulkCollectScheduled;
-    private GameManager _gameManager;
 
     public event Action CollectionStateChanged;
 
@@ -81,15 +87,15 @@ public class GachaTicketField : MonoBehaviour
     {
         get
         {
-            if (SlimeManager.Instance == null) return 0;
+            if (_slimeManager == null) return 0;
 
-            return SlimeManager.Instance.GetPendingTicketCount();
+            return _slimeManager.GetPendingTicketCount();
         }
     }
 
     public bool CanCollectAll =>
-        SlimeManager.Instance != null &&
-        SlimeManager.Instance.IsTicketBulkCollectUnlocked &&
+        _slimeManager != null &&
+        _slimeManager.IsTicketBulkCollectUnlocked &&
         PendingTicketCount > 0 &&
         !_isBulkCollecting &&
         HasCollectableTicket();
@@ -110,7 +116,9 @@ public class GachaTicketField : MonoBehaviour
         }
 
         if (_dropper == null || _ticketPrefab == null || _ticketRoot == null ||
-            _collectTarget == null || _collectOverlayRoot == null)
+            _collectTarget == null || _collectOverlayRoot == null ||
+            _gameManager == null || _gameplaySpaceManager == null ||
+            _slimeManager == null || _currencyManager == null || _spawnManager == null)
         {
             Debug.LogError("가챠권 필드에 필요한 참조가 비어 있습니다.", this);
             enabled = false;
@@ -124,19 +132,8 @@ public class GachaTicketField : MonoBehaviour
     {
         if (!enabled) return;
 
-        _gameManager = GameManager.Instance;
-        if (_gameManager == null)
-        {
-            Debug.LogError("가챠권 필드가 게임 매니저를 찾지 못했습니다.", this);
-            enabled = false;
-            return;
-        }
-
         _gameManager.AllDataInitialized += OnAllDataInitialized;
-        if (GameplaySpaceManager.Instance != null)
-        {
-            GameplaySpaceManager.Instance.SpaceChanged += OnSpaceChanged;
-        }
+        _gameplaySpaceManager.SpaceChanged += OnSpaceChanged;
 
         // 이미 발화한 뒤에 붙었으면 이벤트를 다시 기다릴 수 없다.
         if (_gameManager.IsAllDataInitialized)
@@ -156,9 +153,9 @@ public class GachaTicketField : MonoBehaviour
         {
             _gameManager.AllDataInitialized -= OnAllDataInitialized;
         }
-        if (GameplaySpaceManager.Instance != null)
+        if (_gameplaySpaceManager != null)
         {
-            GameplaySpaceManager.Instance.SpaceChanged -= OnSpaceChanged;
+            _gameplaySpaceManager.SpaceChanged -= OnSpaceChanged;
         }
 
         _targetPunchTween?.Kill(complete: false);
@@ -178,9 +175,9 @@ public class GachaTicketField : MonoBehaviour
 
     private void OnDropped(SlimeController source)
     {
-        if (source == null || SlimeManager.Instance == null) return;
+        if (source == null || _slimeManager == null) return;
 
-        SlimeManager.Instance.AddPendingTicket();
+        _slimeManager.AddPendingTicket();
 
         Vector2 scatter = UnityEngine.Random.insideUnitCircle * _dropScatterRadius;
         Create((Vector2)source.transform.position + scatter);
@@ -190,8 +187,8 @@ public class GachaTicketField : MonoBehaviour
 
     private void Restore()
     {
-        int stored = SlimeManager.Instance != null
-            ? SlimeManager.Instance.GetPendingTicketCount()
+        int stored = _slimeManager != null
+            ? _slimeManager.GetPendingTicketCount()
             : 0;
         int target = Mathf.Min(stored, _maxObjects);
 
@@ -235,8 +232,8 @@ public class GachaTicketField : MonoBehaviour
 
     private void BeginBulkCollect()
     {
-        if (SlimeManager.Instance == null ||
-            SlimeManager.Instance.GetPendingTicketCount() <= 0)
+        if (_slimeManager == null ||
+            _slimeManager.GetPendingTicketCount() <= 0)
         {
             return;
         }
@@ -249,8 +246,8 @@ public class GachaTicketField : MonoBehaviour
     {
         if (!_isBulkCollecting) return;
 
-        if (SlimeManager.Instance == null ||
-            SlimeManager.Instance.GetPendingTicketCount() <= 0)
+        if (_slimeManager == null ||
+            _slimeManager.GetPendingTicketCount() <= 0)
         {
             _isBulkCollecting = false;
             CollectionStateChanged?.Invoke();
@@ -295,8 +292,8 @@ public class GachaTicketField : MonoBehaviour
     // 저장 장수와 개수가 어긋나, 그 사이에 도는 Restore가 대체 티켓을 하나 더 만든다.
     private void Collect(GameObject ticket)
     {
-        if (SlimeManager.Instance == null || CurrencyManager.Instance == null) return;
-        if (SlimeManager.Instance.GetPendingTicketCount() <= 0) return;
+        if (_slimeManager == null || _currencyManager == null) return;
+        if (_slimeManager.GetPendingTicketCount() <= 0) return;
 
         PlayCollectPresentation(ticket, () => CompleteCollect(ticket));
         CollectionStateChanged?.Invoke();
@@ -304,8 +301,8 @@ public class GachaTicketField : MonoBehaviour
 
     private void CollectBulk(GameObject ticket)
     {
-        if (SlimeManager.Instance == null || CurrencyManager.Instance == null) return;
-        if (SlimeManager.Instance.GetPendingTicketCount() <= 0) return;
+        if (_slimeManager == null || _currencyManager == null) return;
+        if (_slimeManager.GetPendingTicketCount() <= 0) return;
 
         ticket.SetActive(true);
         PlayCollectPresentation(
@@ -320,7 +317,7 @@ public class GachaTicketField : MonoBehaviour
         _collectingTickets.Remove(ticket);
         _tickets.Remove(ticket);
 
-        if (SlimeManager.Instance == null || CurrencyManager.Instance == null)
+        if (_slimeManager == null || _currencyManager == null)
         {
             _isBulkCollecting = false;
             CollectionStateChanged?.Invoke();
@@ -328,11 +325,11 @@ public class GachaTicketField : MonoBehaviour
         }
 
         if (!EconomyTransactionService.TryGrantAfterConsume(
-                CurrencyManager.Instance,
+                _currencyManager,
                 ECurrencyType.GachaTicket,
                 1d,
-                SlimeManager.Instance.TryConsumePendingTicket,
-                SlimeManager.Instance.AddPendingTicket))
+                _slimeManager.TryConsumePendingTicket,
+                _slimeManager.AddPendingTicket))
         {
             _isBulkCollecting = false;
             Restore();
@@ -352,7 +349,7 @@ public class GachaTicketField : MonoBehaviour
         Restore();
         ApplyVisibility();
 
-        if (SlimeManager.Instance.GetPendingTicketCount() <= 0)
+        if (_slimeManager.GetPendingTicketCount() <= 0)
         {
             _isBulkCollecting = false;
         }
@@ -662,19 +659,18 @@ public class GachaTicketField : MonoBehaviour
                progress * progress * progress * end;
     }
 
-    private static Vector2 GetRestorePosition()
+    private Vector2 GetRestorePosition()
     {
-        return SpawnManager.Instance != null
-            ? SpawnManager.Instance.GetRandomSpawnPosition()
+        return _spawnManager != null
+            ? _spawnManager.GetRandomSpawnPosition()
             : Vector2.zero;
     }
 
     private void ApplyVisibility()
     {
-        GameplaySpaceManager spaceManager = GameplaySpaceManager.Instance;
         SetVisible(
             _tickets,
-            spaceManager != null && spaceManager.IsMainFieldActive);
+            _gameplaySpaceManager != null && _gameplaySpaceManager.IsMainFieldActive);
     }
 
     private void SetVisible(List<GameObject> tickets, bool isVisible)

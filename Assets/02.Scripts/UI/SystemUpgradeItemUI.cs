@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -220,7 +220,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
             arrowText.fontSize = _successArrowFontSize;
             arrowText.fontStyle = FontStyles.Bold;
             arrowText.alignment = TextAlignmentOptions.Center;
-            arrowText.enableWordWrapping = false;
+            arrowText.textWrappingMode = TextWrappingModes.NoWrap;
 
             arrowObject.SetActive(false);
             _successArrows.Add(new UpgradeArrow(rectTransform, arrowText));
