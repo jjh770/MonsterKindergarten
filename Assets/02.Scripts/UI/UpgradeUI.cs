@@ -219,6 +219,11 @@ public class UpgradeUI : MonoBehaviour
 
     private void MoveDrawer(bool animated)
     {
+        // 씬이 내려가는 중에 다른 UI의 OnDestroy가 스탠드다운을 풀면 이 자리로 온다. 그때는
+        // 서랍의 사각형이 이미 파괴돼 있을 수 있고, 어느 쪽이 먼저 정리될지는 정해져 있지
+        // 않다. 움직일 대상이 없으면 아무것도 하지 않는다.
+        if (_panelTarget == null || _toggleRectTransform == null) return;
+
         _moveTween?.Kill();
         _moveTween = null;
 
