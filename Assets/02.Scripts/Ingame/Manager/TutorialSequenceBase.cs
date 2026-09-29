@@ -45,11 +45,11 @@ public abstract class TutorialSequenceBase : MonoBehaviour
             placement);
     }
 
-    // === 재사용 인프라 헬퍼 (tutorial-sequence-infra-dedup 태스크 3) ===
-    // 5개 시퀀스에 중복 보유된 인프라를 베이스로 끌어올린 것이다. 이 태스크에서는
-    // 헬퍼를 추가만 하고 기존 시퀀스는 아직 호출하지 않는다(아무도 호출하지 않아
-    // 기존 동작에 영향이 없다). 참조는 대안 2에 따라 인자로만 받고 베이스에
-    // [SerializeField]로 승격하지 않는다(각 시퀀스가 계속 소유, 요구사항 3.6).
+    // === 시퀀스 공통 인프라 헬퍼 ===
+    // 가이드 구독, 게임플레이 hold, 종료 정리, 시작 트리거를 시퀀스마다 들고 있던 것을
+    // 여기로 모았다. 스폰과 자동 생산을 멈추지 않는 CollectionMilestoneGuideSequence는
+    // 쓰지 않는다. 참조는 인자로만 받고 베이스의 [SerializeField]로 올리지 않는다.
+    // 각 시퀀스가 자기 참조를 계속 소유한다.
 
     // --- 헬퍼 A: 가이드 구독 관리 ---
     // 구독 형태가 시퀀스마다 인라인/래핑으로 미묘하게 달랐으므로(가드 순서 차이),
@@ -77,7 +77,7 @@ public abstract class TutorialSequenceBase : MonoBehaviour
         _isGuideSubscribed = false;
     }
 
-    // --- 헬퍼 B: 게임플레이 hold 획득/해제 (대안 2, 파라미터 전달) ---
+    // --- 헬퍼 B: 게임플레이 hold 획득/해제 ---
     // spawn/auto는 hold 필수, clicker는 일부 경로에서만 쓰이므로 nullable이다.
     // PushMode는 단계마다 다르게 쓰이므로 여기에 포함하지 않는다.
     protected void AcquireGameplayHold(SpawnManager spawn, AutoClicker auto)
@@ -111,7 +111,7 @@ public abstract class TutorialSequenceBase : MonoBehaviour
         space?.RefreshInteraction();
     }
 
-    // --- 헬퍼 D: 시작 트리거 구독 (채택) ---
+    // --- 헬퍼 D: 시작 트리거 구독 ---
     // 공통 3종 트리거만 묶는다. UnlockPopupUI.PresentationCompleted 핸들러는
     // 시퀀스마다 본문이 다르므로 각 시퀀스가 개별 배선한다.
     // 주의: TutorialManager.Finished는 TutorialManager 타입의 static event Action이다.
@@ -138,7 +138,7 @@ public abstract class TutorialSequenceBase : MonoBehaviour
         if (spawn != null) spawn.Initialized -= onTry;
     }
 
-    // --- 헬퍼 D: 시작 게이트 공통 조건 (선택) ---
+    // --- 헬퍼 E: 시작 게이트 공통 조건 ---
     // 공통 조건만 판정한다. 각 시퀀스는 자기 _step 비교·해금 조건을 이 결과와
     // AND로 결합해 최종 시작 여부를 판정한다.
     protected bool IsCommonStartGateOpen(
