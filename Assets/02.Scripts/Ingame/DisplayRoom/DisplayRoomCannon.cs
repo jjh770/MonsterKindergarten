@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
@@ -59,8 +58,9 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
     private SlimeController _held;
     private Vector3 _heldBaseScale;
 
-    // 내가 끈 것만 담는다. 원래 꺼져 있던 그림을 켜 주면 없던 슬라임이 나타난다.
-    private readonly List<SpriteRenderer> _hiddenRenderers = new();
+    // 그림 숨김을 건 슬라임. 되돌릴 대상을 기억해 둔다. _held가 이미 비워진 뒤
+    // (합성·디스폰) 되돌려야 하는 경로가 있으므로 별도로 들고 있는다.
+    private SlimeController _visualHiddenSlime;
     private Sequence _sequence;
     private Tween _punchTween;
     private Vector3 _baseScale;
@@ -258,40 +258,26 @@ public class DisplayRoomCannon : MonoBehaviour, IPlaygroundObject
         slime.transform.localScale = _heldBaseScale;
         slime.transform.position = position;
         slime.SetPresentationLocked(false);
-
-        // 대포는 크기·위치·잠금만 되돌리고, 렌더러·콜라이더·물리의 최종 표시는 공간
-        // 규칙에 맡긴다. 물고 있는 동안 공간이 바뀌었으면(장식장→메인 필드) 이 슬라임은
-        // 다른 공간 소속이라 규칙이 표시를 끈다. 그렇지 않으면 규칙이 보임을 돌려줘 기존과 같다.
-        GameplaySpaceManager.Instance?.RestoreSlimeToSpaceRule(slime);
     }
 
     private void HideHeld(SlimeController slime)
     {
         if (slime == null) return;
 
-        slime.GetComponentsInChildren(includeInactive: true, result: _hiddenRenderers);
-        for (int i = _hiddenRenderers.Count - 1; i >= 0; --i)
-        {
-            if (_hiddenRenderers[i].enabled)
-            {
-                _hiddenRenderers[i].enabled = false;
-            }
-            else
-            {
-                // 원래 꺼져 있던 것은 되돌릴 대상이 아니다.
-                _hiddenRenderers.RemoveAt(i);
-            }
-        }
+        // 그림 숨김은 SlimeController가 소유한다. 대포는 렌더러를 직접 조작하지 않는다.
+        slime.SetPresentationVisualHidden(true);
+        _visualHiddenSlime = slime;
     }
 
     private void ShowHeld()
     {
-        foreach (SpriteRenderer renderer in _hiddenRenderers)
+        // 숨겨 둔 슬라임의 그림 숨김만 되돌린다. _held가 이미 비워진 경로(합성·디스폰)에서도
+        // 되돌릴 대상을 잃지 않도록 별도 참조를 쓴다. 최종 표시는 공간 가시성이 정한다.
+        if (_visualHiddenSlime != null)
         {
-            if (renderer != null) renderer.enabled = true;
+            _visualHiddenSlime.SetPresentationVisualHidden(false);
+            _visualHiddenSlime = null;
         }
-
-        _hiddenRenderers.Clear();
     }
 
     private void PlayFireFeedback()

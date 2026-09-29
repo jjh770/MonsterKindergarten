@@ -266,6 +266,17 @@ public class SlimeController : MonoBehaviour, IClickable
         ApplyInteractionState();
     }
 
+    // 대포가 물고 있는 동안 "빨려 들어간" 표현으로 그림만 감춘다. 공간 가시성 축(_isSpaceVisible)과
+    // 물리/상호작용(콜라이더·리지드바디·이동잠금)은 건드리지 않는다. 잠금은 SetPresentationLocked이
+    // 이미 물리를 끈다. 시각 숨김이 걸리면 공간이 보임이어도 그림을 끄고, 풀리면 공간 가시성으로 돌아간다.
+    public void SetPresentationVisualHidden(bool isHidden)
+    {
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.enabled = !isHidden && _isSpaceVisible;
+        }
+    }
+
     // 슬라임끼리는 레이어 충돌 행렬에서 서로 부딪히지 않게 꺼 두었다(Clickable 대 Clickable).
     // 드래그로 겹쳐서 합성하는 조작이 그 위에 서 있어, 행렬을 켜면 두 마리를 포개는
     // 것 자체가 불가능해져 메인 필드의 합성이 깨진다.
