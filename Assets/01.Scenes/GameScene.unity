@@ -11942,6 +11942,7 @@ MonoBehaviour:
   _upgradeUI: {fileID: 1526959884}
   _backgroundThemeUI: {fileID: 1324579906}
   _transitionPlayer: {fileID: 954826975}
+  _cameraController: {fileID: 2063349533}
   _backgroundThemeUnlockDirector: {fileID: 954826976}
   _unlockPopupUI: {fileID: 1432576204}
   _gameManager: {fileID: 1237951049}
@@ -11977,23 +11978,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameplayTransitionPlayer
   _camera: {fileID: 519420031}
+  _cameraController: {fileID: 2063349533}
   _backgroundThemeUI: {fileID: 1324579906}
   _transitionOverlay: {fileID: 1907240556}
   _backgroundMove: {fileID: 2131310039}
   _themeDissolveDuration: 0.8
   _cameraTransitionDuration: 1.2
   _cameraTravelDistance: 6
-  _displayRoomOrthographicSize: 7
-  _displayRoomArea: {fileID: 92302708}
-  _displayRoomMinZoomSize: 3.5
-  _displayRoomFitPadding: 0.35
-  _displayRoomMouseWheelStep: 0.75
-  _clicker: {fileID: 115063078}
-  _displayRoomPanThresholdPixels: 12
-  _displayRoomFocusDuration: 0.35
-  _displayRoomFocusSize: 2.5
-  _displayRoomObservationSize: 2.1
-  _displayRoomFollowSpeed: 8
   _displayRoomTransfer:
     Distance: 6
     Duration: 0.45
@@ -29809,6 +29800,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2053637834}
   m_CullTransparentMesh: 1
+--- !u!1 &2063349532
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2063349534}
+  - component: {fileID: 2063349533}
+  m_Layer: 0
+  m_Name: DisplayRoomCameraController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2063349533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063349532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c04310baac6f4ed40a7ce0024ff72389, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomCameraController
+  _camera: {fileID: 519420031}
+  _displayRoomArea: {fileID: 92302708}
+  _clicker: {fileID: 115063078}
+  _displayRoomOrthographicSize: 7
+  _displayRoomMinZoomSize: 3.5
+  _displayRoomFitPadding: 0.35
+  _displayRoomMouseWheelStep: 0.75
+  _displayRoomPanThresholdPixels: 12
+  _displayRoomFocusDuration: 0.35
+  _displayRoomFocusSize: 2.5
+  _displayRoomObservationSize: 2.1
+  _displayRoomFollowSpeed: 8
+--- !u!4 &2063349534
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063349532}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2070131642
 GameObject:
   m_ObjectHideFlags: 0
@@ -36004,3 +36051,4 @@ SceneRoots:
   - {fileID: 1022969828}
   - {fileID: 59771884}
   - {fileID: 882830019}
+  - {fileID: 2063349534}

@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 장식장 슬라임 선택과 기획서 §8의 관찰 진입 UI를 담당한다.
-// 카메라 연출은 GameplayTransitionPlayer에 위임하고 이 컴포넌트는 표시 상태만 소유한다.
+// 카메라 조작은 DisplayRoomCameraController에 위임하고 이 컴포넌트는 표시 상태만 소유한다.
 //
 // DisplayRoomUI와 합치지 않는다. GameExitManager가 소유자별로 뒤로가기 핸들러를
 // 하나만 유지하므로, 같은 소유자가 장식장 나가기와 정보 UI 닫기를 함께 등록하면

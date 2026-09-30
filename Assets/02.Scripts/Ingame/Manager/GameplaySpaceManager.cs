@@ -20,6 +20,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     [FormerlySerializedAs("_stageUI")]
     [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private GameplayTransitionPlayer _transitionPlayer;
+    [SerializeField] private DisplayRoomCameraController _cameraController;
     [FormerlySerializedAs("_skyIntroDirector")]
     [SerializeField] private BackgroundThemeUnlockDirector _backgroundThemeUnlockDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
@@ -39,8 +40,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     public bool IsMainFieldActive => _currentSpace == EGameplaySpace.MainField;
     public bool IsTransitioning => _transitionPlayer != null &&
                                    _transitionPlayer.IsTransitioning;
-    public bool IsDisplayRoomZoomed => _transitionPlayer != null &&
-                                       _transitionPlayer.IsDisplayRoomZoomed;
+    public bool IsDisplayRoomZoomed => _cameraController != null &&
+                                       _cameraController.IsZoomed;
     public bool IsMainFieldInteractionActive =>
         IsMainFieldActive && !IsTransitioning;
     public event Action<EBackgroundTheme> BackgroundThemeChanged;
@@ -162,48 +163,49 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _transitionPlayer.PlayDisplayRoomTransfer(target, onComplete);
     }
 
+    // 장식장의 카메라 조작은 DisplayRoomCameraController가 맡는다. UI는 여기서도 이 경계로만 부른다.
     public void FocusDisplayRoomSlime(SlimeController target, Action onComplete)
     {
-        if (_transitionPlayer == null)
+        if (_cameraController == null)
         {
             onComplete?.Invoke();
             return;
         }
 
-        _transitionPlayer.FocusDisplayRoomSlime(target, onComplete);
+        _cameraController.FocusSlime(target, onComplete);
     }
 
     public void RestoreDisplayRoomFocus(Action onComplete = null)
     {
-        if (_transitionPlayer == null)
+        if (_cameraController == null)
         {
             onComplete?.Invoke();
             return;
         }
 
-        _transitionPlayer.RestoreDisplayRoomFocus(onComplete);
+        _cameraController.RestoreFocus(onComplete);
     }
 
     public void BeginDisplayRoomObservation(Action onComplete = null)
     {
-        if (_transitionPlayer == null)
+        if (_cameraController == null)
         {
             onComplete?.Invoke();
             return;
         }
 
-        _transitionPlayer.BeginDisplayRoomObservation(onComplete);
+        _cameraController.BeginObservation(onComplete);
     }
 
     public void EndDisplayRoomObservation(Action onComplete = null)
     {
-        if (_transitionPlayer == null)
+        if (_cameraController == null)
         {
             onComplete?.Invoke();
             return;
         }
 
-        _transitionPlayer.EndDisplayRoomObservation(onComplete);
+        _cameraController.EndObservation(onComplete);
     }
 
     public bool TryExitDisplayRoom()
@@ -236,6 +238,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
                              _backgroundThemeUI != null &&
                              _unlockPopupUI != null &&
                              _transitionPlayer != null &&
+                             _cameraController != null &&
                              _gameManager != null &&
                              _mergeManager != null &&
                              _slimeManager != null &&
