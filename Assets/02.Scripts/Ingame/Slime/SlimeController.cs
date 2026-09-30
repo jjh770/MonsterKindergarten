@@ -431,8 +431,7 @@ public class SlimeController : MonoBehaviour, IClickable
         SlimeManager.Instance?.RecordProduction(
             clickInfo.Grade,
             clickInfo.ClickType,
-            clickInfo.Point,
-            IsSpecial);
+            clickInfo.Point);
 
         // 포인트 적립
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);

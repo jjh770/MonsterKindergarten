@@ -499,9 +499,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             if (target != null &&
                 target.Location == ESlimeLocation.MainField &&
                 target.IsMainFieldActive &&
-                _slimeManager.CanMoveToDisplayRoom(
-                    target.Grade,
-                    target.IsSpecial))
+                _slimeManager.CanMoveToDisplayRoom(target.Grade))
             {
                 return target;
             }

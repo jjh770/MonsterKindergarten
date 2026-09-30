@@ -225,9 +225,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
             return;
         }
 
-        if (!_slimeManager.CanMoveToDisplayRoom(
-                target.Grade,
-                target.IsSpecial))
+        if (!_slimeManager.CanMoveToDisplayRoom(target.Grade))
         {
             _toast.Show("같은 종류의 슬라임이 이미 장식장에 있어요.");
             return;

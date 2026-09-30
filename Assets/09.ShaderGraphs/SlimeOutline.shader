@@ -10,6 +10,10 @@
 // 기본값(0,0,1,1)이라 아틀라스에 묶이지 않은 스프라이트는 예전과 같게 그려진다.
 //
 // _Special이 1이면 특별한 슬라임이다. 몸에 무지개 광택이 흐르고 외곽선이 무지개색이 된다.
+//
+// UI Image에도 쓴다(도감). 스텐실과 클립 사각형을 UI/Default와 같은 방식으로 받아 스크롤
+// 뷰의 마스크 안에서 잘린다. _OutlineFollowsAlpha가 1이면 외곽선도 정점 알파를 따라가
+// 페이드하는 UI 안에서 외곽선만 남지 않는다. 스프라이트에서는 0이라 예전과 같다.
 Shader "Slime/Outline"
 {
     Properties
@@ -31,6 +35,15 @@ Shader "Slime/Outline"
         _SpriteUV ("Sprite Rect In Texture (xy min, zw size)", Vector) = (0,0,1,1)
         _ArtRect ("Art Rect In Sprite (xy min, zw max)", Vector) = (0,0,1,1)
         _Special ("Special (0 or 1)", Float) = 0
+
+        [Header(UI)]
+        _OutlineFollowsAlpha ("Outline Follows Vertex Alpha", Range(0, 1)) = 0
+        [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
+        [HideInInspector] _Stencil ("Stencil ID", Float) = 0
+        [HideInInspector] _StencilOp ("Stencil Operation", Float) = 0
+        [HideInInspector] _StencilWriteMask ("Stencil Write Mask", Float) = 255
+        [HideInInspector] _StencilReadMask ("Stencil Read Mask", Float) = 255
+        [HideInInspector] _ColorMask ("Color Mask", Float) = 15
     }
 
     SubShader
@@ -49,14 +62,26 @@ Shader "Slime/Outline"
         ZWrite Off
         Blend One OneMinusSrcAlpha
 
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+        ColorMask [_ColorMask]
+
         Pass
         {
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile _ PIXELSNAP_ON
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
 
             #include "UnityCG.cginc"
+            #include "UnityUI.cginc"
 
             struct appdata_t
             {
@@ -70,6 +95,7 @@ Shader "Slime/Outline"
                 float4 vertex   : SV_POSITION;
                 fixed4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
             };
 
             sampler2D _MainTex;
@@ -84,6 +110,8 @@ Shader "Slime/Outline"
             float4 _SpriteUV;
             float4 _ArtRect;
             float _Special;
+            float _OutlineFollowsAlpha;
+            float4 _ClipRect;
 
             // 바깥 고리와 안쪽 고리. 안쪽 고리는 반지름 안에 통째로 들어가는 작은 조각
             // (코인, 뿔 끝)이 바깥 고리 사이로 빠져 외곽선이 끊기는 것을 막는다.
@@ -94,6 +122,7 @@ Shader "Slime/Outline"
             v2f vert(appdata_t IN)
             {
                 v2f OUT;
+                OUT.worldPosition = IN.vertex;
                 OUT.vertex = UnityObjectToClipPos(IN.vertex);
                 OUT.texcoord = IN.texcoord;
                 OUT.color = IN.color * _Color;
@@ -121,7 +150,7 @@ Shader "Slime/Outline"
                 return tex2Dlod(_MainTex, float4(_SpriteUV.xy + content * _SpriteUV.zw, 0.0, 0.0));
             }
 
-            fixed4 frag(v2f IN) : SV_Target
+            fixed4 Shade(v2f IN)
             {
                 // 스프라이트 사각형 안에서의 위치. 0~1이다.
                 float2 local = (IN.texcoord - _SpriteUV.xy) / _SpriteUV.zw;
@@ -201,8 +230,21 @@ Shader "Slime/Outline"
                     outlineRgb = Hsv(around - _Time.y * _OutlineSpeed, _OutlineSaturation, 1.0);
                 }
 
-                fixed4 outline = fixed4(outlineRgb * _OutlineColor.a, _OutlineColor.a);
+                // UI에서는 캔버스 그룹의 페이드를 정점 알파가 실어 온다. 스프라이트에서는
+                // _OutlineFollowsAlpha가 0이라 외곽선이 색의 알파와 무관하게 그려진다.
+                float outlineAlpha = _OutlineColor.a * lerp(1.0, IN.color.a, _OutlineFollowsAlpha);
+                fixed4 outline = fixed4(outlineRgb * outlineAlpha, outlineAlpha);
                 return body + outline * (1.0 - body.a);
+            }
+
+            // 클립 사각형은 색을 미리 곱한 결과에 그대로 곱해도 된다.
+            fixed4 frag(v2f IN) : SV_Target
+            {
+                fixed4 color = Shade(IN);
+                #ifdef UNITY_UI_CLIP_RECT
+                color *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
+                #endif
+                return color;
             }
             ENDCG
         }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 // 슬라임 외곽선 셰이더에 SpriteRenderer마다 다른 값을 넣는다.
@@ -22,10 +21,6 @@ public sealed class SlimeSpriteMaterialDriver : MonoBehaviour
     private static readonly int SpecialId = Shader.PropertyToID("_Special");
     private static readonly int ArtRectId = Shader.PropertyToID("_ArtRect");
     private static readonly Vector4 FullArtRect = new Vector4(0f, 0f, 1f, 1f);
-
-    // 표는 모든 슬라임이 같으므로 한 번만 사전으로 바꿔 나눠 쓴다.
-    private static Dictionary<Sprite, Vector4> s_artRects;
-    private static SlimeArtBounds s_artRectsSource;
 
     [SerializeField] private SlimeArtBounds _artBounds;
 
@@ -97,32 +92,7 @@ public sealed class SlimeSpriteMaterialDriver : MonoBehaviour
 
     private Vector4 GetArtRect(Sprite sprite)
     {
-        if (_artBounds == null) return FullArtRect;
-
-        // 표의 값은 사각형이 스프라이트의 전부일 때만 맞다. 그림 모양으로 잘린(Tight)
-        // 스프라이트는 사각형이 다르므로 전체로 둔다.
-        Rect rect = sprite.textureRect;
-        if (!Mathf.Approximately(rect.width, sprite.rect.width) ||
-            !Mathf.Approximately(rect.height, sprite.rect.height))
-        {
-            return FullArtRect;
-        }
-
-        if (s_artRects == null || s_artRectsSource != _artBounds)
-        {
-            s_artRects = new Dictionary<Sprite, Vector4>();
-            foreach (SlimeArtBounds.Entry entry in _artBounds.Entries)
-            {
-                if (entry.Sprite == null) continue;
-
-                s_artRects[entry.Sprite] =
-                    new Vector4(entry.Min.x, entry.Min.y, entry.Max.x, entry.Max.y);
-            }
-
-            s_artRectsSource = _artBounds;
-        }
-
-        return s_artRects.TryGetValue(sprite, out Vector4 art) ? art : FullArtRect;
+        return _artBounds != null ? _artBounds.GetArtRect(sprite) : FullArtRect;
     }
 
     // Awake 없이 Apply가 먼저 불리는 경우(에디터 미리보기)에도 참조가 비지 않게 한다.

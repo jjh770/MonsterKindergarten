@@ -8,10 +8,8 @@ public class SlimeStatus
 
     private readonly List<SlimeInstance> _activeSlimes = new();
     private readonly HashSet<ESlimeGrade> _registeredNormalCollection = new();
-    private readonly HashSet<ESlimeGrade> _registeredSpecialCollection = new();
     public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
     public int NormalCollectionCount => _registeredNormalCollection.Count;
-    public int SpecialCollectionCount => _registeredSpecialCollection.Count;
     public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
     public bool BackgroundUnlockCompleted { get; private set; }
 
@@ -55,7 +53,7 @@ public class SlimeStatus
         IEnumerable<PlacedPlaygroundObject> placedObjects = null,
         IReadOnlyList<int> ownedPlaygroundObjects = null,
         IEnumerable<EBackgroundTheme> ownedBackgroundThemes = null,
-        IEnumerable<ESlimeGrade> registeredSpecialCollection = null)
+        IEnumerable<ESlimeGrade> legacySpecialCollection = null)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -149,30 +147,20 @@ public class SlimeStatus
 
         foreach (SlimeInstance instance in _activeSlimes)
         {
-            if (instance.Location == ESlimeLocation.DisplayRoom &&
-                !instance.IsSpecial)
+            if (instance.Location == ESlimeLocation.DisplayRoom)
             {
                 _registeredNormalCollection.Add(instance.Grade);
             }
         }
 
-        // 특별 도감에는 완성 조건이나 보상이 걸려 있지 않아 검사할 것이 없다.
-        // 장식장에 있는 특별 슬라임은 등록 목록이 비어 있어도 등록된 것으로 본다.
-        if (registeredSpecialCollection != null)
+        // 특별 도감은 없어졌다. 예전 저장에서 특별한 슬라임으로만 등록한 등급은 일반 도감에
+        // 등록한 것으로 옮긴다. 같은 등급을 채운 것이므로 잃는 진행이 없다.
+        if (legacySpecialCollection != null)
         {
-            foreach (ESlimeGrade grade in registeredSpecialCollection)
+            foreach (ESlimeGrade grade in legacySpecialCollection)
             {
                 ValidateGrade(grade);
-                _registeredSpecialCollection.Add(grade);
-            }
-        }
-
-        foreach (SlimeInstance instance in _activeSlimes)
-        {
-            if (instance.Location == ESlimeLocation.DisplayRoom &&
-                instance.IsSpecial)
-            {
-                _registeredSpecialCollection.Add(instance.Grade);
+                _registeredNormalCollection.Add(grade);
             }
         }
 
@@ -543,13 +531,8 @@ public class SlimeStatus
         _activeSlimes.Add(instance);
     }
 
-    public ESlimeGrade? MoveSlime(
-        string instanceId,
-        ESlimeLocation location,
-        out ESlimeGrade? registeredSpecialGrade)
+    public ESlimeGrade? MoveSlime(string instanceId, ESlimeLocation location)
     {
-        registeredSpecialGrade = null;
-
         if (string.IsNullOrWhiteSpace(instanceId))
         {
             throw new ArgumentException("이동할 슬라임 개체 ID가 비어 있습니다.", nameof(instanceId));
@@ -577,22 +560,14 @@ public class SlimeStatus
         }
 
         if (location == ESlimeLocation.DisplayRoom &&
-            HasDisplayRoomSlime(instance.Grade, instance.IsSpecial))
+            HasDisplayRoomSlime(instance.Grade))
         {
             throw new InvalidOperationException(
-                "장식장에는 같은 종류와 타입의 슬라임을 한 마리만 보관할 수 있습니다.");
+                "장식장에는 같은 종류의 슬라임을 한 마리만 보관할 수 있습니다.");
         }
 
         instance.MoveTo(location);
         if (location == ESlimeLocation.DisplayRoom &&
-            instance.IsSpecial &&
-            _registeredSpecialCollection.Add(instance.Grade))
-        {
-            registeredSpecialGrade = instance.Grade;
-        }
-
-        if (location == ESlimeLocation.DisplayRoom &&
-            !instance.IsSpecial &&
             _registeredNormalCollection.Add(instance.Grade))
         {
             return instance.Grade;
@@ -607,18 +582,21 @@ public class SlimeStatus
         return _registeredNormalCollection.Contains(grade);
     }
 
-    public bool IsSpecialCollectionRegistered(ESlimeGrade grade)
+    // 특별한 슬라임도 일반과 같은 한 자리를 쓴다. 같은 등급이면 종류와 관계없이 한 마리다.
+    public bool HasDisplayRoomSlime(ESlimeGrade grade)
     {
-        ValidateGrade(grade);
-        return _registeredSpecialCollection.Contains(grade);
+        return _activeSlimes.Exists(instance =>
+            instance.Location == ESlimeLocation.DisplayRoom &&
+            instance.Grade == grade);
     }
 
-    public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)
+    // 도감이 특별한 모습을 보여 줄지 정하는 근거다. 자리에 있는 것이 특별한 슬라임일 때뿐이다.
+    public bool HasSpecialDisplayRoomSlime(ESlimeGrade grade)
     {
         return _activeSlimes.Exists(instance =>
             instance.Location == ESlimeLocation.DisplayRoom &&
             instance.Grade == grade &&
-            instance.IsSpecial == isSpecial);
+            instance.IsSpecial);
     }
 
     // 모든 대상을 먼저 검증한 뒤 반영해 중간 실패와 같은 Tick 연쇄 합성을 막는다.

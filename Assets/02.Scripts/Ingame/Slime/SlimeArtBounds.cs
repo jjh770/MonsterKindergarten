@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // 슬라임 그림이 스프라이트 사각형의 어디에 있는지 담아 둔 표다. 값은 0~1이고 사각형의
@@ -23,10 +24,51 @@ public sealed class SlimeArtBounds : ScriptableObject
 
     [SerializeField] private Entry[] _entries = Array.Empty<Entry>();
 
+    private static readonly Vector4 FullArtRect = new Vector4(0f, 0f, 1f, 1f);
+
+    // 스프라이트로 바로 찾기 위한 사전이다. 표가 바뀌면 다시 만든다.
+    [NonSerialized] private Dictionary<Sprite, Vector4> _lookup;
+
     public Entry[] Entries => _entries;
+
+    // 그림이 사각형의 어디에 있는지(왼쪽 아래 xy, 오른쪽 위 zw)를 돌려준다. 표에 없거나 값을
+    // 믿을 수 없으면 사각형 전체를 돌려준다. 그 경우 틀린 그림이 나오지는 않고 느려지기만 한다.
+    public Vector4 GetArtRect(Sprite sprite)
+    {
+        if (sprite == null) return FullArtRect;
+
+        // 표의 값은 사각형이 스프라이트의 전부일 때만 맞다. 그림 모양으로 잘린(Tight)
+        // 스프라이트는 사각형이 다르므로 전체로 둔다.
+        Rect rect = sprite.textureRect;
+        if (!Mathf.Approximately(rect.width, sprite.rect.width) ||
+            !Mathf.Approximately(rect.height, sprite.rect.height))
+        {
+            return FullArtRect;
+        }
+
+        if (_lookup == null)
+        {
+            _lookup = new Dictionary<Sprite, Vector4>();
+            foreach (Entry entry in _entries)
+            {
+                if (entry.Sprite == null) continue;
+
+                _lookup[entry.Sprite] =
+                    new Vector4(entry.Min.x, entry.Min.y, entry.Max.x, entry.Max.y);
+            }
+        }
+
+        return _lookup.TryGetValue(sprite, out Vector4 art) ? art : FullArtRect;
+    }
+
+    private void OnValidate()
+    {
+        _lookup = null;
+    }
 
     public void SetEntries(Entry[] entries)
     {
         _entries = entries ?? Array.Empty<Entry>();
+        _lookup = null;
     }
 }

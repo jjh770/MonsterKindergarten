@@ -10,6 +10,7 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private RectTransform _visualRoot;
     [SerializeField] private Image _background;
     [SerializeField] private Image _icon;
+    [SerializeField] private SlimeOutlineImage _iconOutline;
     [SerializeField] private TextMeshProUGUI _numberText;
     [SerializeField, Min(0f)] private float _selectedLift = 18f;
     [SerializeField] private float _collapsedNumberY = -85f;
@@ -30,8 +31,6 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
     private Color _boundIconColor = Color.white;
     private bool _isReady;
     private bool _hasSelectionState;
-    // 특별 도감의 등록된 항목. 선택돼 그림이 보이는 동안 무지개 광택을 입힌다.
-    private bool _isShimmering;
     private bool _isSelected;
 
     public RectTransform RectTransform => transform as RectTransform;
@@ -46,6 +45,7 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         _isReady = _visualRoot != null &&
                    _background != null &&
                    _icon != null &&
+                   _iconOutline != null &&
                    _numberText != null;
         if (!_isReady)
         {
@@ -53,32 +53,25 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    // 선택 애니메이션이 끝난 뒤에 색을 덮는다. 진행 중에는 애니메이션이 색을 쥐고 있다.
-    private void Update()
-    {
-        if (!_isShimmering || !_isSelected || _selectionTween != null) return;
-
-        _icon.color = RainbowTint.Shimmer();
-    }
-
     private void OnDestroy()
     {
         _selectionTween?.Kill();
     }
 
+    // isSpecial이면 특별한 슬라임의 모습(무지개 광택과 외곽선)으로 그린다. 등록하지 않은
+    // 항목은 외곽선 없이 어두운 실루엣이다.
     public void Bind(
         ESlimeGrade grade,
         SlimeSpecData specData,
         bool isRegistered,
-        Action clicked,
-        bool shimmer = false)
+        bool isSpecial,
+        Action clicked)
     {
         if (!_isReady) return;
 
         _clicked = clicked;
-        _icon.sprite = specData?.Sprite;
+        _iconOutline.Apply(specData?.Sprite, outlined: isRegistered, special: isSpecial);
         _boundIconColor = isRegistered ? Color.white : LockedIconColor;
-        _isShimmering = shimmer && isRegistered;
         if (_isSelected)
         {
             _icon.color = _boundIconColor;

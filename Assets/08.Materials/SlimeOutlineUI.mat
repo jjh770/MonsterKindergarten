@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: SlimeOutline
+  m_Name: SlimeOutlineUI
   m_Shader: {fileID: 4800000, guid: 27987c97653009c4388989ca093a7ee8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -30,7 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _OutlineFollowsAlpha: 0
+    - _OutlineFollowsAlpha: 1
     - _OutlineSaturation: 1
     - _OutlineSpeed: 0.8
     - _RainbowBody: 0.55
