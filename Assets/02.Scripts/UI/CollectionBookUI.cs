@@ -27,6 +27,8 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private Button _closeButton;
     [SerializeField] private Button _previousButton;
     [SerializeField] private Button _nextButton;
+    [Tooltip("졸업식(엔딩 다시 보기) 버튼입니다. 엔딩을 본 뒤에만 켜집니다.")]
+    [SerializeField] private Button _endingReplayButton;
 
     [Header("Entries")]
     [Tooltip("항목 복제본이 배치되는 컨테이너입니다. 항상 활성 상태로 둡니다.")]
@@ -55,7 +57,6 @@ public sealed class CollectionBookUI : MonoBehaviour
     private Tween _replayDelayTween;
     private ESlimeGrade? _selectedGrade;
     private bool _isOpen;
-    private UnityEngine.UI.Button _endingReplayButton;
 
     public bool IsOpen => _isOpen;
     public RectTransform OpenButtonTarget => _openButton != null
@@ -71,7 +72,8 @@ public sealed class CollectionBookUI : MonoBehaviour
         }
 
         CreateEntries();
-        CreateEndingReplayButton();
+        _endingReplayButton.onClick.AddListener(ReplayEnding);
+        RefreshEndingReplayButton();
         _bookRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
@@ -135,6 +137,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _closeButton != null &&
                              _previousButton != null &&
                              _nextButton != null &&
+                             _endingReplayButton != null &&
                              _entriesRoot != null &&
                              _entryTemplate != null &&
                              _entriesScroll != null &&
@@ -451,68 +454,6 @@ public sealed class CollectionBookUI : MonoBehaviour
             RefreshEntries();
             RefreshEndingReplayButton();
         }
-    }
-
-    private void CreateEndingReplayButton()
-    {
-        var buttonObject = new GameObject(
-            "EndingReplayButton",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(UnityEngine.UI.Image),
-            typeof(UnityEngine.UI.Button));
-        buttonObject.layer = gameObject.layer;
-        buttonObject.transform.SetParent(_safeAreaRoot, false);
-
-        RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.72f, 0.9f);
-        rect.anchorMax = new Vector2(0.72f, 0.9f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(180f, 82f);
-
-        UnityEngine.UI.Image image =
-            buttonObject.GetComponent<UnityEngine.UI.Image>();
-        image.sprite = _closeButton.image != null
-            ? _closeButton.image.sprite
-            : null;
-        image.type = _closeButton.image != null
-            ? _closeButton.image.type
-            : UnityEngine.UI.Image.Type.Simple;
-        image.pixelsPerUnitMultiplier = _closeButton.image != null
-            ? _closeButton.image.pixelsPerUnitMultiplier
-            : 1f;
-
-        _endingReplayButton =
-            buttonObject.GetComponent<UnityEngine.UI.Button>();
-        _endingReplayButton.targetGraphic = image;
-        buttonObject.AddComponent<ButtonSFX>();
-
-        var labelObject = new GameObject(
-            "Label",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(TextMeshProUGUI));
-        labelObject.layer = gameObject.layer;
-        labelObject.transform.SetParent(buttonObject.transform, false);
-        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = new Vector2(10f, 8f);
-        labelRect.offsetMax = new Vector2(-10f, -8f);
-
-        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-        label.font = _detailNameText.font;
-        label.text = "졸업식";
-        label.fontSize = 30f;
-        label.enableAutoSizing = true;
-        label.fontSizeMin = 22f;
-        label.fontSizeMax = 30f;
-        label.alignment = TextAlignmentOptions.Center;
-        label.color = new Color(0.2f, 0.09f, 0.04f, 1f);
-        label.raycastTarget = false;
-
-        _endingReplayButton.onClick.AddListener(ReplayEnding);
-        RefreshEndingReplayButton();
     }
 
     private void RefreshEndingReplayButton()
