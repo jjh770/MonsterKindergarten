@@ -51,11 +51,11 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _fadeTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
-        _gameManager.AllDataInitialized -= RefreshAvailability;
         TutorialManager.Started -= RefreshAvailability;
         TutorialManager.Finished -= RefreshAvailability;
         if (_gameManager != null)
         {
+            _gameManager.AllDataInitialized -= RefreshAvailability;
             _gameManager.OnGameplayActivated -= RefreshAvailability;
         }
 

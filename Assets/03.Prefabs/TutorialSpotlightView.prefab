@@ -94,10 +94,14 @@ MonoBehaviour:
   _messageText: {fileID: 920004}
   _messageRect: {fileID: 3913673229204093328}
   _arrowRect: {fileID: 930002}
+  _arrowImageRect: {fileID: 3532643928566011645}
   _holeSize: {x: 320, y: 320}
   _uiHolePadding: {x: 40, y: 30}
   _messageOffset: {x: 0, y: 240}
   _arrowOffset: {x: 0, y: 150}
+  _arrowGap: 12
+  _arrowBobDistance: 18
+  _arrowBobDuration: 0.45
   _messageScreenMargin: 30
   _compactMessageWidth: 150
   _messagePadding: {x: 200, y: 80}
@@ -375,7 +379,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8932111867397767643}
-  m_LocalRotation: {x: 0, y: 0, z: 1, w: -0.00000004371139}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -385,7 +389,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 72, y: 61}
+  m_SizeDelta: {x: 90, y: 95}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7123132142074552872
 CanvasRenderer:
@@ -408,16 +412,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.82, b: 0.18, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1961324092, guid: 52d82ce7ca39a6b449f7d8ea37dd2f0b, type: 3}
+  m_Sprite: {fileID: 275636777535088209, guid: 842f4171327b9774f8f568c83bb99f76, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1

@@ -104,11 +104,11 @@ public sealed class CollectionBookUI : MonoBehaviour
             _spaceManager.SpaceChanged -= OnSpaceChanged;
         }
 
-        _gameManager.AllDataInitialized -= RefreshOpenButton;
         TutorialManager.Started -= RefreshOpenButton;
         TutorialManager.Finished -= RefreshOpenButton;
         if (_gameManager != null)
         {
+            _gameManager.AllDataInitialized -= RefreshOpenButton;
             _gameManager.OnGameplayActivated -= RefreshOpenButton;
         }
 
