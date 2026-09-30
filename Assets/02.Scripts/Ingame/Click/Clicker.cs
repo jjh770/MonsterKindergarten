@@ -155,6 +155,14 @@ public class Clicker : MonoBehaviour
         return nearest;
     }
 
+    // 화면 좌표 아래에 집을 수 있는 슬라임이 있는가. 같은 손가락을 나눠 쓰는 쪽
+    // (확대한 장식장의 화면 이동)이 슬라임을 누른 손가락을 가려내려고 묻는다.
+    public bool HasSelectionTargetAt(Vector2 screenPosition)
+    {
+        return _mainCamera != null &&
+               FindSelectionTarget(_mainCamera.ScreenToWorldPoint(screenPosition)) != null;
+    }
+
     // 튜토리얼이 대상을 지정한 동안에는 그 슬라임만 고를 수 있다.
     private bool IsSelectable(SlimeController target)
     {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.Serialization;
@@ -37,6 +38,11 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     [SerializeField, Min(0f)] private float _displayRoomFitPadding = 0.35f;
     [SerializeField, Min(0.05f)] private float _displayRoomMouseWheelStep = 0.75f;
 
+    [Tooltip("확대한 상태에서 빈 곳을 한 손가락으로 끌어 화면을 옮깁니다. 슬라임을 누른 손가락은 옮기지 않습니다.")]
+    [SerializeField] private Clicker _clicker;
+    [Tooltip("이만큼(픽셀) 움직여야 끄는 것으로 봅니다. 그 아래는 그냥 누르기입니다.")]
+    [SerializeField, Min(0f)] private float _displayRoomPanThresholdPixels = 12f;
+
     [Header("Display Room Focus")]
     [SerializeField, Min(0.1f)] private float _displayRoomFocusDuration = 0.35f;
     [SerializeField, Min(0.1f)] private float _displayRoomFocusSize = 2.5f;
@@ -51,6 +57,8 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         Ease = Ease.InBack,
     };
 
+    private const float ZoomedEpsilon = 0.01f;
+
     private Vector3 _cameraBasePosition;
     private float _cameraBaseOrthographicSize;
     private EGameplaySpace _currentSpace = EGameplaySpace.MainField;
@@ -64,8 +72,17 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     private bool _isPinching;
     private float _previousPinchDistance;
     private Vector2 _previousPinchMidpoint;
+    private bool _isPanCandidate;
+    private bool _isPanning;
+    private Vector2 _panStartScreen;
+    private Vector2 _panPreviousScreen;
+    private readonly List<RaycastResult> _uiRaycastResults = new();
 
     public bool IsTransitioning { get; private set; }
+
+    // 기본 화면보다 확대돼 있는가. 방 전체가 보여야 하는 배치 모드가 묻는다.
+    public bool IsDisplayRoomZoomed => _currentSpace == EGameplaySpace.DisplayRoom &&
+                                       _camera.orthographicSize < BaseOrthographicSize - ZoomedEpsilon;
 
     // 공간마다 쉬는 자리의 화면 크기가 다르다. 확대·복귀·경계 계산이 모두 이 값을
     // 기준으로 삼아야 장식장에서 확대했다가 돌아올 때 메인 필드 크기로 튀지 않는다.
@@ -113,13 +130,19 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
         if (!CanManuallyZoomDisplayRoom())
         {
             ResetPinch();
+            ResetPan();
             return;
         }
 
-        if (TryHandlePinch()) return;
+        if (TryHandlePinch())
+        {
+            ResetPan();
+            return;
+        }
 
         ResetPinch();
         HandleMouseWheelZoom();
+        HandleSinglePointerPan();
     }
 
     private void OnDestroy()
@@ -460,7 +483,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             return true;
         }
 
-        PanBetweenPinchMidpoints(_previousPinchMidpoint, midpoint);
+        PanBetweenScreenPoints(_previousPinchMidpoint, midpoint);
         float targetSize = _camera.orthographicSize *
                            (_previousPinchDistance / distance);
         ApplyManualZoom(targetSize, midpoint);
@@ -483,7 +506,7 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
             mouse.position.ReadValue());
     }
 
-    private void PanBetweenPinchMidpoints(Vector2 previous, Vector2 current)
+    private void PanBetweenScreenPoints(Vector2 previous, Vector2 current)
     {
         Vector3 previousWorld = _camera.ScreenToWorldPoint(previous);
         Vector3 currentWorld = _camera.ScreenToWorldPoint(current);
@@ -542,6 +565,76 @@ public sealed class GameplayTransitionPlayer : MonoBehaviour
     private static float ClampAxis(float value, float minimum, float maximum, float center)
     {
         return minimum <= maximum ? Mathf.Clamp(value, minimum, maximum) : center;
+    }
+
+    // 한 손가락(또는 마우스)으로 빈 곳을 끌면 확대한 화면을 옮긴다.
+    //
+    // 슬라임이나 UI를 누르고 시작한 손가락은 옮기지 않는다. 슬라임 위에서 시작한 손가락을
+    // 옮겨 버리면 뗄 때 Clicker가 그 슬라임을 눌린 것으로 처리한다. 시작할 때 한 번만
+    // 판단하는 것도 같은 이유다. 두 손가락 확대 뒤 남은 한 손가락이 갑자기 화면을 끌지 않는다.
+    private void HandleSinglePointerPan()
+    {
+        Pointer pointer = Pointer.current;
+        if (pointer == null)
+        {
+            ResetPan();
+            return;
+        }
+
+        Vector2 position = pointer.position.ReadValue();
+
+        if (pointer.press.wasPressedThisFrame)
+        {
+            _isPanning = false;
+            _panStartScreen = position;
+            _panPreviousScreen = position;
+            _isPanCandidate = _clicker != null &&
+                              IsDisplayRoomZoomed &&
+                              !IsPointerOverUi(position) &&
+                              !_clicker.HasSelectionTargetAt(position);
+            return;
+        }
+
+        if (!pointer.press.isPressed)
+        {
+            ResetPan();
+            return;
+        }
+
+        if (!_isPanCandidate) return;
+
+        if (!_isPanning)
+        {
+            float threshold = _displayRoomPanThresholdPixels;
+            if ((position - _panStartScreen).sqrMagnitude < threshold * threshold) return;
+
+            // 문턱을 넘은 순간의 위치부터 옮긴다. 시작점부터 옮기면 화면이 한 번 튄다.
+            _isPanning = true;
+            _panPreviousScreen = position;
+            return;
+        }
+
+        PanBetweenScreenPoints(_panPreviousScreen, position);
+        ClampDisplayRoomCamera();
+        _panPreviousScreen = position;
+    }
+
+    private void ResetPan()
+    {
+        _isPanCandidate = false;
+        _isPanning = false;
+    }
+
+    // 누른 자리에 UI가 하나라도 걸리면 화면 이동이 아니라 UI 입력으로 본다.
+    private bool IsPointerOverUi(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        var pointerData = new PointerEventData(eventSystem) { position = screenPosition };
+        _uiRaycastResults.Clear();
+        eventSystem.RaycastAll(pointerData, _uiRaycastResults);
+        return _uiRaycastResults.Count > 0;
     }
 
     private void ResetPinch()

@@ -39,6 +39,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     public bool IsMainFieldActive => _currentSpace == EGameplaySpace.MainField;
     public bool IsTransitioning => _transitionPlayer != null &&
                                    _transitionPlayer.IsTransitioning;
+    public bool IsDisplayRoomZoomed => _transitionPlayer != null &&
+                                       _transitionPlayer.IsDisplayRoomZoomed;
     public bool IsMainFieldInteractionActive =>
         IsMainFieldActive && !IsTransitioning;
     public event Action<EBackgroundTheme> BackgroundThemeChanged;

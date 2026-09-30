@@ -138,6 +138,15 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
             return;
         }
 
+        // 확대한 채로는 놓을 자리가 화면 밖에 있을 수 있다. 방 전체가 보이게 되돌린 뒤
+        // 들어간다. 되돌리는 도중에 또 눌러도 이전 연출이 끊기고 하나만 끝까지 가므로
+        // 모드가 두 번 열리지 않는다.
+        if (spaceManager.IsDisplayRoomZoomed)
+        {
+            spaceManager.RestoreDisplayRoomFocus(Begin);
+            return;
+        }
+
         _isActive = true;
         DisplayRoomCameraInputGate.Push(this);
         _modeSession.Enter(

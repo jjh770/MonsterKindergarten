@@ -19,6 +19,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Slider _sfxSlider;
     [SerializeField] private TMP_Text _bgmValue;
     [SerializeField] private TMP_Text _sfxValue;
+    [SerializeField] private Button _frameRateButton;
+    [SerializeField] private TMP_Text _frameRateLabel;
     [SerializeField] private Button _resetButton;
     [SerializeField] private Button _deleteAccountButton;
     [SerializeField] private GameObject _confirmationRoot;
@@ -52,6 +54,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         if (_canvas == null || _openButton == null || _panelRoot == null || _panel == null ||
             _panelGroup == null || _closeButton == null || _bgmSlider == null ||
             _sfxSlider == null || _bgmValue == null || _sfxValue == null ||
+            _frameRateButton == null || _frameRateLabel == null ||
             _resetButton == null || _deleteAccountButton == null ||
             _confirmationRoot == null || _confirmationPanel == null ||
             _confirmationMessage == null ||
@@ -74,6 +77,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _cancelButton.onClick.AddListener(CancelConfirmation);
         _bgmSlider.onValueChanged.AddListener(ChangeBgmVolume);
         _sfxSlider.onValueChanged.AddListener(ChangeSfxVolume);
+        _frameRateButton.onClick.AddListener(ToggleFrameRate);
         _gameManager.OnGameplayActivated += RefreshAvailability;
         RefreshAvailability();
     }
@@ -89,6 +93,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _cancelButton?.onClick.RemoveListener(CancelConfirmation);
         _bgmSlider?.onValueChanged.RemoveListener(ChangeBgmVolume);
         _sfxSlider?.onValueChanged.RemoveListener(ChangeSfxVolume);
+        _frameRateButton?.onClick.RemoveListener(ToggleFrameRate);
         if (_gameManager != null)
             _gameManager.OnGameplayActivated -= RefreshAvailability;
         if (_clicker != null) _clicker.ReleaseMode(this);
@@ -115,6 +120,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _sfxSlider.SetValueWithoutNotify(AudioManager.Instance.SFXVolume);
         _bgmValue.text = $"{Mathf.RoundToInt(_bgmSlider.value * 100f)}%";
         _sfxValue.text = $"{Mathf.RoundToInt(_sfxSlider.value * 100f)}%";
+        RefreshFrameRateLabel();
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         _fadeTween = _panelGroup.DOFade(1f, _fadeDuration).SetUpdate(true);
@@ -172,6 +178,19 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     {
         AudioManager.Instance?.SetSFXVolume(value);
         _sfxValue.text = $"{Mathf.RoundToInt(value * 100f)}%";
+    }
+
+    private void ToggleFrameRate()
+    {
+        bool toHigh = ApplicationSettings.TargetFrameRate != ApplicationSettings.HighFrameRate;
+        ApplicationSettings.SetTargetFrameRate(
+            toHigh ? ApplicationSettings.HighFrameRate : ApplicationSettings.DefaultFrameRate);
+        RefreshFrameRateLabel();
+    }
+
+    private void RefreshFrameRateLabel()
+    {
+        _frameRateLabel.text = $"{ApplicationSettings.TargetFrameRate} FPS";
     }
 
     private void ShowResetConfirmation()
