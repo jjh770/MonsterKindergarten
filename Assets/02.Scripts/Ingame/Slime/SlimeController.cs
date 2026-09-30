@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // 슬라임 도메인을 가지고 있고 실제 갖가지 기능을 동작하게하는 슬라임 컨트롤러
@@ -12,6 +13,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private SlimeMove _slimeMove;
     private ScaleTweeningFeedback _scaleFeedback;
     private SpriteRenderer _spriteRenderer;
+    private static readonly List<Collider2D> MergeFallbackHits = new(8);
     private Collider2D[] _colliders = Array.Empty<Collider2D>();
     private Rigidbody2D _rigidbody;
     private RigidbodyInterpolation2D _defaultInterpolation;
@@ -407,9 +409,12 @@ public class SlimeController : MonoBehaviour, IClickable
             return;
         }
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.5f);
+        // 드래그를 놓을 때마다 돌므로 배열을 새로 받지 않는다. 병합은 목록을 다 돈 뒤가 아니라
+        // 찾자마자 return하므로 정적 버퍼를 공유해도 겹쳐 쓰이지 않는다.
+        MergeFallbackHits.Clear();
+        Physics2D.OverlapCircle(transform.position, 0.5f, ContactFilter2D.noFilter, MergeFallbackHits);
 
-        foreach (var hit in hits)
+        foreach (Collider2D hit in MergeFallbackHits)
         {
             SlimeController other = hit.GetComponent<SlimeController>();
 

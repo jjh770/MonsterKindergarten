@@ -35,6 +35,9 @@ public class Clicker : MonoBehaviour
     // 손가락 보정용. 프레임마다 새 리스트를 만들지 않도록 하나를 돌려 쓴다.
     private readonly List<Collider2D> _selectionHits = new(8);
     private ContactFilter2D _selectionFilter;
+    // 합성 후보 탐색용이다. 드래그 중 프레임마다 돌므로 배열을 새로 받지 않고 재사용한다.
+    // 후보는 SlimeController가 있는 것만 쓰므로 레이어와 트리거는 거르지 않는다.
+    private readonly List<Collider2D> _mergeHits = new(8);
 
     // 소유자별 입력 요청. 우선순위가 높은 요청을 적용한다.
     // 같은 우선순위에서는 나중에 등록된 요청이 우선한다.
@@ -364,11 +367,14 @@ public class Clicker : MonoBehaviour
     {
         SlimeController nearestCandidate = null;
         float nearestDistanceSqr = float.MaxValue;
-        Collider2D[] hits = Physics2D.OverlapCircleAll(
+        _mergeHits.Clear();
+        Physics2D.OverlapCircle(
             _selectedTarget.transform.position,
-            Mathf.Max(0f, _mergeDetectionRadius));
+            Mathf.Max(0f, _mergeDetectionRadius),
+            ContactFilter2D.noFilter,
+            _mergeHits);
 
-        foreach (Collider2D hit in hits)
+        foreach (Collider2D hit in _mergeHits)
         {
             SlimeController candidate = hit.GetComponent<SlimeController>();
             if (!_selectedTarget.CanMergeWith(candidate)) continue;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // 자동 생산의 대상 판정과 진행을 한곳에서 돌린다.
@@ -26,9 +27,12 @@ public class AutoClicker : MonoBehaviour
         if (!GameplayGate.IsActive) return;
         if (_spawnManager == null) return;
 
-        // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 예외가 난다.
-        foreach (SlimeController target in _spawnManager.GetActiveTargets())
+        // 순회 중에는 슬라임을 만들거나 없애지 않는다. 활성 목록이 바뀌면 순회가 어긋난다.
+        // foreach는 IReadOnlyList의 열거자를 박싱해 프레임마다 할당하므로 인덱스로 돈다.
+        IReadOnlyList<SlimeController> targets = _spawnManager.GetActiveTargets();
+        for (int i = 0; i < targets.Count; i++)
         {
+            SlimeController target = targets[i];
             if (target == null ||
                 target.IsDragging ||
                 target.Location != ESlimeLocation.MainField)
