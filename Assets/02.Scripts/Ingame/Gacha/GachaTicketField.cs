@@ -41,6 +41,9 @@ public class GachaTicketField : MonoBehaviour
     [Tooltip("수집 중인 티켓과 이펙트를 HUD보다 앞에 그리는 오버레이 루트입니다.")]
     [SerializeField] private RectTransform _collectOverlayRoot;
 
+    [Tooltip("수집 폭발의 조각 원본입니다. 오버레이 안에 비활성으로 두고, 조각은 이것을 복제해 씁니다.")]
+    [SerializeField] private UnityEngine.UI.Image _burstPieceTemplate;
+
     [Tooltip("티켓을 담을 월드 스페이스 캔버스입니다.")]
     [SerializeField] private Transform _ticketRoot;
 
@@ -76,6 +79,7 @@ public class GachaTicketField : MonoBehaviour
     // 일괄 회수는 티켓이 거의 동시에 닿는다. 도착할 때마다 펀치를 새로 걸면
     // 크기가 겹쳐 널뛰므로 한 번에 하나만 돌린다.
     private Tween _targetPunchTween;
+    private UiImagePool _burstPool;
 
     private Vector3 _collectTargetBaseScale;
     private bool _isBulkCollecting;
@@ -116,7 +120,7 @@ public class GachaTicketField : MonoBehaviour
         }
 
         if (_dropper == null || _ticketPrefab == null || _ticketRoot == null ||
-            _collectTarget == null || _collectOverlayRoot == null ||
+            _collectTarget == null || _collectOverlayRoot == null || _burstPieceTemplate == null ||
             _gameManager == null || _gameplaySpaceManager == null ||
             _slimeManager == null || _currencyManager == null || _spawnManager == null)
         {
@@ -125,6 +129,12 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
+        // 일괄 회수는 한꺼번에 여러 장이 터진다. 폭발 몇 번 분량을 미리 만들어 두고 나머지는
+        // 모자랄 때 늘어난다.
+        _burstPool = new UiImagePool(
+            _burstPieceTemplate,
+            _collectOverlayRoot,
+            (_collectBurstParticleCount + 1) * 4);
         _dropper.Dropped += OnDropped;
     }
 
@@ -512,52 +522,34 @@ public class GachaTicketField : MonoBehaviour
 
     // 별도 텍스처를 늘리지 않고 티켓 이미지를 작은 반짝이 조각으로 재사용한다.
     // 시작점에서는 터치 반응, 도착점에서는 보유 UI로 흡수됐다는 반응을 만든다.
+    //
+    // 조각은 씬의 원본을 복제한 풀에서 빌려 쓰고 끝나면 돌려준다. 일괄 회수는 수십 장이
+    // 한꺼번에 터지므로, 터질 때마다 오브젝트를 만들고 지우지 않게 하려는 것이다.
     private void PlayCollectBurst(
         Sprite sprite,
         Vector2 position,
         Vector2 ticketSize,
         float intensity)
     {
-        if (_collectOverlayRoot == null || sprite == null) return;
-
-        GameObject rootObject = new GameObject(
-            "TicketCollectBurst",
-            typeof(RectTransform));
-        RectTransform root = rootObject.GetComponent<RectTransform>();
-        root.SetParent(_collectOverlayRoot, false);
-        root.anchorMin = new Vector2(0.5f, 0.5f);
-        root.anchorMax = new Vector2(0.5f, 0.5f);
-        root.pivot = new Vector2(0.5f, 0.5f);
-        root.anchoredPosition = position;
-        root.sizeDelta = Vector2.zero;
-        root.SetAsLastSibling();
+        if (_burstPool == null || sprite == null) return;
 
         int count = Mathf.Max(1, _collectBurstParticleCount);
         float baseSize = Mathf.Max(20f, Mathf.Min(ticketSize.x, ticketSize.y) * 0.38f);
         float distance = Mathf.Max(ticketSize.x, ticketSize.y) *
                          _collectBurstDistanceScale * intensity;
 
+        var pieces = new UnityEngine.UI.Image[count + 1];
         Sequence burst = DOTween.Sequence();
 
         // 티켓 중심에서 한 번 크게 번지는 잔상을 먼저 보여 줘 작은 조각만 흩어질 때보다
         // 터치와 도착 순간을 또렷하게 읽을 수 있게 한다.
-        GameObject flashObject = new GameObject(
-            "Flash",
-            typeof(RectTransform),
-            typeof(CanvasRenderer),
-            typeof(UnityEngine.UI.Image));
-        RectTransform flash = flashObject.GetComponent<RectTransform>();
-        flash.SetParent(root, false);
-        flash.anchorMin = new Vector2(0.5f, 0.5f);
-        flash.anchorMax = new Vector2(0.5f, 0.5f);
-        flash.pivot = new Vector2(0.5f, 0.5f);
+        UnityEngine.UI.Image flashImage = _burstPool.Rent();
+        pieces[0] = flashImage;
+        RectTransform flash = flashImage.rectTransform;
+        flash.anchoredPosition = position;
         flash.sizeDelta = ticketSize * (1.35f * Mathf.Max(0.8f, intensity));
         flash.localScale = Vector3.one * 0.55f;
-
-        UnityEngine.UI.Image flashImage = flashObject.GetComponent<UnityEngine.UI.Image>();
         flashImage.sprite = sprite;
-        flashImage.preserveAspect = true;
-        flashImage.raycastTarget = false;
         flashImage.color = new Color(1f, 0.84f, 0.2f, 0.85f);
 
         float flashDuration = _collectBurstDuration * 0.75f;
@@ -569,29 +561,19 @@ public class GachaTicketField : MonoBehaviour
             float angle = 360f * i / count + UnityEngine.Random.Range(-12f, 12f);
             Vector2 direction = Quaternion.Euler(0f, 0f, angle) * Vector2.up;
 
-            GameObject particleObject = new GameObject(
-                $"Spark{i + 1}",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(UnityEngine.UI.Image));
-            RectTransform particle = particleObject.GetComponent<RectTransform>();
-            particle.SetParent(root, false);
-            particle.anchorMin = new Vector2(0.5f, 0.5f);
-            particle.anchorMax = new Vector2(0.5f, 0.5f);
-            particle.pivot = new Vector2(0.5f, 0.5f);
+            UnityEngine.UI.Image image = _burstPool.Rent();
+            pieces[i + 1] = image;
+            RectTransform particle = image.rectTransform;
+            particle.anchoredPosition = position;
             particle.sizeDelta = Vector2.one * baseSize;
             particle.localScale = Vector3.one * 0.65f;
-
-            UnityEngine.UI.Image image = particleObject.GetComponent<UnityEngine.UI.Image>();
             image.sprite = sprite;
-            image.preserveAspect = true;
-            image.raycastTarget = false;
             image.color = new Color(1f, 0.88f, 0.25f, 1f);
 
             float particleDistance = distance * UnityEngine.Random.Range(0.75f, 1.15f);
             burst.Join(
                 particle.DOAnchorPos(
-                        direction * particleDistance,
+                        position + direction * particleDistance,
                         _collectBurstDuration)
                     .SetEase(Ease.OutCubic));
             burst.Join(
@@ -602,8 +584,14 @@ public class GachaTicketField : MonoBehaviour
             burst.Join(image.DOFade(0f, _collectBurstDuration));
         }
 
-        burst.SetLink(rootObject, LinkBehaviour.KillOnDestroy);
-        burst.OnComplete(() => Destroy(rootObject));
+        burst.SetLink(gameObject, LinkBehaviour.KillOnDestroy);
+        burst.OnComplete(() =>
+        {
+            foreach (UnityEngine.UI.Image piece in pieces)
+            {
+                _burstPool.Return(piece);
+            }
+        });
     }
 
     // 위로 한 번 띄웠다가 버튼으로 내려앉게 만든다. 경로에 수직인 방향으로 휘면
