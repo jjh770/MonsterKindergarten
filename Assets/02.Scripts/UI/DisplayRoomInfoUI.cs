@@ -179,12 +179,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _gameExitManager.RegisterBackHandler(this, TryClose);
 
         SlimeSpecData specData = target.Slime?.SpecData;
-        // 도감의 특별 항목과 같은 표기다. 특별한 슬라임은 이름 앞에 "특별한"을, 번호 앞에
-        // "Special"을 붙인다.
-        string name = specData?.Name ?? string.Empty;
-        bool isSpecial = target.IsSpecial;
-        _nameText.text = isSpecial && name.Length > 0 ? $"특별한 {name}" : name;
-        _numberText.text = $"{(isSpecial ? "Special " : string.Empty)}No.{(int)target.Grade}";
+        _nameText.text = specData?.Name ?? string.Empty;
+        _numberText.text = $"No.{(int)target.Grade}";
         _descriptionText.text = specData?.Description ?? string.Empty;
 
         _spaceManager.FocusDisplayRoomSlime(
