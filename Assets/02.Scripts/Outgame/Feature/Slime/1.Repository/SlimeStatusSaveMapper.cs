@@ -15,13 +15,11 @@ public static class SlimeStatusSaveMapper
         DateTime restoredAtUtc,
         out SlimeStatus status,
         out NormalSlimeCollectionStats collectionStats,
-        out SpecialSlimeCollectionStats specialStats,
         out bool needsMigrationSave,
         out string failureMessage)
     {
         status = null;
         collectionStats = null;
-        specialStats = null;
         needsMigrationSave = false;
         failureMessage = null;
 
@@ -66,16 +64,17 @@ public static class SlimeStatusSaveMapper
         var registeredBeforeRestore = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
         var restoredStats = new NormalSlimeCollectionStats(saveData);
-        var restoredSpecialStats = new SpecialSlimeCollectionStats(saveData);
-        var specialRegisteredBeforeRestore = new HashSet<ESlimeGrade>(
+        // 특별 도감은 없어졌다. 예전 저장에서 특별한 슬라임으로만 등록한 등급은 일반 도감에
+        // 등록한 것으로 옮긴다.
+        var legacySpecialCollection = new List<ESlimeGrade>(
             GetRegisteredCollection(saveData.SpecialCollectionRegistered));
 
         var effectiveRegistered = new HashSet<ESlimeGrade>(
             registeredNormalCollection);
+        effectiveRegistered.UnionWith(legacySpecialCollection);
         foreach (SlimeInstance instance in activeSlimes)
         {
-            if (instance.Location == ESlimeLocation.DisplayRoom &&
-                !instance.IsSpecial)
+            if (instance.Location == ESlimeLocation.DisplayRoom)
             {
                 effectiveRegistered.Add(instance.Grade);
             }
@@ -115,7 +114,7 @@ public static class SlimeStatusSaveMapper
                 ToPlacedObjects(saveData.PlacedObjects),
                 saveData.OwnedPlaygroundObjects,
                 ToBackgroundThemes(saveData.OwnedBackgroundThemes),
-                GetRegisteredCollection(saveData.SpecialCollectionRegistered));
+                legacySpecialCollection);
         }
         catch (ArgumentException e)
         {
@@ -138,24 +137,8 @@ public static class SlimeStatusSaveMapper
             }
         }
 
-        // 장식장에 있는 특별 슬라임이 등록 목록에 없던 저장(등록 목록이 생기기 전 문서)은
-        // 이번 복원에서 등록되므로 그 시각을 첫 등록으로 남긴다.
-        for (int gradeValue = (int)ESlimeGrade.Grade1;
-             gradeValue < (int)ESlimeGrade.Count;
-             gradeValue++)
-        {
-            ESlimeGrade grade = (ESlimeGrade)gradeValue;
-            if (restoredStatus.IsSpecialCollectionRegistered(grade) &&
-                !specialRegisteredBeforeRestore.Contains(grade))
-            {
-                restoredRegistrationStats |=
-                    restoredSpecialStats.RecordRegistration(grade, restoredAtUtc);
-            }
-        }
-
         status = restoredStatus;
         collectionStats = restoredStats;
-        specialStats = restoredSpecialStats;
         needsMigrationSave = saveData.WasMigrated ||
                              restoredStatus.NormalCollectionCount >
                              registeredNormalCollection.Count ||
@@ -264,8 +247,7 @@ public static class SlimeStatusSaveMapper
 
     public static SlimeStatusSaveData Build(
         SlimeStatus status,
-        NormalSlimeCollectionStats collectionStats,
-        SpecialSlimeCollectionStats specialStats)
+        NormalSlimeCollectionStats collectionStats)
     {
         var saveData = new SlimeStatusSaveData
         {
@@ -288,16 +270,12 @@ public static class SlimeStatusSaveMapper
             OwnedPlaygroundObjects = BuildOwnedPlaygroundObjects(status),
             OwnedBackgroundThemes = BuildOwnedBackgroundThemes(status),
             NormalCollectionRegistered = BuildNormalCollectionSaveData(status),
-            SpecialCollectionRegistered = BuildSpecialCollectionSaveData(status),
             NormalFirstRegisteredAt = collectionStats.BuildFirstRegisteredAt(),
             NormalNaturalSpawnCounts = collectionStats.BuildNaturalSpawnCounts(),
             NormalMergeCreatedCounts = collectionStats.BuildMergeCreatedCounts(),
             NormalManualTouchCounts = collectionStats.BuildManualTouchCounts(),
             NormalProducedPointTotals = collectionStats.BuildProducedPointTotals(),
-            SpecialFirstRegisteredAt = specialStats.BuildFirstRegisteredAt(),
-            SpecialObtainedCounts = specialStats.BuildObtainedCounts(),
-            SpecialManualTouchCounts = specialStats.BuildManualTouchCounts(),
-            SpecialProducedPointTotals = specialStats.BuildProducedPointTotals(),
+            NormalGachaObtainedCounts = collectionStats.BuildGachaObtainedCounts(),
         };
 
         foreach (SlimeInstance instance in status.ActiveSlimes)
@@ -448,20 +426,6 @@ public static class SlimeStatusSaveMapper
             ESlimeGrade grade = (ESlimeGrade)(
                 (int)ESlimeGrade.Grade1 + i);
             registered[i] = status.IsNormalCollectionRegistered(grade);
-        }
-
-        return registered;
-    }
-
-    private static List<bool> BuildSpecialCollectionSaveData(SlimeStatus status)
-    {
-        List<bool> registered =
-            SlimeStatusSaveData.CreateEmptyNormalCollection();
-        for (int i = 0; i < registered.Count; i++)
-        {
-            ESlimeGrade grade = (ESlimeGrade)(
-                (int)ESlimeGrade.Grade1 + i);
-            registered[i] = status.IsSpecialCollectionRegistered(grade);
         }
 
         return registered;

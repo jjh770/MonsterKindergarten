@@ -77,7 +77,7 @@ public static class GachaService
 
             // 실패 횟수는 결과가 실제로 생긴 뒤에만 센다. 환불된 가챠가 피버를 올리면 안 된다.
             if (!isTutorialPull) slimeManager.RecordSpecialGachaResult(isSpecial);
-            if (isSpecial) slimeManager.RecordSpecialObtained(pickedGrade);
+            slimeManager.RecordGachaObtained(pickedGrade);
             LogPull(pickedGrade, isSpecial, specialChance);
             return EGachaFailure.None;
         }
@@ -91,9 +91,9 @@ public static class GachaService
         return EGachaFailure.SpawnFailed;
     }
 
-    // 기획서 §15.2: 특별 여부를 가장 먼저 판정한다. 성공하면 특별 풀에서 종류를 고르고,
-    // 실패하면 일반 풀로 간다. 특별 종류를 고르지 못하는 경우는 후보가 없을 때뿐이라
-    // 그때도 일반 결과로 이어 가챠가 아무것도 못 주는 일이 없게 한다.
+// 기획서 §15.2: 특별 여부를 가장 먼저 판정한다. 종류는 특별이든 일반이든 같은 일반 풀에서
+    // 고른다. 특별한 슬라임은 외형과 포인트 배율만 다른 같은 등급이라 후보와 가중치를 나눌
+    // 이유가 없다.
     private static bool TryPick(
         SlimeManager slimeManager,
         float specialChance,
@@ -120,25 +120,15 @@ public static class GachaService
             return true;
         }
 
-        if (Random.value < specialChance &&
-            SpecialGachaPool.TryPick(
-                slimeManager.HighestGrade,
-                slimeManager.SpecialCollectionCount,
-                slimeManager.IsSpecialCollectionRegistered,
-                out grade))
-        {
-            rarity = EGachaRarity.Special;
-            isSpecial = true;
-            return true;
-        }
-
+        bool isSpecialRoll = Random.value < specialChance;
         if (!NormalGachaPool.TryPick(slimeManager.HighestGrade, out NormalGachaResult result))
         {
             return false;
         }
 
         grade = result.Grade;
-        rarity = result.Rarity;
+        isSpecial = isSpecialRoll;
+        rarity = isSpecialRoll ? EGachaRarity.Special : result.Rarity;
         return true;
     }
 

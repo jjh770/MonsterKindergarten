@@ -164,16 +164,15 @@ public sealed class SlimeStatusSaveData : ISaveData
     public List<bool> NormalCollectionRegistered { get; set; } =
         CreateEmptyNormalCollection();
 
-    // v12. 특별한 슬라임 도감 등록 상태다. 일반 도감과 달리 미리 채운 목록을 두지 않는다.
-    // 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙고, 필드가 없는 이전 문서는 빈
-    // 목록으로 읽히는데 그것이 "등록한 특별 슬라임이 없는" 정확한 상태다.
+    // v12. 예전 특별 도감의 등록 상태다. 특별 도감은 없어져 읽기만 한다. 등록한 등급은
+    // 로드할 때 일반 도감 등록으로 옮기고, 새 저장에는 빈 목록을 쓴다. 미리 채운 목록은
+    // 로컬 JSON 읽기에서 뒤에 이어 붙으므로 초기값은 빈 목록으로 둔다.
     [FirestoreProperty]
     public List<bool> SpecialCollectionRegistered { get; set; } = new();
 
-    // v13. 특별 도감의 등급별 기록이다. 일반 도감 기록과 같은 모양이고, 자연 출현과 합성
-    // 탄생 대신 가챠 획득 횟수를 둔다. 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙으므로
-    // 빈 목록으로 두고, 읽을 때 SpecialSlimeCollectionStats가 스무 칸으로 맞춘다.
-    // 필드가 없는 이전 문서는 빈 목록, 곧 "기록 없음"으로 읽힌다.
+    // v13. 예전 특별 도감의 등급별 기록이다. 이것도 읽지 않고 새 저장에는 빈 목록을 쓴다.
+    // 기록은 일반 도감 통계에 합산하지 않고 버린다. 필드를 지우지 않는 것은 이미 이 형식으로
+    // 저장된 문서와 클라우드 문서가 그대로 읽혀야 하기 때문이다.
     [FirestoreProperty]
     public List<string> SpecialFirstRegisteredAt { get; set; } = new();
 
@@ -206,6 +205,12 @@ public sealed class SlimeStatusSaveData : ISaveData
     public List<double> NormalProducedPointTotals { get; set; } =
         CreateEmptyDoubleStats();
 
+    // v14. 등급별로 가챠에서 얻은 횟수다. 다른 통계와 같은 스무 칸이고, 필드가 없는 이전 문서는
+    // 0으로 채워진 목록으로 읽히며 그것이 "가챠로 얻은 기록 없음"이다.
+    [FirestoreProperty]
+    public List<long> NormalGachaObtainedCounts { get; set; } =
+        CreateEmptyLongStats();
+
     [FirestoreProperty]
     public string LastSaveTime { get; set; }
 
@@ -227,6 +232,7 @@ public sealed class SlimeStatusSaveData : ISaveData
         NormalMergeCreatedCounts = CreateEmptyLongStats(),
         NormalManualTouchCounts = CreateEmptyLongStats(),
         NormalProducedPointTotals = CreateEmptyDoubleStats(),
+        NormalGachaObtainedCounts = CreateEmptyLongStats(),
     };
 
     public static List<bool> CreateEmptyNormalCollection()
@@ -325,6 +331,8 @@ public sealed class SlimeStatusSaveData : ISaveData
             saveData.NormalManualTouchCounts);
         saveData.NormalProducedPointTotals = NormalizeDoubleStats(
             saveData.NormalProducedPointTotals);
+        saveData.NormalGachaObtainedCounts = NormalizeLongStats(
+            saveData.NormalGachaObtainedCounts);
     }
 }
 
@@ -394,6 +402,7 @@ public static class SlimeStatusSaveMigration
             NormalMergeCreatedCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
             NormalManualTouchCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
             NormalProducedPointTotals = SlimeStatusSaveData.CreateEmptyDoubleStats(),
+            NormalGachaObtainedCounts = SlimeStatusSaveData.CreateEmptyLongStats(),
             LastSaveTime = legacyData.LastSaveTime,
             WasMigrated = true,
         };

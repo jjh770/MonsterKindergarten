@@ -15,7 +15,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     private IRepository<SlimeStatusSaveData> _statusRepository;
     private SlimeStatus _status;
     private NormalSlimeCollectionStats _collectionStats;
-    private SpecialSlimeCollectionStats _specialStats;
     private bool _statsDirty;
     private float _statsSaveTimer;
     // 도메인 객체를 통째로 내주면 저장을 거치지 않고 상태를 바꿀 수 있다.
@@ -54,7 +53,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
             : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
-    public int SpecialCollectionCount => _status?.SpecialCollectionCount ?? 0;
     public bool IsTicketBulkCollectUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.TicketBulkCollectCount;
     public bool IsOfflineTicketRewardUnlocked =>
@@ -102,7 +100,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public event Action<int> NormalCollectionCountChanged;
     public event Action<ESlimeGrade> NormalCollectionRegistered;
     // 특별 슬라임을 장식장에 처음 넣어 등록했을 때. 도감 카테고리 연출이 구독한다.
-    public event Action<ESlimeGrade> SpecialCollectionRegistered;
     public event Action PlaygroundChanged;
     public event Action BackgroundThemesChanged;
     public bool IsInitialized { get; private set; }
@@ -183,7 +180,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
                     ServerClock.TrustedUtcNow,
                     out SlimeStatus restoredStatus,
                     out NormalSlimeCollectionStats restoredStats,
-                    out SpecialSlimeCollectionStats restoredSpecialStats,
                     out bool needsMigrationSave,
                     out string failureMessage))
             {
@@ -193,7 +189,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
             _status = restoredStatus;
             _collectionStats = restoredStats;
-            _specialStats = restoredSpecialStats;
 
             // 문서가 없던 신규 계정은 승격할 원본이 없다. 기본값에서 채운 시작 시각은
             // 메모리에만 두고, 튜토리얼을 마칠 때 세 문서와 함께 기록한다. 여기서 저장하면
@@ -387,10 +382,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     // 이동 검증과 저장을 한 경계에서 처리해 UI가 개체를 직접 변경하지 않게 한다.
     public void MoveSlime(string instanceId, ESlimeLocation location)
     {
-        ESlimeGrade? registeredGrade = _status.MoveSlime(
-            instanceId,
-            location,
-            out ESlimeGrade? registeredSpecialGrade);
+        ESlimeGrade? registeredGrade = _status.MoveSlime(instanceId, location);
         if (registeredGrade.HasValue)
         {
             _collectionStats.RecordRegistration(
@@ -401,15 +393,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         }
 
         Save();
-        if (registeredSpecialGrade.HasValue)
-        {
-            _specialStats?.RecordRegistration(
-                registeredSpecialGrade.Value,
-                ServerClock.TrustedUtcNow);
-            MarkStatsDirty();
-            SpecialCollectionRegistered?.Invoke(registeredSpecialGrade.Value);
-        }
-
         if (!registeredGrade.HasValue)
         {
             return;
@@ -423,12 +406,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     {
         return _status != null &&
                _status.IsNormalCollectionRegistered(grade);
-    }
-
-    public bool IsSpecialCollectionRegistered(ESlimeGrade grade)
-    {
-        return _status != null &&
-               _status.IsSpecialCollectionRegistered(grade);
     }
 
     public bool IsTutorialCompleted(string tutorialId)
@@ -479,20 +456,12 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             : default;
     }
 
-    public SpecialSlimeCollectionStatsSnapshot GetSpecialCollectionStats(
-        ESlimeGrade grade)
+    // 가챠로 슬라임을 얻었을 때 부른다. 특별한 슬라임도 같은 등급의 기록에 합산한다.
+    public void RecordGachaObtained(ESlimeGrade grade)
     {
-        return _specialStats != null
-            ? _specialStats.Get(grade)
-            : default;
-    }
+        if (_collectionStats == null) return;
 
-    // 가챠로 특별한 슬라임을 얻었을 때 부른다. 특별한 슬라임은 다른 경로로 태어나지 않는다.
-    public void RecordSpecialObtained(ESlimeGrade grade)
-    {
-        if (_specialStats == null) return;
-
-        _specialStats.RecordObtained(grade);
+        _collectionStats.RecordGachaObtained(grade);
         MarkStatsDirty();
     }
 
@@ -504,21 +473,13 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         MarkStatsDirty();
     }
 
+    // 특별한 슬라임의 생산도 같은 등급의 일반 기록에 합산한다. 도감에는 등급 한 칸의
+    // 기록만 있으므로 종류로 나누지 않는다.
     public void RecordProduction(
         ESlimeGrade grade,
         EClickType clickType,
-        double point,
-        bool isSpecial = false)
+        double point)
     {
-        if (isSpecial)
-        {
-            if (_specialStats == null) return;
-
-            _specialStats.RecordProduction(grade, clickType, point);
-            MarkStatsDirty();
-            return;
-        }
-
         if (_collectionStats == null) return;
 
         _collectionStats.RecordProduction(grade, clickType, point);
@@ -529,16 +490,24 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     //
     // 등록은 한 번 들어가면 꺼내도 남는 영구 기록이고, 이쪽은 현재 상태다.
     // 도감이 전시 중인 개체에만 표식을 붙이는 데 쓴다.
-    public bool IsDisplayedInDisplayRoom(ESlimeGrade grade, bool isSpecial = false)
+    public bool IsDisplayedInDisplayRoom(ESlimeGrade grade)
     {
         return _status != null &&
-               _status.HasDisplayRoomSlime(grade, isSpecial);
+               _status.HasDisplayRoomSlime(grade);
     }
 
-    public bool CanMoveToDisplayRoom(ESlimeGrade grade, bool isSpecial)
+    // 장식장에 있는 것이 특별한 슬라임인지. 도감이 특별한 모습으로 보여 줄지 정한다.
+    public bool IsSpecialDisplayedInDisplayRoom(ESlimeGrade grade)
     {
         return _status != null &&
-               !_status.HasDisplayRoomSlime(grade, isSpecial);
+               _status.HasSpecialDisplayRoomSlime(grade);
+    }
+
+    // 같은 등급은 종류와 관계없이 한 마리만 넣을 수 있다.
+    public bool CanMoveToDisplayRoom(ESlimeGrade grade)
+    {
+        return _status != null &&
+               !_status.HasDisplayRoomSlime(grade);
     }
 
     // 한 발동의 합성, 통계, 최고 등급을 모두 반영한 뒤 저장은 한 번만 한다.
@@ -611,7 +580,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
     private SlimeStatusSaveData BuildSaveData()
     {
-        return SlimeStatusSaveMapper.Build(_status, _collectionStats, _specialStats);
+        return SlimeStatusSaveMapper.Build(_status, _collectionStats);
     }
 
     private void MarkStatsDirty()
