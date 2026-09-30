@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -63,14 +63,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_elapsedTimeText != null)
         {
-            _elapsedTimeText.text = FormatElapsedTime(elapsedTime);
+            _elapsedTimeText.text = $"잠시 떠난 시간 : {FormatElapsedTime(elapsedTime)}";
         }
 
         if (_rewardText != null)
         {
-            string pointLine = $"{CurrencyIcon.Point}{reward}";
+            string pointLine = $"획득한 포인트 : {CurrencyIcon.Point}{reward}";
             _rewardText.text = ticketReward > 0
-                ? $"{pointLine}\n{CurrencyIcon.GachaTicket}+{ticketReward}"
+                ? $"획득한 티켓 : {pointLine}\n{CurrencyIcon.GachaTicket}+{ticketReward}"
                 : pointLine;
         }
 

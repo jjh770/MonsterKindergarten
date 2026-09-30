@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Utility;
 
 // 유치원 업그레이드의 목록·구매·표기를 담당한다.
@@ -19,6 +20,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private SpawnManager _spawnManager;
     [SerializeField] private MessagePopupUI _messagePopup;
+    [Tooltip("업그레이드 성공을 손가락이 닿은 자리에서 터뜨리는 효과입니다.")]
+    [SerializeField] private UpgradeTouchBurst _touchBurst;
 
     private readonly Dictionary<EUpgradeType, Upgrade> _upgrades = new();
     private readonly List<EUpgradeType> _orderedTypes = new();
@@ -43,7 +46,8 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private void Start()
     {
         if (_carousel == null || _gameManager == null || _upgradeManager == null ||
-            _slimeManager == null || _spawnManager == null || _messagePopup == null)
+            _slimeManager == null || _spawnManager == null || _messagePopup == null ||
+            _touchBurst == null)
         {
             Debug.LogError("시스템 업그레이드 캐러셀 참조가 비어 있습니다.", this);
             enabled = false;
@@ -193,12 +197,22 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             ESlimeGrade.None);
         if (upgraded)
         {
-            _carousel.PlayCenterUpgradeEffect();
+            _touchBurst.Play(GetBurstOrigin());
         }
         else if (!upgrade.IsMaxLevel)
         {
             _messagePopup.Show();
         }
+    }
+
+    // 손가락이 닿은 자리다. 버튼은 뗄 때 눌리지만 손가락은 거의 그 자리에 있다.
+    // 포인터가 없으면 가운데 카드에서 터뜨린다.
+    private Vector2 GetBurstOrigin()
+    {
+        Pointer pointer = Pointer.current;
+        if (pointer != null) return pointer.position.ReadValue();
+
+        return RectTransformUtility.WorldToScreenPoint(null, _carousel.CenterTarget.position);
     }
 
     private void OnHighestGradeChanged(ESlimeGrade grade)
