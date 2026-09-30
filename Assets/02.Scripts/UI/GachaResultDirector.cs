@@ -23,6 +23,41 @@ public sealed class GachaResultDirector : MonoBehaviour
     // 특별한 결과는 터지는 순간의 빛과 충격파를 더 세게 준다.
     private const float SpecialBurstBoost = 1.35f;
 
+    // 파편이 퍼지는 모양이다. 거리는 캔버스 좌표 단위이고, 끝 거리는 파편마다
+    // EndSpread씩 EndSpreadSteps 칸으로 엇갈려 한 줄로 늘어서지 않게 한다.
+    private struct BurstShape
+    {
+        public float AngleJitter;
+        public float StartDistance;
+        public float EndDistance;
+        public float EndSpread;
+        public int EndSpreadSteps;
+        public float StartScale;
+        public float EndScale;
+    }
+
+    private static readonly BurstShape PortalBurstShape = new()
+    {
+        AngleJitter = 0.12f,
+        StartDistance = 25f,
+        EndDistance = 330f,
+        EndSpread = 22f,
+        EndSpreadSteps = 5,
+        StartScale = 1.35f,
+        EndScale = 0.25f,
+    };
+
+    private static readonly BurstShape ArrivalBurstShape = new()
+    {
+        AngleJitter = 0.16f,
+        StartDistance = 18f,
+        EndDistance = 170f,
+        EndSpread = 18f,
+        EndSpreadSteps = 4,
+        StartScale = 1.3f,
+        EndScale = 0.2f,
+    };
+
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private GameObject _reelViewport;
@@ -231,13 +266,13 @@ public sealed class GachaResultDirector : MonoBehaviour
         _arrivalEffectRoot.gameObject.SetActive(false);
         _arrivalEffectRoot.localScale = Vector3.one;
         SetImageAlpha(_arrivalShockwave, 0f);
-        HideArrivalSparks();
+        HideSparks(_arrivalSparks);
 
         SetPortalColor(InitialColor, 1f);
         SetImageAlpha(_shockwave, 0f);
         _shockwave.rectTransform.localScale = Vector3.one * 0.35f;
         SetImageAlpha(_flashImage, 0f);
-        HideBurstSparks();
+        HideSparks(_burstSparks);
     }
 
     private async UniTask<bool> WaitForTap(CancellationToken token)
@@ -391,7 +426,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultNameText.alpha = 1f;
         _resultNameRect.anchoredPosition = _resultNameRestPosition;
         _portalRoot.gameObject.SetActive(false);
-        HideBurstSparks();
+        HideSparks(_burstSparks);
         return false;
     }
 
@@ -427,18 +462,38 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void AnimateBurst(float ratio, Color color)
     {
-        int count = _burstSparks.Length;
+        AnimateSparkBurst(_burstSparks, PortalBurstShape, ratio, color);
+    }
+
+    // 바깥으로 퍼지며 작아지고 옅어지는 파편이다. 포털이 터질 때와 도착할 때가 같은 수식을
+    // 쓰고 거리, 크기, 엇갈림만 다르다. 그 차이는 BurstShape이 든다.
+    private static void AnimateSparkBurst(
+        RectTransform[] sparks,
+        in BurstShape shape,
+        float ratio,
+        Color color)
+    {
+        int count = sparks.Length;
         for (int i = 0; i < count; i++)
         {
-            RectTransform spark = _burstSparks[i];
+            RectTransform spark = sparks[i];
             if (spark == null) continue;
-            float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) + (i % 2) * 0.12f;
-            float distance = Mathf.Lerp(25f, 330f + i % 5 * 22f, ratio);
-            spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
-            spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
-            spark.localScale = Vector3.one * Mathf.Lerp(1.35f, 0.25f, ratio);
+
+            float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) +
+                          (i % 2) * shape.AngleJitter;
+            float endDistance = shape.EndDistance + i % shape.EndSpreadSteps * shape.EndSpread;
+            SetRadial(spark, angle, Mathf.Lerp(shape.StartDistance, endDistance, ratio));
+            spark.localScale = Vector3.one * Mathf.Lerp(shape.StartScale, shape.EndScale, ratio);
             SetImageColor(spark.GetComponent<Image>(), color, 1f - ratio);
         }
+    }
+
+    // 중심에서 angle(라디안) 방향으로 distance만큼 떨어진 자리에 놓고 바깥을 향해 세운다.
+    // 스프라이트가 위쪽을 보고 그려져 있어서 90도를 뺀다.
+    private static void SetRadial(RectTransform spark, float angle, float distance)
+    {
+        spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+        spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
     }
 
     // 슬라임이 모습을 드러내는 동안 한 번 터지고 끝나지 않도록 각 파티클의
@@ -455,8 +510,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) + elapsed * 0.45f;
             float distance = Mathf.Lerp(45f, 350f + i % 4 * 22f, phase);
             float alpha = Mathf.Sin(phase * Mathf.PI);
-            spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
-            spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
+            SetRadial(spark, angle, distance);
             spark.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.2f, alpha);
             SetImageColor(spark.GetComponent<Image>(), color, alpha * 0.9f);
         }
@@ -479,20 +533,9 @@ public sealed class GachaResultDirector : MonoBehaviour
             if (spark != null) SetImageAlpha(spark.GetComponent<Image>(), alpha);
     }
 
-    private void HideBurstSparks()
+    private void HideSparks(RectTransform[] sparks)
     {
-        foreach (RectTransform spark in _burstSparks)
-        {
-            if (spark == null) continue;
-            spark.anchoredPosition = Vector2.zero;
-            spark.localScale = Vector3.zero;
-            SetImageAlpha(spark.GetComponent<Image>(), 0f);
-        }
-    }
-
-    private void HideArrivalSparks()
-    {
-        foreach (RectTransform spark in _arrivalSparks)
+        foreach (RectTransform spark in sparks)
         {
             if (spark == null) continue;
             spark.anchoredPosition = Vector2.zero;
@@ -503,19 +546,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void AnimateArrivalSparks(float ratio, Color color)
     {
-        int count = _arrivalSparks.Length;
-        for (int i = 0; i < count; i++)
-        {
-            RectTransform spark = _arrivalSparks[i];
-            if (spark == null) continue;
-
-            float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) + (i % 2) * 0.16f;
-            float distance = Mathf.Lerp(18f, 170f + i % 4 * 18f, ratio);
-            spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
-            spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
-            spark.localScale = Vector3.one * Mathf.Lerp(1.3f, 0.2f, ratio);
-            SetImageColor(spark.GetComponent<Image>(), color, 1f - ratio);
-        }
+        AnimateSparkBurst(_arrivalSparks, ArrivalBurstShape, ratio, color);
     }
 
     private void OnPortalTapped()
@@ -670,7 +701,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _arrivalEffectRoot.anchoredPosition = destination;
         _arrivalEffectRoot.localScale = Vector3.one;
         _arrivalEffectRoot.gameObject.SetActive(true);
-        HideArrivalSparks();
+        HideSparks(_arrivalSparks);
         float elapsed = 0f;
 
         while (elapsed < _arrivalDuration)
