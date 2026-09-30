@@ -24,6 +24,7 @@ Shader "Slime/Outline"
         [Header(Special)]
         _RainbowSpeed ("Rainbow Body Speed", Float) = 0.35
         _OutlineSpeed ("Rainbow Outline Speed (cycles per second)", Float) = 0.8
+        _OutlineSaturation ("Rainbow Outline Saturation", Range(0, 1)) = 0.8
         _RainbowBody ("Rainbow Body Strength", Range(0, 1)) = 0.55
 
         [Header(Set Per Renderer)]
@@ -78,6 +79,7 @@ Shader "Slime/Outline"
             float _Thickness;
             float _RainbowSpeed;
             float _OutlineSpeed;
+            float _OutlineSaturation;
             float _RainbowBody;
             float4 _SpriteUV;
             float4 _ArtRect;
@@ -196,7 +198,7 @@ Shader "Slime/Outline"
                     // 색이 테두리를 따라 계속 돌아서 멈춘 그림처럼 보이지 않는다.
                     float2 fromCenter = local - 0.5;
                     float around = atan2(fromCenter.y, fromCenter.x) * 0.15915494 + 0.5;
-                    outlineRgb = Hsv(around - _Time.y * _OutlineSpeed, 0.7, 1.0);
+                    outlineRgb = Hsv(around - _Time.y * _OutlineSpeed, _OutlineSaturation, 1.0);
                 }
 
                 fixed4 outline = fixed4(outlineRgb * _OutlineColor.a, _OutlineColor.a);
