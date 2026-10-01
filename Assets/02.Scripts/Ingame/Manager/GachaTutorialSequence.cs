@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 // 가챠 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
 //
@@ -23,6 +24,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     [SerializeField] private AutoSpawnToggleUI _autoSpawnToggle;
     [SerializeField] private GachaButtonUI _gachaButton;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
+    [SerializeField] private GachaTicketField _ticketField;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private MergeManager _mergeManager;
@@ -37,6 +39,9 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     // 자리를 만들 수 없어 위치만 알리는 중인지. 이때는 버튼을 누르게 하지 않는다.
     private bool _isGachaButtonInfoOnly;
+
+    // 티켓은 날아가 닿는 순간에 올린다. 안내를 시작할 때 이미 가지고 있으면 올리지 않는다.
+    private bool _needsTicketGrant;
 
     private void Start()
     {
@@ -143,12 +148,66 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
-        if ((double)_currencyManager.Get(ECurrencyType.GachaTicket) <= 0d)
+        _needsTicketGrant = (double)_currencyManager.Get(ECurrencyType.GachaTicket) <= 0d;
+
+        ShowGachaIntroDialogue();
+    }
+
+    // 마지막 줄이 티켓을 주는 대사다. 그 줄에서 해금 연출을 띄워 다음을 누를 때까지 붙든다.
+    // 대사 자산을 둘로 나누지 않으려고 줄 목록을 여기서 잘라 두 번에 나누어 보여 준다.
+    private void ShowGachaIntroDialogue()
+    {
+        IReadOnlyList<DialogueLine> lines = Content.GetDialogue(DialogueId.Gacha);
+        if (_unlockPopupUI == null || lines == null || lines.Count < 2)
         {
-            _currencyManager.Add(ECurrencyType.GachaTicket, 1d);
+            ShowDialogue(lines, ShowAutoSpawnStep);
+            return;
         }
 
-        ShowDialogue(Content.GetDialogue(DialogueId.Gacha), ShowAutoSpawnStep);
+        var lead = new List<DialogueLine>(lines.Count - 1);
+        for (int i = 0; i < lines.Count - 1; i++)
+        {
+            lead.Add(lines[i]);
+        }
+
+        ShowDialogue(lead, () => ShowTicketLine(lines[lines.Count - 1]));
+    }
+
+    private void ShowTicketLine(DialogueLine line)
+    {
+        _unlockPopupUI.ShowTicketHold("가챠권 획득!");
+        ShowDialogue(new[] { line }, FlyTicketToHud, keepGuideVisible: true);
+    }
+
+    // 다음을 누르면 연출의 티켓이 상단 바 아이콘으로 날아가 앉고, 닿는 순간 한 장이 올라간다.
+    // 필드에서 줍던 것과 같은 방식이다. 날아가는 동안에는 다음 안내를 띄우지 않는다.
+    private void FlyTicketToHud()
+    {
+        void Arrived()
+        {
+            if (_step != Step.Dialogue) return;
+
+            if (_needsTicketGrant)
+            {
+                _currencyManager.Add(ECurrencyType.GachaTicket, 1d);
+            }
+
+            ShowAutoSpawnStep();
+        }
+
+        if (_ticketField == null)
+        {
+            _unlockPopupUI.ReleaseHold();
+            Arrived();
+            return;
+        }
+
+        // 출발 자리를 먼저 읽어야 한다. 연출을 닫으면 그림이 사라지기 시작한다.
+        _ticketField.PlayGrantFlight(
+            _unlockPopupUI.TicketAnchor,
+            _unlockPopupUI.TicketSprite,
+            Arrived);
+        _unlockPopupUI.ReleaseHold();
     }
 
     private void ShowAutoSpawnStep()

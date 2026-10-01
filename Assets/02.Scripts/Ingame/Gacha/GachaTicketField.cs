@@ -488,6 +488,119 @@ public class GachaTicketField : MonoBehaviour
         });
     }
 
+    // 튜토리얼이 주는 티켓처럼 필드에서 줍지 않은 한 장을, 화면의 한 자리에서 상단 바 티켓
+    // 아이콘으로 날려 보낸다. 줍는 연출과 같은 궤적, 폭발, 아이콘 펀치를 쓰지만 저장과
+    // 재화는 건드리지 않는다. 도착한 순간에 올릴 것은 부른 쪽이 onArrived에서 올린다.
+    //
+    // 어느 경로로 빠지든 onArrived는 부른다. 연출을 못 보여 준 것이 티켓을 주지 않을
+    // 이유는 되지 않는다.
+    public void PlayGrantFlight(RectTransform source, Sprite sprite, Action onArrived)
+    {
+        if (!enabled || _burstPool == null || _collectTarget == null ||
+            source == null || sprite == null)
+        {
+            onArrived?.Invoke();
+            return;
+        }
+
+        // 출발점은 Screen Space Overlay 팝업, 도착점도 Overlay라 카메라 없이 화면 좌표로 옮긴다.
+        var corners = new Vector3[4];
+        source.GetWorldCorners(corners);
+        Vector2 startScreenPosition = RectTransformUtility.WorldToScreenPoint(null, source.position);
+        Vector2 targetScreenPosition = RectTransformUtility.WorldToScreenPoint(null, _collectTarget.position);
+        Vector2 bottomLeftScreen = RectTransformUtility.WorldToScreenPoint(null, corners[0]);
+        Vector2 topRightScreen = RectTransformUtility.WorldToScreenPoint(null, corners[2]);
+
+        if (!TryGetOverlayPosition(startScreenPosition, out Vector2 startOverlayPosition) ||
+            !TryGetOverlayPosition(targetScreenPosition, out Vector2 targetOverlayPosition) ||
+            !TryGetOverlayPosition(bottomLeftScreen, out Vector2 bottomLeft) ||
+            !TryGetOverlayPosition(topRightScreen, out Vector2 topRight))
+        {
+            onArrived?.Invoke();
+            return;
+        }
+
+        Vector2 overlaySize = new Vector2(
+            Mathf.Max(1f, Mathf.Abs(topRight.x - bottomLeft.x)),
+            Mathf.Max(1f, Mathf.Abs(topRight.y - bottomLeft.y)));
+
+        // 도착 크기는 상단 아이콘에 맞춘다. 출발 그림은 팝업의 큰 그림이라 줍기 때와 같은
+        // 비율로 줄이면 아이콘보다 훨씬 큰 채로 닿는다.
+        var targetCorners = new Vector3[4];
+        _collectTarget.GetWorldCorners(targetCorners);
+        Vector2 targetScreenSize = (Vector2)RectTransformUtility.WorldToScreenPoint(null, targetCorners[2]) -
+                                   RectTransformUtility.WorldToScreenPoint(null, targetCorners[0]);
+        Vector2 sourceScreenSize = topRightScreen - bottomLeftScreen;
+        float endScale = Mathf.Clamp(
+            Mathf.Min(
+                Mathf.Abs(targetScreenSize.x) / Mathf.Max(1f, Mathf.Abs(sourceScreenSize.x)),
+                Mathf.Abs(targetScreenSize.y) / Mathf.Max(1f, Mathf.Abs(sourceScreenSize.y))),
+            0.02f,
+            1f);
+
+        UnityEngine.UI.Image flying = _burstPool.Rent();
+        RectTransform flyingRect = flying.rectTransform;
+        flying.sprite = sprite;
+        flying.color = Color.white;
+        flying.raycastTarget = false;
+        flyingRect.anchoredPosition = startOverlayPosition;
+        flyingRect.sizeDelta = overlaySize;
+        flyingRect.localScale = Vector3.one;
+
+        GetArcControlPoints(
+            startScreenPosition,
+            targetScreenPosition,
+            out Vector2 firstControlPoint,
+            out Vector2 secondControlPoint);
+
+        PlayCollectBurst(sprite, startOverlayPosition, overlaySize * 0.35f, 1f);
+        flyingRect.SetAsLastSibling();
+
+        Sequence sequence = DOTween.Sequence();
+        sequence.AppendInterval(_collectBurstLeadTime);
+        sequence.Append(
+            DOVirtual.Float(0f, 1f, _collectFlyDuration, progress =>
+            {
+                Vector2 screenPosition = EvaluateCubicBezier(
+                    startScreenPosition,
+                    firstControlPoint,
+                    secondControlPoint,
+                    targetScreenPosition,
+                    progress);
+                if (TryGetOverlayPosition(screenPosition, out Vector2 overlayPosition))
+                {
+                    flyingRect.anchoredPosition = overlayPosition;
+                }
+            })
+                .SetEase(Ease.InOutQuad));
+        sequence.Join(
+            flyingRect.DOScale(
+                Vector3.one * endScale,
+                _collectFlyDuration)
+                .SetEase(Ease.InQuad));
+        sequence.SetLink(gameObject, LinkBehaviour.KillOnDestroy);
+        sequence.OnComplete(() =>
+        {
+            PlayCollectBurst(
+                sprite,
+                targetOverlayPosition,
+                overlaySize * endScale,
+                0.65f);
+
+            PlayCollectTargetPunch();
+            _burstPool.Return(flying);
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySFXWithCooldown(
+                    EAudioSfx.TicketCollect,
+                    _collectSoundCooldown);
+            }
+
+            onArrived?.Invoke();
+        });
+    }
+
     private Vector2 GetOverlaySize(RectTransform ticketRect, Camera mainCamera)
     {
         var corners = new Vector3[4];
