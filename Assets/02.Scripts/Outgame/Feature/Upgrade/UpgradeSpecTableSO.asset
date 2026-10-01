@@ -26,6 +26,7 @@ MonoBehaviour:
     LateCostMultiplier: 1
     PointMultiplier: 0.1
     PointFormula: 0
+    PointBreakpoints: []
     SystemIconIndex: -1
   - Type: 5
     SlimeGrade: 0
@@ -40,6 +41,7 @@ MonoBehaviour:
     LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
+    PointBreakpoints: []
     SystemIconIndex: -1
   - Type: 6
     SlimeGrade: 0
@@ -54,6 +56,7 @@ MonoBehaviour:
     LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
+    PointBreakpoints: []
     SystemIconIndex: -1
   - Type: 7
     SlimeGrade: 0
@@ -68,6 +71,7 @@ MonoBehaviour:
     LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
+    PointBreakpoints: []
     SystemIconIndex: -1
   - Type: 8
     SlimeGrade: 0
@@ -81,5 +85,12 @@ MonoBehaviour:
     LateBaseCost: 1000000000000
     LateCostMultiplier: 1.025
     PointMultiplier: 1
-    PointFormula: 0
+    PointFormula: 2
+    PointBreakpoints:
+    - Level: 50
+      Point: 50
+    - Level: 100
+      Point: 75
+    - Level: 200
+      Point: 150
     SystemIconIndex: -1

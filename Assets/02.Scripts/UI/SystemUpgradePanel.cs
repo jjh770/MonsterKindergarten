@@ -295,7 +295,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
             EUpgradeType.AutoMergePairAdd =>
                 BuildAutoMergeValueText(icon, upgrade.Level),
             EUpgradeType.AllSlimePointPercentAdd =>
-                $"{icon}배율 {upgrade.Point:N0}% → {upgrade.NextPoint:N0}%",
+                $"{icon}배율 {upgrade.Point:0.#}% → {upgrade.NextPoint:0.#}%",
             _ => $"{icon}{upgrade.Point:N0} → {upgrade.NextPoint:N0}",
         };
     }

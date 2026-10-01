@@ -119,7 +119,7 @@ public static class GameplayInfoTextBuilder
                 return $"버튼을 누를 때마다 한 번에 " +
                        $"{AutoMergeManager.GetPairCountForLevel(upgrade.Level)}쌍";
             case EUpgradeType.AllSlimePointPercentAdd:
-                return $"모든 포인트 획득량 +{upgrade.Point:N0}%";
+                return $"모든 포인트 획득량 +{upgrade.Point:0.#}%";
             default:
                 return string.Empty;
         }

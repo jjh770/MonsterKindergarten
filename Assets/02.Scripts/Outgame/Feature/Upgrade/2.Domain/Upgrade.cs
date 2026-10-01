@@ -50,6 +50,7 @@ public class Upgrade
     // 레벨 0이면 보너스 없음
     // Linear : 선형 공식 (BasePoint + Level * PointMultiplier)
     // Fixed  : 고정값 공식 (레벨과 무관하게 항상 BasePoint)
+    // Piecewise : 구간 공식 (PointBreakpoints의 점들 사이를 직선으로 이음)
     public double Point => Level == 0 ? 0 : CalculatePoint(Level);
     public double NextPoint => IsMaxLevel ? Point : CalculatePoint(Level + 1);
     public bool IsMaxLevel => Level >= SpecData.MaxLevel;
@@ -59,8 +60,31 @@ public class Upgrade
         return SpecData.PointFormula switch
         {
             EPointFormula.Fixed => SpecData.BasePoint,
+            EPointFormula.Piecewise => InterpolatePoint(level),
             _ => SpecData.BasePoint + level * SpecData.PointMultiplier, // Linear
         };
+    }
+
+    // 레벨 0의 값은 0이고, 점 사이는 직선이며, 마지막 점 너머는 마지막 값을 유지한다.
+    // 이미 올린 레벨이 같거나 더 높은 값을 받도록 점의 값은 줄어들지 않는다.
+    private double InterpolatePoint(int level)
+    {
+        int previousLevel = 0;
+        double previousPoint = 0d;
+        foreach (PointBreakpoint breakpoint in SpecData.PointBreakpoints)
+        {
+            if (level <= breakpoint.Level)
+            {
+                double ratio = (level - previousLevel) /
+                               (double)(breakpoint.Level - previousLevel);
+                return previousPoint + (breakpoint.Point - previousPoint) * ratio;
+            }
+
+            previousLevel = breakpoint.Level;
+            previousPoint = breakpoint.Point;
+        }
+
+        return previousPoint;
     }
 
     // 2. 핵심 규칙을 작성한다.
@@ -83,9 +107,43 @@ public class Upgrade
             throw new System.ArgumentException(
                 $"후반 비용 구간 설정이 올바르지 않습니다. : {specData.Type}");
         }
-        // Fixed 공식은 PointMultiplier를 사용하지 않으므로 검증 생략
-        if (specData.PointFormula != EPointFormula.Fixed && specData.PointMultiplier <= 0)
+        // Linear만 PointMultiplier를 쓴다. Fixed와 Piecewise는 검증하지 않는다.
+        if (specData.PointFormula == EPointFormula.Linear && specData.PointMultiplier <= 0)
             throw new System.ArgumentException($"포인트 증가량은 0보다 크거나 같아야 합니다. : {specData.PointMultiplier}");
+        if (specData.PointFormula == EPointFormula.Piecewise)
+        {
+            ValidateBreakpoints(specData);
+        }
+    }
+
+    private static void ValidateBreakpoints(UpgradeSpecData specData)
+    {
+        PointBreakpoint[] points = specData.PointBreakpoints;
+        if (points == null || points.Length == 0)
+        {
+            throw new System.ArgumentException(
+                $"구간 공식에는 점이 하나 이상 필요합니다. : {specData.Type}");
+        }
+
+        int previousLevel = 0;
+        double previousPoint = 0d;
+        foreach (PointBreakpoint point in points)
+        {
+            if (point.Level <= previousLevel || point.Point < previousPoint)
+            {
+                throw new System.ArgumentException(
+                    $"구간 공식의 점은 레벨이 늘고 값이 줄지 않아야 합니다. : {specData.Type}");
+            }
+
+            previousLevel = point.Level;
+            previousPoint = point.Point;
+        }
+
+        if (previousLevel != specData.MaxLevel)
+        {
+            throw new System.ArgumentException(
+                $"구간 공식의 마지막 점은 최대 레벨이어야 합니다. : {specData.Type}");
+        }
     }
 
     public bool CanLevelUp()

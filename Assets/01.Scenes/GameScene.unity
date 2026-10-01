@@ -30097,7 +30097,9 @@ MonoBehaviour:
   _gameExitManager: {fileID: 286711904}
   _slimeManager: {fileID: 376498428}
   _gameManager: {fileID: 1237951049}
+  _toast: {fileID: 487418094}
   _fadeDuration: 0.15
+  _bonusToastDuration: 2.8
 --- !u!114 &1908029487
 MonoBehaviour:
   m_ObjectHideFlags: 0

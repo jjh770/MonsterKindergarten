@@ -47,7 +47,12 @@ public static class PointCalculator
             EUpgradeType.AllSlimePointPercentAdd,
             ESlimeGrade.None) * 0.01d;
 
-        return gradeBonus + allSlimeBonus;
+        // 도감을 채운 만큼의 보너스도 같은 풀에 더한다. 업그레이드로 줄인 후반 배율을 대신하는
+        // 장기 성장이라, 터치·자동·오프라인·도감 표시가 모두 이 한 곳을 거치게 한다.
+        double collectionBonus = NormalCollectionRules.GetPointBonusPercent(
+            SlimeManager.Instance != null ? SlimeManager.Instance.NormalCollectionCount : 0) * 0.01d;
+
+        return gradeBonus + allSlimeBonus + collectionBonus;
     }
 
     private static double GetUpgradePoint(EUpgradeType type, ESlimeGrade grade)
