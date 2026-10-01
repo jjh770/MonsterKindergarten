@@ -11,6 +11,10 @@ using UnityEngine;
 // 짧은 쿨타임을 센다.
 public sealed class AutoMergeManager : MonoBehaviour
 {
+    private const float AutoMergeSoundInterval = 0.055f;
+    private const float AutoMergeMinPitch = 0.96f;
+    private const float AutoMergeMaxPitch = 1.06f;
+
     public enum EMergeFailure
     {
         None,
@@ -292,7 +296,11 @@ public sealed class AutoMergeManager : MonoBehaviour
         }
 
         bool canMerge = _mergeManager != null && attempted.Count > 0;
-        bool merged = canMerge && _mergeManager.MergeBatch(attemptedTargets);
+        int mergedPairCount = 0;
+        bool merged = canMerge &&
+                      _mergeManager.MergeBatch(
+                          attemptedTargets,
+                          out mergedPairCount);
 
         // 시도한 쌍마다의 결과. 저장이 실제로 거절한 쌍만 참이 된다.
         //
@@ -313,12 +321,24 @@ public sealed class AutoMergeManager : MonoBehaviour
                 // 저장이 실제로 거절한 쌍만 가려낸다. 드문 경로라 쌍마다 저장해도 된다.
                 for (int i = 0; i < attempted.Count; i++)
                 {
-                    bool pairMerged =
-                        _mergeManager.MergeBatch(new[] { attemptedTargets[i] });
+                    bool pairMerged = _mergeManager.MergeBatch(
+                        new[] { attemptedTargets[i] },
+                        out int singleMergedPairCount);
                     isRefused[i] = !pairMerged;
                     merged |= pairMerged;
+                    mergedPairCount += singleMergedPairCount;
                 }
             }
+        }
+
+        if (mergedPairCount > 0)
+        {
+            AudioManager.Instance?.PlaySFXRandomPitchSequence(
+                EAudioSfx.SlimePromote,
+                mergedPairCount,
+                AutoMergeSoundInterval,
+                AutoMergeMinPitch,
+                AutoMergeMaxPitch);
         }
 
         foreach (PresentationPair pair in _presentationPairs)

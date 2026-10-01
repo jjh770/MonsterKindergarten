@@ -21,7 +21,6 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     private void OnEnable()
     {
-        _slimeController.OnPromoted += PlayLevelUpSound;
         _slimeController.OnLanded += PlayLandSound;
         _slimeController.OnBumped += PlayBumpSound;
     }
@@ -30,20 +29,8 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
     {
         if (_slimeController == null) return;
 
-        _slimeController.OnPromoted -= PlayLevelUpSound;
         _slimeController.OnLanded -= PlayLandSound;
         _slimeController.OnBumped -= PlayBumpSound;
-    }
-
-    private void PlayLevelUpSound()
-    {
-        if (!_slimeController.IsMainFieldActive ||
-            AudioManager.Instance == null)
-        {
-            return;
-        }
-
-        AudioManager.Instance.PlaySFX(EAudioSfx.SlimePromote);
     }
 
     // IsMainFieldActive를 묻지 않는다. 슬라임끼리 부딪히는 일은 장식장에서만

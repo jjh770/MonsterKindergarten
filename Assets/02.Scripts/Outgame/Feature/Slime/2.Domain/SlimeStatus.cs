@@ -10,6 +10,25 @@ public class SlimeStatus
     private readonly HashSet<ESlimeGrade> _registeredNormalCollection = new();
     public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
     public int NormalCollectionCount => _registeredNormalCollection.Count;
+    public int DisplayRoomSlimeCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (SlimeInstance instance in _activeSlimes)
+            {
+                if (instance.Location == ESlimeLocation.DisplayRoom)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    public bool IsGraduationDisplayComplete =>
+        DisplayRoomSlimeCount >= NormalCollectionRules.MainEndingCount;
     public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
     public bool BackgroundUnlockCompleted { get; private set; }
 
@@ -457,7 +476,7 @@ public class SlimeStatus
 
     public bool TryMarkMainEndingSeen()
     {
-        if (MainEndingSeen || NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        if (MainEndingSeen || !IsGraduationDisplayComplete)
         {
             return false;
         }
@@ -469,7 +488,7 @@ public class SlimeStatus
     public bool TryMarkMainEndingReached(DateTime reachedAtUtc)
     {
         if (MainEndingReachedAtUtc.HasValue ||
-            NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+            !IsGraduationDisplayComplete)
         {
             return false;
         }

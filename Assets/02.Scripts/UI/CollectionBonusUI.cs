@@ -199,13 +199,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             "티켓 회수", "필드에 떨어진 티켓을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
             "오프라인 티켓 회수", "접속하지 않은 시간에 티켓도 모아줘요.");
-        // 20종을 채우면 숨겨 둔 마지막 항목이 졸업식으로 바뀐다. 그 전에는 무엇인지 알리지 않는다.
-        bool isEndingUnlocked = count >= NormalCollectionRules.MainEndingCount;
-        AppendBonus(builder, count, NormalCollectionRules.MainEndingCount,
-            isEndingUnlocked ? "유치원 졸업식" : "???",
-            isEndingUnlocked
-                ? "유치원 졸업을 축하합니다!\n도감에서 다시 볼 수 있어요."
-                : "???");
+        AppendGraduation(builder, count);
         _bonusText.text = builder.ToString();
     }
 
@@ -254,8 +248,58 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             .Append('>')
             .Append(state)
             .Append("</color>\n<size=88%>")
-            .Append(description)
+            .Append(unlocked ? description : "???")
             .Append("</size>");
+    }
+
+    private void AppendGraduation(StringBuilder builder, int registeredCount)
+    {
+        if (builder.Length > 0)
+        {
+            builder.Append("\n\n");
+        }
+
+        int requiredCount = NormalCollectionRules.MainEndingCount;
+        int displayedCount = Mathf.Clamp(
+            _slimeManager.DisplayRoomSlimeCount,
+            0,
+            requiredCount);
+        string stateColor = displayedCount >= requiredCount ? "#4F8A3B" : "#8B7868";
+
+        if (_slimeManager.IsMainEndingSeen)
+        {
+            builder.Append("<b>도감 20종 - 유치원 졸업</b>   <color=")
+                .Append(stateColor)
+                .Append('>')
+                .Append(displayedCount)
+                .Append('/')
+                .Append(requiredCount)
+                .Append("</color>\n")
+                .Append("<size=88%>슬라임 유치원 졸업을 축하합니다!</size>");
+            return;
+        }
+
+        if (registeredCount < requiredCount)
+        {
+            builder.Append("<b>도감 20종 - ???</b>   <color=")
+                .Append(stateColor)
+                .Append('>')
+                .Append(displayedCount)
+                .Append('/')
+                .Append(requiredCount)
+                .Append("</color>\n")
+                .Append("<size=88%>???</size>");
+            return;
+        }
+
+        builder.Append("<b>도감 20종 - 유치원 졸업</b>   <color=")
+            .Append(stateColor)
+            .Append('>')
+            .Append(displayedCount)
+            .Append('/')
+            .Append(requiredCount)
+            .Append("</color>\n")
+            .Append("<size=88%>장식장에 20종을 모두 모으면...?</size>");
     }
 
     private static bool CanOpen()

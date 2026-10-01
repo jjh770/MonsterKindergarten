@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class MergeManager : MonoBehaviour
 {
+    private const float ManualMergeMinPitch = 0.96f;
+    private const float ManualMergeMaxPitch = 1.06f;
+
     public readonly struct MergeTargetPair
     {
         public SlimeController Keeper { get; }
@@ -48,7 +51,16 @@ public class MergeManager : MonoBehaviour
     // GameplaySpaceManager.TryRelocateSlime()과 같은 처리 방식이다.
     public void Merge(SlimeController keeper, SlimeController removed)
     {
-        MergeBatch(new[] { new MergeTargetPair(keeper, removed) });
+        if (MergeBatch(
+                new[] { new MergeTargetPair(keeper, removed) },
+                out int mergedPairCount) &&
+            mergedPairCount > 0)
+        {
+            AudioManager.Instance?.PlaySFXRandomPitch(
+                EAudioSfx.SlimePromote,
+                ManualMergeMinPitch,
+                ManualMergeMaxPitch);
+        }
     }
 
     // 실제로 합성한 쌍이 있으면 true. 자동 합성은 이 결과로 다음 등급을 시도할지
@@ -56,6 +68,14 @@ public class MergeManager : MonoBehaviour
     public bool MergeBatch(
         System.Collections.Generic.IReadOnlyList<MergeTargetPair> pairs)
     {
+        return MergeBatch(pairs, out _);
+    }
+
+    public bool MergeBatch(
+        System.Collections.Generic.IReadOnlyList<MergeTargetPair> pairs,
+        out int mergedPairCount)
+    {
+        mergedPairCount = 0;
         if (pairs == null || pairs.Count == 0 || _slimeManager == null) return false;
 
         var validPairs = new System.Collections.Generic.List<MergeTargetPair>(pairs.Count);
@@ -101,6 +121,7 @@ public class MergeManager : MonoBehaviour
             Merged?.Invoke(pair.Keeper, fromGrade, toGrade);
         }
 
+        mergedPairCount = validPairs.Count;
         return true;
     }
 }

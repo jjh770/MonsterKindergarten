@@ -56,6 +56,9 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             ? _spawnWeightTable.GetRequiredHighestGradeForTier(0)
             : ESlimeGrade.Count;
     public int NormalCollectionCount => _status?.NormalCollectionCount ?? 0;
+    public int DisplayRoomSlimeCount => _status?.DisplayRoomSlimeCount ?? 0;
+    public bool IsGraduationDisplayComplete =>
+        _status?.IsGraduationDisplayComplete ?? false;
     public bool IsTicketBulkCollectUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.TicketBulkCollectCount;
     public bool IsOfflineTicketRewardUnlocked =>
@@ -391,9 +394,13 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             _collectionStats.RecordRegistration(
                 registeredGrade.Value,
                 ServerClock.TrustedUtcNow);
-            _status.TryMarkMainEndingReached(ServerClock.TrustedUtcNow);
             MarkStatsDirty();
         }
+
+        // 도감 등록은 영구 진행도지만, 졸업 도달 시각은 실제 장식장에 20종이
+        // 모두 모인 최초 순간을 기록한다. 이미 등록한 슬라임을 다시 넣어 마지막
+        // 자리를 채우는 경우도 있으므로 신규 등록 분기 밖에서 검사한다.
+        _status.TryMarkMainEndingReached(ServerClock.TrustedUtcNow);
 
         Save();
         if (!registeredGrade.HasValue)

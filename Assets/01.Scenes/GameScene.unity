@@ -24844,6 +24844,7 @@ MonoBehaviour:
   _menuRoot: {fileID: 104382432}
   _probabilityButton: {fileID: 1559864951}
   _upgradeStatusButton: {fileID: 1536552636}
+  _gachaProbabilityButton: {fileID: 1225446716}
   _closeButton: {fileID: 1953315130}
   _detailRoot: {fileID: 453603081}
   _detailPanel: {fileID: 1076031529}

@@ -96,6 +96,35 @@ public static class GameplayInfoTextBuilder
         return builder.ToString();
     }
 
+    public static string BuildNormalGachaProbabilityText(
+        ESlimeGrade highestGrade,
+        bool includeTitle = true)
+    {
+        var builder = new StringBuilder();
+        if (includeTitle)
+        {
+            builder.Append("현재 슬라임 뽑기 확률\n");
+        }
+
+        builder.Append("현재 최고 등급 Lv.")
+            .Append((int)highestGrade)
+            .Append(" 기준\n\n");
+
+        foreach (NormalGachaProbability probability in
+                 NormalGachaPool.GetProbabilities(highestGrade))
+        {
+            builder.Append("<sprite name=\"")
+                .Append(((int)probability.Grade).ToString("00"))
+                .Append("\"> Lv.")
+                .Append((int)probability.Grade)
+                .Append("   ")
+                .Append((probability.Probability * 100d).ToString("F1"))
+                .Append("%\n");
+        }
+
+        return builder.ToString();
+    }
+
     private static string BuildEffect(
         EUpgradeType type,
         Upgrade upgrade,

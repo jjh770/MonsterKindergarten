@@ -278,6 +278,25 @@ public class AudioManager : MonoBehaviour
         PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip));
     }
 
+    public void PlaySFXRandomPitchSequence(
+        EAudioSfx cue,
+        int count,
+        float interval,
+        float minPitch = 0.9f,
+        float maxPitch = 1.1f)
+    {
+        AudioClip clip = GetSfx(cue);
+        if (clip == null || count <= 0) return;
+
+        StartCoroutine(PlaySfxRandomPitchSequenceRoutine(
+            clip,
+            count,
+            Mathf.Max(0f, interval),
+            minPitch,
+            maxPitch,
+            GetClipVolume(clip)));
+    }
+
     public void PlayLoopingSFX(EAudioSfx cue)
     {
         AudioClip clip = GetSfx(cue);
@@ -361,6 +380,24 @@ public class AudioManager : MonoBehaviour
 
         float randomPitch = Random.Range(minPitch, maxPitch);
         PlaySFXWithPitch(clip, randomPitch, volumeScale);
+    }
+
+    private IEnumerator PlaySfxRandomPitchSequenceRoutine(
+        AudioClip clip,
+        int count,
+        float interval,
+        float minPitch,
+        float maxPitch,
+        float volumeScale)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            PlaySFXRandomPitch(clip, minPitch, maxPitch, volumeScale);
+            if (i + 1 < count && interval > 0f)
+            {
+                yield return new WaitForSecondsRealtime(interval);
+            }
+        }
     }
 
     private IEnumerator FadeOutLoopingSfxRoutine(float duration)

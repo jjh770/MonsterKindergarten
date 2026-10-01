@@ -32,6 +32,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [SerializeField] private GameObject _menuRoot;
     [SerializeField] private Button _probabilityButton;
     [SerializeField] private Button _upgradeStatusButton;
+    [SerializeField] private Button _gachaProbabilityButton;
     [SerializeField] private Button _closeButton;
 
     [Header("Detail")]
@@ -70,6 +71,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
         _probabilityButton.onClick.AddListener(ShowProbability);
         _upgradeStatusButton.onClick.AddListener(ShowUpgradeStatus);
+        _gachaProbabilityButton.onClick.AddListener(ShowGachaProbability);
         _closeButton.onClick.AddListener(Close);
         _backButton.onClick.AddListener(ShowMenu);
         _root.gameObject.SetActive(false);
@@ -81,6 +83,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
             _scholarDestination != null && _portraitBackgroundGroup != null &&
             _dialogueGroup != null && _menuRoot != null &&
             _probabilityButton != null && _upgradeStatusButton != null &&
+            _gachaProbabilityButton != null &&
             _closeButton != null && _detailRoot != null &&
             _detailPanel != null && _detailTitle != null &&
             _detailText != null && _backButton != null &&
@@ -94,6 +97,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
     {
         _probabilityButton?.onClick.RemoveListener(ShowProbability);
         _upgradeStatusButton?.onClick.RemoveListener(ShowUpgradeStatus);
+        _gachaProbabilityButton?.onClick.RemoveListener(ShowGachaProbability);
         _closeButton?.onClick.RemoveListener(Close);
         _backButton?.onClick.RemoveListener(ShowMenu);
         Cleanup(animated: false, notify: false);
@@ -116,6 +120,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         PrepareScholarImage();
         _root.gameObject.SetActive(true);
         _root.SetAsLastSibling();
+        RefreshMenuAvailability();
         _menuRoot.SetActive(true);
         _detailRoot.SetActive(false);
         _portraitBackgroundGroup.alpha = 1f;
@@ -186,12 +191,29 @@ public sealed class ScholarGuideUI : MonoBehaviour
         ShowDetail();
     }
 
+    public void ShowGachaProbability()
+    {
+        if (!_isOpen || !_slimeManager.IsGachaUnlocked) return;
+
+        _detailTitle.text = "슬라임 뽑기 확률";
+        _detailText.text = GameplayInfoTextBuilder.BuildNormalGachaProbabilityText(
+            _slimeManager.HighestGrade,
+            includeTitle: false);
+        ShowDetail();
+    }
+
     public void ShowMenu()
     {
         if (!_isOpen || _isTransitioning) return;
 
+        RefreshMenuAvailability();
         _detailRoot.SetActive(false);
         _menuRoot.SetActive(true);
+    }
+
+    private void RefreshMenuAvailability()
+    {
+        _gachaProbabilityButton.gameObject.SetActive(_slimeManager.IsGachaUnlocked);
     }
 
     private void ShowDetail()

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum EGachaRarity
@@ -22,6 +23,18 @@ public readonly struct NormalGachaResult
     }
 }
 
+public readonly struct NormalGachaProbability
+{
+    public ESlimeGrade Grade { get; }
+    public double Probability { get; }
+
+    public NormalGachaProbability(ESlimeGrade grade, double probability)
+    {
+        Grade = grade;
+        Probability = probability;
+    }
+}
+
 // 일반 가챠 결과의 후보와 가중치.
 //
 // 후보는 Lv.1부터 최고 해금 등급까지 전부다. 최고 등급 자신도 나올 수 있고, 그 위는
@@ -37,6 +50,28 @@ public static class NormalGachaPool
     private const int JackpotMaxDistance = 1;
     private const int RareMaxDistance = 3;
     private const int UncommonMaxDistance = 6;
+
+    public static List<NormalGachaProbability> GetProbabilities(ESlimeGrade highestGrade)
+    {
+        var probabilities = new List<NormalGachaProbability>();
+        if (highestGrade < ESlimeGrade.Grade1) return probabilities;
+
+        int highest = (int)highestGrade;
+        int totalWeight = 0;
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
+        {
+            totalWeight += GetWeight(highest, grade);
+        }
+
+        for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
+        {
+            probabilities.Add(new NormalGachaProbability(
+                (ESlimeGrade)grade,
+                (double)GetWeight(highest, grade) / totalWeight));
+        }
+
+        return probabilities;
+    }
 
     public static bool TryPick(ESlimeGrade highestGrade, out NormalGachaResult result)
     {

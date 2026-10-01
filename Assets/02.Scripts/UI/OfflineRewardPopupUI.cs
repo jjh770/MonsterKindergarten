@@ -70,7 +70,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         {
             string pointLine = $"획득한 포인트 : {CurrencyIcon.Point}{reward}";
             _rewardText.text = ticketReward > 0
-                ? $"획득한 티켓 : {pointLine}\n{CurrencyIcon.GachaTicket}+{ticketReward}"
+                ? $"{pointLine}\n획득한 티켓 : {CurrencyIcon.GachaTicket}+{ticketReward}"
                 : pointLine;
         }
 

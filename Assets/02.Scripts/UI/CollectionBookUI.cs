@@ -29,6 +29,8 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private Button _nextButton;
     [Tooltip("졸업식(엔딩 다시 보기) 버튼입니다. 엔딩을 본 뒤에만 켜집니다.")]
     [SerializeField] private Button _endingReplayButton;
+    [Tooltip("도감 제목 아래에 현재 졸업 진행도를 표시합니다.")]
+    [SerializeField] private TextMeshProUGUI _graduationProgressText;
 
     [Header("Entries")]
     [Tooltip("항목 복제본이 배치되는 컨테이너입니다. 항상 활성 상태로 둡니다.")]
@@ -74,6 +76,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         CreateEntries();
         _endingReplayButton.onClick.AddListener(ReplayEnding);
         RefreshEndingReplayButton();
+        RefreshGraduationProgress();
         _bookRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
@@ -138,6 +141,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                              _previousButton != null &&
                              _nextButton != null &&
                              _endingReplayButton != null &&
+                             _graduationProgressText != null &&
                              _entriesRoot != null &&
                              _entryTemplate != null &&
                              _entriesScroll != null &&
@@ -202,6 +206,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         RefreshOpenButton();
         RefreshEntries();
         RefreshEndingReplayButton();
+        RefreshGraduationProgress();
 
         _fadeTween?.Kill();
         _fadeTween = _bookCanvasGroup
@@ -453,7 +458,37 @@ public sealed class CollectionBookUI : MonoBehaviour
         {
             RefreshEntries();
             RefreshEndingReplayButton();
+            RefreshGraduationProgress();
         }
+    }
+
+    private void RefreshGraduationProgress()
+    {
+        if (_graduationProgressText == null || _slimeManager == null) return;
+
+        if (_slimeManager.IsMainEndingSeen)
+        {
+            _graduationProgressText.text = "졸업 완료!";
+            return;
+        }
+
+        int registeredCount = Mathf.Clamp(
+            _slimeManager.NormalCollectionCount,
+            0,
+            NormalCollectionRules.MainEndingCount);
+        if (registeredCount < NormalCollectionRules.MainEndingCount)
+        {
+            _graduationProgressText.text =
+                $"졸업까지 도감 {registeredCount} / {NormalCollectionRules.MainEndingCount}";
+            return;
+        }
+
+        int displayedCount = Mathf.Clamp(
+            _slimeManager.DisplayRoomSlimeCount,
+            0,
+            NormalCollectionRules.MainEndingCount);
+        _graduationProgressText.text =
+            $"도감 완성 · 장식장 {displayedCount} / {NormalCollectionRules.MainEndingCount}";
     }
 
     private void RefreshEndingReplayButton()
