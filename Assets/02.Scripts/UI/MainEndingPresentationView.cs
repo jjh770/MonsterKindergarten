@@ -4,93 +4,84 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
-// 메인 엔딩의 런타임 uGUI 계층과 각 화면의 시각 연출을 소유한다.
+// 메인 엔딩 각 화면의 시각 연출을 소유한다. 화면 계층은 씬에 작성되어 있고,
+// 이 컴포넌트는 그 참조를 들고 보이고 사라지는 움직임만 만든다.
 // 언제 재생할지와 게임 입력을 잠글지는 MainEndingUI가 결정한다.
-public sealed class MainEndingPresentationView
+public sealed class MainEndingPresentationView : MonoBehaviour
 {
-    private readonly Sprite _celebrationImageSprite;
-    private readonly UnityAction _backgroundPressed;
-    private readonly UnityAction _continuePressed;
+    [Header("Root")]
+    [Tooltip("엔딩 전체의 안전 영역 루트입니다. 노치 여백은 코드가 맞춥니다.")]
+    [SerializeField] private RectTransform _safeAreaRoot;
+    [SerializeField] private CanvasGroup _presentationCanvasGroup;
+    [Tooltip("배경 전체를 덮는 버튼입니다. 누르면 지금 단계를 건너뜁니다.")]
+    [SerializeField] private UnityEngine.UI.Button _backgroundButton;
 
-    private RectTransform _safeAreaRoot;
-    private CanvasGroup _presentationCanvasGroup;
-    private UnityEngine.UI.Button _backgroundButton;
-
-    private GameObject _classGroup;
-    private CanvasGroup _classCanvasGroup;
-    private RectTransform _slimeGrid;
-    private TextMeshProUGUI _classTitle;
-    private readonly UnityEngine.UI.Image[] _slimeImages =
+    [Header("Class")]
+    [SerializeField] private GameObject _classGroup;
+    [SerializeField] private CanvasGroup _classCanvasGroup;
+    [SerializeField] private RectTransform _slimeGrid;
+    [SerializeField] private TextMeshProUGUI _classTitle;
+    [Tooltip("일반 슬라임 20종의 그림입니다. 등급 순서대로 연결합니다.")]
+    [SerializeField] private UnityEngine.UI.Image[] _slimeImages =
         new UnityEngine.UI.Image[SlimeStatusSaveData.NormalCollectionSize];
 
-    private GameObject _creditsGroup;
-    private CanvasGroup _creditsCanvasGroup;
-    private RectTransform _creditsContent;
-    private TextMeshProUGUI _creditsText;
+    [Header("Credits")]
+    [SerializeField] private GameObject _creditsGroup;
+    [SerializeField] private CanvasGroup _creditsCanvasGroup;
+    [SerializeField] private RectTransform _creditsContent;
+    [SerializeField] private TextMeshProUGUI _creditsText;
 
-    private GameObject _teaserGroup;
-    private CanvasGroup _teaserCanvasGroup;
+    [Header("Teaser")]
+    [SerializeField] private GameObject _teaserGroup;
+    [SerializeField] private CanvasGroup _teaserCanvasGroup;
 
-    private GameObject _celebrationGroup;
-    private CanvasGroup _celebrationCanvasGroup;
-    private RectTransform _celebrationArtworkRect;
-    private UnityEngine.UI.Image _celebrationArtwork;
-    private TextMeshProUGUI _celebrationFallbackTitle;
-    private UnityEngine.UI.Button _endingContinueButton;
+    [Header("Celebration")]
+    [SerializeField] private GameObject _celebrationGroup;
+    [SerializeField] private CanvasGroup _celebrationCanvasGroup;
+    [SerializeField] private RectTransform _celebrationArtworkRect;
+    [SerializeField] private UnityEngine.UI.Image _celebrationArtwork;
+    [SerializeField] private TextMeshProUGUI _celebrationFallbackTitle;
+    [SerializeField] private UnityEngine.UI.Button _endingContinueButton;
 
-    public GameObject Root { get; }
+    private Sprite _celebrationImageSprite;
+    private UnityAction _backgroundPressed;
+    private UnityAction _continuePressed;
 
-    public MainEndingPresentationView(
-        Transform host,
-        GameObject fontSource,
-        UnityEngine.UI.Button buttonStyle,
+    // MainEndingUI가 Awake에서 한 번 부른다. 참조가 비어 있으면 false를 돌려주고
+    // 엔딩 전체가 꺼진다. 일부만 비어 있는 채로 재생하면 중간에 멈춘다.
+    public bool Initialize(
         Sprite celebrationImageSprite,
         UnityAction backgroundPressed,
         UnityAction continuePressed)
     {
-        if (host == null) throw new ArgumentNullException(nameof(host));
-        if (fontSource == null) throw new ArgumentNullException(nameof(fontSource));
-        if (buttonStyle == null) throw new ArgumentNullException(nameof(buttonStyle));
+        if (!HasRequiredReferences()) return false;
 
         _celebrationImageSprite = celebrationImageSprite;
         _backgroundPressed = backgroundPressed;
         _continuePressed = continuePressed;
 
-        TMP_FontAsset font = fontSource
-            .GetComponentInChildren<TextMeshProUGUI>(true)?.font;
+        if (_backgroundPressed != null)
+        {
+            _backgroundButton.onClick.AddListener(_backgroundPressed);
+        }
 
-        Root = CreateRectObject("EndingPresentation", host);
-        Stretch(Root.GetComponent<RectTransform>());
-        _presentationCanvasGroup = Root.AddComponent<CanvasGroup>();
+        if (_continuePressed != null)
+        {
+            _endingContinueButton.onClick.AddListener(_continuePressed);
+        }
 
-        UnityEngine.UI.Image background =
-            Root.AddComponent<UnityEngine.UI.Image>();
-        background.color = new Color(0.035f, 0.025f, 0.02f, 0.97f);
-        background.raycastTarget = true;
-        _backgroundButton = Root.AddComponent<UnityEngine.UI.Button>();
-        _backgroundButton.targetGraphic = background;
-        _backgroundButton.transition = UnityEngine.UI.Selectable.Transition.None;
-        _backgroundButton.onClick.AddListener(_backgroundPressed);
-
-        GameObject safeObject = CreateRectObject("SafeAreaRoot", Root.transform);
-        _safeAreaRoot = safeObject.GetComponent<RectTransform>();
-        Stretch(_safeAreaRoot);
-
-        BuildClassGroup(font);
-        BuildCreditsGroup(font);
-        BuildTeaserGroup(font);
-        BuildCelebrationGroup(font, buttonStyle);
-        Root.SetActive(false);
+        gameObject.SetActive(false);
+        return true;
     }
 
     public void Dispose()
     {
-        if (_backgroundPressed != null)
+        if (_backgroundPressed != null && _backgroundButton != null)
         {
             _backgroundButton.onClick.RemoveListener(_backgroundPressed);
         }
 
-        if (_continuePressed != null)
+        if (_continuePressed != null && _endingContinueButton != null)
         {
             _endingContinueButton.onClick.RemoveListener(_continuePressed);
         }
@@ -98,7 +89,7 @@ public sealed class MainEndingPresentationView
 
     public void SetActive(bool active)
     {
-        Root.SetActive(active);
+        gameObject.SetActive(active);
     }
 
     public void RefreshSafeArea(RectTransform hostRoot)
@@ -273,224 +264,40 @@ public sealed class MainEndingPresentationView
         return _presentationCanvasGroup.DOFade(0f, fadeDuration);
     }
 
-    private void BuildClassGroup(TMP_FontAsset font)
+    private bool HasRequiredReferences()
     {
-        _classGroup = CreateRectObject("ClassGroup", _safeAreaRoot);
-        Stretch(_classGroup.GetComponent<RectTransform>());
-        _classCanvasGroup = _classGroup.AddComponent<CanvasGroup>();
+        bool hasReferences = _safeAreaRoot != null &&
+                             _presentationCanvasGroup != null &&
+                             _backgroundButton != null &&
+                             _classGroup != null &&
+                             _classCanvasGroup != null &&
+                             _slimeGrid != null &&
+                             _classTitle != null &&
+                             _creditsGroup != null &&
+                             _creditsCanvasGroup != null &&
+                             _creditsContent != null &&
+                             _creditsText != null &&
+                             _teaserGroup != null &&
+                             _teaserCanvasGroup != null &&
+                             _celebrationGroup != null &&
+                             _celebrationCanvasGroup != null &&
+                             _celebrationArtworkRect != null &&
+                             _celebrationArtwork != null &&
+                             _celebrationFallbackTitle != null &&
+                             _endingContinueButton != null &&
+                             _slimeImages != null &&
+                             _slimeImages.Length == SlimeStatusSaveData.NormalCollectionSize;
 
-        _classTitle = CreateText(
-            "GraduationTitle",
-            _classGroup.transform,
-            font,
-            64f,
-            TextAlignmentOptions.Center,
-            new Color(1f, 0.88f, 0.45f, 1f));
-        RectTransform titleRect = _classTitle.rectTransform;
-        titleRect.anchorMin = new Vector2(0.08f, 0.78f);
-        titleRect.anchorMax = new Vector2(0.92f, 0.96f);
-        titleRect.offsetMin = Vector2.zero;
-        titleRect.offsetMax = Vector2.zero;
-
-        GameObject gridObject = CreateRectObject(
-            "SlimeClassGrid",
-            _classGroup.transform);
-        _slimeGrid = gridObject.GetComponent<RectTransform>();
-        _slimeGrid.anchorMin = new Vector2(0.5f, 0.44f);
-        _slimeGrid.anchorMax = new Vector2(0.5f, 0.44f);
-        _slimeGrid.pivot = new Vector2(0.5f, 0.5f);
-        _slimeGrid.sizeDelta = new Vector2(900f, 760f);
-
-        UnityEngine.UI.GridLayoutGroup layout =
-            gridObject.AddComponent<UnityEngine.UI.GridLayoutGroup>();
-        layout.cellSize = new Vector2(150f, 150f);
-        layout.spacing = new Vector2(30f, 30f);
-        layout.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
-        layout.constraintCount = 5;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-
-        for (int i = 0; i < _slimeImages.Length; i++)
+        for (int i = 0; hasReferences && i < _slimeImages.Length; i++)
         {
-            GameObject imageObject = CreateRectObject(
-                $"Slime{i + 1:00}",
-                _slimeGrid);
-            UnityEngine.UI.Image image =
-                imageObject.AddComponent<UnityEngine.UI.Image>();
-            image.preserveAspect = true;
-            image.raycastTarget = false;
-            _slimeImages[i] = image;
+            hasReferences = _slimeImages[i] != null;
         }
-    }
 
-    private void BuildCreditsGroup(TMP_FontAsset font)
-    {
-        _creditsGroup = CreateRectObject("CreditsGroup", _safeAreaRoot);
-        Stretch(_creditsGroup.GetComponent<RectTransform>());
-        _creditsCanvasGroup = _creditsGroup.AddComponent<CanvasGroup>();
+        if (!hasReferences)
+        {
+            Debug.LogError("메인 엔딩 연출의 필수 참조가 비어 있습니다.", this);
+        }
 
-        GameObject content = CreateRectObject(
-            "CreditsContent",
-            _creditsGroup.transform);
-        _creditsContent = content.GetComponent<RectTransform>();
-        _creditsContent.anchorMin = new Vector2(0.08f, 0.5f);
-        _creditsContent.anchorMax = new Vector2(0.92f, 0.5f);
-        _creditsContent.sizeDelta = new Vector2(0f, 2100f);
-
-        _creditsText = CreateText(
-            "CreditsText",
-            content.transform,
-            font,
-            46f,
-            TextAlignmentOptions.Center,
-            new Color(1f, 0.93f, 0.75f, 1f));
-        Stretch(_creditsText.rectTransform);
-        _creditsText.lineSpacing = 12f;
-    }
-
-    private void BuildTeaserGroup(TMP_FontAsset font)
-    {
-        _teaserGroup = CreateRectObject("SpecialSlimeTeaser", _safeAreaRoot);
-        Stretch(_teaserGroup.GetComponent<RectTransform>());
-        _teaserCanvasGroup = _teaserGroup.AddComponent<CanvasGroup>();
-
-        TextMeshProUGUI teaser = CreateText(
-            "TeaserText",
-            _teaserGroup.transform,
-            font,
-            50f,
-            TextAlignmentOptions.Center,
-            new Color(0.82f, 0.92f, 1f, 1f));
-        teaser.text = "그런데 말이에요...\n\n" +
-                      "가챠권 속에는\n평범한 슬라임과는 조금 다른\n\n" +
-                      "특별한 빛을 가진 슬라임이\n숨어 있다는데...?";
-        teaser.rectTransform.anchorMin = new Vector2(0.08f, 0.2f);
-        teaser.rectTransform.anchorMax = new Vector2(0.92f, 0.8f);
-        teaser.rectTransform.offsetMin = Vector2.zero;
-        teaser.rectTransform.offsetMax = Vector2.zero;
-    }
-
-    private void BuildCelebrationGroup(
-        TMP_FontAsset font,
-        UnityEngine.UI.Button buttonStyle)
-    {
-        _celebrationGroup = CreateRectObject("CelebrationGroup", Root.transform);
-        Stretch(_celebrationGroup.GetComponent<RectTransform>());
-        _celebrationCanvasGroup = _celebrationGroup.AddComponent<CanvasGroup>();
-
-        GameObject artworkObject = CreateRectObject(
-            "CelebrationArtwork",
-            _celebrationGroup.transform);
-        _celebrationArtworkRect = artworkObject.GetComponent<RectTransform>();
-        _celebrationArtworkRect.anchorMin = new Vector2(0.5f, 0.5f);
-        _celebrationArtworkRect.anchorMax = new Vector2(0.5f, 0.5f);
-        _celebrationArtworkRect.sizeDelta = new Vector2(1080f, 1920f);
-        _celebrationArtwork = artworkObject.AddComponent<UnityEngine.UI.Image>();
-        _celebrationArtwork.preserveAspect = true;
-        _celebrationArtwork.raycastTarget = false;
-        UnityEngine.UI.AspectRatioFitter aspect =
-            artworkObject.AddComponent<UnityEngine.UI.AspectRatioFitter>();
-        aspect.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.FitInParent;
-        aspect.aspectRatio = 9f / 16f;
-
-        _celebrationFallbackTitle = CreateText(
-            "FallbackTitle",
-            _celebrationGroup.transform,
-            font,
-            72f,
-            TextAlignmentOptions.Center,
-            new Color(1f, 0.87f, 0.42f, 1f));
-        _celebrationFallbackTitle.text =
-            "몬스터 유치원 졸업!\n\n<size=44>새로운 친구를 만나는 시작이에요.</size>";
-        _celebrationFallbackTitle.rectTransform.anchorMin = new Vector2(0.08f, 0.3f);
-        _celebrationFallbackTitle.rectTransform.anchorMax = new Vector2(0.92f, 0.72f);
-        _celebrationFallbackTitle.rectTransform.offsetMin = Vector2.zero;
-        _celebrationFallbackTitle.rectTransform.offsetMax = Vector2.zero;
-
-        _endingContinueButton = CreateButton(
-            "ContinueButton",
-            _celebrationGroup.transform,
-            font,
-            "계속 플레이",
-            buttonStyle);
-        RectTransform buttonRect =
-            _endingContinueButton.transform as RectTransform;
-        buttonRect.anchorMin = new Vector2(0.5f, 0.08f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.08f);
-        buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        buttonRect.sizeDelta = new Vector2(480f, 120f);
-        _endingContinueButton.onClick.AddListener(_continuePressed);
-    }
-
-    private static UnityEngine.UI.Button CreateButton(
-        string name,
-        Transform parent,
-        TMP_FontAsset font,
-        string label,
-        UnityEngine.UI.Button buttonStyle)
-    {
-        GameObject buttonObject = CreateRectObject(name, parent);
-        UnityEngine.UI.Image image =
-            buttonObject.AddComponent<UnityEngine.UI.Image>();
-        image.sprite = buttonStyle.image != null
-            ? buttonStyle.image.sprite
-            : null;
-        image.type = buttonStyle.image != null
-            ? buttonStyle.image.type
-            : UnityEngine.UI.Image.Type.Simple;
-        image.color = Color.white;
-
-        UnityEngine.UI.Button button =
-            buttonObject.AddComponent<UnityEngine.UI.Button>();
-        button.targetGraphic = image;
-        buttonObject.AddComponent<ButtonSFX>();
-
-        TextMeshProUGUI text = CreateText(
-            "Label",
-            buttonObject.transform,
-            font,
-            42f,
-            TextAlignmentOptions.Center,
-            Color.white);
-        text.text = label;
-        Stretch(text.rectTransform);
-        return button;
-    }
-
-    private static TextMeshProUGUI CreateText(
-        string name,
-        Transform parent,
-        TMP_FontAsset font,
-        float fontSize,
-        TextAlignmentOptions alignment,
-        Color color)
-    {
-        GameObject textObject = CreateRectObject(name, parent);
-        TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
-        text.font = font;
-        text.fontSize = fontSize;
-        text.enableAutoSizing = true;
-        text.fontSizeMin = Mathf.Max(22f, fontSize * 0.7f);
-        text.fontSizeMax = fontSize;
-        text.alignment = alignment;
-        text.color = color;
-        text.raycastTarget = false;
-        text.textWrappingMode = TextWrappingModes.Normal;
-        return text;
-    }
-
-    private static GameObject CreateRectObject(string name, Transform parent)
-    {
-        GameObject result = new GameObject(name, typeof(RectTransform));
-        result.layer = parent.gameObject.layer;
-        result.transform.SetParent(parent, false);
-        return result;
-    }
-
-    private static void Stretch(RectTransform target)
-    {
-        target.anchorMin = Vector2.zero;
-        target.anchorMax = Vector2.one;
-        target.offsetMin = Vector2.zero;
-        target.offsetMax = Vector2.zero;
+        return hasReferences;
     }
 }

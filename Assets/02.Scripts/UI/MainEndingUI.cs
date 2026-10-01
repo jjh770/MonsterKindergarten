@@ -26,6 +26,10 @@ public sealed class MainEndingUI : MonoBehaviour
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private AutoClicker _autoClicker;
 
+    [Header("Ending Presentation")]
+    [Tooltip("씬에 작성된 엔딩 화면입니다. 비활성 상태로 두고, 재생할 때만 켭니다.")]
+    [SerializeField] private MainEndingPresentationView _view;
+
     [Header("Ending Artwork")]
     [Tooltip("9:16 축전 이미지를 연결합니다. 비어 있으면 졸업 타이틀 배경으로 대체합니다.")]
     [SerializeField] private Sprite _celebrationImageSprite;
@@ -36,7 +40,6 @@ public sealed class MainEndingUI : MonoBehaviour
     [SerializeField, Min(0f)] private float _introHoldDuration = 1.2f;
     [SerializeField, Min(0f)] private float _teaserHoldDuration = 3.5f;
 
-    private MainEndingPresentationView _view;
     private Coroutine _playbackCoroutine;
     private Tween _phaseTween;
     private Tween _celebrationZoomTween;
@@ -67,13 +70,12 @@ public sealed class MainEndingUI : MonoBehaviour
 
         _popupPanel.SetActive(false);
         _doNotTouchPanel.SetActive(false);
-        _view = new MainEndingPresentationView(
-            transform,
-            _popupPanel,
-            _continueButton,
-            _celebrationImageSprite,
-            OnBackgroundPressed,
-            EndPresentation);
+        if (!_view.Initialize(_celebrationImageSprite, OnBackgroundPressed, EndPresentation))
+        {
+            enabled = false;
+            return;
+        }
+
         RefreshSafeArea();
     }
 
@@ -112,7 +114,7 @@ public sealed class MainEndingUI : MonoBehaviour
         _phaseTween?.Kill();
         _celebrationZoomTween?.Kill();
         _closeTween?.Kill();
-        _view?.Dispose();
+        if (_view != null) _view.Dispose();
         ReleasePresentationOwnership(animated: false);
     }
 
@@ -152,7 +154,8 @@ public sealed class MainEndingUI : MonoBehaviour
                              _displayRoomUI != null &&
                              _hudVisibility != null &&
                              _upgradeUI != null &&
-                             _autoClicker != null;
+                             _autoClicker != null &&
+                             _view != null;
         if (!hasReferences)
         {
             Debug.LogError("메인 엔딩 UI의 필수 참조가 비어 있습니다.", this);
