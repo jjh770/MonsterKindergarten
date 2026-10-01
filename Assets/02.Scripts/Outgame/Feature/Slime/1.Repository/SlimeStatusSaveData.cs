@@ -155,8 +155,7 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public List<int> OwnedPlaygroundObjects { get; set; } = new();
 
-    // v10. 상점에서 산 배경 테마 번호다. 땅과 하늘은 해금이 주는 기본 테마라
-    // 여기 담지 않는다. 담으면 필드가 없는 이전 문서가 전부 잃는다.
+    // v10. 상점에서 산 배경 테마 번호다. 기본 제공되는 땅은 여기에 담지 않는다.
     [FirestoreProperty]
     public List<int> OwnedBackgroundThemes { get; set; } = new();
 

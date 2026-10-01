@@ -21,11 +21,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private GameplayTransitionPlayer _transitionPlayer;
     [SerializeField] private DisplayRoomCameraController _cameraController;
-    [FormerlySerializedAs("_skyIntroDirector")]
-    [SerializeField] private BackgroundThemeUnlockDirector _backgroundThemeUnlockDirector;
-    [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private GameManager _gameManager;
-    [SerializeField] private MergeManager _mergeManager;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private SlimeSpawner _slimeSpawner;
     [SerializeField] private SpawnManager _spawnManager;
@@ -70,14 +66,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
         _backgroundThemeUI.ButtonClicked += OnBackgroundButtonClicked;
         _backgroundThemeUI.ThemeSelected += OnBackgroundThemeSelected;
-        _backgroundThemeUnlockDirector.BackgroundThemeTransitionRequested +=
-            OnBackgroundThemeTransitionRequested;
-        _backgroundThemeUnlockDirector.InteractionEnableRequested +=
-            SetInteractionEnabled;
-
         _gameManager.AllDataInitialized += OnAllDataInitialized;
-        _mergeManager.Merged += OnMerged;
-        _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
 
         _slimeSpawner.Spawned += OnSlimeSpawned;
 
@@ -98,16 +87,6 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         {
             _gameManager.AllDataInitialized -= OnAllDataInitialized;
         }
-        if (_mergeManager != null)
-        {
-            _mergeManager.Merged -= OnMerged;
-        }
-
-        if (_unlockPopupUI != null)
-        {
-            _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
-        }
-
         if (_slimeSpawner != null)
         {
             _slimeSpawner.Spawned -= OnSlimeSpawned;
@@ -119,13 +98,6 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _backgroundThemeUI.ThemeSelected -= OnBackgroundThemeSelected;
         }
 
-        if (_backgroundThemeUnlockDirector != null)
-        {
-            _backgroundThemeUnlockDirector.BackgroundThemeTransitionRequested -=
-                OnBackgroundThemeTransitionRequested;
-            _backgroundThemeUnlockDirector.InteractionEnableRequested -=
-                SetInteractionEnabled;
-        }
     }
 
     public bool TryEnterDisplayRoom()
@@ -135,9 +107,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _transitionPlayer.IsTransitioning ||
             !GameplayGate.IsActive ||
             _slimeManager == null ||
-            !_slimeManager.IsDisplayRoomUnlocked ||
-            (_slimeManager.IsBackgroundThemeUnlocked &&
-             !_slimeManager.BackgroundUnlockCompleted))
+            !_slimeManager.IsDisplayRoomUnlocked)
         {
             return false;
         }
@@ -234,13 +204,10 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     {
         bool hasReferences = _clicker != null &&
                              _upgradeUI != null &&
-                             _backgroundThemeUnlockDirector != null &&
                              _backgroundThemeUI != null &&
-                             _unlockPopupUI != null &&
                              _transitionPlayer != null &&
                              _cameraController != null &&
                              _gameManager != null &&
-                             _mergeManager != null &&
                              _slimeManager != null &&
                              _slimeSpawner != null &&
                              _spawnManager != null;
@@ -283,26 +250,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
         SetInteractionEnabled(true);
 
-        // 하늘 안내를 아직 못 본 계정만 여기서 인트로를 띄운다. 버튼 노출은
-        // 규칙 하나가 정하므로 분기마다 따로 켜고 끄지 않는다.
         RefreshBackgroundButton();
-        if (_slimeManager.IsBackgroundThemeUnlocked &&
-            !_slimeManager.BackgroundUnlockCompleted)
-        {
-            SlimeController skyTarget = FindFirstSkySlime();
-            if (skyTarget != null)
-            {
-                _backgroundThemeUnlockDirector.Prepare(skyTarget);
-                _backgroundThemeUnlockDirector.Begin();
-            }
-            else
-            {
-                _slimeManager.UpdateBackgroundProgress(
-                    EBackgroundTheme.Ground,
-                    backgroundUnlockCompleted: true);
-                RefreshBackgroundButton();
-            }
-        }
     }
 
     // 오프라인 보상 팝업 등으로 게임플레이가 잠겨 있으면 활성화 이벤트를 기다린다.
@@ -332,57 +280,6 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         RefreshSlimePresentation(target);
     }
 
-    private void OnMerged(
-        SlimeController target,
-        ESlimeGrade fromGrade,
-        ESlimeGrade toGrade)
-    {
-        if (target == null ||
-            !BackgroundThemeRules.IsUnlockMerge(fromGrade, toGrade))
-        {
-            return;
-        }
-
-        if (_slimeManager != null &&
-            !_slimeManager.BackgroundUnlockCompleted)
-        {
-            target.PreparePresentationTransfer();
-            _backgroundThemeUnlockDirector.Prepare(target);
-            SetInteractionEnabled(false);
-
-            // 해금 팝업이 재생 중일 때만 PresentationCompleted가 온다.
-            // 이미 해금된 등급이면 팝업이 뜨지 않으므로 바로 인트로를 시작한다.
-            if (!_unlockPopupUI.IsPresenting)
-            {
-                _backgroundThemeUnlockDirector.Begin();
-            }
-
-            return;
-        }
-
-        RefreshSlimePresentation(target);
-    }
-
-    private void OnUnlockPresentationCompleted(ESlimeGrade grade)
-    {
-        if (!BackgroundThemeRules.IsUnlockGrade(grade) ||
-            !_backgroundThemeUnlockDirector.HasPendingTarget ||
-            _transitionPlayer.IsTransitioning)
-        {
-            return;
-        }
-
-        _backgroundThemeUnlockDirector.Begin();
-    }
-
-    private void OnBackgroundThemeTransitionRequested(SlimeController target, Action onArrived)
-    {
-        StartBackgroundThemeTransition(
-            EBackgroundTheme.Sky,
-            onArrived,
-            saveTheme: false);
-    }
-
     private void OnBackgroundButtonClicked()
     {
         if (!_isInitialized ||
@@ -392,13 +289,6 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _slimeManager == null ||
             !_slimeManager.IsBackgroundThemeUnlocked)
         {
-            return;
-        }
-
-        if (_backgroundThemeUnlockDirector.IsWaitingForBackgroundButton)
-        {
-            // 첫 안내에서는 이동하지 않고 버튼 설명 다음 대화로 이어진다.
-            _backgroundThemeUnlockDirector.AdvanceBackgroundButtonStep();
             return;
         }
 
@@ -456,7 +346,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
                 {
                     _slimeManager.UpdateBackgroundProgress(
                         _currentBackgroundTheme,
-                        _slimeManager.BackgroundUnlockCompleted);
+                        backgroundUnlockCompleted: true);
                 }
 
                 SetInteractionEnabled(true);
@@ -534,22 +424,6 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         SpaceChanged?.Invoke(_currentSpace);
     }
 
-    private SlimeController FindFirstSkySlime()
-    {
-        if (_slimeSpawner == null) return null;
-
-        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
-        {
-            if (target != null &&
-                target.Grade >= UnlockGrades.BackgroundTheme)
-            {
-                return target;
-            }
-        }
-
-        return null;
-    }
-
     // 공간별 입력 정책을 한곳에서 정한다.
     // 평상시는 공간 기본값이며, 초기화·전환 연출 중에는 차단 우선순위를 쓴다.
     private void SetInteractionEnabled(bool isEnabled)
@@ -589,8 +463,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             _isInitialized &&
             IsMainFieldActive &&
             _slimeManager != null &&
-            _slimeManager.IsBackgroundThemeUnlocked &&
-            _slimeManager.BackgroundUnlockCompleted);
+            _slimeManager.IsBackgroundThemeUnlocked);
     }
 
     public void RefreshInteraction()

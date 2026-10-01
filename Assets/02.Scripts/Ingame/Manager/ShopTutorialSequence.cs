@@ -12,7 +12,8 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
         None,
         Dialogue,
         DrawerButton,
-        ShopTabs,
+        ObjectsTab,
+        ShopExplanation,
         Complete,
     }
 
@@ -45,6 +46,7 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
         }
 
         _drawer.Opened += OnDrawerOpened;
+        _shop.ObjectsTabSelected += OnObjectsTabSelected;
         SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         TryStart();
@@ -60,6 +62,11 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
         if (_drawer != null)
         {
             _drawer.Opened -= OnDrawerOpened;
+        }
+
+        if (_shop != null)
+        {
+            _shop.ObjectsTabSelected -= OnObjectsTabSelected;
         }
 
         UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
@@ -130,13 +137,36 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.DrawerButton) return;
 
+        RectTransform objectsTabTarget = _shop.ObjectsTabTarget;
+        if (objectsTabTarget == null)
+        {
+            ShowShopExplanation();
+            return;
+        }
+
+        _step = Step.ObjectsTab;
+        Spotlight.ShowUiTarget(
+            Content.ShopObjectsTabMessage,
+            objectsTabTarget,
+            SpotlightInteractionMode.PassThroughPrimary);
+    }
+
+    private void OnObjectsTabSelected()
+    {
+        if (_step != Step.ObjectsTab) return;
+
+        ShowShopExplanation();
+    }
+
+    private void ShowShopExplanation()
+    {
         RectTransform tabsTarget = _shop.TabsTarget;
         if (tabsTarget != null)
         {
             Spotlight.ShowUiFocus(tabsTarget);
         }
 
-        _step = Step.ShopTabs;
+        _step = Step.ShopExplanation;
         ShowDialogue(
             Content.GetDialogue(DialogueId.ShopTabs),
             CloseDrawerAndComplete,

@@ -84,6 +84,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomTakeOutMessage;
     [SerializeField] private string _displayRoomCloseMessage;
     [SerializeField] private string _shopButtonMessage;
+    [SerializeField] private string _shopObjectsTabMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
@@ -114,6 +115,7 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
     public string ShopButtonMessage => _shopButtonMessage;
+    public string ShopObjectsTabMessage => _shopObjectsTabMessage;
     public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
     public string BackgroundButtonMessage => _backgroundButtonMessage;
 

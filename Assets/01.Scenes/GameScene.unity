@@ -13998,10 +13998,7 @@ MonoBehaviour:
   _backgroundThemeUI: {fileID: 1324579906}
   _transitionPlayer: {fileID: 954826975}
   _cameraController: {fileID: 2063349533}
-  _backgroundThemeUnlockDirector: {fileID: 954826976}
-  _unlockPopupUI: {fileID: 1432576204}
   _gameManager: {fileID: 1237951049}
-  _mergeManager: {fileID: 1919398862}
   _slimeManager: {fileID: 376498428}
   _slimeSpawner: {fileID: 1712991167}
   _spawnManager: {fileID: 1271333080}
@@ -14051,7 +14048,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 954826972}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d27893e306905d40a49ff350f7acf06, type: 3}
   m_Name: 

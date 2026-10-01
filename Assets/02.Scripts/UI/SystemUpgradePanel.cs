@@ -328,7 +328,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 return $"최고 Lv.{(int)requiredGrade} 해금 필요";
             }
 
-            return $"레벨 {(int)UnlockGrades.BackgroundTheme} 해금 필요";
+            return $"레벨 {(int)UnlockGrades.MaxCountExpansion} 해금 필요";
         }
 
         if (isMax)

@@ -229,7 +229,7 @@ public class SlimeStatus
     }
 
     // 모르는 번호는 흘려보낸다. 종류를 줄이는 개편이 있어도 막히지 않아야 한다.
-    // 기본 테마는 담지 않는다. 담아 두면 저장에도 실려 나가 규칙이 둘이 된다.
+    // 무료 기본 테마는 담지 않는다. 담아 두면 저장에도 실려 나가 규칙이 둘이 된다.
     private void RestoreOwnedBackgroundThemes(IEnumerable<EBackgroundTheme> themes)
     {
         if (themes == null) return;

@@ -105,16 +105,14 @@ public sealed class BackgroundThemeUI : MonoBehaviour
         RefreshOwnership();
     }
 
-    // 상점에서 산 테마만 고를 수 있게 한다. 땅과 하늘은 해금이 주는 기본 테마라
-    // 늘 남는다. 데이터가 준비되기 전에는 기본 테마만 보인다.
+    // 상점에서 산 테마만 고를 수 있게 한다. 땅은 처음부터 제공되는 기본 테마다.
     private void RefreshOwnership()
     {
         foreach (ThemeButtonRuntime runtime in _themeButtons)
         {
             if (runtime.Button == null) continue;
 
-            bool isOwned = BackgroundThemeRules.IsFree(runtime.Theme) ||
-                           _slimeManager.IsBackgroundThemeOwned(runtime.Theme);
+            bool isOwned = _slimeManager.IsBackgroundThemeOwned(runtime.Theme);
             runtime.Button.gameObject.SetActive(isOwned);
         }
     }

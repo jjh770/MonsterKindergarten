@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -54,6 +55,9 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     private ShopTab _selectedTab;
 
     public RectTransform TabsTarget => _tabsRoot;
+    public RectTransform ObjectsTabTarget =>
+        _objectsTabButton != null ? _objectsTabButton.transform as RectTransform : null;
+    public event Action ObjectsTabSelected;
 
     private readonly List<PlaygroundShopItemView> _items = new();
     private readonly List<AffordabilityBinding> _affordabilityBindings = new();
@@ -170,6 +174,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     private void SelectObjectsTab()
     {
         SelectTab(ShopTab.Objects);
+        ObjectsTabSelected?.Invoke();
     }
 
     private void SelectThemesTab()
@@ -270,7 +275,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         foreach (PlaygroundShopTableSO.ThemeEntry entry in _table.Themes)
         {
             if (!BackgroundThemeRules.IsValid(entry.Theme)) continue;
-            // 기본 테마는 팔 것이 아니다. 표에 들어와 있어도 보여 주지 않는다.
+            // 무료 기본 테마는 팔 것이 아니다. 표에 들어와 있어도 보여 주지 않는다.
             if (BackgroundThemeRules.IsFree(entry.Theme)) continue;
 
             bool isOwned = manager.IsBackgroundThemeOwned(entry.Theme);

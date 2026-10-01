@@ -221,7 +221,7 @@ public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
         }
 
         return _slimeManager == null ||
-               !_slimeManager.IsBackgroundThemeUnlocked;
+               !_slimeManager.IsMaxCountExpansionUnlocked;
     }
 
     private void Save()

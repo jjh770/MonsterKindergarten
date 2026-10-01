@@ -30,6 +30,9 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public bool IsBackgroundThemeUnlocked =>
         _status != null &&
         BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
+    public bool IsMaxCountExpansionUnlocked =>
+        _status != null &&
+        _status.HighestGrade >= UnlockGrades.MaxCountExpansion;
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);

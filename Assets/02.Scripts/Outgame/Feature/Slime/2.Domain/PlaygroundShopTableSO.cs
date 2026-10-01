@@ -48,7 +48,7 @@ public sealed class PlaygroundShopTableSO : ScriptableObject
     [Tooltip("장식장에서 파는 놀이터 오브젝트입니다.")]
     [SerializeField] private ObjectEntry[] _objects = Array.Empty<ObjectEntry>();
 
-    [Tooltip("메인 필드에서 파는 배경 테마입니다. 땅과 하늘은 기본 제공이라 넣지 않습니다.")]
+    [Tooltip("메인 필드에서 파는 배경 테마입니다. 기본 제공되는 땅은 넣지 않습니다.")]
     [SerializeField] private ThemeEntry[] _themes = Array.Empty<ThemeEntry>();
 
     public IReadOnlyList<ObjectEntry> Objects => _objects;

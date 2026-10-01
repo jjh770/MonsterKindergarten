@@ -25,6 +25,12 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: c502c40d1527d714e8564b9987fa2a28, type: 3}
     _price: 10000000
   _themes:
+  - _theme: 1
+    _displayName: "\uD558\uB298"
+    _description: "\uD478\uB978 \uD558\uB298\uC774 \uD3BC\uCCD0\uC9C0\uB294 \uBC30\uACBD\uC73C\uB85C
+      \uBC14\uAFC9\uB2C8\uB2E4."
+    _icon: {fileID: -3181609865550756412, guid: f604498fdef58c8409eac7f7e815b20a, type: 3}
+    _price: 10000000
   - _theme: 2
     _displayName: "\uC6B0\uC8FC"
     _description: "\uBCC4\uC774 \uD750\uB974\uB294 \uBC30\uACBD\uC73C\uB85C \uBC14\uAFC9\uB2C8\uB2E4."
