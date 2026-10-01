@@ -29,6 +29,8 @@ public enum DialogueId
     CollectionAutoMergeDone = 21,
     CollectionAutoMergeNoPair = 22,
     CollectionOfflineTicket = 23,
+    ShopObjects = 24,
+    ShopFinal = 25,
 }
 
 [Serializable]

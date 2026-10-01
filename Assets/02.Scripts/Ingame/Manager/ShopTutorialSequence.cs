@@ -12,8 +12,10 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
         None,
         Dialogue,
         DrawerButton,
+        BackgroundShop,
         ObjectsTab,
-        ShopExplanation,
+        ObjectsShop,
+        FinalDialogue,
         Complete,
     }
 
@@ -137,10 +139,19 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.DrawerButton) return;
 
+        _step = Step.BackgroundShop;
+        Spotlight.Hide();
+        ShowDialogue(
+            Content.GetDialogue(DialogueId.ShopTabs),
+            ShowObjectsTabStep);
+    }
+
+    private void ShowObjectsTabStep()
+    {
         RectTransform objectsTabTarget = _shop.ObjectsTabTarget;
         if (objectsTabTarget == null)
         {
-            ShowShopExplanation();
+            ShowObjectsShopExplanation();
             return;
         }
 
@@ -155,10 +166,10 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.ObjectsTab) return;
 
-        ShowShopExplanation();
+        ShowObjectsShopExplanation();
     }
 
-    private void ShowShopExplanation()
+    private void ShowObjectsShopExplanation()
     {
         RectTransform tabsTarget = _shop.TabsTarget;
         if (tabsTarget != null)
@@ -166,11 +177,20 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
             Spotlight.ShowUiFocus(tabsTarget);
         }
 
-        _step = Step.ShopExplanation;
+        _step = Step.ObjectsShop;
         ShowDialogue(
-            Content.GetDialogue(DialogueId.ShopTabs),
-            CloseDrawerAndComplete,
+            Content.GetDialogue(DialogueId.ShopObjects),
+            ShowFinalDialogue,
             keepGuideVisible: tabsTarget != null);
+    }
+
+    private void ShowFinalDialogue()
+    {
+        Spotlight.Hide();
+        _step = Step.FinalDialogue;
+        ShowDialogue(
+            Content.GetDialogue(DialogueId.ShopFinal),
+            CloseDrawerAndComplete);
     }
 
     private void CloseDrawerAndComplete()
