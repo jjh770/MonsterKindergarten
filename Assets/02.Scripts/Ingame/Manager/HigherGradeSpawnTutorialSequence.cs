@@ -175,7 +175,9 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void ShowUpgradeStep()
     {
-        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        // 카드 한 장만 비춘다. 캐러셀 전체를 비추면 화면 밖 슬롯까지 구멍이 퍼져 가로 전체가 밝아진다.
+        RectTransform carouselTarget = _systemUpgradePanel?.SelectedItemTarget ??
+                                       _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null ||
             _panelSwitcher == null ||
             !_panelSwitcher.TryShowSystemUpgradePanel())
@@ -229,7 +231,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             Content.GetDialogue(DialogueId.HigherGradeSpawnUpgrade),
             Complete,
             keepGuideVisible: true,
-            placement: DialoguePlacement.Top);
+            placement: DialoguePlacement.NearSpotlight);
     }
 
     private void Complete()

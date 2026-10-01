@@ -90,6 +90,8 @@ public sealed class AutoMergeManager : MonoBehaviour
         ? Mathf.Clamp01(1f - _remainingWait / _waitDuration)
         : 1f;
     public bool IsReady => !_isPresenting && _remainingWait <= 0f;
+    // 두 슬라임이 모이는 연출이 도는 중인가. 도감 마일스톤 안내가 연출이 끝나기를 기다릴 때 쓴다.
+    public bool IsPresenting => _isPresenting;
 
     private void Awake()
     {

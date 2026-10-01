@@ -305,6 +305,11 @@ public class GameManager : MonoBehaviour
             order: NormalCollectionRules.TicketBulkCollectCount,
             completeByDefault: false,
             completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.CollectionOfflineTicket,
+            order: NormalCollectionRules.OfflineTicketRewardCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
         // 상점은 이번에 추가된 안내라 이미 Lv.9를 넘긴 플레이어도 한 번은 본다.
         TutorialProgress.Register(
             TutorialIds.Shop,

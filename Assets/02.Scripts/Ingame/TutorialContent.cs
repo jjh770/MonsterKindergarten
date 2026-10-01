@@ -26,6 +26,9 @@ public enum DialogueId
     CollectionTicketCollect = 18,
     Shop = 19,
     ShopTabs = 20,
+    CollectionAutoMergeDone = 21,
+    CollectionAutoMergeNoPair = 22,
+    CollectionOfflineTicket = 23,
 }
 
 [Serializable]

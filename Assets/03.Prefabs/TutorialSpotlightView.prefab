@@ -95,8 +95,8 @@ MonoBehaviour:
   _messageRect: {fileID: 3913673229204093328}
   _arrowRect: {fileID: 930002}
   _arrowImageRect: {fileID: 3532643928566011645}
-  _holeSize: {x: 320, y: 320}
-  _uiHolePadding: {x: 40, y: 30}
+  _holeSize: {x: 260, y: 260}
+  _uiHolePadding: {x: 20, y: 14}
   _messageOffset: {x: 0, y: 240}
   _arrowOffset: {x: 0, y: 150}
   _arrowGap: 12

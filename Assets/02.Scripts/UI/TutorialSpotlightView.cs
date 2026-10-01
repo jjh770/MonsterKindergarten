@@ -72,6 +72,10 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
     private Color _defaultOverlayColor;
     private Vector2 _defaultMessageSize;
     private float _messageMaxWidth;
+    // 화면 안으로 잘라 낸 첫 번째 구멍. 안내창이 구멍 가까이에 놓일 자리를 정하는 데 쓴다.
+    private Vector2 _visibleHoleCenter;
+    private Vector2 _visibleHoleSize;
+    private bool _hasVisibleHole;
 
     public event Action AdvanceRequested;
 
@@ -257,6 +261,18 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         RestartArrowBob();
     }
 
+    // 지금 비추는 첫 번째 구멍의 사각형을 월드 좌표로 돌려준다. 비추는 중이 아니면 false다.
+    public bool TryGetHoleWorldRect(out Rect worldRect)
+    {
+        worldRect = default;
+        if (!_hasVisibleHole || !gameObject.activeInHierarchy) return false;
+
+        Vector3 min = _rootRect.TransformPoint(_visibleHoleCenter - _visibleHoleSize * 0.5f);
+        Vector3 max = _rootRect.TransformPoint(_visibleHoleCenter + _visibleHoleSize * 0.5f);
+        worldRect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        return true;
+    }
+
     public void Hide()
     {
         _worldTarget = null;
@@ -269,6 +285,7 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
         _useRectangularHole = false;
         _useRectangularSecondHole = false;
         SetBackgroundDim(1f);
+        _hasVisibleHole = false;
         gameObject.SetActive(false);
     }
 
@@ -430,6 +447,9 @@ public sealed class TutorialSpotlightView : MonoBehaviour, ICanvasRaycastFilter,
             visibleSize.x * 0.5f / rect.width,
             visibleSize.y * 0.5f / rect.height);
 
+        _visibleHoleCenter = visibleCenter;
+        _visibleHoleSize = visibleSize;
+        _hasVisibleHole = true;
         _runtimeMaterial.SetVector(RootSizeId, new Vector4(rect.width, rect.height, 0f, 0f));
         _runtimeMaterial.SetVector(HoleCenterId, normalizedCenter);
         _runtimeMaterial.SetVector(HoleSizeId, normalizedHalfSize);

@@ -285,7 +285,8 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
     private void ShowSlimeUpgradeIntro()
     {
-        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        RectTransform carouselTarget = _systemUpgradePanel?.SelectedItemTarget ??
+                                       _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null)
         {
             Debug.LogWarning("강조할 시스템 업그레이드 캐러셀이 없어 게이지 설명으로 이동합니다.");
@@ -298,7 +299,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
             Content.GetDialogue(DialogueId.SpawnUpgrade),
             FocusSlimeUpgrade,
             keepGuideVisible: true,
-            placement: DialoguePlacement.Top);
+            placement: DialoguePlacement.NearSpotlight);
     }
 
     private void FocusSlimeUpgrade()

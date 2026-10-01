@@ -89,6 +89,7 @@ public sealed class MainEndingUI : MonoBehaviour
         if (_displayRoomUI != null)
         {
             _displayRoomUI.SendModeEnded += TryShowFirstEnding;
+            _displayRoomUI.SlimeTransferred += OnSlimeTransferred;
         }
 
         TryShowFirstEnding();
@@ -108,6 +109,7 @@ public sealed class MainEndingUI : MonoBehaviour
         if (_displayRoomUI != null)
         {
             _displayRoomUI.SendModeEnded -= TryShowFirstEnding;
+            _displayRoomUI.SlimeTransferred -= OnSlimeTransferred;
         }
 
         StopAllCoroutines();
@@ -168,8 +170,24 @@ public sealed class MainEndingUI : MonoBehaviour
     {
         if (count < NormalCollectionRules.MainEndingCount) return;
 
+        // 보내기 모드 중에 20종째가 등록되면 지금은 화면을 비우지 않는다. 보내기 모드의 버튼이
+        // 하단 HUD 안에 있어서, 여기서 HUD를 치우면 모드는 남아 있는데 취소할 길이 사라진다.
+        // 전송이 끝나는 순간 OnSlimeTransferred가 보내기 모드를 끝내고 엔딩을 이어 간다.
+        if (_displayRoomUI != null && _displayRoomUI.IsSendMode) return;
+
         ReserveHiddenPresentation();
         TryShowFirstEnding();
+    }
+
+    // 20종째를 장식장에 보내면 선택 모드를 닫고 엔딩으로 넘어간다. 계속 고르게 두면 엔딩이
+    // 모드가 끝날 때까지 밀려난다. 전송 연출이 끝난 뒤에 불리므로 취소해도 안전하다.
+    private void OnSlimeTransferred(SlimeController target)
+    {
+        if (_isPresenting || _slimeManager == null) return;
+        if (_slimeManager.NormalCollectionCount < NormalCollectionRules.MainEndingCount) return;
+        if (_slimeManager.IsMainEndingSeen) return;
+
+        _displayRoomUI.CancelSendMode();
     }
 
     private void TryShowFirstEnding()
@@ -178,11 +196,8 @@ public sealed class MainEndingUI : MonoBehaviour
         if (_slimeManager.NormalCollectionCount < NormalCollectionRules.MainEndingCount) return;
         if (_slimeManager.IsMainEndingSeen) return;
 
-        if (_displayRoomUI != null && _displayRoomUI.IsSendMode)
-        {
-            ReserveHiddenPresentation();
-            return;
-        }
+        // 보내기 모드가 끝나면(SendModeEnded) 다시 불린다. 그 전에 화면을 비우지 않는다.
+        if (_displayRoomUI != null && _displayRoomUI.IsSendMode) return;
 
         if (TutorialManager.IsRunning || !_gameManager.IsGameplayActive) return;
         if (_spaceManager.IsTransitioning) return;

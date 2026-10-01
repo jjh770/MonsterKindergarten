@@ -103,11 +103,21 @@ public sealed class DialoguePresentation : IDisposable
     private void ShowCurrentLine()
     {
         DialogueLine line = _activeDialogue[_dialogueIndex];
+
+        // 구멍 가까이에 놓는 배치는 지금 비추는 구멍이 있어야 한다. 없으면 뷰가 아래쪽으로 돌아간다.
+        Rect? spotlightRect = null;
+        if (_dialoguePlacement == DialoguePlacement.NearSpotlight &&
+            Spotlight.TryGetHoleWorldRect(out Rect holeRect))
+        {
+            spotlightRect = holeRect;
+        }
+
         _dialogueView.Show(
             line.Speaker,
             line.Message,
             dimBackground: !_keepSpotlightVisible,
-            placement: _dialoguePlacement);
+            placement: _dialoguePlacement,
+            spotlightWorldRect: spotlightRect);
     }
 
     private void FinishDialogue()

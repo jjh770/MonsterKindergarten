@@ -10,6 +10,7 @@ public static class TutorialIds
     public const string CollectionAutoMerge = "CollectionAutoMergeTutorial";
     public const string CollectionTicketCollect = "CollectionTicketCollectTutorial";
     public const string Shop = "ShopTutorial";
+    public const string CollectionOfflineTicket = "CollectionOfflineTicketTutorial";
 
     // 등록과 삭제가 같은 목록을 본다. 튜토리얼을 추가하면 여기만 늘린다.
     // 저장 키 형식이 바뀌는 변경을 할 때 해당 항목의 버전을 올린다.
@@ -22,6 +23,7 @@ public static class TutorialIds
         (CollectionAutoMerge, 1),
         (CollectionTicketCollect, 1),
         (Shop, 1),
+        (CollectionOfflineTicket, 1),
     };
 }
 

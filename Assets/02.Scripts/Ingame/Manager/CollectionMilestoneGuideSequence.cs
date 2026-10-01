@@ -1,11 +1,16 @@
 using UnityEngine;
 
-// 도감 마일스톤에서 새로 열린 버튼을 한 번씩 알려 준다. 기획서 §19.
+// 도감 마일스톤에서 새로 열린 기능을 한 번씩 알려 준다. 기획서 §19.
 //
-// 10종 자동 합성과 12종 티켓 회수는 "대화 한 번 + 버튼 가리키기"라는 같은 흐름이라
-// 시퀀스를 둘로 나누지 않고 표 하나로 둔다. 다른 점은 실제로 눌러 보게 하는지뿐이다.
-// 자동 합성은 누르지 않으면 아무 일도 일어나지 않으므로 한 번 눌러 보게 하고,
-// 티켓 회수는 이미 아는 동작(티켓 탭)의 단축이라 위치만 알린다.
+// 10종 자동 합성, 12종 티켓 회수, 15종 오프라인 티켓은 "대화 한 번"이 바탕이라 시퀀스를
+// 나누지 않고 표 하나로 둔다. 다른 점은 무엇을 가리키고 어떻게 끝내는지뿐이다.
+//  - 자동 합성 : 버튼을 가리키고 한 번 눌러 보게 한다. 누르지 않으면 아무 일도 일어나지 않는
+//                기능이라서다. 합성 연출이 끝나면 마무리 대화를, 합성할 쌍이 없으면 없다는
+//                대화를 보여 주고 끝낸다.
+//  - 티켓 회수 : 이미 아는 동작(티켓 탭)의 단축이라 위치만 알린다.
+//  - 오프라인 티켓 : 가리킬 버튼이 없다. 대화로 한 번 언급하고 끝낸다.
+//
+// 버튼을 가리키는 대화는 구멍 바로 위에 놓는다. 아래쪽에 두면 가리키는 버튼을 가린다.
 //
 // 도감 등록은 합성 도중이나 가챠 연출 중에 일어난다. 그 자리에서 띄우면 연출과
 // 스포트라이트가 겹치므로, 띄워도 되는 상태가 될 때까지 기다렸다가 낮은 쪽부터
@@ -18,6 +23,18 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         None,
         Dialogue,
         Button,
+        // 누른 버튼의 합성 연출이 끝나기를 기다린다.
+        WaitingMerge,
+        // 마무리 대화 중.
+        Closing,
+    }
+
+    // 무엇을 가리키고 어떻게 끝나는가.
+    private enum Mode
+    {
+        PressButton,
+        PointOnly,
+        TalkOnly,
     }
 
     private sealed class Milestone
@@ -25,24 +42,24 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         public string TutorialId { get; }
         public int RequiredCount { get; }
         public DialogueId Dialogue { get; }
-        // 버튼을 실제로 눌러야 끝나는가. 아니면 위치만 보여 주고 대화로 끝낸다.
-        public bool RequiresPress { get; }
+        public Mode Mode { get; }
 
         public Milestone(
             string tutorialId,
             int requiredCount,
             DialogueId dialogue,
-            bool requiresPress)
+            Mode mode)
         {
             TutorialId = tutorialId;
             RequiredCount = requiredCount;
             Dialogue = dialogue;
-            RequiresPress = requiresPress;
+            Mode = mode;
         }
     }
 
     [SerializeField] private AutoMergeButtonUI _autoMergeButton;
     [SerializeField] private GachaTicketCollectButtonUI _ticketCollectButton;
+    [SerializeField] private AutoMergeManager _autoMergeManager;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private GachaResultDirector _gachaResultDirector;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
@@ -68,7 +85,7 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         if (!enabled) return;
 
         if (_autoMergeButton == null || _ticketCollectButton == null ||
-            _panelSwitcher == null || _clicker == null ||
+            _panelSwitcher == null || _clicker == null || _autoMergeManager == null ||
             _slimeManager == null || _spawnManager == null ||
             _gameplaySpaceManager == null)
         {
@@ -83,12 +100,17 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
                 TutorialIds.CollectionAutoMerge,
                 NormalCollectionRules.AutoMergeCount,
                 DialogueId.CollectionAutoMerge,
-                requiresPress: true),
+                Mode.PressButton),
             new Milestone(
                 TutorialIds.CollectionTicketCollect,
                 NormalCollectionRules.TicketBulkCollectCount,
                 DialogueId.CollectionTicketCollect,
-                requiresPress: false),
+                Mode.PointOnly),
+            new Milestone(
+                TutorialIds.CollectionOfflineTicket,
+                NormalCollectionRules.OfflineTicketRewardCount,
+                DialogueId.CollectionOfflineTicket,
+                Mode.TalkOnly),
         };
     }
 
@@ -100,12 +122,22 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
 
     private void Update()
     {
+        if (_step == Step.WaitingMerge)
+        {
+            if (!_autoMergeManager.IsPresenting)
+            {
+                ShowClosing(DialogueId.CollectionAutoMergeDone);
+            }
+
+            return;
+        }
+
         if (_step != Step.None) return;
 
         Milestone pending = FindPending();
         if (pending == null)
         {
-            // 둘 다 끝났으면 다시 생길 일이 없다. 매 프레임 확인할 이유도 없다.
+            // 모두 끝났으면 다시 생길 일이 없다. 매 프레임 확인할 이유도 없다.
             if (IsEverythingCompleted()) enabled = false;
             return;
         }
@@ -165,9 +197,13 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
     private void Begin(Milestone milestone)
     {
         // 해금 직후에는 버튼이 아직 켜지지 않았을 수 있다. 꺼진 대상을 가리키면
-        // 크기가 0인 구멍만 남는다.
+        // 크기가 0인 구멍만 남는다. 가리킬 것이 없는 안내는 이 확인이 필요 없다.
         RectTransform target = GetTarget(milestone);
-        if (target == null || !target.gameObject.activeInHierarchy) return;
+        if (milestone.Mode != Mode.TalkOnly &&
+            (target == null || !target.gameObject.activeInHierarchy))
+        {
+            return;
+        }
 
         _active = milestone;
         if (!TryBeginTutorial())
@@ -179,19 +215,33 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
         _step = Step.Dialogue;
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
 
-        if (milestone.RequiresPress)
+        switch (milestone.Mode)
         {
-            Spotlight.Hide();
-            ShowDialogue(Content.GetDialogue(milestone.Dialogue), ShowButtonStep);
-            return;
-        }
+            case Mode.PressButton:
+                // 대화하는 동안에도 버튼을 비춘다. 대화는 구멍 바로 위에 놓여 버튼을 가리지 않는다.
+                Spotlight.ShowUiFocus(target);
+                ShowDialogue(
+                    Content.GetDialogue(milestone.Dialogue),
+                    ShowButtonStep,
+                    keepGuideVisible: true,
+                    placement: DialoguePlacement.NearSpotlight);
+                break;
 
-        // 누를 필요가 없으면 가리킨 채로 대화만 하고 끝낸다.
-        Spotlight.ShowUiFocus(target);
-        ShowDialogue(
-            Content.GetDialogue(milestone.Dialogue),
-            Complete,
-            keepGuideVisible: true);
+            case Mode.PointOnly:
+                // 누를 필요가 없으면 가리킨 채로 대화만 하고 끝낸다.
+                Spotlight.ShowUiFocus(target);
+                ShowDialogue(
+                    Content.GetDialogue(milestone.Dialogue),
+                    Complete,
+                    keepGuideVisible: true,
+                    placement: DialoguePlacement.NearSpotlight);
+                break;
+
+            default:
+                Spotlight.Hide();
+                ShowDialogue(Content.GetDialogue(milestone.Dialogue), Complete);
+                break;
+        }
     }
 
     private void ShowButtonStep()
@@ -213,20 +263,50 @@ public sealed class CollectionMilestoneGuideSequence : TutorialSequenceBase
             SpotlightInteractionMode.PassThroughPrimary);
     }
 
-    // 합성에 성공했는지는 보지 않는다. 합성할 쌍이 없는 순간에도 버튼은 안내 문구를
-    // 띄우므로, 성공만 기다리면 그 상태에서 안내가 영영 끝나지 않는다.
+    // 누른 결과로 마무리를 고른다. 합성할 쌍이 없을 때도 버튼은 안내 문구를 띄우므로, 성공만
+    // 기다리면 그 상태에서 안내가 영영 끝나지 않는다. 그래서 없다는 대화를 보여 주고 끝낸다.
     private void OnAutoMergePressed(AutoMergeManager.EMergeFailure failure)
     {
         if (_step != Step.Button) return;
 
-        Complete();
+        UnsubscribePress();
+        Spotlight.Hide();
+
+        switch (failure)
+        {
+            case AutoMergeManager.EMergeFailure.None:
+                // 합성 연출이 끝난 뒤에 마무리 대화를 띄운다. Update가 끝을 기다린다.
+                _step = Step.WaitingMerge;
+                break;
+
+            case AutoMergeManager.EMergeFailure.NoPair:
+                ShowClosing(DialogueId.CollectionAutoMergeNoPair);
+                break;
+
+            default:
+                Complete();
+                break;
+        }
+    }
+
+    private void ShowClosing(DialogueId dialogue)
+    {
+        _step = Step.Closing;
+        Spotlight.Hide();
+        ShowDialogue(Content.GetDialogue(dialogue), Complete);
     }
 
     private RectTransform GetTarget(Milestone milestone)
     {
-        return milestone.RequiresPress
-            ? _autoMergeButton.ButtonTarget
-            : _ticketCollectButton.ButtonTarget;
+        switch (milestone.Mode)
+        {
+            case Mode.PressButton:
+                return _autoMergeButton.ButtonTarget;
+            case Mode.PointOnly:
+                return _ticketCollectButton.ButtonTarget;
+            default:
+                return null;
+        }
     }
 
     private void SubscribePress()
