@@ -204,7 +204,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         AppendBonus(builder, count, NormalCollectionRules.MainEndingCount,
             isEndingUnlocked ? "유치원 졸업식" : "???",
             isEndingUnlocked
-                ? "유치원 졸업식을 축하합니다! 도감에서 다시 볼 수 있어요."
+                ? "유치원 졸업을 축하합니다!\n도감에서 다시 볼 수 있어요."
                 : "???");
         _bonusText.text = builder.ToString();
     }
@@ -225,7 +225,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             .Append(NormalCollectionRules.PointBonusPercentPerStep.ToString("0"))
             .Append("%</b>   <color=#4F8A3B>현재 +")
             .Append(current.ToString("0"))
-            .Append("%</color>\n<size=88%>모든 슬라임의 터치·자동 포인트가 늘어나요. (")
+            .Append("%</color>\n<size=88%>모든 슬라임의 터치, 자동 포인트가 늘어나요. (")
             .Append(nextText)
             .Append(")</size>");
     }
