@@ -190,6 +190,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             if (_needsTicketGrant)
             {
                 _currencyManager.Add(ECurrencyType.GachaTicket, 1d);
+                _slimeManager.RecordGachaTicketsObtained(1);
             }
 
             ShowAutoSpawnStep();

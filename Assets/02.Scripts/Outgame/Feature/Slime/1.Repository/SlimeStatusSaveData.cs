@@ -134,10 +134,46 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public string MainEndingReachedAtUtc { get; set; }
 
+    // v15. 최초 졸업식 재생 시점에 한 번만 기록하고 이후에는 바꾸지 않는다.
+    [FirestoreProperty]
+    public string GraduationSnapshotAtUtc { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationNaturalSpawnCount { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationMergeCreatedCount { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationManualTouchCount { get; set; }
+
+    [FirestoreProperty]
+    public double GraduationProducedPointTotal { get; set; }
+
+    [FirestoreProperty]
+    public int GraduationMostTouchedGrade { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationMostTouchedCount { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationGachaTicketsObtainedTotal { get; set; }
+
+    [FirestoreProperty]
+    public long GraduationAutoMergeUseCount { get; set; }
+
     // 스페셜 가챠에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
     // 이전 문서의 기본값 0은 기본 확률 3%를 뜻한다.
     [FirestoreProperty]
     public int SpecialGachaMissCount { get; set; }
+
+    // v15. 지금까지 얻은 가챠권의 누적과 자동 합성을 쓴 횟수다. 필드가 없는 문서는 0으로 읽혀
+    // "기록 없음"이 된다.
+    [FirestoreProperty]
+    public long GachaTicketsObtainedTotal { get; set; }
+
+    [FirestoreProperty]
+    public long AutoMergeUseCount { get; set; }
 
     // 이 계정이 마친 튜토리얼 식별자. 로컬 완료 표시는 앱 데이터를 지우면 사라진다.
     // 기본값은 빈 목록이다. 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙는다.

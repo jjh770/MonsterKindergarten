@@ -40,7 +40,12 @@ public class SlimeStatus
     public bool MainEndingSeen { get; private set; }
     public DateTime GameStartedAtUtc { get; }
     public DateTime? MainEndingReachedAtUtc { get; private set; }
+    public GraduationStatistics? GraduationSnapshot { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
+
+    // 지금까지 얻은 가챠권의 누적과 자동 합성을 쓴 횟수. 쓰거나 줄어도 내려가지 않는다.
+    public long GachaTicketsObtainedTotal { get; private set; }
+    public long AutoMergeUseCount { get; private set; }
 
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
     // 계정 문서에도 남긴다. 값은 튜토리얼 쪽이 정하는 식별자이고 여기서는 해석하지 않는다.
@@ -67,12 +72,15 @@ public class SlimeStatus
         bool mainEndingSeen,
         DateTime gameStartedAtUtc,
         DateTime? mainEndingReachedAtUtc,
+        GraduationStatistics? graduationSnapshot,
         int specialGachaMissCount,
         IEnumerable<string> completedTutorials = null,
         IEnumerable<PlacedPlaygroundObject> placedObjects = null,
         IReadOnlyList<int> ownedPlaygroundObjects = null,
         IEnumerable<EBackgroundTheme> ownedBackgroundThemes = null,
-        IEnumerable<ESlimeGrade> legacySpecialCollection = null)
+        IEnumerable<ESlimeGrade> legacySpecialCollection = null,
+        long gachaTicketsObtainedTotal = 0,
+        long autoMergeUseCount = 0)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -107,6 +115,7 @@ public class SlimeStatus
         MainEndingReachedAtUtc = mainEndingReachedAtUtc.HasValue
             ? NormalizeUtc(mainEndingReachedAtUtc.Value)
             : null;
+        GraduationSnapshot = graduationSnapshot;
 
         if (specialGachaMissCount < 0 ||
             specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
@@ -116,6 +125,16 @@ public class SlimeStatus
         }
 
         SpecialGachaMissCount = specialGachaMissCount;
+
+        // 누적 값은 쓰는 쪽에서 음수가 나올 수 없다. 다른 손상과 같은 경로로 보낸다.
+        if (gachaTicketsObtainedTotal < 0 || autoMergeUseCount < 0)
+        {
+            throw new ArgumentException(
+                $"누적 기록이 올바르지 않습니다. : 가챠권 {gachaTicketsObtainedTotal}, 자동 합성 {autoMergeUseCount}");
+        }
+
+        GachaTicketsObtainedTotal = gachaTicketsObtainedTotal;
+        AutoMergeUseCount = autoMergeUseCount;
 
         if (completedTutorials != null)
         {
@@ -497,6 +516,18 @@ public class SlimeStatus
         return true;
     }
 
+    public bool TrySetGraduationSnapshot(GraduationStatistics snapshot)
+    {
+        if (GraduationSnapshot.HasValue || !IsGraduationDisplayComplete)
+        {
+            return false;
+        }
+
+        GraduationSnapshot = snapshot;
+        MainEndingReachedAtUtc = snapshot.GraduatedAtUtc;
+        return true;
+    }
+
     private static DateTime NormalizeUtc(DateTime value)
     {
         if (value == DateTime.MinValue)
@@ -507,6 +538,20 @@ public class SlimeStatus
         return value.Kind == DateTimeKind.Utc
             ? value
             : value.ToUniversalTime();
+    }
+
+    public void RecordGachaTicketsObtained(int count)
+    {
+        if (count <= 0) return;
+
+        GachaTicketsObtainedTotal = GachaTicketsObtainedTotal > long.MaxValue - count
+            ? long.MaxValue
+            : GachaTicketsObtainedTotal + count;
+    }
+
+    public void RecordAutoMergeUse()
+    {
+        if (AutoMergeUseCount < long.MaxValue) AutoMergeUseCount++;
     }
 
     public bool RecordSpecialGachaResult(bool wasSpecial)

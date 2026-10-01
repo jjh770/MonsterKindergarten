@@ -348,6 +348,8 @@ public class GachaTicketField : MonoBehaviour
             return;
         }
 
+        _slimeManager.RecordGachaTicketsObtained(1);
+
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlaySFXWithCooldown(

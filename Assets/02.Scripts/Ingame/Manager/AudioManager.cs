@@ -278,6 +278,23 @@ public class AudioManager : MonoBehaviour
         PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip));
     }
 
+    public void PlaySFXRandomPitchWithCooldown(
+        EAudioSfx cue,
+        float cooldown,
+        float minPitch = 0.9f,
+        float maxPitch = 1.1f)
+    {
+        AudioClip clip = GetSfx(cue);
+        if (clip == null) return;
+
+        float currentTime = Time.unscaledTime;
+        if (_lastSfxPlayedTimes.TryGetValue(clip, out float lastPlayedTime) &&
+            currentTime - lastPlayedTime < cooldown) return;
+
+        _lastSfxPlayedTimes[clip] = currentTime;
+        PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip));
+    }
+
     public void PlaySFXRandomPitchSequence(
         EAudioSfx cue,
         int count,

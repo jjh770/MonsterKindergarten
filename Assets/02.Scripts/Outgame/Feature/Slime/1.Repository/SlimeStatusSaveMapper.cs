@@ -92,6 +92,15 @@ public static class SlimeStatusSaveMapper
             return false;
         }
 
+        if (!TryRestoreGraduationSnapshot(
+                saveData,
+                gameStartedAtUtc,
+                out GraduationStatistics? graduationSnapshot,
+                out failureMessage))
+        {
+            return false;
+        }
+
         // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
         // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
         // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
@@ -109,12 +118,15 @@ public static class SlimeStatusSaveMapper
                 saveData.MainEndingSeen,
                 gameStartedAtUtc,
                 mainEndingReachedAtUtc,
+                graduationSnapshot,
                 saveData.SpecialGachaMissCount,
                 saveData.CompletedTutorials,
                 ToPlacedObjects(saveData.PlacedObjects),
                 saveData.OwnedPlaygroundObjects,
                 ToBackgroundThemes(saveData.OwnedBackgroundThemes),
-                legacySpecialCollection);
+                legacySpecialCollection,
+                saveData.GachaTicketsObtainedTotal,
+                saveData.AutoMergeUseCount);
         }
         catch (ArgumentException e)
         {
@@ -264,7 +276,18 @@ public static class SlimeStatusSaveMapper
             MainEndingSeen = status.MainEndingSeen,
             GameStartedAtUtc = status.GameStartedAtUtc.ToString("o"),
             MainEndingReachedAtUtc = status.MainEndingReachedAtUtc?.ToString("o"),
+            GraduationSnapshotAtUtc = status.GraduationSnapshot?.GraduatedAtUtc.ToString("o"),
+            GraduationNaturalSpawnCount = status.GraduationSnapshot?.NaturalSpawnCount ?? 0,
+            GraduationMergeCreatedCount = status.GraduationSnapshot?.MergeCreatedCount ?? 0,
+            GraduationManualTouchCount = status.GraduationSnapshot?.ManualTouchCount ?? 0,
+            GraduationProducedPointTotal = status.GraduationSnapshot?.ProducedPointTotal ?? 0d,
+            GraduationMostTouchedGrade = (int)(status.GraduationSnapshot?.MostTouchedGrade ?? ESlimeGrade.Grade1),
+            GraduationMostTouchedCount = status.GraduationSnapshot?.MostTouchedCount ?? 0,
+            GraduationGachaTicketsObtainedTotal = status.GraduationSnapshot?.GachaTicketsObtainedTotal ?? 0,
+            GraduationAutoMergeUseCount = status.GraduationSnapshot?.AutoMergeUseCount ?? 0,
             SpecialGachaMissCount = status.SpecialGachaMissCount,
+            GachaTicketsObtainedTotal = status.GachaTicketsObtainedTotal,
+            AutoMergeUseCount = status.AutoMergeUseCount,
             CompletedTutorials = new List<string>(status.CompletedTutorials),
             PlacedObjects = BuildPlacedObjects(status),
             OwnedPlaygroundObjects = BuildOwnedPlaygroundObjects(status),
@@ -285,6 +308,56 @@ public static class SlimeStatusSaveMapper
         }
 
         return saveData;
+    }
+
+    private static bool TryRestoreGraduationSnapshot(
+        SlimeStatusSaveData saveData,
+        DateTime startedAtUtc,
+        out GraduationStatistics? snapshot,
+        out string failureMessage)
+    {
+        snapshot = null;
+        failureMessage = null;
+        if (!TryParseOptionalUtc(saveData.GraduationSnapshotAtUtc, out DateTime? at))
+        {
+            failureMessage = "SlimeStatus : 졸업 통계 시각을 해석할 수 없습니다.";
+            return false;
+        }
+        if (!at.HasValue) return true;
+        if (at.Value < startedAtUtc ||
+            saveData.GraduationNaturalSpawnCount < 0 ||
+            saveData.GraduationMergeCreatedCount < 0 ||
+            saveData.GraduationManualTouchCount < 0 ||
+            saveData.GraduationProducedPointTotal < 0d ||
+            double.IsNaN(saveData.GraduationProducedPointTotal) ||
+            double.IsInfinity(saveData.GraduationProducedPointTotal) ||
+            saveData.GraduationMostTouchedCount < 0 ||
+            saveData.GraduationGachaTicketsObtainedTotal < 0 ||
+            saveData.GraduationAutoMergeUseCount < 0)
+        {
+            failureMessage = "SlimeStatus : 졸업 통계 값이 올바르지 않습니다.";
+            return false;
+        }
+
+        ESlimeGrade favorite = (ESlimeGrade)saveData.GraduationMostTouchedGrade;
+        if (favorite < ESlimeGrade.Grade1 || favorite >= ESlimeGrade.Count)
+        {
+            failureMessage = "SlimeStatus : 졸업 통계의 슬라임 등급이 올바르지 않습니다.";
+            return false;
+        }
+
+        snapshot = new GraduationStatistics(
+            startedAtUtc,
+            at.Value,
+            saveData.GraduationNaturalSpawnCount,
+            saveData.GraduationMergeCreatedCount,
+            saveData.GraduationManualTouchCount,
+            saveData.GraduationProducedPointTotal,
+            favorite,
+            saveData.GraduationMostTouchedCount,
+            saveData.GraduationGachaTicketsObtainedTotal,
+            saveData.GraduationAutoMergeUseCount);
+        return true;
     }
 
     private static bool TryResolveJourneyDates(

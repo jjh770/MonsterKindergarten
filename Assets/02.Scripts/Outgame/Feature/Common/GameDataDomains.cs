@@ -42,10 +42,13 @@ public static class GameDataDomains
     // v12: 특별한 슬라임 도감 등록 상태를 추가했다. 특별 도감이 없어진 뒤로는 읽기 전용이다.
     // v13: 특별한 슬라임 도감의 등급별 기록을 추가했다. 이것도 지금은 쓰지 않는다.
     // v14: 등급별 가챠 획득 횟수를 추가했다.
+    // v15: 최초 졸업식 시작 순간의 통계 스냅샷을 추가했다.
+    //      아직 배포 전이라 같은 버전에 가챠권 누적 획득 수와 자동 합성 사용 횟수를 함께 넣었다.
+    //      이전 문서에는 필드가 없어 0으로 읽힌다.
     public static readonly GameDataDomainDefinition SlimeStatus = new(
         displayName: "슬라임",
         cloudCollectionName: "SlimeStatus",
-        currentSchemaVersion: 14,
+        currentSchemaVersion: 15,
         localDataDeleter: userId =>
             new PlayerPrefsSlimeStatusRepository(userId).Delete());
 

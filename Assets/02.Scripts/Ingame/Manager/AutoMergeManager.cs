@@ -333,6 +333,7 @@ public sealed class AutoMergeManager : MonoBehaviour
 
         if (mergedPairCount > 0)
         {
+            _slimeManager.RecordAutoMergeUse();
             AudioManager.Instance?.PlaySFXRandomPitchSequence(
                 EAudioSfx.SlimePromote,
                 mergedPairCount,

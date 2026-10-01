@@ -73,6 +73,9 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         _status?.GameStartedAtUtc ?? DateTime.MinValue;
     public DateTime? MainEndingReachedAtUtc =>
         _status?.MainEndingReachedAtUtc;
+    public GraduationStatistics? GraduationSnapshot => _status?.GraduationSnapshot;
+    public long GachaTicketsObtainedTotal => _status?.GachaTicketsObtainedTotal ?? 0;
+    public long AutoMergeUseCount => _status?.AutoMergeUseCount ?? 0;
     public float SpecialGachaChance => SpecialGachaFever.GetChance(
         _status?.SpecialGachaMissCount ?? 0);
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
@@ -400,11 +403,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             MarkStatsDirty();
         }
 
-        // 도감 등록은 영구 진행도지만, 졸업 도달 시각은 실제 장식장에 20종이
-        // 모두 모인 최초 순간을 기록한다. 이미 등록한 슬라임을 다시 넣어 마지막
-        // 자리를 채우는 경우도 있으므로 신규 등록 분기 밖에서 검사한다.
-        _status.TryMarkMainEndingReached(ServerClock.TrustedUtcNow);
-
         Save();
         if (!registeredGrade.HasValue)
         {
@@ -452,6 +450,57 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         return true;
     }
 
+    public bool TryCaptureGraduationSnapshot(DateTime capturedAtUtc)
+    {
+        if (_status == null || _status.GraduationSnapshot.HasValue) return false;
+        if (!_status.TrySetGraduationSnapshot(CreateCurrentStatistics(capturedAtUtc))) return false;
+        Save();
+        return true;
+    }
+
+    public GraduationStatistics CreateCurrentStatistics(DateTime capturedAtUtc)
+    {
+        long naturalSpawns = 0;
+        long mergeCreated = 0;
+        long manualTouches = 0;
+        double producedPoints = 0d;
+        long mostTouches = -1;
+        ESlimeGrade mostTouchedGrade = ESlimeGrade.Grade1;
+        for (int value = (int)ESlimeGrade.Grade1; value < (int)ESlimeGrade.Count; value++)
+        {
+            ESlimeGrade grade = (ESlimeGrade)value;
+            NormalSlimeCollectionStatsSnapshot stats = GetNormalCollectionStats(grade);
+            naturalSpawns = SaturatingAdd(naturalSpawns, stats.NaturalSpawnCount);
+            mergeCreated = SaturatingAdd(mergeCreated, stats.MergeCreatedCount);
+            manualTouches = SaturatingAdd(manualTouches, stats.ManualTouchCount);
+            producedPoints = SaturatingAdd(producedPoints, stats.ProducedPointTotal);
+            if (stats.ManualTouchCount > mostTouches)
+            {
+                mostTouches = stats.ManualTouchCount;
+                mostTouchedGrade = grade;
+            }
+        }
+
+        DateTime startedAt = GameStartedAtUtc == DateTime.MinValue ? capturedAtUtc : GameStartedAtUtc;
+        return new GraduationStatistics(
+            startedAt, capturedAtUtc, naturalSpawns, mergeCreated, manualTouches,
+            producedPoints, mostTouchedGrade, Math.Max(0, mostTouches),
+            GachaTicketsObtainedTotal, AutoMergeUseCount);
+    }
+
+    private static long SaturatingAdd(long left, long right)
+    {
+        if (right <= 0) return left;
+        return left > long.MaxValue - right ? long.MaxValue : left + right;
+    }
+
+    private static double SaturatingAdd(double left, double right)
+    {
+        if (right <= 0d || double.IsNaN(right)) return left;
+        double result = left + right;
+        return double.IsInfinity(result) ? double.MaxValue : result;
+    }
+
     // Phase 5의 스페셜 결과 판정 지점에서 호출한다. 해금 전에는 상태를 만들지 않고,
     // 스페셜 성공 시 3%로 초기화하며 일반 결과면 최대 10%까지 0.5%p씩 올린다.
     public void RecordSpecialGachaResult(bool wasSpecial)
@@ -475,6 +524,25 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         if (_collectionStats == null) return;
 
         _collectionStats.RecordGachaObtained(grade);
+        MarkStatsDirty();
+    }
+
+    // 가챠권이 지갑에 들어간 순간에 부른다. 필드에서 주운 것, 오프라인 보상, 튜토리얼의
+    // 한 장이 해당하고, 뽑기 실패로 돌려받은 환불은 해당하지 않는다.
+    public void RecordGachaTicketsObtained(int count)
+    {
+        if (_status == null || count <= 0) return;
+
+        _status.RecordGachaTicketsObtained(count);
+        MarkStatsDirty();
+    }
+
+    // 자동 합성 버튼이 실제로 한 쌍 이상 합쳤을 때 한 번 센다. 합칠 쌍이 없어 안내만 뜬 경우는 세지 않는다.
+    public void RecordAutoMergeUse()
+    {
+        if (_status == null) return;
+
+        _status.RecordAutoMergeUse();
         MarkStatsDirty();
     }
 

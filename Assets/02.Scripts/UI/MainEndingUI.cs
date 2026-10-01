@@ -2,7 +2,8 @@ using System.Collections;
 using DG.Tweening;
 using UnityEngine;
 
-// 일반 도감에 등록된 20종이 장식장에 실제로 모두 모인 뒤의 전체 화면 졸업식 연출을 담당한다.
+// 장식장에 20종이 실제로 모두 모인 뒤, 플레이어가 장식장에 입장했을 때의
+// 전체 화면 졸업식 연출을 담당한다.
 // 게임 상태와 입력 소유권, 재생 순서만 관리하고 화면 계층은
 // MainEndingPresentationView가 소유한다.
 public sealed class MainEndingUI : MonoBehaviour
@@ -21,7 +22,6 @@ public sealed class MainEndingUI : MonoBehaviour
     [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private SpawnManager _spawnManager;
-    [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private HudVisibility _hudVisibility;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private AutoClicker _autoClicker;
@@ -38,7 +38,7 @@ public sealed class MainEndingUI : MonoBehaviour
     [SerializeField, Min(0f)] private float _fadeDuration = 0.45f;
     [SerializeField, Min(1f)] private float _creditScrollDuration = 12f;
     [SerializeField, Min(0f)] private float _introHoldDuration = 1.2f;
-    [SerializeField, Min(0f)] private float _teaserHoldDuration = 3.5f;
+    [SerializeField, Min(1f)] private float _holdFastForwardScale = 4f;
 
     private Coroutine _playbackCoroutine;
     private Tween _phaseTween;
@@ -50,6 +50,10 @@ public sealed class MainEndingUI : MonoBehaviour
     private bool _skipToFinalRequested;
     private bool _ownsHiddenPresentation;
     private bool _ownsGameplayPause;
+    private Vector2[] _slimeIntroductionOrigins;
+    private bool _isFastForwardHeld;
+    private bool _isAwaitingAdvance;
+    private bool _advanceRequested;
 
     public bool IsPresenting => _isPresenting;
 
@@ -70,7 +74,12 @@ public sealed class MainEndingUI : MonoBehaviour
 
         _popupPanel.SetActive(false);
         _doNotTouchPanel.SetActive(false);
-        if (!_view.Initialize(_celebrationImageSprite, OnBackgroundPressed, EndPresentation))
+        if (!_view.Initialize(
+                _celebrationImageSprite,
+                StartFastForward,
+                StopFastForward,
+                RequestAdvance,
+                EndPresentation))
         {
             enabled = false;
             return;
@@ -83,34 +92,19 @@ public sealed class MainEndingUI : MonoBehaviour
     {
         if (!enabled) return;
 
-        _slimeManager.NormalCollectionCountChanged += OnCollectionCountChanged;
+        _spaceManager.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
         TutorialManager.Finished += TryShowFirstEnding;
-        _gameManager.OnGameplayActivated += TryShowFirstEnding;
-        if (_displayRoomUI != null)
-        {
-            _displayRoomUI.SendModeEnded += TryShowFirstEnding;
-            _displayRoomUI.SlimeTransferred += OnSlimeTransferred;
-        }
-
-        TryShowFirstEnding();
     }
 
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
 
-        _slimeManager.NormalCollectionCountChanged -= OnCollectionCountChanged;
+        if (_spaceManager != null)
+        {
+            _spaceManager.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
+        }
         TutorialManager.Finished -= TryShowFirstEnding;
-        if (_gameManager != null)
-        {
-            _gameManager.OnGameplayActivated -= TryShowFirstEnding;
-        }
-
-        if (_displayRoomUI != null)
-        {
-            _displayRoomUI.SendModeEnded -= TryShowFirstEnding;
-            _displayRoomUI.SlimeTransferred -= OnSlimeTransferred;
-        }
 
         StopAllCoroutines();
         _phaseTween?.Kill();
@@ -153,7 +147,6 @@ public sealed class MainEndingUI : MonoBehaviour
                              _spaceManager != null &&
                              _slimeManager != null &&
                              _spawnManager != null &&
-                             _displayRoomUI != null &&
                              _hudVisibility != null &&
                              _upgradeUI != null &&
                              _autoClicker != null &&
@@ -166,28 +159,10 @@ public sealed class MainEndingUI : MonoBehaviour
         return hasReferences;
     }
 
-    private void OnCollectionCountChanged(int count)
+    private void OnSpaceTransitionCompleted()
     {
-        if (!_slimeManager.IsGraduationDisplayComplete) return;
-
-        // 보내기 모드 중에 20종째가 등록되면 지금은 화면을 비우지 않는다. 보내기 모드의 버튼이
-        // 하단 HUD 안에 있어서, 여기서 HUD를 치우면 모드는 남아 있는데 취소할 길이 사라진다.
-        // 전송이 끝나는 순간 OnSlimeTransferred가 보내기 모드를 끝내고 엔딩을 이어 간다.
-        if (_displayRoomUI != null && _displayRoomUI.IsSendMode) return;
-
-        ReserveHiddenPresentation();
+        if (_spaceManager == null || _spaceManager.IsMainFieldActive) return;
         TryShowFirstEnding();
-    }
-
-    // 장식장에 20종째를 채우면 선택 모드를 닫고 엔딩으로 넘어간다. 계속 고르게 두면 엔딩이
-    // 모드가 끝날 때까지 밀려난다. 전송 연출이 끝난 뒤에 불리므로 취소해도 안전하다.
-    private void OnSlimeTransferred(SlimeController target)
-    {
-        if (_isPresenting || _slimeManager == null) return;
-        if (!_slimeManager.IsGraduationDisplayComplete) return;
-        if (_slimeManager.IsMainEndingSeen) return;
-
-        _displayRoomUI.CancelSendMode();
     }
 
     private void TryShowFirstEnding()
@@ -196,11 +171,9 @@ public sealed class MainEndingUI : MonoBehaviour
         if (!_slimeManager.IsGraduationDisplayComplete) return;
         if (_slimeManager.IsMainEndingSeen) return;
 
-        // 보내기 모드가 끝나면(SendModeEnded) 다시 불린다. 그 전에 화면을 비우지 않는다.
-        if (_displayRoomUI != null && _displayRoomUI.IsSendMode) return;
-
         if (TutorialManager.IsRunning || !_gameManager.IsGameplayActive) return;
         if (_spaceManager.IsTransitioning) return;
+        if (_spaceManager.IsMainFieldActive) return;
 
         BeginPresentation(isReplay: false);
     }
@@ -211,6 +184,12 @@ public sealed class MainEndingUI : MonoBehaviour
         _isReplay = isReplay;
         _isFinalScreen = false;
         _skipToFinalRequested = false;
+        _isFastForwardHeld = false;
+        _isAwaitingAdvance = false;
+        _advanceRequested = false;
+
+        // 최초 재생 직전에 한 번만 고정한다. 이후 다시보기는 이 값만 사용한다.
+        _slimeManager.TryCaptureGraduationSnapshot(ServerClock.TrustedUtcNow);
 
         ReserveHiddenPresentation();
         _clicker.PushMode(
@@ -231,6 +210,9 @@ public sealed class MainEndingUI : MonoBehaviour
         _celebrationZoomTween = null;
         _closeTween = null;
         _view.RefreshSlimeSprites(_slimeManager);
+        _slimeIntroductionOrigins = isReplay
+            ? null
+            : BuildSlimeIntroductionOrigins();
         _view.ResetVisuals();
         _view.SetActive(true);
         _playbackCoroutine = StartCoroutine(PlayEnding());
@@ -251,21 +233,29 @@ public sealed class MainEndingUI : MonoBehaviour
         if (!_skipToFinalRequested)
         {
             yield return PlayPhase(BuildSlimeIntroduction());
+            yield return WaitForAdvance();
+            yield return PlayPhase(_view.HideSlimeIntroduction(_fadeDuration));
         }
 
         if (!_skipToFinalRequested)
         {
             yield return PlayPhase(BuildCredits());
+            yield return WaitForAdvance();
+            yield return PlayPhase(_view.HideCredits(_fadeDuration));
+        }
+
+        if (!_skipToFinalRequested)
+        {
+            yield return PlayPhase(_view.BuildThanks(_fadeDuration));
+            yield return WaitForAdvance();
+            yield return PlayPhase(_view.HideThanks(_fadeDuration));
         }
 
         if (!_skipToFinalRequested)
         {
             yield return PlayPhase(BuildSpecialSlimeTeaser());
-        }
-
-        if (!_skipToFinalRequested)
-        {
-            yield return PlayPhase(BuildGraduationFinale());
+            yield return WaitForAdvance();
+            yield return PlayPhase(_view.HideSpecialSlimeTeaser(_fadeDuration));
         }
 
         yield return PlayPhase(BuildCelebrationReveal());
@@ -276,6 +266,8 @@ public sealed class MainEndingUI : MonoBehaviour
     private IEnumerator PlayPhase(Tween tween)
     {
         _phaseTween = tween;
+        if (_phaseTween != null)
+            _phaseTween.timeScale = _isFastForwardHeld ? _holdFastForwardScale : 1f;
         while (_phaseTween != null && _phaseTween.IsActive())
         {
             yield return null;
@@ -284,30 +276,88 @@ public sealed class MainEndingUI : MonoBehaviour
         _phaseTween = null;
     }
 
+    private IEnumerator WaitForAdvance()
+    {
+        _isAwaitingAdvance = true;
+        _advanceRequested = false;
+        _view.SetAdvanceHint(true);
+        while (!_advanceRequested && !_skipToFinalRequested)
+        {
+            yield return null;
+        }
+        _view.SetAdvanceHint(false);
+        _isAwaitingAdvance = false;
+    }
+
     private Tween BuildOpeningFade() => _view.BuildOpeningFade(_fadeDuration);
 
     private Tween BuildSlimeIntroduction() => _view.BuildSlimeIntroduction(
-        _fadeDuration,
-        _introHoldDuration);
+        _slimeIntroductionOrigins,
+        _introHoldDuration,
+        PlaySlimeArrivalSound,
+        () => AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock));
+
+    private Vector2[] BuildSlimeIntroductionOrigins()
+    {
+        int count = SlimeStatusSaveData.NormalCollectionSize;
+        var origins = new Vector2[count];
+        var found = new bool[count];
+        Camera worldCamera = Camera.main;
+
+        if (worldCamera != null && _spawnManager != null)
+        {
+            foreach (SlimeController target in _spawnManager.GetActiveTargets())
+            {
+                if (target == null ||
+                    target.Location != ESlimeLocation.DisplayRoom)
+                {
+                    continue;
+                }
+
+                int index = (int)target.Grade - (int)ESlimeGrade.Grade1;
+                if (index < 0 || index >= count || found[index]) continue;
+
+                Vector3 screen = worldCamera.WorldToScreenPoint(target.transform.position);
+                origins[index] = new Vector2(
+                    Mathf.Clamp(screen.x, Screen.width * 0.08f, Screen.width * 0.92f),
+                    Mathf.Clamp(screen.y, Screen.height * 0.16f, Screen.height * 0.84f));
+                found[index] = true;
+            }
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            if (found[i]) continue;
+
+            float x = Mathf.Lerp(Screen.width * 0.14f, Screen.width * 0.86f,
+                (i % 4) / 3f);
+            origins[i] = new Vector2(x, Screen.height * 0.18f);
+        }
+
+        return origins;
+    }
+
+    private static void PlaySlimeArrivalSound()
+    {
+        // 화면을 건너뛰어 콜백이 한 프레임에 몰려도 소리가 겹쳐 터지지 않게 한다.
+        AudioManager.Instance?.PlaySFXRandomPitchWithCooldown(
+            EAudioSfx.SlimeBounce, 0.055f, 0.88f, 1.12f);
+    }
 
     private Tween BuildCredits()
     {
-        string credits = MainEndingCreditsTextBuilder.Build(
+        MainEndingCreditsTextBuilder.BuildGraduationColumns(
             _slimeManager,
-            ServerClock.TrustedUtcNow);
+            out string left,
+            out string right);
         return _view.BuildCredits(
-            credits,
-            _creditScrollDuration,
-            _fadeDuration);
+            left,
+            right,
+            _creditScrollDuration);
     }
 
     private Tween BuildSpecialSlimeTeaser() => _view.BuildSpecialSlimeTeaser(
-        _fadeDuration,
-        _teaserHoldDuration);
-
-    private Tween BuildGraduationFinale() => _view.BuildGraduationFinale(
-        _fadeDuration,
-        () => AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock));
+        _fadeDuration);
 
     private Tween BuildCelebrationReveal() => _view.BuildCelebrationReveal();
 
@@ -324,10 +374,24 @@ public sealed class MainEndingUI : MonoBehaviour
         _celebrationZoomTween = _view.BuildCelebrationZoom();
     }
 
-    private void OnBackgroundPressed()
+    private void StartFastForward()
     {
-        if (!_isPresenting || _isFinalScreen) return;
-        _phaseTween?.Complete(withCallbacks: true);
+        if (!_isPresenting || _isFinalScreen || _isAwaitingAdvance) return;
+        _isFastForwardHeld = true;
+        if (_phaseTween != null) _phaseTween.timeScale = _holdFastForwardScale;
+    }
+
+    private void StopFastForward()
+    {
+        _isFastForwardHeld = false;
+        if (_phaseTween != null) _phaseTween.timeScale = 1f;
+    }
+
+    private void RequestAdvance()
+    {
+        if (!_isPresenting || !_isAwaitingAdvance || _isFinalScreen) return;
+        _advanceRequested = true;
+        AudioManager.Instance?.PlaySFX(EAudioSfx.UIClick);
     }
 
     private bool HandleBack()
@@ -340,6 +404,8 @@ public sealed class MainEndingUI : MonoBehaviour
         }
 
         _skipToFinalRequested = true;
+        _advanceRequested = true;
+        _view.SetAdvanceHint(false);
         _phaseTween?.Complete(withCallbacks: true);
         return true;
     }

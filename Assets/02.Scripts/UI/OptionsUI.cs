@@ -23,6 +23,14 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _frameRateLabel;
     [SerializeField] private Button _resetButton;
     [SerializeField] private Button _deleteAccountButton;
+    [Header("Play Statistics")]
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private Button _statisticsButton;
+    [SerializeField] private GameObject _statisticsRoot;
+    [SerializeField] private RectTransform _statisticsPanel;
+    [SerializeField] private TMP_Text _statisticsText;
+    [SerializeField] private TMP_Text _statisticsRightText;
+    [SerializeField] private Button _statisticsCloseButton;
     [SerializeField] private GameObject _confirmationRoot;
     [SerializeField] private RectTransform _confirmationPanel;
     [SerializeField] private TMP_Text _confirmationMessage;
@@ -56,6 +64,10 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             _sfxSlider == null || _bgmValue == null || _sfxValue == null ||
             _frameRateButton == null || _frameRateLabel == null ||
             _resetButton == null || _deleteAccountButton == null ||
+            _slimeManager == null || _statisticsButton == null ||
+            _statisticsRoot == null || _statisticsPanel == null ||
+            _statisticsText == null || _statisticsRightText == null ||
+            _statisticsCloseButton == null ||
             _confirmationRoot == null || _confirmationPanel == null ||
             _confirmationMessage == null ||
             _confirmButton == null || _cancelButton == null || _confirmLabel == null ||
@@ -69,10 +81,13 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
 
         _panelRoot.SetActive(false);
         _confirmationRoot.SetActive(false);
+        _statisticsRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
         _resetButton.onClick.AddListener(ShowResetConfirmation);
         _deleteAccountButton.onClick.AddListener(ShowDeleteAccountConfirmation);
+        _statisticsButton.onClick.AddListener(ShowStatistics);
+        _statisticsCloseButton.onClick.AddListener(CloseStatistics);
         _confirmButton.onClick.AddListener(ConfirmDestructiveAction);
         _cancelButton.onClick.AddListener(CancelConfirmation);
         _bgmSlider.onValueChanged.AddListener(ChangeBgmVolume);
@@ -89,6 +104,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _closeButton?.onClick.RemoveListener(Close);
         _resetButton?.onClick.RemoveListener(ShowResetConfirmation);
         _deleteAccountButton?.onClick.RemoveListener(ShowDeleteAccountConfirmation);
+        _statisticsButton?.onClick.RemoveListener(ShowStatistics);
+        _statisticsCloseButton?.onClick.RemoveListener(CloseStatistics);
         _confirmButton?.onClick.RemoveListener(ConfirmDestructiveAction);
         _cancelButton?.onClick.RemoveListener(CancelConfirmation);
         _bgmSlider?.onValueChanged.RemoveListener(ChangeBgmVolume);
@@ -121,6 +138,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _bgmValue.text = $"{Mathf.RoundToInt(_bgmSlider.value * 100f)}%";
         _sfxValue.text = $"{Mathf.RoundToInt(_sfxSlider.value * 100f)}%";
         RefreshFrameRateLabel();
+        _statisticsButton.gameObject.SetActive(_slimeManager.IsMainEndingSeen);
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         _fadeTween = _panelGroup.DOFade(1f, _fadeDuration).SetUpdate(true);
@@ -132,12 +150,16 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     {
         if (!_isOpen || _isBusy || _isClosing) return;
 
-        RectTransform activePanel = _confirmationRoot.activeSelf ? _confirmationPanel : _panel;
+        RectTransform activePanel = _confirmationRoot.activeSelf
+            ? _confirmationPanel
+            : _statisticsRoot.activeSelf ? _statisticsPanel : _panel;
         if (RectTransformUtility.RectangleContainsScreenPoint(
                 activePanel, eventData.position, eventData.pressEventCamera)) return;
 
         if (_confirmationRoot.activeSelf)
             CancelConfirmation();
+        else if (_statisticsRoot.activeSelf)
+            CloseStatistics();
         else
             TryClose();
     }
@@ -149,6 +171,11 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         if (_confirmationRoot.activeSelf)
         {
             CancelConfirmation();
+            return true;
+        }
+        if (_statisticsRoot.activeSelf)
+        {
+            CloseStatistics();
             return true;
         }
 
@@ -191,6 +218,25 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     private void RefreshFrameRateLabel()
     {
         _frameRateLabel.text = $"{ApplicationSettings.TargetFrameRate} FPS";
+    }
+
+    private void ShowStatistics()
+    {
+        if (_isBusy || !_slimeManager.IsMainEndingSeen) return;
+        MainEndingCreditsTextBuilder.BuildCurrentColumns(
+            _slimeManager,
+            ServerClock.TrustedUtcNow,
+            out string left,
+            out string right);
+        _statisticsText.text = left;
+        _statisticsRightText.text = right;
+        _statisticsRoot.SetActive(true);
+        _statisticsCloseButton.Select();
+    }
+
+    private void CloseStatistics()
+    {
+        _statisticsRoot.SetActive(false);
     }
 
     private void ShowResetConfirmation()
