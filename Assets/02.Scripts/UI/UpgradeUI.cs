@@ -323,6 +323,29 @@ public class UpgradeUI : MonoBehaviour
         _uiButton.interactable = _isToggleInputEnabled && !IsStandingDown;
     }
 
+    // 서랍을 열어 줄지는 진행도가 정한다. 처음에는 손잡이를 치워 두었다가 상점이 열리는 순간 불러낸다.
+    // 입력 가능 여부는 공간과 튜토리얼이 정하므로 여기서는 켜 두기만 하고, 호출부가 그 규칙을
+    // 다시 적용하게 한다(GameplaySpaceManager.RefreshInteraction).
+    public void SetContentAvailable(bool isAvailable, bool animated = true)
+    {
+        if (_isContentAvailable == isAvailable) return;
+
+        _isContentAvailable = isAvailable;
+        // Start가 이 값으로 처음 상태를 정하므로 아직 시작 전이면 값만 바꿔 둔다.
+        if (!_isInitialized) return;
+
+        _isToggleInputEnabled = isAvailable;
+        _isToggleVisible = isAvailable;
+        if (!isAvailable && _isOpened)
+        {
+            SetOpened(false);
+            return;
+        }
+
+        ApplyToggleInput();
+        MoveDrawer(animated);
+    }
+
     public void SetToggleVisible(bool isVisible, bool animated = true)
     {
         isVisible = _isContentAvailable && isVisible;

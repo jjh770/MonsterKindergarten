@@ -199,8 +199,13 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             "티켓 회수", "필드에 떨어진 티켓을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
             "오프라인 티켓 회수", "접속하지 않은 시간에 티켓도 모아줘요.");
-        AppendBonus(builder, count, NormalCollectionRules.HiddenFeverCount,
-            "???", "???");
+        // 20종을 채우면 숨겨 둔 마지막 항목이 졸업식으로 바뀐다. 그 전에는 무엇인지 알리지 않는다.
+        bool isEndingUnlocked = count >= NormalCollectionRules.MainEndingCount;
+        AppendBonus(builder, count, NormalCollectionRules.MainEndingCount,
+            isEndingUnlocked ? "유치원 졸업식" : "???",
+            isEndingUnlocked
+                ? "유치원 졸업식을 축하합니다! 도감에서 다시 볼 수 있어요."
+                : "???");
         _bonusText.text = builder.ToString();
     }
 

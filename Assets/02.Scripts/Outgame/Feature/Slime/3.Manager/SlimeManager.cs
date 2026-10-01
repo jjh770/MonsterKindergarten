@@ -40,6 +40,9 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
     public bool IsAutoMergeUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.AutoMergeCount;
+    public bool IsShopUnlocked =>
+        _status != null &&
+        _status.HighestGrade >= UnlockGrades.Shop;
     public bool IsGachaUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.Gacha;

@@ -24,6 +24,8 @@ public enum DialogueId
     GachaResult = 16,
     CollectionAutoMerge = 17,
     CollectionTicketCollect = 18,
+    Shop = 19,
+    ShopTabs = 20,
 }
 
 [Serializable]
@@ -78,6 +80,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomObserveMessage;
     [SerializeField] private string _displayRoomTakeOutMessage;
     [SerializeField] private string _displayRoomCloseMessage;
+    [SerializeField] private string _shopButtonMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
@@ -107,6 +110,7 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
+    public string ShopButtonMessage => _shopButtonMessage;
     public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
     public string BackgroundButtonMessage => _backgroundButtonMessage;
 
