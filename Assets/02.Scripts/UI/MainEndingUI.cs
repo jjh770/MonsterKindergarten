@@ -42,7 +42,6 @@ public sealed class MainEndingUI : MonoBehaviour
 
     private Coroutine _playbackCoroutine;
     private Tween _phaseTween;
-    private Tween _celebrationZoomTween;
     private Tween _closeTween;
     private bool _isPresenting;
     private bool _isReplay;
@@ -78,8 +77,7 @@ public sealed class MainEndingUI : MonoBehaviour
                 _celebrationImageSprite,
                 StartFastForward,
                 StopFastForward,
-                RequestAdvance,
-                EndPresentation))
+                RequestAdvance))
         {
             enabled = false;
             return;
@@ -108,7 +106,6 @@ public sealed class MainEndingUI : MonoBehaviour
 
         StopAllCoroutines();
         _phaseTween?.Kill();
-        _celebrationZoomTween?.Kill();
         _closeTween?.Kill();
         if (_view != null) _view.Dispose();
         ReleasePresentationOwnership(animated: false);
@@ -204,10 +201,8 @@ public sealed class MainEndingUI : MonoBehaviour
         transform.SetAsLastSibling();
         RefreshSafeArea();
         _phaseTween?.Kill();
-        _celebrationZoomTween?.Kill();
         _closeTween?.Kill();
         _phaseTween = null;
-        _celebrationZoomTween = null;
         _closeTween = null;
         _view.RefreshSlimeSprites(_slimeManager);
         _slimeIntroductionOrigins = isReplay
@@ -227,6 +222,8 @@ public sealed class MainEndingUI : MonoBehaviour
         _upgradeUI?.PushStandDown(this);
     }
 
+    // 슬라임 입장 -> 게임 기록 -> 축전과 감사 인사 -> 특별한 슬라임 예고. 예고가 마지막 화면이라
+    // 거기서 터치하면 졸업식이 끝난다. 건너뛰기는 예고 화면으로 넘어간다.
     private IEnumerator PlayEnding()
     {
         yield return PlayPhase(BuildOpeningFade());
@@ -251,16 +248,12 @@ public sealed class MainEndingUI : MonoBehaviour
             yield return PlayPhase(_view.HideThanks(_fadeDuration));
         }
 
-        if (!_skipToFinalRequested)
-        {
-            yield return PlayPhase(BuildSpecialSlimeTeaser());
-            yield return WaitForAdvance();
-            yield return PlayPhase(_view.HideSpecialSlimeTeaser(_fadeDuration));
-        }
-
-        yield return PlayPhase(BuildCelebrationReveal());
+        yield return PlayPhase(BuildSpecialSlimeTeaser());
         EnterFinalScreen();
+        yield return WaitForAdvance();
+
         _playbackCoroutine = null;
+        EndPresentation();
     }
 
     private IEnumerator PlayPhase(Tween tween)
@@ -359,19 +352,17 @@ public sealed class MainEndingUI : MonoBehaviour
     private Tween BuildSpecialSlimeTeaser() => _view.BuildSpecialSlimeTeaser(
         _fadeDuration);
 
-    private Tween BuildCelebrationReveal() => _view.BuildCelebrationReveal();
-
+    // 마지막 화면(예고)에 닿았다. 건너뛰기로 왔더라도 이 화면은 보여 주고 터치를 기다린다.
+    // 시청 기록은 여기서 남긴다. 크레딧 도중에 앱을 끄면 다음에 다시 나온다.
     private void EnterFinalScreen()
     {
         _isFinalScreen = true;
-        _view.ShowFinalScreen();
+        _skipToFinalRequested = false;
+        _advanceRequested = false;
         if (!_isReplay)
         {
             _slimeManager.TryMarkMainEndingSeen();
         }
-
-        _celebrationZoomTween?.Kill();
-        _celebrationZoomTween = _view.BuildCelebrationZoom();
     }
 
     private void StartFastForward()
@@ -389,7 +380,7 @@ public sealed class MainEndingUI : MonoBehaviour
 
     private void RequestAdvance()
     {
-        if (!_isPresenting || !_isAwaitingAdvance || _isFinalScreen) return;
+        if (!_isPresenting || !_isAwaitingAdvance) return;
         _advanceRequested = true;
         AudioManager.Instance?.PlaySFX(EAudioSfx.UIClick);
     }
@@ -397,9 +388,12 @@ public sealed class MainEndingUI : MonoBehaviour
     private bool HandleBack()
     {
         if (!_isPresenting) return false;
+        if (_closeTween != null) return true;
+
+        // 마지막 화면에서는 터치와 같다. 끝내면 코루틴이 이어서 닫는다.
         if (_isFinalScreen)
         {
-            EndPresentation();
+            _advanceRequested = true;
             return true;
         }
 
@@ -412,12 +406,8 @@ public sealed class MainEndingUI : MonoBehaviour
 
     private void EndPresentation()
     {
-        if (!_isPresenting || !_isFinalScreen) return;
+        if (!_isPresenting || _closeTween != null) return;
 
-        _view.SetContinueInteractable(false);
-        _celebrationZoomTween?.Kill();
-        _celebrationZoomTween = null;
-        _closeTween?.Kill();
         _closeTween = _view.BuildClose(_fadeDuration)
             .OnComplete(() =>
             {

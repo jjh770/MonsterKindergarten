@@ -53,13 +53,13 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
     [SerializeField] private RectTransform _celebrationArtworkRect;
     [SerializeField] private UnityEngine.UI.Image _celebrationArtwork;
     [SerializeField] private TextMeshProUGUI _celebrationFallbackTitle;
-    [SerializeField] private UnityEngine.UI.Button _endingContinueButton;
 
+    // 감사 인사 줄 높이의 하한. 그림 위 여백이 이보다 좁으면 이만큼은 확보한다.
+    private const float ThanksTitleMinHeight = 160f;
     private Sprite _celebrationImageSprite;
     private UnityAction _holdStarted;
     private UnityAction _holdEnded;
     private UnityAction _advancePressed;
-    private UnityAction _continuePressed;
     private UnityEngine.UI.Image _backdropImage;
     private UnityEngine.UI.GridLayoutGroup _slimeGridLayout;
     private Color _backdropColor;
@@ -67,6 +67,7 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
     private Tween[] _fireworkTweens;
     private Tween[] _questionTweens;
     private Tween[] _petalTweens;
+    private Tween _celebrationZoomTween;
     private float _pointerDownAt;
     private Vector2 _classTitleAnchorMin;
     private Vector2 _classTitleAnchorMax;
@@ -81,8 +82,7 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         Sprite celebrationImageSprite,
         UnityAction holdStarted,
         UnityAction holdEnded,
-        UnityAction advancePressed,
-        UnityAction continuePressed)
+        UnityAction advancePressed)
     {
         if (!HasRequiredReferences()) return false;
 
@@ -90,7 +90,6 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         _holdStarted = holdStarted;
         _holdEnded = holdEnded;
         _advancePressed = advancePressed;
-        _continuePressed = continuePressed;
         _backdropImage = _backgroundButton.targetGraphic as UnityEngine.UI.Image;
         _slimeGridLayout = _slimeGrid.GetComponent<UnityEngine.UI.GridLayoutGroup>();
         _classTitleAnchorMin = _classTitle.rectTransform.anchorMin;
@@ -104,11 +103,6 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
             _backdropColor = _backdropImage.color;
         }
 
-        if (_continuePressed != null)
-        {
-            _endingContinueButton.onClick.AddListener(_continuePressed);
-        }
-
         gameObject.SetActive(false);
         return true;
     }
@@ -118,10 +112,6 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         StopAllEffectTweens();
         _hintTween?.Kill();
         if (_slimeGridLayout != null) _slimeGridLayout.enabled = true;
-        if (_continuePressed != null && _endingContinueButton != null)
-        {
-            _endingContinueButton.onClick.RemoveListener(_continuePressed);
-        }
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -303,25 +293,26 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         });
     }
 
+    // 감사 인사와 함께 축전 그림과 꽃잎이 나온다. 별 터지는 효과는 SafeAreaRoot 안에 있어서
+    // CelebrationGroup보다 앞에 그려지므로 그림 위로 터진다.
     public Tween BuildThanks(float fadeDuration)
     {
         _classGroup.SetActive(true);
         _classCanvasGroup.alpha = 0f;
         _slimeGrid.gameObject.SetActive(false);
+        ShowCelebration();
+
         _classTitle.text = "모든 순간을 함께해 주셔서\n진심으로 감사합니다!";
-        _classTitle.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        _classTitle.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        _classTitle.rectTransform.anchoredPosition = Vector2.zero;
-        _classTitle.rectTransform.sizeDelta = new Vector2(
-            Mathf.Max(760f, _safeAreaRoot.rect.width - 120f),
-            360f);
+        PlaceThanksTitleAboveArtwork();
         _classTitle.enableAutoSizing = false;
-        _classTitle.fontSize = 66f;
+        _classTitle.fontSize = 60f;
         _classTitle.alignment = TextAlignmentOptions.Center;
         _classTitle.rectTransform.localScale = Vector3.one * 0.78f;
 
         Sequence sequence = DOTween.Sequence();
         sequence.Append(_classCanvasGroup.DOFade(1f, fadeDuration));
+        sequence.Join(_celebrationCanvasGroup.DOFade(1f, fadeDuration)
+            .SetEase(Ease.OutQuad));
         sequence.Join(_classTitle.rectTransform.DOScale(1f, 0.55f).SetEase(Ease.OutBack));
         sequence.Append(_classTitle.rectTransform.DOPunchScale(
             Vector3.one * 0.1f, 0.5f, 5, 0.65f));
@@ -333,12 +324,18 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
     {
         KillTweens(ref _fireworkTweens);
         Deactivate(_fireworkParticles);
-        return _classCanvasGroup.DOFade(0f, fadeDuration).OnComplete(() =>
+
+        Sequence sequence = DOTween.Sequence();
+        sequence.Append(_classCanvasGroup.DOFade(0f, fadeDuration));
+        sequence.Join(_celebrationCanvasGroup.DOFade(0f, fadeDuration));
+        sequence.OnComplete(() =>
         {
             _slimeGrid.gameObject.SetActive(true);
             _classGroup.SetActive(false);
             RestoreClassTitleLayout();
+            StopCelebration();
         });
+        return sequence;
     }
 
     public Tween BuildCredits(
@@ -370,6 +367,7 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
 
     public Tween BuildSpecialSlimeTeaser(float fadeDuration)
     {
+        StopCelebration();
         _teaserGroup.SetActive(true);
         _teaserCanvasGroup.alpha = 0f;
 
@@ -379,58 +377,62 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         return sequence;
     }
 
-    public Tween HideSpecialSlimeTeaser(float fadeDuration)
+    // 축전 그림과 꽃잎. 감사 인사 화면에서 함께 보인다.
+    private void ShowCelebration()
     {
-        KillTweens(ref _questionTweens);
-        return _teaserCanvasGroup.DOFade(0f, fadeDuration)
-            .OnComplete(() => _teaserGroup.SetActive(false));
-    }
-
-    public Tween BuildCelebrationReveal()
-    {
-        _classGroup.SetActive(false);
-        _creditsGroup.SetActive(false);
-        _teaserGroup.SetActive(false);
+        bool hasArtwork = _celebrationImageSprite != null;
         _celebrationGroup.SetActive(true);
         _celebrationCanvasGroup.alpha = 0f;
-        StartPetalEffects();
-
-        bool hasArtwork = _celebrationImageSprite != null;
         _celebrationArtwork.sprite = _celebrationImageSprite;
         _celebrationArtwork.color = hasArtwork
             ? Color.white
             : new Color(0.22f, 0.16f, 0.08f, 1f);
         _celebrationFallbackTitle.gameObject.SetActive(!hasArtwork);
-        _endingContinueButton.gameObject.SetActive(false);
         _celebrationArtworkRect.localScale = Vector3.one;
 
-        return _celebrationCanvasGroup
-            .DOFade(1f, 0.8f)
-            .SetEase(Ease.OutQuad);
-    }
-
-    public void ShowFinalScreen()
-    {
-        _endingContinueButton.gameObject.SetActive(true);
-        _endingContinueButton.interactable = true;
-    }
-
-    public void SetContinueInteractable(bool interactable)
-    {
-        _endingContinueButton.interactable = interactable;
-    }
-
-    public Tween BuildCelebrationZoom()
-    {
-        return _celebrationArtworkRect
+        StartPetalEffects();
+        _celebrationZoomTween?.Kill();
+        _celebrationZoomTween = _celebrationArtworkRect
             .DOScale(1.04f, 6f)
             .SetEase(Ease.InOutSine)
             .SetLoops(-1, LoopType.Yoyo);
     }
 
+    private void StopCelebration()
+    {
+        KillTweens(ref _fireworkTweens);
+        Deactivate(_fireworkParticles);
+        KillTweens(ref _petalTweens);
+        Deactivate(_petalParticles);
+        _celebrationZoomTween?.Kill();
+        _celebrationZoomTween = null;
+        _celebrationGroup.SetActive(false);
+    }
+
+    // 그림은 화면 위아래에 여백을 두고 놓여 있다. 감사 인사는 그 위쪽 여백에 놓아 그림을
+    // 가리지 않게 한다. 노치 때문에 여백 높이가 기기마다 달라 그림의 실제 위치에서 계산한다.
+    private void PlaceThanksTitleAboveArtwork()
+    {
+        Canvas.ForceUpdateCanvases();
+        var corners = new Vector3[4];
+        _celebrationArtworkRect.GetWorldCorners(corners);
+        float artworkTop = _safeAreaRoot.InverseTransformPoint(corners[1]).y;
+        float safeTop = _safeAreaRoot.rect.yMax;
+        float height = Mathf.Max(ThanksTitleMinHeight, safeTop - artworkTop);
+
+        RectTransform title = _classTitle.rectTransform;
+        title.anchorMin = new Vector2(0.5f, 1f);
+        title.anchorMax = new Vector2(0.5f, 1f);
+        title.sizeDelta = new Vector2(
+            Mathf.Max(760f, _safeAreaRoot.rect.width - 120f),
+            height);
+        title.anchoredPosition = new Vector2(0f, -height * 0.5f);
+    }
+
     public Tween BuildClose(float fadeDuration)
     {
         KillTweens(ref _petalTweens);
+        KillTweens(ref _questionTweens);
         return _presentationCanvasGroup.DOFade(0f, fadeDuration);
     }
 
@@ -603,6 +605,8 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         KillTweens(ref _fireworkTweens);
         KillTweens(ref _questionTweens);
         KillTweens(ref _petalTweens);
+        _celebrationZoomTween?.Kill();
+        _celebrationZoomTween = null;
         Deactivate(_fireworkParticles);
         Deactivate(_questionParticles);
         Deactivate(_petalParticles);
@@ -651,7 +655,6 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
                              _celebrationArtworkRect != null &&
                              _celebrationArtwork != null &&
                              _celebrationFallbackTitle != null &&
-                             _endingContinueButton != null &&
                              _questionParticles != null &&
                              _fireworkParticles != null &&
                              _petalParticles != null &&

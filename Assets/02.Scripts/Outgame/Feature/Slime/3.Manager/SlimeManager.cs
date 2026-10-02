@@ -567,6 +567,26 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         MarkStatsDirty();
     }
 
+    // 오프라인 보상으로 받은 포인트를 등급별 생산 기록에 더한다. 자동 생산과 같은 기록이라
+    // 터치 횟수는 늘리지 않는다. 배열은 1등급부터 순서대로 등급별 몫이고 합이 받은 포인트다.
+    public void RecordOfflineProduction(IReadOnlyList<double> pointsByGrade)
+    {
+        if (_collectionStats == null || pointsByGrade == null) return;
+
+        for (int i = 0; i < pointsByGrade.Count; i++)
+        {
+            double point = pointsByGrade[i];
+            if (point <= 0d) continue;
+
+            _collectionStats.RecordProduction(
+                (ESlimeGrade)((int)ESlimeGrade.Grade1 + i),
+                EClickType.Auto,
+                point);
+        }
+
+        MarkStatsDirty();
+    }
+
     // 지금 장식장에 전시 중인지. 도감 등록 여부와 다르다.
     //
     // 등록은 한 번 들어가면 꺼내도 남는 영구 기록이고, 이쪽은 현재 상태다.
