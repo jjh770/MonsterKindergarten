@@ -25,6 +25,8 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
     [SerializeField] private CanvasGroup _classCanvasGroup;
     [SerializeField] private RectTransform _slimeGrid;
     [SerializeField] private TextMeshProUGUI _classTitle;
+    [Tooltip("감사 인사 뒤에 까는 어두운 띠입니다. 그림 위 여백이 모자란 화면에서만 켜집니다.")]
+    [SerializeField] private RectTransform _thanksTitleBackdrop;
     [Tooltip("일반 슬라임 20종의 그림입니다. 등급 순서대로 연결합니다.")]
     [SerializeField] private UnityEngine.UI.Image[] _slimeImages =
         new UnityEngine.UI.Image[SlimeStatusSaveData.NormalCollectionSize];
@@ -56,6 +58,9 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
 
     // 감사 인사 줄 높이의 하한. 그림 위 여백이 이보다 좁으면 이만큼은 확보한다.
     private const float ThanksTitleMinHeight = 160f;
+
+    // 띠가 안전 영역 위(노치 쪽)까지 덮도록 위로 더 늘리는 길이.
+    private const float ThanksBackdropOverscan = 400f;
     private Sprite _celebrationImageSprite;
     private UnityAction _holdStarted;
     private UnityAction _holdEnded;
@@ -418,7 +423,8 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         _celebrationArtworkRect.GetWorldCorners(corners);
         float artworkTop = _safeAreaRoot.InverseTransformPoint(corners[1]).y;
         float safeTop = _safeAreaRoot.rect.yMax;
-        float height = Mathf.Max(ThanksTitleMinHeight, safeTop - artworkTop);
+        float margin = safeTop - artworkTop;
+        float height = Mathf.Max(ThanksTitleMinHeight, margin);
 
         RectTransform title = _classTitle.rectTransform;
         title.anchorMin = new Vector2(0.5f, 1f);
@@ -427,6 +433,19 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
             Mathf.Max(760f, _safeAreaRoot.rect.width - 120f),
             height);
         title.anchoredPosition = new Vector2(0f, -height * 0.5f);
+
+        // 그림 비율이 화면과 비슷하면(16:9 폰, 태블릿) 위 여백이 없어 제목이 그림 위에 놓인다.
+        // 금색 글자가 그림 위에서 읽히지 않으므로 그때만 어두운 띠를 뒤에 깐다.
+        bool overlapsArtwork = margin < ThanksTitleMinHeight;
+        _thanksTitleBackdrop.gameObject.SetActive(overlapsArtwork);
+        if (overlapsArtwork)
+        {
+            _thanksTitleBackdrop.anchorMin = new Vector2(0f, 1f);
+            _thanksTitleBackdrop.anchorMax = new Vector2(1f, 1f);
+            _thanksTitleBackdrop.pivot = new Vector2(0.5f, 0f);
+            _thanksTitleBackdrop.sizeDelta = new Vector2(0f, height + ThanksBackdropOverscan);
+            _thanksTitleBackdrop.anchoredPosition = new Vector2(0f, -height);
+        }
     }
 
     public Tween BuildClose(float fadeDuration)
@@ -563,6 +582,7 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
         _classTitle.fontSize = _classTitleFontSize;
         _classTitle.enableAutoSizing = _classTitleAutoSizing;
         _classTitle.alignment = TextAlignmentOptions.Center;
+        _thanksTitleBackdrop.gameObject.SetActive(false);
     }
 
     private void StartPetalEffects()
@@ -641,6 +661,7 @@ public sealed class MainEndingPresentationView : MonoBehaviour,
                              _classCanvasGroup != null &&
                              _slimeGrid != null &&
                              _classTitle != null &&
+                             _thanksTitleBackdrop != null &&
                              _slimeOutlines != null &&
                              _slimeOutlines.Length == SlimeStatusSaveData.NormalCollectionSize &&
                              _creditsGroup != null &&
