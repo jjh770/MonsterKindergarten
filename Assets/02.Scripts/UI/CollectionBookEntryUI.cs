@@ -10,6 +10,7 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private RectTransform _visualRoot;
     [SerializeField] private Image _background;
     [SerializeField] private Image _icon;
+    [SerializeField] private SlimeOutlineImage _iconOutline;
     [SerializeField] private TextMeshProUGUI _numberText;
     [SerializeField, Min(0f)] private float _selectedLift = 18f;
     [SerializeField] private float _collapsedNumberY = -85f;
@@ -44,6 +45,7 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         _isReady = _visualRoot != null &&
                    _background != null &&
                    _icon != null &&
+                   _iconOutline != null &&
                    _numberText != null;
         if (!_isReady)
         {
@@ -56,16 +58,19 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
         _selectionTween?.Kill();
     }
 
+    // isSpecial이면 특별한 슬라임의 모습(무지개 광택과 외곽선)으로 그린다. 등록하지 않은
+    // 항목은 외곽선 없이 어두운 실루엣이다.
     public void Bind(
         ESlimeGrade grade,
         SlimeSpecData specData,
         bool isRegistered,
+        bool isSpecial,
         Action clicked)
     {
         if (!_isReady) return;
 
         _clicked = clicked;
-        _icon.sprite = specData?.Sprite;
+        _iconOutline.Apply(specData?.Sprite, outlined: isRegistered, special: isSpecial);
         _boundIconColor = isRegistered ? Color.white : LockedIconColor;
         if (_isSelected)
         {

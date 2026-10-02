@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -18,8 +18,10 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private Button _confirmButton;
     [Header("Reward Fly Effect")]
     [SerializeField] private RectTransform _rewardFlyVisual;
+    [Tooltip("ECurrencyType 순서대로 포인트, 티켓 이미지를 연결합니다.")]
     [SerializeField] private Sprite[] _rewardFlySprites;
     [SerializeField] private RectTransform _pointTarget;
+    [SerializeField] private RectTransform _ticketTarget;
     [SerializeField] private float _flySpawnInterval = 0.04f;
     [SerializeField] private float _scatterDuration = 0.18f;
     [SerializeField] private Vector2 _scatterDistance = new Vector2(140f, 90f);
@@ -27,10 +29,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private float _targetPunchScale = 0.12f;
     [SerializeField] private float _fadeDuration = 0.2f;
     [SerializeField] private float _punchDuration = 0.35f;
-    [Header("Audio")]
-    [SerializeField] private AudioClip _popupOpenSound;
-    [SerializeField] private AudioClip _collectSound;
-    [SerializeField] private AudioClip _arrivalSound;
     [SerializeField] private CanvasGroup _canvasGroup;
 
     private Sequence _currentSequence;
@@ -38,7 +36,9 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_popupPanel == null || _canvasGroup == null)
+        if (_popupPanel == null ||
+            _canvasGroup == null ||
+            !HasRewardFlyReferences())
         {
             Debug.LogError("오프라인 보상 팝업의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -63,14 +63,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_elapsedTimeText != null)
         {
-            _elapsedTimeText.text = FormatElapsedTime(elapsedTime);
+            _elapsedTimeText.text = $"잠시 떠난 시간 : {FormatElapsedTime(elapsedTime)}";
         }
 
         if (_rewardText != null)
         {
-            string pointLine = $"{CurrencyIcon.Point}{reward}";
+            string pointLine = $"획득한 포인트 : {CurrencyIcon.Point}{reward}";
             _rewardText.text = ticketReward > 0
-                ? $"{pointLine}\n가챠권 +{ticketReward}"
+                ? $"{pointLine}\n획득한 티켓 : {CurrencyIcon.GachaTicket}+{ticketReward}"
                 : pointLine;
         }
 
@@ -80,7 +80,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _doNotTouchPanel?.SetActive(true);
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
-        PlaySound(_popupOpenSound);
+        PlaySound(EAudioSfx.OfflineRewardOpen);
 
         if (_confirmButton != null)
         {
@@ -111,7 +111,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         ConfirmRequested?.Invoke();
     }
 
-    public float PlayCollect(TimeSpan elapsedTime)
+    public float PlayCollect(TimeSpan elapsedTime, int ticketReward)
     {
         if (_popupPanel == null || !_popupPanel.activeSelf)
         {
@@ -119,7 +119,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
             return 0f;
         }
 
-        PlaySound(_collectSound);
+        PlaySound(EAudioSfx.OfflineRewardCollect);
         _currentSequence?.Kill();
 
         if (_confirmButton != null)
@@ -127,27 +127,57 @@ public class OfflineRewardPopupUI : MonoBehaviour
             _confirmButton.interactable = false;
         }
 
-        if (_rewardFlyVisual == null || _pointTarget == null)
+        if (!HasRewardFlyReferences())
         {
             return FadeOutAndClose();
         }
 
-        return PlayRewardFlyEffect(elapsedTime);
+        return PlayRewardFlyEffect(elapsedTime, Mathf.Max(0, ticketReward));
     }
 
-    private float PlayRewardFlyEffect(TimeSpan elapsedTime)
+    private float PlayRewardFlyEffect(TimeSpan elapsedTime, int ticketReward)
     {
         ClearFlyingVisuals();
         _currentSequence = DOTween.Sequence();
-        int visualCount = GetFlyVisualCount(elapsedTime);
+        AddRewardFlyVisuals(
+            GetFlyVisualCount(elapsedTime),
+            ECurrencyType.Point,
+            _pointTarget);
+        AddRewardFlyVisuals(
+            ticketReward,
+            ECurrencyType.GachaTicket,
+            _ticketTarget);
 
+        // 모든 보상 이미지가 도착한 뒤 팝업과 입력 차단 패널을 닫는다.
+        _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+        float duration = _currentSequence.Duration();
+        _currentSequence.OnComplete(() =>
+        {
+            _currentSequence = null;
+            ClearFlyingVisuals();
+            ClosePopup();
+            PunchTarget(_pointTarget);
+            if (ticketReward > 0)
+            {
+                PunchTarget(_ticketTarget);
+            }
+        });
+
+        return duration;
+    }
+
+    private void AddRewardFlyVisuals(
+        int visualCount,
+        ECurrencyType currencyType,
+        RectTransform target)
+    {
         for (int i = 0; i < visualCount; i++)
         {
             RectTransform flyingVisual = Instantiate(_rewardFlyVisual, transform, true);
-            flyingVisual.name = $"OfflineRewardFlyingVisual_{i + 1}";
+            flyingVisual.name = $"OfflineReward{currencyType}Visual_{i + 1}";
             _flyingVisuals.Add(flyingVisual);
 
-            ApplyRandomSprite(flyingVisual);
+            ApplyRewardSprite(flyingVisual, currencyType);
 
             CanvasGroup flyingCanvasGroup = flyingVisual.GetComponent<CanvasGroup>();
             if (flyingCanvasGroup == null)
@@ -160,10 +190,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
             flyingCanvasGroup.blocksRaycasts = false;
 
             Vector2 randomDirection = UnityEngine.Random.insideUnitCircle;
-            Vector3 scatterPosition = flyingVisual.position + new Vector3(
+            // _scatterDistance는 비행 이미지 부모(this.transform)의 로컬 단위다.
+            // 복제본 자신의 lossyScale에는 원본 이미지의 로컬 스케일(0.5)이 섞여 폭이 절반이 되므로,
+            // 부모의 TransformVector로 부모 체인의 회전·스케일(CanvasScaler 포함)만 반영해 world 벡터로 바꾼다.
+            Vector3 scatterOffset = transform.TransformVector(new Vector3(
                 randomDirection.x * _scatterDistance.x,
                 randomDirection.y * _scatterDistance.y,
-                0f);
+                0f));
+            Vector3 scatterPosition = flyingVisual.position + scatterOffset;
 
             float flyDuration = _flyDuration * UnityEngine.Random.Range(0.85f, 1.15f);
             float startDelay = i * Mathf.Max(0f, _flySpawnInterval);
@@ -173,7 +207,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
                 flyingVisual.DOMove(scatterPosition, _scatterDuration)
                     .SetEase(Ease.OutQuad));
             flyingSequence.Append(
-                flyingVisual.DOMove(_pointTarget.position, flyDuration)
+                flyingVisual.DOMove(target.position, flyDuration)
                     .SetEase(Ease.InCubic));
             flyingSequence.Insert(
                 _scatterDuration + flyDuration * 0.9f,
@@ -181,23 +215,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
             _currentSequence.Insert(startDelay, flyingSequence);
         }
-
-        // 모든 보상 이미지가 도착한 뒤 팝업과 입력 차단 패널을 닫는다.
-        _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
-        float duration = _currentSequence.Duration();
-        _currentSequence.OnComplete(() =>
-        {
-            _currentSequence = null;
-            ClearFlyingVisuals();
-            ClosePopup();
-            _pointTarget.DOPunchScale(
-                Vector3.one * _targetPunchScale,
-                _punchDuration,
-                6,
-                0.5f);
-        });
-
-        return duration;
     }
 
     private static int GetFlyVisualCount(TimeSpan elapsedTime)
@@ -209,21 +226,46 @@ public class OfflineRewardPopupUI : MonoBehaviour
         return 50;
     }
 
-    private void ApplyRandomSprite(RectTransform flyingVisual)
+    private void ApplyRewardSprite(
+        RectTransform flyingVisual,
+        ECurrencyType currencyType)
     {
-        if (_rewardFlySprites == null || _rewardFlySprites.Length == 0) return;
-
         Image flyingImage = flyingVisual.GetComponent<Image>();
         if (flyingImage == null) return;
 
-        Sprite randomSprite = _rewardFlySprites[
-            UnityEngine.Random.Range(0, _rewardFlySprites.Length)];
-
-        if (randomSprite != null)
+        Sprite rewardSprite = _rewardFlySprites[(int)currencyType];
+        if (rewardSprite != null)
         {
-            flyingImage.sprite = randomSprite;
+            flyingImage.sprite = rewardSprite;
             flyingImage.preserveAspect = true;
         }
+    }
+
+    private bool HasRewardFlySprite(ECurrencyType currencyType)
+    {
+        int index = (int)currencyType;
+        return _rewardFlySprites != null &&
+               index >= 0 &&
+               index < _rewardFlySprites.Length &&
+               _rewardFlySprites[index] != null;
+    }
+
+    private bool HasRewardFlyReferences()
+    {
+        return _rewardFlyVisual != null &&
+               _pointTarget != null &&
+               _ticketTarget != null &&
+               HasRewardFlySprite(ECurrencyType.Point) &&
+               HasRewardFlySprite(ECurrencyType.GachaTicket);
+    }
+
+    private void PunchTarget(RectTransform target)
+    {
+        target.DOPunchScale(
+            Vector3.one * _targetPunchScale,
+            _punchDuration,
+            6,
+            0.5f);
     }
 
     private void ClearFlyingVisuals()
@@ -255,7 +297,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
     private void ClosePopup()
     {
-        PlaySound(_arrivalSound);
+        PlaySound(EAudioSfx.OfflineRewardArrival);
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
 
@@ -267,12 +309,9 @@ public class OfflineRewardPopupUI : MonoBehaviour
         PresentationCompleted?.Invoke();
     }
 
-    private static void PlaySound(AudioClip clip)
+    private void PlaySound(EAudioSfx cue)
     {
-        if (AudioManager.Instance != null && clip != null)
-        {
-            AudioManager.Instance.PlaySFX(clip);
-        }
+        AudioManager.Instance?.PlaySFX(cue);
     }
 
     private static string FormatElapsedTime(TimeSpan elapsedTime)

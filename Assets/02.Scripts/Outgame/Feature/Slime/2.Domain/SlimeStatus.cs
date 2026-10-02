@@ -10,62 +10,112 @@ public class SlimeStatus
     private readonly HashSet<ESlimeGrade> _registeredNormalCollection = new();
     public IReadOnlyList<SlimeInstance> ActiveSlimes => _activeSlimes;
     public int NormalCollectionCount => _registeredNormalCollection.Count;
-    public EGameStage CurrentStage { get; private set; }
-    public bool SkyIntroCompleted { get; private set; }
+    public int DisplayRoomSlimeCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (SlimeInstance instance in _activeSlimes)
+            {
+                if (instance.Location == ESlimeLocation.DisplayRoom)
+                {
+                    count++;
+                }
+            }
 
-    // 아직 줍지 않은 가챠권 수. 티켓의 스테이지는 드랍 시점에 정해져 고정된다.
-    public int PendingGroundTickets { get; private set; }
-    public int PendingSkyTickets { get; private set; }
+            return count;
+        }
+    }
+
+    public bool IsGraduationDisplayComplete =>
+        DisplayRoomSlimeCount >= NormalCollectionRules.MainEndingCount;
+    public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
+    public bool BackgroundUnlockCompleted { get; private set; }
+
+    // 아직 줍지 않은 가챠권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
+    public int PendingTickets { get; private set; }
 
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
     public bool IsAutoSpawnEnabled { get; private set; }
-    public bool IsAutoMergeEnabled { get; private set; }
     public bool MainEndingSeen { get; private set; }
+    public DateTime GameStartedAtUtc { get; }
+    public DateTime? MainEndingReachedAtUtc { get; private set; }
+    public GraduationStatistics? GraduationSnapshot { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
+
+    // 지금까지 얻은 가챠권의 누적과 자동 합성을 쓴 횟수. 쓰거나 줄어도 내려가지 않는다.
+    public long GachaTicketsObtainedTotal { get; private set; }
+    public long AutoMergeUseCount { get; private set; }
 
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
     // 계정 문서에도 남긴다. 값은 튜토리얼 쪽이 정하는 식별자이고 여기서는 해석하지 않는다.
     private readonly List<string> _completedTutorials = new();
     public IReadOnlyList<string> CompletedTutorials => _completedTutorials;
 
+    private readonly List<PlacedPlaygroundObject> _placedObjects = new();
+    private readonly int[] _ownedPlaygroundObjects =
+        new int[(int)EPlaygroundObjectType.Count];
+    private readonly HashSet<EBackgroundTheme> _ownedBackgroundThemes = new();
+
+    public IReadOnlyList<PlacedPlaygroundObject> PlacedObjects => _placedObjects;
+    public IReadOnlyCollection<EBackgroundTheme> OwnedBackgroundThemes =>
+        _ownedBackgroundThemes;
+
     public SlimeStatus(
         ESlimeGrade highestGrade,
         IEnumerable<SlimeInstance> activeSlimes,
         IEnumerable<ESlimeGrade> registeredNormalCollection,
-        EGameStage currentStage,
-        bool skyIntroCompleted,
-        int pendingGroundTickets,
-        int pendingSkyTickets,
+        EBackgroundTheme selectedBackgroundTheme,
+        bool backgroundUnlockCompleted,
+        int pendingTickets,
         bool isAutoSpawnEnabled,
-        bool isAutoMergeEnabled,
         bool mainEndingSeen,
+        DateTime gameStartedAtUtc,
+        DateTime? mainEndingReachedAtUtc,
+        GraduationStatistics? graduationSnapshot,
         int specialGachaMissCount,
-        IEnumerable<string> completedTutorials = null)
+        IEnumerable<string> completedTutorials = null,
+        IEnumerable<PlacedPlaygroundObject> placedObjects = null,
+        IReadOnlyList<int> ownedPlaygroundObjects = null,
+        IEnumerable<EBackgroundTheme> ownedBackgroundThemes = null,
+        IEnumerable<ESlimeGrade> legacySpecialCollection = null,
+        long gachaTicketsObtainedTotal = 0,
+        long autoMergeUseCount = 0)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
 
-        bool isSkyUnlocked = GameStageRules.IsSkyUnlocked(highestGrade);
-        CurrentStage = isSkyUnlocked && GameStageRules.IsValid(currentStage)
-            ? currentStage
-            : EGameStage.Ground;
-        SkyIntroCompleted = isSkyUnlocked && skyIntroCompleted;
+        RestoreOwnedBackgroundThemes(ownedBackgroundThemes);
+        RestorePlayground(placedObjects, ownedPlaygroundObjects);
+
+        // 가지지 않은 테마가 선택되어 있으면 기본 테마로 돌린다. 상점에서 산 것을
+        // 잃는 개편이 있어도 화면이 빈 배경으로 남지 않는다.
+        bool isBackgroundUnlocked = BackgroundThemeRules.IsUnlocked(highestGrade);
+        SelectedBackgroundTheme = isBackgroundUnlocked &&
+                                  BackgroundThemeRules.IsValid(selectedBackgroundTheme) &&
+                                  IsBackgroundThemeOwned(selectedBackgroundTheme)
+            ? selectedBackgroundTheme
+            : EBackgroundTheme.Ground;
+        BackgroundUnlockCompleted = isBackgroundUnlocked &&
+                                    backgroundUnlockCompleted;
 
         // 음수는 쓰는 쪽에서 나올 수 없는 값이다. 재화와 같은 성격의 개수라
         // 같은 규율로 다룬다. 여기서 던지면 SlimeManager가 다른 손상과 같은
         // 경로로 보낸다.
-        if (pendingGroundTickets < 0 || pendingSkyTickets < 0)
+        if (pendingTickets < 0)
         {
             throw new ArgumentException(
-                "미수령 가챠권 수가 올바르지 않습니다. : " +
-                $"{pendingGroundTickets}, {pendingSkyTickets}");
+                $"미수령 가챠권 수가 올바르지 않습니다. : {pendingTickets}");
         }
 
-        PendingGroundTickets = pendingGroundTickets;
-        PendingSkyTickets = pendingSkyTickets;
+        PendingTickets = pendingTickets;
         IsAutoSpawnEnabled = isAutoSpawnEnabled;
-        IsAutoMergeEnabled = isAutoMergeEnabled;
         MainEndingSeen = mainEndingSeen;
+        GameStartedAtUtc = NormalizeUtc(gameStartedAtUtc);
+        MainEndingReachedAtUtc = mainEndingReachedAtUtc.HasValue
+            ? NormalizeUtc(mainEndingReachedAtUtc.Value)
+            : null;
+        GraduationSnapshot = graduationSnapshot;
 
         if (specialGachaMissCount < 0 ||
             specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
@@ -75,6 +125,16 @@ public class SlimeStatus
         }
 
         SpecialGachaMissCount = specialGachaMissCount;
+
+        // 누적 값은 쓰는 쪽에서 음수가 나올 수 없다. 다른 손상과 같은 경로로 보낸다.
+        if (gachaTicketsObtainedTotal < 0 || autoMergeUseCount < 0)
+        {
+            throw new ArgumentException(
+                $"누적 기록이 올바르지 않습니다. : 가챠권 {gachaTicketsObtainedTotal}, 자동 합성 {autoMergeUseCount}");
+        }
+
+        GachaTicketsObtainedTotal = gachaTicketsObtainedTotal;
+        AutoMergeUseCount = autoMergeUseCount;
 
         if (completedTutorials != null)
         {
@@ -125,10 +185,20 @@ public class SlimeStatus
 
         foreach (SlimeInstance instance in _activeSlimes)
         {
-            if (instance.Location == ESlimeLocation.DisplayRoom &&
-                !instance.IsSpecial)
+            if (instance.Location == ESlimeLocation.DisplayRoom)
             {
                 _registeredNormalCollection.Add(instance.Grade);
+            }
+        }
+
+        // 특별 도감은 없어졌다. 예전 저장에서 특별한 슬라임으로만 등록한 등급은 일반 도감에
+        // 등록한 것으로 옮긴다. 같은 등급을 채운 것이므로 잃는 진행이 없다.
+        if (legacySpecialCollection != null)
+        {
+            foreach (ESlimeGrade grade in legacySpecialCollection)
+            {
+                ValidateGrade(grade);
+                _registeredNormalCollection.Add(grade);
             }
         }
 
@@ -138,89 +208,262 @@ public class SlimeStatus
             throw new ArgumentException("도감 완성 전에 메인 엔딩이 완료된 저장입니다.");
         }
 
+        if (MainEndingReachedAtUtc.HasValue &&
+            NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        {
+            throw new ArgumentException("도감 완성 전에 메인 엔딩 도달 시각이 저장되어 있습니다.");
+        }
+
+        if (MainEndingSeen && !MainEndingReachedAtUtc.HasValue)
+        {
+            throw new ArgumentException("메인 엔딩 확인 기록에 도달 시각이 없습니다.");
+        }
+
         if (SpecialGachaMissCount > 0 &&
             NormalCollectionCount < NormalCollectionRules.HiddenFeverCount)
         {
             throw new ArgumentException("피버 해금 전에 실패 횟수가 저장되어 있습니다.");
         }
 
-        if (IsAutoMergeEnabled &&
-            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
+    }
+
+    // --- 배경 테마 소유 ---
+
+    public bool IsBackgroundThemeOwned(EBackgroundTheme theme)
+    {
+        return BackgroundThemeRules.IsFree(theme) ||
+               _ownedBackgroundThemes.Contains(theme);
+    }
+
+    public bool TryAddBackgroundTheme(EBackgroundTheme theme)
+    {
+        if (!BackgroundThemeRules.IsValid(theme) ||
+            IsBackgroundThemeOwned(theme))
         {
-            throw new ArgumentException("자동 합성 해금 전에 켜진 저장입니다.");
+            return false;
+        }
+
+        _ownedBackgroundThemes.Add(theme);
+        return true;
+    }
+
+    // 모르는 번호는 흘려보낸다. 종류를 줄이는 개편이 있어도 막히지 않아야 한다.
+    // 무료 기본 테마는 담지 않는다. 담아 두면 저장에도 실려 나가 규칙이 둘이 된다.
+    private void RestoreOwnedBackgroundThemes(IEnumerable<EBackgroundTheme> themes)
+    {
+        if (themes == null) return;
+
+        foreach (EBackgroundTheme theme in themes)
+        {
+            if (!BackgroundThemeRules.IsValid(theme)) continue;
+            if (BackgroundThemeRules.IsFree(theme)) continue;
+
+            _ownedBackgroundThemes.Add(theme);
         }
     }
 
-    public void UpdateStageProgress(
-        EGameStage currentStage,
-        bool skyIntroCompleted)
+    // --- 놀이터 오브젝트 ---
+
+    public int GetOwnedPlaygroundObjectCount(EPlaygroundObjectType type)
     {
-        if (!GameStageRules.IsValid(currentStage))
-        {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {currentStage}");
-        }
-
-        if (currentStage == EGameStage.Sky &&
-            !GameStageRules.IsSkyUnlocked(HighestGrade))
-        {
-            throw new InvalidOperationException("하늘 스테이지가 아직 해금되지 않았습니다.");
-        }
-
-        CurrentStage = currentStage;
-        SkyIntroCompleted = skyIntroCompleted &&
-                            GameStageRules.IsSkyUnlocked(HighestGrade);
+        return PlaygroundRules.IsValid(type) ? _ownedPlaygroundObjects[(int)type] : 0;
     }
 
-    public int GetPendingTickets(EGameStage stage)
+    public int GetPlacedPlaygroundObjectCount(EPlaygroundObjectType type)
     {
-        return stage == EGameStage.Sky
-            ? PendingSkyTickets
-            : PendingGroundTickets;
+        int count = 0;
+        foreach (PlacedPlaygroundObject placed in _placedObjects)
+        {
+            if (placed.Type == type) count++;
+        }
+
+        return count;
     }
 
-    // 티켓의 스테이지는 드랍 시점에 정하고 그대로 굳힌다. 떨어뜨린 슬라임이
-    // 나중에 합성되어 하늘로 올라가도 이미 떨어진 티켓은 따라가지 않는다.
-    //
-    // 하늘 해금 여부는 보지 않는다. 하늘 등급 슬라임이 필드에 있다는 것 자체가
-    // 이미 해금됐다는 뜻이고, 여기서 다시 막으면 정상적인 드랍이 사라진다.
-    public void AddPendingTicket(EGameStage stage)
+    public bool TryBuyPlaygroundObject(EPlaygroundObjectType type)
     {
-        if (!GameStageRules.IsValid(stage))
+        if (!PlaygroundRules.IsValid(type)) return false;
+        if (_ownedPlaygroundObjects[(int)type] >= PlaygroundRules.MaxPerType) return false;
+
+        _ownedPlaygroundObjects[(int)type]++;
+        return true;
+    }
+
+    // 산 것 중 아직 놓지 않은 것이 있어야 놓을 수 있다.
+    public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)
+    {
+        if (!PlaygroundRules.IsValid(type)) return false;
+        if (GetPlacedPlaygroundObjectCount(type) >= PlaygroundRules.MaxPerType)
         {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {stage}");
+            return false;
         }
 
-        if (stage == EGameStage.Sky)
+        if (GetPlacedPlaygroundObjectCount(type) >= GetOwnedPlaygroundObjectCount(type))
         {
-            PendingSkyTickets++;
+            return false;
         }
-        else
+
+        if (!IsPlaygroundPositionAvailable(x, y)) return false;
+
+        _placedObjects.Add(new PlacedPlaygroundObject(
+            type,
+            PlaygroundRules.ClampX(x),
+            PlaygroundRules.ClampY(y)));
+        return true;
+    }
+
+    public bool TryMovePlacedObject(int index, float x, float y)
+    {
+        if (index < 0 || index >= _placedObjects.Count) return false;
+        if (!IsPlaygroundPositionAvailable(x, y, index)) return false;
+
+        PlacedPlaygroundObject placed = _placedObjects[index];
+        _placedObjects[index] = new PlacedPlaygroundObject(
+            placed.Type,
+            PlaygroundRules.ClampX(x),
+            PlaygroundRules.ClampY(y));
+        return true;
+    }
+
+    // 배치 규칙은 저장 상태를 소유한 도메인이 최종 판정한다. UI가 미리 물어보는
+    // 것은 안내 문구를 고르기 위한 것이고, 실제 변경도 반드시 이 검사를 다시 거친다.
+    public bool IsPlaygroundPositionAvailable(float x, float y, int ignoreIndex = -1)
+    {
+        if (!IsFinite(x) || !IsFinite(y)) return false;
+        if (ignoreIndex < -1 || ignoreIndex >= _placedObjects.Count) return false;
+
+        float clampedX = PlaygroundRules.ClampX(x);
+        float clampedY = PlaygroundRules.ClampY(y);
+        float minimumDistanceSquared =
+            PlaygroundRules.MinimumSpacing * PlaygroundRules.MinimumSpacing;
+
+        for (int i = 0; i < _placedObjects.Count; i++)
         {
-            PendingGroundTickets++;
+            if (i == ignoreIndex) continue;
+
+            float dx = _placedObjects[i].X - clampedX;
+            float dy = _placedObjects[i].Y - clampedY;
+            if (dx * dx + dy * dy < minimumDistanceSquared)
+            {
+                return false;
+            }
         }
+
+        return true;
+    }
+
+    // 치우면 보유로 돌아간다. 보유 수는 놓은 것을 포함한 총량이라 건드리지 않는다.
+    public bool TryRemovePlacedObject(int index)
+    {
+        if (index < 0 || index >= _placedObjects.Count) return false;
+
+        _placedObjects.RemoveAt(index);
+        return true;
+    }
+
+    // 쓰는 쪽에서 나올 수 없는 값만 막는다. 밸런스로 달라질 수 있는 값은 흡수한다.
+    //  - 모르는 종류, 상한을 넘은 배치 : 흘려보내거나 잘라낸다
+    //  - 방 밖 좌표 : 방 크기는 바뀔 수 있으므로 가둔다
+    //  - 음수 보유 수 : 정상적으로 만들 수 없으므로 막는다
+    private void RestorePlayground(
+        IEnumerable<PlacedPlaygroundObject> placedObjects,
+        IReadOnlyList<int> ownedCounts)
+    {
+        if (ownedCounts != null)
+        {
+            for (int i = 0; i < ownedCounts.Count && i < _ownedPlaygroundObjects.Length; i++)
+            {
+                int owned = ownedCounts[i];
+                if (owned < 0)
+                {
+                    throw new ArgumentException(
+                        $"놀이터 오브젝트 보유 수가 올바르지 않습니다. : {owned}");
+                }
+
+                _ownedPlaygroundObjects[i] = Math.Min(owned, PlaygroundRules.MaxPerType);
+            }
+        }
+
+        if (placedObjects != null)
+        {
+            foreach (PlacedPlaygroundObject placed in placedObjects)
+            {
+                if (!PlaygroundRules.IsValid(placed.Type)) continue;
+                if (!IsFinite(placed.X) || !IsFinite(placed.Y))
+                {
+                    throw new ArgumentException(
+                        $"놀이터 오브젝트 위치가 올바르지 않습니다. : ({placed.X}, {placed.Y})");
+                }
+
+                if (GetPlacedPlaygroundObjectCount(placed.Type) >=
+                    PlaygroundRules.MaxPerType)
+                {
+                    continue;
+                }
+
+                // 간격은 밸런스 값이라 나중에 넓어질 수 있다. 예전 저장끼리 겹치면
+                // 먼저 저장된 것만 놓고 나머지는 보유 상태로 돌려 막지 않고 흡수한다.
+                if (!IsPlaygroundPositionAvailable(placed.X, placed.Y)) continue;
+
+                _placedObjects.Add(new PlacedPlaygroundObject(
+                    placed.Type,
+                    PlaygroundRules.ClampX(placed.X),
+                    PlaygroundRules.ClampY(placed.Y)));
+            }
+        }
+
+        // 상한을 낮추는 개편이 있으면 놓은 수가 보유 수를 넘을 수 있다.
+        // 놓여 있는 것이 사실이므로 보유 수를 그쪽에 맞춘다.
+        for (int i = 0; i < _ownedPlaygroundObjects.Length; i++)
+        {
+            int placedCount = GetPlacedPlaygroundObjectCount((EPlaygroundObjectType)i);
+            if (_ownedPlaygroundObjects[i] < placedCount)
+            {
+                _ownedPlaygroundObjects[i] = placedCount;
+            }
+        }
+    }
+
+    public void UpdateBackgroundProgress(
+        EBackgroundTheme selectedBackgroundTheme,
+        bool backgroundUnlockCompleted)
+    {
+        if (!BackgroundThemeRules.IsValid(selectedBackgroundTheme))
+        {
+            throw new ArgumentException(
+                $"올바른 배경 테마가 아닙니다. : {selectedBackgroundTheme}");
+        }
+
+        if (selectedBackgroundTheme != EBackgroundTheme.Ground &&
+            !BackgroundThemeRules.IsUnlocked(HighestGrade))
+        {
+            throw new InvalidOperationException("배경 테마가 아직 해금되지 않았습니다.");
+        }
+
+        if (!IsBackgroundThemeOwned(selectedBackgroundTheme))
+        {
+            throw new InvalidOperationException("가지고 있지 않은 배경 테마입니다.");
+        }
+
+        SelectedBackgroundTheme = selectedBackgroundTheme;
+        BackgroundUnlockCompleted = backgroundUnlockCompleted &&
+                                    BackgroundThemeRules.IsUnlocked(HighestGrade);
+    }
+
+    public void AddPendingTicket()
+    {
+        PendingTickets++;
     }
 
     // 한 장 줍는다. 남은 장수가 없으면 아무것도 하지 않고 false를 준다.
     //
     // 화면의 오브젝트 수와 저장된 장수는 어긋날 수 있다. 표시 상한을 넘은 몫은
     // 저장에만 남기 때문이다. 그래서 오브젝트가 아니라 저장이 판정 근거다.
-    public bool TryConsumePendingTicket(EGameStage stage)
+    public bool TryConsumePendingTicket()
     {
-        if (!GameStageRules.IsValid(stage))
-        {
-            throw new ArgumentException($"올바른 스테이지가 아닙니다. : {stage}");
-        }
+        if (PendingTickets <= 0) return false;
 
-        if (GetPendingTickets(stage) <= 0) return false;
-
-        if (stage == EGameStage.Sky)
-        {
-            PendingSkyTickets--;
-        }
-        else
-        {
-            PendingGroundTickets--;
-        }
+        PendingTickets--;
 
         return true;
     }
@@ -228,18 +471,6 @@ public class SlimeStatus
     public void SetAutoSpawnEnabled(bool isEnabled)
     {
         IsAutoSpawnEnabled = isEnabled;
-    }
-
-    public bool SetAutoMergeEnabled(bool isEnabled)
-    {
-        if (isEnabled &&
-            NormalCollectionCount < NormalCollectionRules.AutoMergeCount)
-        {
-            return false;
-        }
-
-        IsAutoMergeEnabled = isEnabled;
-        return true;
     }
 
     public bool IsTutorialCompleted(string tutorialId)
@@ -264,13 +495,63 @@ public class SlimeStatus
 
     public bool TryMarkMainEndingSeen()
     {
-        if (MainEndingSeen || NormalCollectionCount < NormalCollectionRules.MainEndingCount)
+        if (MainEndingSeen || !IsGraduationDisplayComplete)
         {
             return false;
         }
 
         MainEndingSeen = true;
         return true;
+    }
+
+    public bool TryMarkMainEndingReached(DateTime reachedAtUtc)
+    {
+        if (MainEndingReachedAtUtc.HasValue ||
+            !IsGraduationDisplayComplete)
+        {
+            return false;
+        }
+
+        MainEndingReachedAtUtc = NormalizeUtc(reachedAtUtc);
+        return true;
+    }
+
+    public bool TrySetGraduationSnapshot(GraduationStatistics snapshot)
+    {
+        if (GraduationSnapshot.HasValue || !IsGraduationDisplayComplete)
+        {
+            return false;
+        }
+
+        GraduationSnapshot = snapshot;
+        MainEndingReachedAtUtc = snapshot.GraduatedAtUtc;
+        return true;
+    }
+
+    private static DateTime NormalizeUtc(DateTime value)
+    {
+        if (value == DateTime.MinValue)
+        {
+            throw new ArgumentException("게임 진행 시각이 비어 있습니다.");
+        }
+
+        return value.Kind == DateTimeKind.Utc
+            ? value
+            : value.ToUniversalTime();
+    }
+
+    public void RecordGachaTicketsObtained(int count)
+    {
+        if (count <= 0) return;
+
+        GachaTicketsObtainedTotal = GachaTicketsObtainedTotal > long.MaxValue - count
+            ? long.MaxValue
+            : GachaTicketsObtainedTotal + count;
+    }
+
+    public void RecordAutoMergeUse()
+    {
+        if (AutoMergeUseCount < long.MaxValue) AutoMergeUseCount++;
     }
 
     public bool RecordSpecialGachaResult(bool wasSpecial)
@@ -343,15 +624,14 @@ public class SlimeStatus
         }
 
         if (location == ESlimeLocation.DisplayRoom &&
-            HasDisplayRoomSlime(instance.Grade, instance.IsSpecial))
+            HasDisplayRoomSlime(instance.Grade))
         {
             throw new InvalidOperationException(
-                "장식장에는 같은 종류와 타입의 슬라임을 한 마리만 보관할 수 있습니다.");
+                "장식장에는 같은 종류의 슬라임을 한 마리만 보관할 수 있습니다.");
         }
 
         instance.MoveTo(location);
         if (location == ESlimeLocation.DisplayRoom &&
-            !instance.IsSpecial &&
             _registeredNormalCollection.Add(instance.Grade))
         {
             return instance.Grade;
@@ -366,12 +646,21 @@ public class SlimeStatus
         return _registeredNormalCollection.Contains(grade);
     }
 
-    public bool HasDisplayRoomSlime(ESlimeGrade grade, bool isSpecial)
+    // 특별한 슬라임도 일반과 같은 한 자리를 쓴다. 같은 등급이면 종류와 관계없이 한 마리다.
+    public bool HasDisplayRoomSlime(ESlimeGrade grade)
+    {
+        return _activeSlimes.Exists(instance =>
+            instance.Location == ESlimeLocation.DisplayRoom &&
+            instance.Grade == grade);
+    }
+
+    // 도감이 특별한 모습을 보여 줄지 정하는 근거다. 자리에 있는 것이 특별한 슬라임일 때뿐이다.
+    public bool HasSpecialDisplayRoomSlime(ESlimeGrade grade)
     {
         return _activeSlimes.Exists(instance =>
             instance.Location == ESlimeLocation.DisplayRoom &&
             instance.Grade == grade &&
-            instance.IsSpecial == isSpecial);
+            instance.IsSpecial);
     }
 
     // 모든 대상을 먼저 검증한 뒤 반영해 중간 실패와 같은 Tick 연쇄 합성을 막는다.
@@ -448,5 +737,10 @@ public class SlimeStatus
         {
             throw new ArgumentException($"올바른 등급 설정이 아닙니다. : {grade}");
         }
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

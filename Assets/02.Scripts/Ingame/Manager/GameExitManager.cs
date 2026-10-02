@@ -8,6 +8,7 @@ public sealed class GameExitManager : MonoBehaviour
     [SerializeField] private GameExitPopupUI _popup;
     [SerializeField] private UpgradeUI _upgradeUI;
     [SerializeField] private Clicker _clicker;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private bool _wasClickerEnabled;
     private bool _isWorldInputBlocked;
@@ -15,7 +16,7 @@ public sealed class GameExitManager : MonoBehaviour
 
     private void Start()
     {
-        if (_popup == null)
+        if (_popup == null || _gameplaySpaceManager == null)
         {
             Debug.LogError("게임 종료 팝업의 씬 참조가 비어 있습니다.", this);
             enabled = false;
@@ -36,7 +37,7 @@ public sealed class GameExitManager : MonoBehaviour
     private void Update()
     {
         if (Keyboard.current?.escapeKey.wasPressedThisFrame != true) return;
-        if (StageManager.Instance != null && StageManager.Instance.IsTransitioning) return;
+        if (_gameplaySpaceManager.IsTransitioning) return;
 
         if (TryHandleBack()) return;
 

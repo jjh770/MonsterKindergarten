@@ -1,6 +1,6 @@
-﻿using System;
-using DG.Tweening;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public sealed class DisplayRoomUI : MonoBehaviour
@@ -9,10 +9,14 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
     [SerializeField] private SpaceToggleButtonUI _spaceToggleButton;
     [SerializeField] private Button _sendButton;
-    [SerializeField] private StageUI _stageUI;
+    [FormerlySerializedAs("_stageUI")]
+    [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private UpgradeUI _upgradeUI;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SlimeManager _slimeManager;
 
     [Header("Send Mode")]
     [SerializeField] private GameObject _sendModeRoot;
@@ -26,10 +30,9 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _modeAnimationDuration = 0.35f;
 
-    private Tween _modeTween;
+    private GameplayModeSession _sendModeSession;
     private bool _isSendMode;
     private bool _isTransferPlaying;
-    private bool _wasUpgradeToggleInputEnabled;
     private Vector3 _transferStartPosition;
 
     public RectTransform SendButtonTarget => _sendButton != null
@@ -48,7 +51,16 @@ public sealed class DisplayRoomUI : MonoBehaviour
             return;
         }
 
-        _sendModeRoot.SetActive(false);
+        _sendModeSession = new GameplayModeSession(
+            _upgradeUI,
+            _clicker,
+            _gameExitManager,
+            _hudVisibility,
+            EHudParts.Top,
+            _sendModeRoot,
+            _sendModeCanvasGroup,
+            _modeAnimationDuration);
+        _sendModeSession.ResetPresentation();
         _toast.Hide();
 
         _panelSwitcher.MovePanelPresentationChanged += OnMovePanelPresentationChanged;
@@ -56,16 +68,16 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _sendButton.onClick.AddListener(BeginSendMode);
         _cancelButton.onClick.AddListener(CancelSendMode);
         _clicker.TargetClicked += OnTargetClicked;
-        StageManager.Instance.SpaceChanged += OnSpaceChanged;
-        StageManager.Instance.StageTransitionCompleted += OnStageTransitionCompleted;
-        GameManager.OnAllDataInitialized += Refresh;
-        GameManager.Instance.OnGameplayActivated += Refresh;
-        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
+        _spaceManager.SpaceChanged += OnSpaceChanged;
+        _spaceManager.BackgroundThemeTransitionCompleted += OnBackgroundThemeTransitionCompleted;
+        _gameManager.AllDataInitialized += Refresh;
+        _gameManager.OnGameplayActivated += Refresh;
+        _slimeManager.HighestGradeChanged += OnHighestGradeChanged;
         TutorialManager.Started += Refresh;
         TutorialManager.Finished += Refresh;
 
         bool isDisplayRoom =
-            StageManager.Instance.CurrentSpace == EGameplaySpace.DisplayRoom;
+            _spaceManager.CurrentSpace == EGameplaySpace.DisplayRoom;
         _panelSwitcher.ResetSelection(isDisplayRoom);
         ApplySpacePresentation(isDisplayRoom, animated: false);
         Refresh();
@@ -73,7 +85,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        _modeTween?.Kill();
+        _sendModeSession?.Dispose();
 
         if (_panelSwitcher != null)
         {
@@ -91,22 +103,21 @@ public sealed class DisplayRoomUI : MonoBehaviour
         if (_clicker != null)
         {
             _clicker.TargetClicked -= OnTargetClicked;
-            _clicker.ReleaseMode(this);
         }
 
-        if (StageManager.Instance != null)
+        if (_spaceManager != null)
         {
-            StageManager.Instance.SpaceChanged -= OnSpaceChanged;
-            StageManager.Instance.StageTransitionCompleted -= OnStageTransitionCompleted;
+            _spaceManager.SpaceChanged -= OnSpaceChanged;
+            _spaceManager.BackgroundThemeTransitionCompleted -= OnBackgroundThemeTransitionCompleted;
         }
 
-        GameManager.OnAllDataInitialized -= Refresh;
-        if (GameManager.Instance != null)
+        _gameManager.AllDataInitialized -= Refresh;
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameplayActivated -= Refresh;
+            _gameManager.OnGameplayActivated -= Refresh;
         }
 
-        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
+        _slimeManager.HighestGradeChanged -= OnHighestGradeChanged;
         TutorialManager.Started -= Refresh;
         TutorialManager.Finished -= Refresh;
         _gameExitManager?.UnregisterBackHandler(this);
@@ -117,7 +128,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         bool hasReferences = _panelSwitcher != null &&
                              _spaceToggleButton != null &&
                              _sendButton != null &&
-                             _stageUI != null &&
+                             _backgroundThemeUI != null &&
                              _gameExitManager != null &&
                              _clicker != null &&
                              _upgradeUI != null &&
@@ -126,8 +137,9 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _hudVisibility != null &&
                              _cancelButton != null &&
                              _toast != null &&
-                             GameManager.Instance != null &&
-                             StageManager.Instance != null;
+                             _gameManager != null &&
+                             _spaceManager != null &&
+                             _slimeManager != null;
         if (!hasReferences)
         {
             Debug.LogError("장식장 UI의 필수 참조가 비어 있습니다.", this);
@@ -138,44 +150,37 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void OnSpaceButtonClicked()
     {
-        StageManager stageManager = StageManager.Instance;
-        if (stageManager == null || _isSendMode) return;
+        GameplaySpaceManager spaceManager = _spaceManager;
+        if (spaceManager == null || _isSendMode) return;
 
-        if (stageManager.IsMainStageActive)
+        if (spaceManager.IsMainFieldActive)
         {
-            stageManager.TryEnterDisplayRoom();
+            spaceManager.TryEnterDisplayRoom();
         }
         else
         {
-            stageManager.TryExitDisplayRoom();
+            spaceManager.TryExitDisplayRoom();
         }
     }
 
     private void BeginSendMode()
     {
-        StageManager stageManager = StageManager.Instance;
+        GameplaySpaceManager spaceManager = _spaceManager;
         if (_isSendMode ||
-            stageManager == null ||
-            !stageManager.IsMainStageActive ||
-            stageManager.IsTransitioning)
+            spaceManager == null ||
+            !spaceManager.IsMainFieldActive ||
+            spaceManager.IsTransitioning)
         {
             return;
         }
 
-        _upgradeUI.TryClose();
-        _wasUpgradeToggleInputEnabled = _upgradeUI.IsToggleInputEnabled;
-        _upgradeUI.SetToggleInputEnabled(false);
-        // 서랍은 자기 폭과 세이프에어리어로 숨김 위치를 계산한다.
-        // 좌우 이동을 여기서 흉내 내지 않고 서랍에 맡긴다.
-        _upgradeUI.SetToggleVisible(false);
         _isSendMode = true;
-        _sendModeRoot.SetActive(true);
-        _sendModeRoot.transform.SetAsLastSibling();
-        _sendModeCanvasGroup.alpha = 0f;
         _toast.Hide();
-        ApplySendModeInput();
-        _gameExitManager.RegisterBackHandler(this, TryCancelSendMode);
-        PlayModePresentation(show: true);
+        _sendModeSession.Enter(
+            ClickerInputMode.SelectOnly(),
+            ClickerInputPriority.Selection,
+            TryCancelSendMode,
+            bringRootToFront: true);
         Refresh();
         SendModeStarted?.Invoke();
     }
@@ -203,14 +208,10 @@ public sealed class DisplayRoomUI : MonoBehaviour
         _isSendMode = false;
         _isTransferPlaying = false;
         _toast.Hide();
-        _gameExitManager.UnregisterBackHandler(this);
-        _clicker.ReleaseMode(this);
-        // 튜토리얼이 이미 잠가둔 경우까지 활성화하지 않고 진입 전 상태로 복구한다.
-        _upgradeUI.SetToggleInputEnabled(_wasUpgradeToggleInputEnabled);
-        PlayModePresentation(show: false);
+        _sendModeSession.Exit();
 
-        StageManager stageManager = StageManager.Instance;
-        bool isDisplayRoom = stageManager != null && !stageManager.IsMainStageActive;
+        GameplaySpaceManager spaceManager = _spaceManager;
+        bool isDisplayRoom = spaceManager != null && !spaceManager.IsMainFieldActive;
         ApplySpacePresentation(isDisplayRoom, animated: true);
         SendModeEnded?.Invoke();
     }
@@ -218,16 +219,13 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private void OnTargetClicked(SlimeController target)
     {
         if (!_isSendMode || _isTransferPlaying || target == null) return;
-        if (target.Location != ESlimeLocation.MainStage ||
-            !target.IsCurrentStageActive)
+        if (target.Location != ESlimeLocation.MainField ||
+            !target.IsMainFieldActive)
         {
             return;
         }
 
-        if (SlimeManager.Instance == null ||
-            !SlimeManager.Instance.CanMoveToDisplayRoom(
-                target.Grade,
-                target.IsSpecial))
+        if (!_slimeManager.CanMoveToDisplayRoom(target.Grade))
         {
             _toast.Show("같은 종류의 슬라임이 이미 장식장에 있어요.");
             return;
@@ -235,23 +233,25 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
         _isTransferPlaying = true;
         _transferStartPosition = target.transform.position;
-        _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
-        StageManager.Instance.PlayDisplayRoomTransfer(
+        _sendModeSession.SetInputMode(
+            ClickerInputMode.Blocked,
+            ClickerInputPriority.Modal);
+        _spaceManager.PlayDisplayRoomTransfer(
             target,
             () => CompleteTransfer(target));
     }
 
     private void CompleteTransfer(SlimeController target)
     {
-        StageManager stageManager = StageManager.Instance;
-        if (target == null || stageManager == null)
+        GameplaySpaceManager spaceManager = _spaceManager;
+        if (target == null || spaceManager == null)
         {
             EndSendMode();
             return;
         }
 
         _isTransferPlaying = false;
-        bool moved = stageManager.TryRelocateSlime(
+        bool moved = spaceManager.TryRelocateSlime(
             target,
             ESlimeLocation.DisplayRoom,
             _transferStartPosition);
@@ -268,10 +268,12 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
     private void ApplySendModeInput()
     {
-        _clicker.PushMode(this, ClickerInputMode.SelectOnly(), ClickerInputPriority.Selection);
+        _sendModeSession.SetInputMode(
+            ClickerInputMode.SelectOnly(),
+            ClickerInputPriority.Selection);
     }
 
-    private void OnStageTransitionCompleted()
+    private void OnBackgroundThemeTransitionCompleted()
     {
         if (_isSendMode)
         {
@@ -293,14 +295,14 @@ public sealed class DisplayRoomUI : MonoBehaviour
     private void ApplySpacePresentation(bool isDisplayRoom, bool animated)
     {
         _spaceToggleButton.SetSpace(isDisplayRoom);
-        _upgradeUI.SetToggleVisible(!isDisplayRoom, animated);
+        // 상점은 장식장에서도 쓴다. 공간에 따라 파는 물건만 달라진다.
+        _upgradeUI.SetToggleVisible(true, animated);
         Refresh();
     }
 
     private bool TryExitDisplayRoom()
     {
-        return StageManager.Instance != null &&
-               StageManager.Instance.TryExitDisplayRoom();
+        return _spaceManager.TryExitDisplayRoom();
     }
 
     private bool HandleBack()
@@ -312,8 +314,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     {
         if (_gameExitManager == null) return;
 
-        bool isDisplayRoom = StageManager.Instance != null &&
-                             !StageManager.Instance.IsMainStageActive;
+        bool isDisplayRoom = !_spaceManager.IsMainFieldActive;
         if (isDisplayRoom)
         {
             _gameExitManager.RegisterBackHandler(this, HandleBack);
@@ -334,14 +335,14 @@ public sealed class DisplayRoomUI : MonoBehaviour
         if (_panelSwitcher == null ||
             _spaceToggleButton == null ||
             _sendButton == null ||
-            _stageUI == null)
+            _backgroundThemeUI == null)
         {
             return;
         }
 
-        StageManager stageManager = StageManager.Instance;
-        bool isDisplayRoom = stageManager != null &&
-                             !stageManager.IsMainStageActive;
+        GameplaySpaceManager spaceManager = _spaceManager;
+        bool isDisplayRoom = spaceManager != null &&
+                             !spaceManager.IsMainFieldActive;
         _panelSwitcher.ApplyContext(
             isAreaVisible: !_isSendMode,
             forceMovePanel: isDisplayRoom,
@@ -358,37 +359,13 @@ public sealed class DisplayRoomUI : MonoBehaviour
     // 보내기 버튼만 장식장 안에서 추가로 숨긴다.
     private void OnMovePanelPresentationChanged(bool isMovePanelVisible)
     {
-        StageManager stageManager = StageManager.Instance;
-        bool isDisplayRoom = stageManager != null &&
-                             !stageManager.IsMainStageActive;
+        GameplaySpaceManager spaceManager = _spaceManager;
+        bool isDisplayRoom = spaceManager != null &&
+                             !spaceManager.IsMainFieldActive;
         bool showChildren = isMovePanelVisible && !isDisplayRoom;
 
-        _stageUI.SetMenuPresentation(showChildren);
+        _backgroundThemeUI.SetMenuPresentation(showChildren);
         _sendButton.gameObject.SetActive(showChildren);
-    }
-
-    private void PlayModePresentation(bool show)
-    {
-        if (show)
-        {
-            _hudVisibility.PushHide(this, EHudParts.Top);
-        }
-        else
-        {
-            _hudVisibility.Release(this);
-        }
-
-        _modeTween?.Kill();
-        _modeTween = _sendModeCanvasGroup
-            .DOFade(show ? 1f : 0f, _modeAnimationDuration)
-            .OnComplete(() =>
-            {
-                _modeTween = null;
-                if (!show)
-                {
-                    _sendModeRoot.SetActive(false);
-                }
-            });
     }
 
 }

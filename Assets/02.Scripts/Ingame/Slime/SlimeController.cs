@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // 슬라임 도메인을 가지고 있고 실제 갖가지 기능을 동작하게하는 슬라임 컨트롤러
@@ -10,7 +11,9 @@ public class SlimeController : MonoBehaviour, IClickable
 
     private IFeedback[] _feedbacks = Array.Empty<IFeedback>();
     private SlimeMove _slimeMove;
+    private ScaleTweeningFeedback _scaleFeedback;
     private SpriteRenderer _spriteRenderer;
+    private static readonly List<Collider2D> MergeFallbackHits = new(8);
     private Collider2D[] _colliders = Array.Empty<Collider2D>();
     private Rigidbody2D _rigidbody;
     private RigidbodyInterpolation2D _defaultInterpolation;
@@ -22,23 +25,28 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _isDragging = false;
     private int _defaultSortingOrder;
     private float _autoProductionTimer;
+    // 연출이 이 슬라임을 쓰는 중인지. 대포가 물고 있는 동안 정보창이 이 값을 보고
+    // 버튼을 내린다.
+    private bool _isPresentationLocked;
+    // 현재 공간에서 이 슬라임(Location)이 보여야 하는지. SetLocationPresentationActive가 소유.
+    private bool _isSpaceVisible;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
     public bool IsSpecial => Instance != null && Instance.IsSpecial;
     public ESlimeLocation Location => Instance != null
         ? Instance.Location
-        : ESlimeLocation.MainStage;
+        : ESlimeLocation.MainField;
     public bool IsDragging => _isDragging;
     // 스폰 직후 떨어지는 동안에는 합성 대상으로 삼지 않는다.
     public bool HasLanded => _hasLanded;
     public int Point => _slime != null ? _slime.SpecData.Point : 1;
     public float AutoClickInterval => _slime != null ? _slime.SpecData.AutoClickInterval : 1f;
-    public bool IsCurrentStageActive =>
+    public bool IsMainFieldActive =>
         Instance != null &&
-        Location == ESlimeLocation.MainStage &&
-        (StageManager.Instance == null ||
-         StageManager.Instance.IsStageActive(Grade));
+        Location == ESlimeLocation.MainField &&
+        (GameplaySpaceManager.Instance == null ||
+         GameplaySpaceManager.Instance.IsMainFieldInteractionActive);
 
     public event Action<ESlimeGrade> OnGradeChanged;
     public event Action OnSpawned;
@@ -46,10 +54,15 @@ public class SlimeController : MonoBehaviour, IClickable
     public event Action OnLanded;
     public event Action OnInteracted;
 
+    // 슬라임끼리 부딪혔을 때 그 충돌 속도를 넘긴다. 세기에 따라 반응을 달리하려는
+    // 쪽이 쓴다. 메인 필드에서는 레이어 행렬이 서로를 막고 있어 장식장에서만 난다.
+    public event Action<float> OnBumped;
+
     private void Awake()
     {
         _feedbacks = GetComponentsInChildren<IFeedback>();
         _slimeMove = GetComponent<SlimeMove>();
+        _scaleFeedback = GetComponent<ScaleTweeningFeedback>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
         if (_spriteRenderer != null)
         {
@@ -87,6 +100,14 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         SetDragging(false);
         _hasLanded = false;
+        // 풀에서 재사용된 오브젝트가 이전 연출 잠금이나 보간 설정을 물려받지 않게 한다.
+        // 스폰된 슬라임은 기본적으로 메인 필드에 보이는 상태다. 장식장 복원은 직후
+        // SetLocationPresentationActive(false)가 명시적으로 끈다. 합성으로 살아남는
+        // 슬라임처럼 SetLocationPresentationActive를 다시 거치지 않는 경로도 있으므로
+        // 기본값을 보임(true)으로 두어야 만질 수 있는 상태가 유지된다.
+        _isPresentationLocked = false;
+        _isSpaceVisible = true;
+        SetDisplayRoomCameraFocus(false);
         ResetAutoProductionPhase();
         OnSpawned?.Invoke();
     }
@@ -120,6 +141,8 @@ public class SlimeController : MonoBehaviour, IClickable
     public void OnDespawn()
     {
         SetDragging(false);
+        // 자동합성 등 연출이 잠근 채 despawn되면 그 잠금이 풀로 유입되므로, 반환 전에 해제한다.
+        _isPresentationLocked = false;
         Instance = null;
     }
 
@@ -128,20 +151,70 @@ public class SlimeController : MonoBehaviour, IClickable
         _slimeMove?.SetMovementLocked(isLocked);
     }
 
+    // 장식장 놀이터가 이 슬라임을 건드려도 되는지.
+    //
+    // 이 놀이는 장식장 안에서만 성립한다. 메인 필드 슬라임은 터치 포인트와 드래그
+    // 합성의 대상이라, 밀려 날아가면 조준이 불가능해지고 합성 판정이 겹친다.
+    // 다른 공간의 슬라임은 물리가 꺼져 있어 닿지도 않지만, 충돌을 거치지 않는
+    // 호출이 생길 수 있으므로 여기서 한 번 더 막는다.
+    //
+    // 보고 있는 슬라임도 뺄 이유가 없다. 카메라가 그 슬라임을 따라다니므로
+    // (기획서 §8) 밀려 날아가면 화면도 같이 따라간다. 그 편이 재미있다.
+    // 대신 물려 있는 동안 정보창이 손을 떼는 일은 DisplayRoomInfoUI가 맡는다.
+    //
+    // 이미 다른 연출이 쓰는 중이면 뺀다. 그때는 콜라이더가 꺼져 있어 부딪힐 일도
+    // 없지만, Launch는 콜라이더를 거치지 않고 들어온다.
+    //
+    // 범퍼는 미는 순간에, 대포는 붙잡기 전에 같은 조건을 봐야 한다. 두 곳에
+    // 따로 쓰면 한쪽만 고쳐졌을 때 조용히 어긋난다.
+    public bool IsPlaygroundTarget =>
+        !_isDragging &&
+        !_isPresentationLocked &&
+        _slimeMove != null &&
+        Location == ESlimeLocation.DisplayRoom;
+
+    // 실제로 밀었는지를 돌려주므로, 부르는 쪽은 조건을 다시 쓰지 않고 연출만
+    // 이 결과에 맞추면 된다.
+    public bool Launch(Vector2 velocity)
+    {
+        if (!IsPlaygroundTarget) return false;
+
+        return _slimeMove.Launch(velocity);
+    }
+
+    // 이미 날아가는 중인지. 오브젝트가 같은 슬라임을 연달아 밀지 판단한다.
+    public bool IsLaunched => _slimeMove != null && _slimeMove.IsLaunched;
+
+    // 합성이나 대포처럼 다른 연출이 이 슬라임을 쓰는 중인지. 그동안 이 슬라임을
+    // 옮기거나 위치를 손대면 연출이 끝나면서 그 결과를 덮어쓴다.
+    public bool IsPresentationLocked => _isPresentationLocked;
+
     // 자동 합성처럼 연출이 개체를 직접 움직이는 동안 쓴다. 콜라이더를 끄므로 터치도
     // 드래그도 닿지 않고, 물리가 연출 위치를 밀어내지도 않는다. 화면에는 계속 보인다.
     public void SetPresentationLocked(bool isLocked)
     {
+        _isPresentationLocked = isLocked;
+
         if (isLocked)
         {
             CancelDrag();
+
+            // 크기의 주인은 피드백 쪽이다. 돌고 있던 펀치를 여기서 정리하지 않으면
+            // 연출이 정한 크기를 펀치가 끝나면서 덮어쓴다.
+            _scaleFeedback?.StopAndReset();
         }
 
-        // 풀 때는 스테이지가 정해 둔 표시 상태를 따른다. 그림이 꺼진 슬라임은 다른 스테이지에
-        // 숨어 있는 것이라, 콜라이더와 물리만 되살아나면 보이지 않는 채로 터치를 가로채고
-        // 보이는 슬라임을 밀어낸다. 스테이지 전환 중 판정은 흔들리므로 그림 상태를 기준으로 삼는다.
-        bool isInteractive = !isLocked &&
-                             (_spriteRenderer == null || _spriteRenderer.enabled);
+        // 렌더러는 건드리지 않는다. 그림은 공간 가시성 축이 정한다.
+        ApplyInteractionState();
+    }
+
+    // 콜라이더·물리·이동 잠금·슬라임끼리 충돌을 정하는 유일한 지점이다. 두 축을 AND한다.
+    // 공간에 보이면서(_isSpaceVisible) 연출이 점유하지 않을 때(!_isPresentationLocked)만 만질 수 있다.
+    private void ApplyInteractionState()
+    {
+        bool isInteractive = _isSpaceVisible && !_isPresentationLocked;
+
+        ApplySlimeToSlimeCollision();
 
         foreach (Collider2D targetCollider in _colliders)
         {
@@ -166,6 +239,8 @@ public class SlimeController : MonoBehaviour, IClickable
 
     public void SetDisplayRoomCameraFocus(bool isFocused)
     {
+        // 카메라가 이 슬라임을 따라다니는 동안이다(기획서 §8). 보간을 켜 두지 않으면
+        // 물리 갱신 주기로 끊기는 위치를 카메라가 그대로 따라가 화면이 떨린다.
         if (_rigidbody != null)
         {
             _rigidbody.interpolation = isFocused
@@ -174,51 +249,66 @@ public class SlimeController : MonoBehaviour, IClickable
         }
     }
 
-    public void SetStagePresentationActive(bool isActive)
+    public void SetLocationPresentationActive(bool isActive)
     {
+        _isSpaceVisible = isActive;
+
         if (!isActive)
         {
             CancelDrag();
-            // 비활성 스테이지에서 복원된 슬라임이 다시 활성화될 때
+            // 다른 공간에서 복원된 슬라임이 다시 활성화될 때
             // 일괄 충돌로 착지음이 재생되지 않도록 첫 착지를 소비한다.
             _hasLanded = true;
         }
 
+        // 그림은 공간 가시성 축이 정한다. 연출 잠금은 그림을 끄지 않는다.
         if (_spriteRenderer != null)
         {
             _spriteRenderer.enabled = isActive;
+        }
+
+        ApplyInteractionState();
+    }
+
+    // 대포가 물고 있는 동안 "빨려 들어간" 표현으로 그림만 감춘다. 공간 가시성 축(_isSpaceVisible)과
+    // 물리/상호작용(콜라이더·리지드바디·이동잠금)은 건드리지 않는다. 잠금은 SetPresentationLocked이
+    // 이미 물리를 끈다. 시각 숨김이 걸리면 공간이 보임이어도 그림을 끄고, 풀리면 공간 가시성으로 돌아간다.
+    public void SetPresentationVisualHidden(bool isHidden)
+    {
+        if (_spriteRenderer != null)
+        {
+            _spriteRenderer.enabled = !isHidden && _isSpaceVisible;
+        }
+    }
+
+    // 슬라임끼리는 레이어 충돌 행렬에서 서로 부딪히지 않게 꺼 두었다(Clickable 대 Clickable).
+    // 드래그로 겹쳐서 합성하는 조작이 그 위에 서 있어, 행렬을 켜면 두 마리를 포개는
+    // 것 자체가 불가능해져 메인 필드의 합성이 깨진다.
+    //
+    // 그래서 행렬은 그대로 두고, 장식장에 있는 동안만 이 개체에 한해 같은 레이어를
+    // 다시 포함시킨다. 리지드바디와 콜라이더 양쪽에 같은 값을 넣는 것은 둘 중
+    // 어느 쪽이 우선하든 결과가 같게 하려는 것이다.
+    private void ApplySlimeToSlimeCollision()
+    {
+        LayerMask mask = Location == ESlimeLocation.DisplayRoom
+            ? 1 << gameObject.layer
+            : 0;
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.includeLayers = mask;
         }
 
         foreach (Collider2D targetCollider in _colliders)
         {
             if (targetCollider != null)
             {
-                targetCollider.enabled = isActive;
+                targetCollider.includeLayers = mask;
             }
-        }
-
-        if (!isActive)
-        {
-            _slimeMove?.SetMovementLocked(true);
-        }
-
-        if (_rigidbody != null)
-        {
-            if (!isActive)
-            {
-                _rigidbody.linearVelocity = Vector2.zero;
-            }
-
-            _rigidbody.simulated = isActive;
-        }
-
-        if (isActive)
-        {
-            _slimeMove?.SetMovementLocked(false);
         }
     }
 
-    public void PrepareStageTransfer()
+    public void PreparePresentationTransfer()
     {
         if (_spriteRenderer != null)
         {
@@ -249,6 +339,12 @@ public class SlimeController : MonoBehaviour, IClickable
             _hasLanded = true;
             OnLanded?.Invoke();
         }
+
+        // Collision2D.collider는 상대 쪽 콜라이더다. 벽에 닿은 것과 구분하려면
+        // 이 검사가 필요하다.
+        if (collision.collider.GetComponent<SlimeController>() == null) return;
+
+        OnBumped?.Invoke(collision.relativeVelocity.magnitude);
     }
 
     public void StartDrag()
@@ -297,8 +393,8 @@ public class SlimeController : MonoBehaviour, IClickable
         return other != null &&
                other != this &&
                // 기획서 §7.2 - 장식장 개체는 합성 대상이 되지 않는다.
-               Location == ESlimeLocation.MainStage &&
-               other.Location == ESlimeLocation.MainStage &&
+               Location == ESlimeLocation.MainField &&
+               other.Location == ESlimeLocation.MainField &&
                _slime != null &&
                other.Slime != null &&
                SlimeManager.Instance != null &&
@@ -313,9 +409,12 @@ public class SlimeController : MonoBehaviour, IClickable
             return;
         }
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.5f);
+        // 드래그를 놓을 때마다 돌므로 배열을 새로 받지 않는다. 병합은 목록을 다 돈 뒤가 아니라
+        // 찾자마자 return하므로 정적 버퍼를 공유해도 겹쳐 쓰이지 않는다.
+        MergeFallbackHits.Clear();
+        Physics2D.OverlapCircle(transform.position, 0.5f, ContactFilter2D.noFilter, MergeFallbackHits);
 
-        foreach (var hit in hits)
+        foreach (Collider2D hit in MergeFallbackHits)
         {
             SlimeController other = hit.GetComponent<SlimeController>();
 
@@ -334,19 +433,16 @@ public class SlimeController : MonoBehaviour, IClickable
             OnInteracted?.Invoke();
         }
 
-        if (!IsSpecial)
-        {
-            SlimeManager.Instance?.RecordProduction(
-                clickInfo.Grade,
-                clickInfo.ClickType,
-                clickInfo.Point);
-        }
+        SlimeManager.Instance?.RecordProduction(
+            clickInfo.Grade,
+            clickInfo.ClickType,
+            clickInfo.Point);
 
         // 포인트 적립
         CurrencyManager.Instance.Add(ECurrencyType.Point, clickInfo.Point);
 
         // 클릭에 대한 피드백
-        if (!IsCurrentStageActive) return true;
+        if (!IsMainFieldActive) return true;
 
         foreach (IFeedback feedback in _feedbacks)
         {

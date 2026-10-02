@@ -22,8 +22,8 @@
             {
                 return num.ToString("N0");
             }
-            int suffixIndex = 0;
 
+            int suffixIndex = 0;
             double value = num;
             while (value >= 1000 && suffixIndex < MaxSuffixIndex)
             {
@@ -31,11 +31,30 @@
                 suffixIndex++;
             }
 
+            int places = PlacesFor(value);
+            double rounded = System.Math.Round(value, places, System.MidpointRounding.AwayFromZero);
+
+            // 반올림 결과가 1000 이상이면 한 단위 위로 올린다. "1000K" 대신 "1.00M".
+            if (rounded >= 1000d && suffixIndex < MaxSuffixIndex)
+            {
+                value = rounded / 1000d;
+                suffixIndex++;
+                places = PlacesFor(value);
+                rounded = System.Math.Round(value, places, System.MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                // 반올림이 100/10 경계를 넘었으면 자릿수를 다시 정한다(예: 99.95→100.0→100).
+                value = rounded;
+                places = PlacesFor(value);
+            }
+
             string suffix = GetSuffix(suffixIndex);
-            if (value >= 100) return $"{value:F0}{suffix}";
-            if (value >= 10) return $"{value:F1}{suffix}";
-            return $"{value:F2}{suffix}";
+            return $"{rounded.ToString("F" + places)}{suffix}";
         }
+
+        // 값 크기에 따른 표시 소수 자릿수. 100 이상 0자리, 10 이상 1자리, 그 외 2자리.
+        private static int PlacesFor(double v) => v >= 100d ? 0 : v >= 10d ? 1 : 2;
 
         // T 다음은 aa, ab, ... az, ba 순으로 이어 간다.
         //

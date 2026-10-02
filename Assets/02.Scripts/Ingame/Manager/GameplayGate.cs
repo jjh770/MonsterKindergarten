@@ -26,10 +26,10 @@ public static class GameplayGate
         GameManager.Instance.IsGameplayActive;
 
     // 필드 위에 얹히는 UI가 쓴다. 장식장을 보고 있으면 false다.
-    public static bool IsMainStageReady =>
+    public static bool IsMainFieldReady =>
         IsReady &&
-        StageManager.Instance != null &&
-        StageManager.Instance.IsMainStageActive;
+        GameplaySpaceManager.Instance != null &&
+        GameplaySpaceManager.Instance.IsMainFieldActive;
 
     // 장식장으로 가는 입구를 열어도 되는가. 해금은 도메인이 판단하고 여기서는
     // 그것을 지금 보여 줘도 되는지만 더한다.

@@ -52,12 +52,13 @@ public static class GameDataResetService
             await db.WaitForPendingWritesAsync().AsUniTask()
                 .AttachExternalCancellation(timeout.Token);
 
-            // 새 저장 도메인을 추가하면 이 배치와 아래 로컬 삭제를 함께 확장한다.
             // 다른 기기의 로컬 세이브까지 무효화하는 계정 단위 세대 관리는 별도 정책이다.
             WriteBatch batch = db.StartBatch();
-            batch.Delete(db.Collection("Currency").Document(userId));
-            batch.Delete(db.Collection("SlimeStatus").Document(userId));
-            batch.Delete(db.Collection("Upgrade").Document(userId));
+            foreach (GameDataDomainDefinition domain in GameDataDomains.All)
+            {
+                batch.Delete(
+                    db.Collection(domain.CloudCollectionName).Document(userId));
+            }
             // 진행도는 아니지만 계정에 딸린 문서라 함께 지운다. 남겨도 무해하지만
             // 계정 삭제 뒤 고아 문서가 남는다.
             batch.Delete(db.Collection("TimeSync").Document(userId));
@@ -66,9 +67,10 @@ public static class GameDataResetService
             await UniTask.CompletedTask;
 #endif
 
-            new LocalCurrencyRepository(userId).Delete();
-            new PlayerPrefsSlimeStatusRepository(userId).Delete();
-            new PlayerPrefsUpgradeRepository(userId).Delete();
+            foreach (GameDataDomainDefinition domain in GameDataDomains.All)
+            {
+                domain.DeleteLocalData(userId);
+            }
             TutorialProgress.DeleteForUser(userId);
             PlayerPrefs.DeleteKey(PendingKey(userId));
             PlayerPrefs.Save();

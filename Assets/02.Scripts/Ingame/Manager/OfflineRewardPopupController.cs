@@ -4,6 +4,7 @@ using UnityEngine;
 public sealed class OfflineRewardPopupController : MonoBehaviour
 {
     [SerializeField] private OfflineRewardPopupUI _view;
+    [SerializeField] private OfflineRewardManager _offlineRewardManager;
 
     private OfflineRewardResult? _displayedReward;
 
@@ -24,7 +25,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
             return;
         }
 
-        if (OfflineRewardManager.Instance == null)
+        if (_offlineRewardManager == null)
         {
             Debug.LogError("보상 매니저가 없어 오프라인 보상 팝업을 초기화할 수 없습니다.", this);
             enabled = false;
@@ -33,7 +34,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
 
         _view.ConfirmRequested += OnConfirmRequested;
         _view.PresentationCompleted += OnPresentationCompleted;
-        OfflineRewardManager.Instance.Ready += ShowPendingReward;
+        _offlineRewardManager.Ready += ShowPendingReward;
         ShowPendingReward();
     }
 
@@ -45,17 +46,17 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
             _view.PresentationCompleted -= OnPresentationCompleted;
         }
 
-        if (OfflineRewardManager.Instance != null)
+        if (_offlineRewardManager != null)
         {
-            OfflineRewardManager.Instance.Ready -= ShowPendingReward;
+            _offlineRewardManager.Ready -= ShowPendingReward;
         }
     }
 
     private void ShowPendingReward()
     {
         if (_displayedReward.HasValue ||
-            OfflineRewardManager.Instance == null ||
-            !OfflineRewardManager.Instance.TryConsume(out OfflineRewardResult result))
+            _offlineRewardManager == null ||
+            !_offlineRewardManager.TryConsume(out OfflineRewardResult result))
         {
             return;
         }
@@ -67,14 +68,16 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
     private void OnConfirmRequested()
     {
         if (!_displayedReward.HasValue ||
-            OfflineRewardManager.Instance == null ||
-            !OfflineRewardManager.Instance.TryClaim())
+            _offlineRewardManager == null ||
+            !_offlineRewardManager.TryClaim())
         {
             return;
         }
 
         OfflineRewardResult result = _displayedReward.Value;
-        float duration = _view.PlayCollect(result.ElapsedTime);
+        float duration = _view.PlayCollect(
+            result.ElapsedTime,
+            result.TicketReward);
 
         if ((double)result.Reward > 0d)
         {
@@ -89,7 +92,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
     {
         if (!_displayedReward.HasValue) return;
 
-        OfflineRewardManager.Instance?.CompletePresentation();
+        _offlineRewardManager?.CompletePresentation();
         _displayedReward = null;
     }
 }

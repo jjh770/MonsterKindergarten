@@ -13,22 +13,29 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeInDuration = 0.3f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
-    [SerializeField] private AudioClip _unlockSound;
     [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private Sprite _ticketSprite;
 
     private Sequence _sequence;
     private Tween _glowScaleTween;
     private Tween _glowRotateTween;
+    private bool _isHolding;
 
     public event System.Action<ESlimeGrade> PresentationCompleted;
 
     // 연출이 진행 중일 때만 PresentationCompleted가 발화한다.
     // 대기 여부를 판단하는 쪽에서 이 값을 먼저 확인해야 한다.
-    public bool IsPresenting => _sequence != null;
+    public bool IsPresenting => _sequence != null || _isHolding;
+
+    // 티켓 연출의 그림 자리와 그림. 튜토리얼이 이 자리에서 상단 바로 티켓을 날려 보낸다.
+    public RectTransform TicketAnchor => _gradeImage != null ? _gradeImage.rectTransform : null;
+    public Sprite TicketSprite => _ticketSprite;
 
     private void Awake()
     {
-        if (_popupPanel == null || _canvasGroup == null)
+        if (_popupPanel == null || _canvasGroup == null ||
+            _slimeManager == null)
         {
             Debug.LogError("해금 팝업의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -37,7 +44,7 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void Start()
     {
-        SlimeManager.OnHighestGradeChanged += ShowPopup;
+        _slimeManager.HighestGradeChanged += ShowPopup;
         _popupPanel.SetActive(false);
     }
 
@@ -48,7 +55,7 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        SlimeManager.OnHighestGradeChanged -= ShowPopup;
+        _slimeManager.HighestGradeChanged -= ShowPopup;
         CleanupTweens();
     }
 
@@ -58,30 +65,23 @@ public class UnlockPopupUI : MonoBehaviour
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
-        if (AudioManager.Instance != null && _unlockSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_unlockSound);
-        }
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
+
+        // 등급 숫자만으로는 무엇이 열렸는지 알 수 없다. 이름과 그림이 같은 스펙에서
+        // 나오므로 한 번만 찾아 둘 다 쓴다.
+        SlimeSpecData specData = _slimeManager.Get(grade)?.SpecData;
 
         if (_gradeText != null)
         {
-            _gradeText.text = $"Lv.{(int)grade} 해금!";
+            _gradeText.text = $"{specData?.Name ?? grade.ToString()} 해금!";
         }
 
         if (_gradeImage != null)
         {
-            _gradeImage.sprite = SlimeManager.Instance.Get(grade)?.SpecData.Sprite;
+            _gradeImage.sprite = specData?.Sprite;
         }
 
-        if (_whiteGlowImage != null)
-        {
-            _whiteGlowImage.SetScaleToZero();
-            _glowScaleTween = _whiteGlowImage.transform.DOScale(Vector3.one, 1f);
-            _glowRotateTween = _whiteGlowImage.transform.DORotate(
-                new Vector3(0, 0, 360),
-                3f,
-                RotateMode.LocalAxisAdd);
-        }
+        StartGlow();
 
         // 페이드 인 -> 대기 -> 페이드 아웃
         _sequence = DOTween.Sequence();
@@ -98,8 +98,64 @@ public class UnlockPopupUI : MonoBehaviour
         });
     }
 
+    // 가챠 튜토리얼이 티켓 한 장을 줄 때 쓴다. 슬라임 해금과 같은 연출이지만 스스로 사라지지
+    // 않는다. 대화가 넘어갈 때까지 떠 있어야 해서 ReleaseHold가 불릴 때까지 붙든다.
+    // PresentationCompleted는 슬라임 등급을 싣고 오므로 이 경로에서는 보내지 않는다.
+    public void ShowTicketHold(string title)
+    {
+        CleanupTweens();
+        _isHolding = true;
+        _popupPanel.SetActive(true);
+        _canvasGroup.alpha = 0f;
+
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
+
+        if (_gradeText != null)
+        {
+            _gradeText.text = title;
+        }
+
+        if (_gradeImage != null)
+        {
+            _gradeImage.sprite = _ticketSprite;
+        }
+
+        StartGlow();
+        _canvasGroup.DOFade(1f, _fadeInDuration).SetId(this);
+    }
+
+    public void ReleaseHold()
+    {
+        if (!_isHolding) return;
+
+        CleanupTweens();
+        _sequence = DOTween.Sequence();
+        _sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
+        _sequence.OnComplete(() =>
+        {
+            _sequence = null;
+            CleanupGlowTweens();
+            _popupPanel.SetActive(false);
+            _whiteGlowImage?.SetScaleToZero();
+        });
+    }
+
+    private void StartGlow()
+    {
+        if (_whiteGlowImage == null) return;
+
+        _whiteGlowImage.SetScaleToZero();
+        _glowScaleTween = _whiteGlowImage.transform.DOScale(Vector3.one, 1f);
+        _glowRotateTween = _whiteGlowImage.transform.DORotate(
+            new Vector3(0, 0, 360),
+            3f,
+            RotateMode.LocalAxisAdd);
+    }
+
     private void CleanupTweens()
     {
+        _isHolding = false;
+        DOTween.Kill(this);
         _sequence?.Kill();
         _sequence = null;
         CleanupGlowTweens();

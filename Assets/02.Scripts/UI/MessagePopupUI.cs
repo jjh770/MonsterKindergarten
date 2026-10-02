@@ -15,7 +15,6 @@ public class MessagePopupUI : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private RectTransform _popupRectTransform;
     [SerializeField] private TextMeshProUGUI _messageText;
-    [SerializeField] private AudioClip _popupSound;
 
     [Header("Animation")]
     [SerializeField] private float _fadeInDuration = 0.2f;
@@ -25,6 +24,7 @@ public class MessagePopupUI : MonoBehaviour
     [SerializeField] private float _punchStrength = 15f;
 
     private Sequence _currentSequence;
+    private Vector2 _basePosition;
 
     private void Awake()
     {
@@ -45,6 +45,8 @@ public class MessagePopupUI : MonoBehaviour
             return;
         }
 
+        _basePosition = _popupRectTransform.anchoredPosition;
+
         _popupPanel.SetActive(false);
     }
 
@@ -64,13 +66,13 @@ public class MessagePopupUI : MonoBehaviour
         // 이전 애니메이션 취소
         _currentSequence?.Kill();
 
+        // 이전 펀치가 남긴 오프셋을 지우고 항상 기준 위치에서 시작
+        _popupRectTransform.anchoredPosition = _basePosition;
+
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
-        if (AudioManager.Instance != null && _popupSound != null)
-        {
-            AudioManager.Instance.PlaySFX(_popupSound);
-        }
+        AudioManager.Instance?.PlaySFX(EAudioSfx.InsufficientCurrency);
 
         if (_messageText != null && message != null)
         {

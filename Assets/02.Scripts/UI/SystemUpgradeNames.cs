@@ -12,7 +12,8 @@ public static class SystemUpgradeNames
             EUpgradeType.SpawnTimeSub => "스폰 시간 단축",
             EUpgradeType.MaxCountAdd => "최대 슬라임 수",
             EUpgradeType.HigherGradeSpawnWeightAdd => "상위 슬라임 등장 확률",
-            EUpgradeType.AutoMergeTimeSub => "자동 합성 시간 단축",
+            EUpgradeType.AutoMergePairAdd => "자동 합성 쌍 수",
+            EUpgradeType.AllSlimePointPercentAdd => "슬라임 업그레이드",
             _ => upgradeType.ToString(),
         };
     }

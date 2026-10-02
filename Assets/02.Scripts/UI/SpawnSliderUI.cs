@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +14,9 @@ public class SpawnSliderUI : MonoBehaviour
     [SerializeField] private Button _spawnPoolButton;
     [SerializeField] private SpawnPoolPopupUI _spawnPoolPopup;
     [SerializeField] private ScholarGuideUI _scholarGuide;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
 
     private const string AutoSpawnOffMessage = "자동 스폰 꺼짐";
     private const string FieldFullMessage = "공간 가득 참";
@@ -46,6 +49,15 @@ public class SpawnSliderUI : MonoBehaviour
 
     private void Awake()
     {
+        if (_spawnManager == null ||
+            _slimeManager == null ||
+            _upgradeManager == null)
+        {
+            Debug.LogError("스폰 게이지의 매니저 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
         _spawnPoolPopup?.Hide();
         if (_spawnPoolPopup != null)
         {
@@ -64,8 +76,8 @@ public class SpawnSliderUI : MonoBehaviour
 
     private void Start()
     {
-        SlimeManager.OnHighestGradeChanged += OnHighestGradeChanged;
-        UpgradeManager.OnUpgraded += OnUpgraded;
+        _slimeManager.HighestGradeChanged += OnHighestGradeChanged;
+        _upgradeManager.Upgraded += OnUpgraded;
     }
 
     private void OnEnable()
@@ -96,23 +108,27 @@ public class SpawnSliderUI : MonoBehaviour
             _scholarGuide.Closed -= OnSpawnPoolPopupClosed;
         }
 
-        SlimeManager.OnHighestGradeChanged -= OnHighestGradeChanged;
-        UpgradeManager.OnUpgraded -= OnUpgraded;
+        if (_slimeManager != null)
+        {
+            _slimeManager.HighestGradeChanged -= OnHighestGradeChanged;
+        }
+        if (_upgradeManager != null)
+        {
+            _upgradeManager.Upgraded -= OnUpgraded;
+        }
     }
 
     private void Update()
     {
-        if (SpawnManager.Instance == null) return;
-
         if (_slider != null)
         {
-            _slider.value = SpawnManager.Instance.SpawnProgress;
+            _slider.value = _spawnManager.SpawnProgress;
         }
 
         if (_spawnIntervalText != null)
         {
             int remainingTenths = Mathf.RoundToInt(
-                SpawnManager.Instance.RemainingTime * 10f);
+                _spawnManager.RemainingTime * 10f);
 
             if (_displayedRemainingTenths != remainingTenths)
             {
@@ -127,8 +143,8 @@ public class SpawnSliderUI : MonoBehaviour
 
         if (_spawnMaxText != null)
         {
-            int current = SpawnManager.Instance.GetMainStageSlimeCount();
-            int max = SpawnManager.Instance.MaxActiveCount;
+            int current = _spawnManager.GetMainFieldSlimeCount();
+            int max = _spawnManager.MaxActiveCount;
 
             if (_displayedActiveCount != current || _displayedMaxCount != max)
             {
@@ -169,14 +185,14 @@ public class SpawnSliderUI : MonoBehaviour
         };
     }
 
-    private static SpawnGaugeState GetSpawnState()
+    private SpawnGaugeState GetSpawnState()
     {
-        if (SlimeManager.Instance != null && !SlimeManager.Instance.IsAutoSpawnEnabled)
+        if (!_slimeManager.IsAutoSpawnEnabled)
         {
             return SpawnGaugeState.AutoSpawnOff;
         }
 
-        return SpawnManager.Instance.HasMainStageRoom()
+        return _spawnManager.HasMainFieldRoom()
             ? SpawnGaugeState.Running
             : SpawnGaugeState.FieldFull;
     }
@@ -190,7 +206,7 @@ public class SpawnSliderUI : MonoBehaviour
         }
 
         // 이전 씬 배선도 계속 동작하게 두되 새 씬에서는 학자 안내가 이 경로를 대신한다.
-        if (_spawnPoolPopup == null || SpawnManager.Instance == null) return;
+        if (_spawnPoolPopup == null) return;
         RefreshSpawnPoolPopup();
         SpawnPoolPopupOpened?.Invoke();
     }
@@ -241,14 +257,13 @@ public class SpawnSliderUI : MonoBehaviour
 
     private void RefreshSpawnPoolPopup()
     {
-        if (_spawnPoolPopup == null || SpawnManager.Instance == null) return;
+        if (_spawnPoolPopup == null) return;
 
         // 해금 전에는 레벨을 보여 줘도 뜻이 통하지 않는다. 음수로 넘겨 줄을 뺀다.
-        bool isUnlocked = SlimeManager.Instance != null &&
-                          SlimeManager.Instance.IsHigherGradeSpawnUnlocked;
+        bool isUnlocked = _slimeManager.IsHigherGradeSpawnUnlocked;
 
         _spawnPoolPopup.Show(
-            SpawnManager.Instance.GetCurrentSpawnProbabilities(),
-            isUnlocked ? SpawnManager.GetSpawnWeightUpgradeLevel() : -1);
+            _spawnManager.GetCurrentSpawnProbabilities(),
+            isUnlocked ? _spawnManager.GetSpawnWeightUpgradeLevel() : -1);
     }
 }

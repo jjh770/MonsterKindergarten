@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +10,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _nameText;
     [SerializeField] private TextMeshProUGUI _valueText;
     [SerializeField] private TextMeshProUGUI _costText;
+    [SerializeField] private CurrencyManager _currencyManager;
 
     [Tooltip("포인트가 모자랄 때 가격 줄의 불투명도입니다.")]
     [SerializeField, Range(0f, 1f)] private float _unaffordableCostAlpha = 0.4f;
@@ -17,18 +18,23 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
     private bool _isCentered;
     private bool _canPurchase;
     private Currency? _purchaseCost;
-
     public EUpgradeType UpgradeType => _upgradeType;
     public event Action<SystemUpgradeItemUI> Pressed;
 
     private void Awake()
     {
+        if (_currencyManager == null)
+        {
+            Debug.LogError("업그레이드 항목의 CurrencyManager 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
         _button?.onClick.AddListener(OnClickUpgrade);
     }
 
     private void Start()
     {
-        CurrencyManager.OnDataChanged += OnCurrencyChanged;
+        _currencyManager.DataChanged += OnCurrencyChanged;
 
         RefreshAffordability();
     }
@@ -36,7 +42,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
     private void OnDestroy()
     {
         _button?.onClick.RemoveListener(OnClickUpgrade);
-        CurrencyManager.OnDataChanged -= OnCurrencyChanged;
+        if (_currencyManager != null) _currencyManager.DataChanged -= OnCurrencyChanged;
     }
 
     public void Bind(EUpgradeType upgradeType)
@@ -102,8 +108,7 @@ public sealed class SystemUpgradeItemUI : MonoBehaviour
         if (_costText == null) return;
 
         bool isAffordable = !_purchaseCost.HasValue ||
-                            CurrencyManager.Instance == null ||
-                            CurrencyManager.Instance.CanAfford(
+                            _currencyManager.CanAfford(
                                 ECurrencyType.Point,
                                 _purchaseCost.Value);
         float alpha = isAffordable ? 1f : _unaffordableCostAlpha;

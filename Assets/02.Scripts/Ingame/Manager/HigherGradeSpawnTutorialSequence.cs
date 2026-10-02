@@ -20,12 +20,22 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
     private Step _step;
 
     private void Start()
     {
-        TutorialManager.Finished += TryStart;
+        if (_gameManager == null || _spawnManager == null || _slimeManager == null ||
+            _gameplaySpaceManager == null)
+        {
+            Debug.LogError("상위 슬라임 등장 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
 
         if (_unlockPopupUI != null)
         {
@@ -38,23 +48,13 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _spawnSliderUI.SpawnPoolPopupOpened += OnSpawnPoolPopupOpened;
         }
 
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated += TryStart;
-        }
-
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.Initialized += TryStart;
-        }
+        SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         TryStart();
     }
 
     private void OnDestroy()
     {
-        TutorialManager.Finished -= TryStart;
-
         if (_unlockPopupUI != null)
         {
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
@@ -66,15 +66,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _spawnSliderUI.SpawnPoolPopupOpened -= OnSpawnPoolPopupOpened;
         }
 
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated -= TryStart;
-        }
-
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.Initialized -= TryStart;
-        }
+        UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
 
         if (_systemUpgradePanel != null)
         {
@@ -84,8 +76,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
         {
-            SpawnManager.Instance?.SetSpawningPaused(false);
-            _autoClicker?.SetPaused(false);
+            _spawnManager?.ReleaseSpawnPause(this);
+            _autoClicker?.ReleasePause(this);
         }
     }
 
@@ -96,17 +88,13 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void TryStart()
     {
-        if (_step != Step.None ||
-            !GameplayGate.IsActive ||
-            SpawnManager.Instance == null ||
-            !SpawnManager.Instance.IsInitialized ||
-            SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsHigherGradeSpawnUnlocked ||
-            !TutorialProgress.CanStart(TutorialIds.HigherGradeSpawn) ||
-            StageManager.Instance == null ||
-            !StageManager.Instance.IsMainStageActive ||
-            StageManager.Instance.IsTransitioning ||
-            (_unlockPopupUI != null && _unlockPopupUI.IsPresenting))
+        if (_step != Step.None) return;
+        if (_slimeManager == null || !_slimeManager.IsHigherGradeSpawnUnlocked) return;
+        if (!IsCommonStartGateOpen(
+                _spawnManager,
+                _gameplaySpaceManager,
+                _unlockPopupUI,
+                TutorialIds.HigherGradeSpawn))
         {
             return;
         }
@@ -118,10 +106,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
     {
         if (!TryBeginTutorial()) return;
 
-        TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Dialogue;
-        SpawnManager.Instance?.SetSpawningPaused(true);
-        _autoClicker?.SetPaused(true);
+        AcquireGameplayHold(_spawnManager, _autoClicker);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.Hide();
 
@@ -189,7 +175,9 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void ShowUpgradeStep()
     {
-        RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
+        // 카드 한 장만 비춘다. 캐러셀 전체를 비추면 화면 밖 슬롯까지 구멍이 퍼져 가로 전체가 밝아진다.
+        RectTransform carouselTarget = _systemUpgradePanel?.SelectedItemTarget ??
+                                       _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null ||
             _panelSwitcher == null ||
             !_panelSwitcher.TryShowSystemUpgradePanel())
@@ -218,9 +206,22 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
 
     private void OnUpgradeFocused()
     {
-        if (_step != Step.Carousel ||
-            !_systemUpgradePanel.IsSelected(EUpgradeType.HigherGradeSpawnWeightAdd))
+        if (_step != Step.Carousel)
         {
+            return;
+        }
+
+        if (!_systemUpgradePanel.IsSelected(EUpgradeType.HigherGradeSpawnWeightAdd))
+        {
+            // TryFocus는 한 번에 한 칸만 이동한다. 목표 카드가 여러 칸 떨어져
+            // 있으면 다음 회전을 이어 가지 않는 한 중간 카드에서 멈춘다.
+            if (_systemUpgradePanel.TryFocus(EUpgradeType.HigherGradeSpawnWeightAdd))
+            {
+                return;
+            }
+
+            _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
+            Complete();
             return;
         }
 
@@ -230,7 +231,7 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             Content.GetDialogue(DialogueId.HigherGradeSpawnUpgrade),
             Complete,
             keepGuideVisible: true,
-            placement: DialoguePlacement.Top);
+            placement: DialoguePlacement.NearSpotlight);
     }
 
     private void Complete()
@@ -242,11 +243,8 @@ public sealed class HigherGradeSpawnTutorialSequence : TutorialSequenceBase
             _systemUpgradePanel.RotationCompleted -= OnUpgradeFocused;
         }
 
+        TutorialProgress.MarkCompleted(TutorialIds.HigherGradeSpawn);
         _step = Step.Complete;
-        SpawnManager.Instance?.SetSpawningPaused(false);
-        _autoClicker?.SetPaused(false);
-        _clicker?.ReleaseMode(this);
-        CompleteTutorial();
-        StageManager.Instance?.RefreshInteraction();
+        FinishGameplayTeardown(_spawnManager, _autoClicker, _clicker, _gameplaySpaceManager);
     }
 }

@@ -5,19 +5,32 @@ using UnityEngine;
 public class PointUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _pointText;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private OfflineRewardManager _offlineRewardManager;
 
     private bool _isInitialized;
     private bool _isCountUpPlaying;
+    private bool _isPresentationBlocking;
     private Tween _countUpTween;
 
     private void Start()
     {
-        GameManager.OnAllDataInitialized += OnAllDataInitialized;
-        CurrencyManager.OnDataChanged += OnPointChanged;
+        if (_currencyManager == null || _gameManager == null ||
+            _offlineRewardManager == null)
+        {
+            Debug.LogError("PointUI에 CurrencyManager 참조가 없습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _gameManager.AllDataInitialized += OnAllDataInitialized;
+        _currencyManager.DataChanged += OnPointChanged;
+        _offlineRewardManager.PresentationBlockChanged += OnPresentationBlockChanged;
         PointCountUpEvents.OnRequested += PlayPointCountUp;
 
         // 이미 초기화가 완료된 경우
-        if (GameManager.Instance.IsAllDataInitialized)
+        if (_gameManager.IsAllDataInitialized)
         {
             OnAllDataInitialized();
         }
@@ -25,8 +38,16 @@ public class PointUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameManager.OnAllDataInitialized -= OnAllDataInitialized;
-        CurrencyManager.OnDataChanged -= OnPointChanged;
+        _gameManager.AllDataInitialized -= OnAllDataInitialized;
+        if (_currencyManager != null)
+        {
+            _currencyManager.DataChanged -= OnPointChanged;
+        }
+
+        if (_offlineRewardManager != null)
+        {
+            _offlineRewardManager.PresentationBlockChanged -= OnPresentationBlockChanged;
+        }
 
         PointCountUpEvents.OnRequested -= PlayPointCountUp;
         _countUpTween?.Kill();
@@ -36,8 +57,7 @@ public class PointUI : MonoBehaviour
     {
         _isInitialized = true;
 
-        if (OfflineRewardManager.Instance != null &&
-            OfflineRewardManager.Instance.TryGetCurrent(out OfflineRewardResult result))
+        if (_offlineRewardManager.TryGetCurrent(out OfflineRewardResult result))
         {
             UpdateUI((double)result.PointBeforeReward);
         }
@@ -50,16 +70,25 @@ public class PointUI : MonoBehaviour
     private void OnPointChanged(ECurrencyType type, Currency point)
     {
         if (!_isInitialized || _isCountUpPlaying) return;
-        if (OfflineRewardManager.Instance != null &&
-            OfflineRewardManager.Instance.TryGetCurrent(out _)) return;
+        if (_isPresentationBlocking) return;
         UpdateUI();
+    }
+
+    private void OnPresentationBlockChanged(bool isBlocking)
+    {
+        _isPresentationBlocking = isBlocking;
+        // 발표가 끝나 막힘이 풀리면 최신 통화값으로 한 번 맞춘다.
+        if (!isBlocking && !_isCountUpPlaying)
+        {
+            UpdateUI();
+        }
     }
 
     private void UpdateUI()
     {
         if (!_isInitialized) return;
 
-        UpdateUI((double)CurrencyManager.Instance.Point);
+        UpdateUI((double)_currencyManager.Point);
     }
 
     private void UpdateUI(double point)
@@ -68,7 +97,7 @@ public class PointUI : MonoBehaviour
 
         if (_pointText != null)
         {
-            _pointText.text = $"{CurrencyIcon.Point}{(Currency)point}";
+            _pointText.text = $"{CurrencyIcon.Point} {(Currency)point}";
         }
     }
 

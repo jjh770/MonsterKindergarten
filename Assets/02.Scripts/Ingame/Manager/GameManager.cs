@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -6,23 +8,24 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public static event Action OnAllDataInitialized;
+    public event Action AllDataInitialized;
     public event Action OnGameplayActivated;
 
     [Header("Loading")]
     [Tooltip("이 시간 안에 저장 데이터를 불러오지 못하면 로그인 화면으로 돌려보냅니다.")]
     [SerializeField, Min(1f)] private float _initializationTimeoutSeconds = 30f;
 
-    private bool _isUpgradeInitialized;
-    private bool _isSlimeInitialized;
-    private bool _isCurrencyInitialized;
+    [Header("Scene References")]
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private UpgradeManager _upgradeManager;
+    [SerializeField] private OfflineRewardManager _offlineRewardManager;
+
     private bool _isAllInitialized;
     private bool _isReturningToLogin;
+    private readonly List<IGameDataDomainManager> _dataManagers = new();
+    private readonly List<GameDataDomainDefinition> _dataDomains = new();
 
-    // TODO : 데이터 초기화 고려사항
-    // 1. 이렇게 전체 데이터를 이벤트 구독해서 확인하는 방법도 있지만
-    // 2. GameManager에서 모든 매니저의 데이터를 초기화하라고 시키는 방법도 있음. (이러면 GameManager에서 순차적으로 진행하기 때문에 살짝 느릴 수 있다.)
-    // 3. 아예 로딩씬에서 데이터를 모두 초기화하고 게임 씬으로 넘어가는 방법도 있다.
     public bool IsAllDataInitialized => _isAllInitialized;
 
     private bool _isGameplayActive;
@@ -54,21 +57,19 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        UpgradeManager.OnDataInitialized += OnUpgradeDataInitialized;
-        SlimeManager.OnDataInitialized += OnSlimeDataInitialized;
-        CurrencyManager.OnDataInitialized += OnCurrencyDataInitialized;
+        if (!TryBindDataManagers())
+        {
+            enabled = false;
+            return;
+        }
+
+        foreach (IGameDataDomainManager manager in _dataManagers)
+        {
+            manager.DataInitialized += OnDataInitialized;
+        }
         SaveDataLoadGuard.Failed += OnSaveDataLoadFailed;
-        // 이 구독이 게임플레이를 켜는 유일한 경로다. 매니저가 없으면 커튼은 걷히는데
-        // 아무것도 조작할 수 없는 화면이 되므로 조용히 넘어가면 안 된다.
-        if (OfflineRewardManager.Instance == null)
-        {
-            Debug.LogError("오프라인 보상 매니저가 씬에 없습니다.", this);
-        }
-        else
-        {
-            OfflineRewardManager.Instance.PresentationBlockChanged +=
-                OnOfflineRewardBlockChanged;
-        }
+        _offlineRewardManager.PresentationBlockChanged +=
+            OnOfflineRewardBlockChanged;
 
         WatchInitializationTimeout().Forget();
 
@@ -76,27 +77,72 @@ public class GameManager : MonoBehaviour
         if (SaveDataLoadGuard.HasFailure)
         {
             OnSaveDataLoadFailed();
+            return;
         }
+
+        // 실행 순서가 바뀌어 Start 전에 로드가 끝났어도 이벤트 재발화를 요구하지 않는다.
+        TryInvokeAllInitialized();
     }
 
     private void OnDestroy()
     {
-        UpgradeManager.OnDataInitialized -= OnUpgradeDataInitialized;
-        SlimeManager.OnDataInitialized -= OnSlimeDataInitialized;
-        CurrencyManager.OnDataInitialized -= OnCurrencyDataInitialized;
+        foreach (IGameDataDomainManager manager in _dataManagers)
+        {
+            manager.DataInitialized -= OnDataInitialized;
+        }
 
         SaveDataLoadGuard.Failed -= OnSaveDataLoadFailed;
-        if (OfflineRewardManager.Instance != null)
+        if (_offlineRewardManager != null)
         {
-            OfflineRewardManager.Instance.PresentationBlockChanged -=
+            _offlineRewardManager.PresentationBlockChanged -=
                 OnOfflineRewardBlockChanged;
         }
+    }
+
+    private bool TryBindDataManagers()
+    {
+        if (!TryAddDataManager(GameDataDomains.Currency, _currencyManager) ||
+            !TryAddDataManager(GameDataDomains.SlimeStatus, _slimeManager) ||
+            !TryAddDataManager(GameDataDomains.Upgrade, _upgradeManager))
+        {
+            _dataManagers.Clear();
+            _dataDomains.Clear();
+            return false;
+        }
+
+        if (_offlineRewardManager == null)
+        {
+            Debug.LogError("게임 매니저의 오프라인 보상 매니저 참조가 비어 있습니다.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryAddDataManager(
+        GameDataDomainDefinition domain,
+        IGameDataDomainManager manager)
+    {
+        // 인터페이스로 비교하면 UnityEngine.Object의 파괴된 객체 null 판정을
+        // 우회하므로 실제 C# null과 Unity 가짜 null을 모두 확인한다.
+        if (manager == null ||
+            (manager is UnityEngine.Object managerObject && managerObject == null))
+        {
+            Debug.LogError(
+                $"게임 매니저의 {domain.DisplayName} 데이터 매니저 참조가 비어 있습니다.",
+                this);
+            return false;
+        }
+
+        _dataDomains.Add(domain);
+        _dataManagers.Add(manager);
+        return true;
     }
 
     // 불러오기가 실패가 아니라 멈추면 아무도 신고하지 않는다.
     //
     // 각 매니저는 읽기에 실패했을 때만 신고한다. 응답이 아예 오지 않으면 실패도
-    // 아니어서 OnAllDataInitialized가 영영 발화하지 않고, 커튼이 걷히지 않은 채
+    // 아니어서 AllDataInitialized가 영영 발화하지 않고, 커튼이 걷히지 않은 채
     // 남는다. 그 상태에서는 뒤로 가기도 커튼에 가려 강제 종료 말고 나갈 길이 없다.
     //
     // 로그인은 이미 네트워크를 통과한 뒤이므로, 여기서 걸리는 것은 연결이 로그인
@@ -121,7 +167,7 @@ public class GameManager : MonoBehaviour
 
     // 저장 데이터를 확인하지 못한 세션은 게임에 들어가지 않는다.
     //
-    // 그냥 두면 OnAllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
+    // 그냥 두면 AllDataInitialized가 영영 발화하지 않아 화면이 멈추고,
     // 기본값으로 진행시키면 첫 저장이 확인하지 못한 원본을 덮어써 복구할 수 없다.
     // 로그인 화면으로 돌려보내 다시 시도하게 한다.
     private void OnSaveDataLoadFailed()
@@ -142,21 +188,8 @@ public class GameManager : MonoBehaviour
         UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
-    private void OnUpgradeDataInitialized()
+    private void OnDataInitialized()
     {
-        _isUpgradeInitialized = true;
-        TryInvokeAllInitialized();
-    }
-
-    private void OnSlimeDataInitialized()
-    {
-        _isSlimeInitialized = true;
-        TryInvokeAllInitialized();
-    }
-
-    private void OnCurrencyDataInitialized()
-    {
-        _isCurrencyInitialized = true;
         TryInvokeAllInitialized();
     }
 
@@ -164,37 +197,63 @@ public class GameManager : MonoBehaviour
     {
         if (_isAllInitialized) return;
 
-        if (_isUpgradeInitialized && _isSlimeInitialized && _isCurrencyInitialized)
+        foreach (IGameDataDomainManager manager in _dataManagers)
         {
-            if (!HasConsistentStoredSaveData()) return;
+            if (!manager.IsInitialized) return;
+        }
 
-            _isAllInitialized = true;
+        if (!HasConsistentStoredSaveData()) return;
+
+        _isAllInitialized = true;
+
+        // 후반 단계에서 예외가 나면 AllDataInitialized가 끝까지 발화하지 못해 로딩이 멈춘다.
+        // _isAllInitialized가 이미 true라 타임아웃 감시는 무력화되므로, 여기서 즉시
+        // 로드 실패를 신고해 로그인 화면으로 돌려보낸다. 저장은 이미 읽은 뒤라 종류는
+        // InitializationFailed다. Unreadable로 신고하면 멀쩡한 진행도에 초기화를 권하게 된다.
+        try
+        {
             InitializeTutorialProgress();
-            OfflineRewardManager.Instance?.Grant();
-            OnAllDataInitialized?.Invoke();
+            _offlineRewardManager.Grant();
+            AllDataInitialized?.Invoke();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"초기화 마무리 단계에서 예외가 발생했습니다: {e}");
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.InitializationFailed,
+                $"초기화 마무리 단계 예외 : {e.Message}");
         }
     }
 
-    // 세 저장 문서는 함께 만들어지고 함께 지워진다. 튜토리얼을 마칠 때 셋을 같이
-    // 저장하고, 초기화와 계정 삭제도 셋을 한 배치로 지운다.
+    // 등록된 저장 문서는 함께 만들어지고 함께 지워진다. 튜토리얼을 마칠 때 전부
+    // 저장하고, 초기화와 계정 삭제도 한 배치로 지운다.
     //
     // 그래서 일부만 없는 상태는 신규 계정이 아니라 결손이다. 기본값으로 출발하면
     // 남은 도메인은 복원되고 없는 도메인만 초기화된 채 시작하며, 다음 저장이 그
     // 손실을 확정한다. 도메인별 가드는 자기 안만 보므로 여기서 교차로 확인한다.
     private bool HasConsistentStoredSaveData()
     {
-        bool hasCurrency = CurrencyManager.Instance.HasStoredSaveData;
-        bool hasSlime = SlimeManager.Instance.HasStoredSaveData;
-        bool hasUpgrade = UpgradeManager.Instance.HasStoredSaveData;
+        bool expected = _dataManagers[0].HasStoredSaveData;
+        bool isConsistent = true;
+        for (int i = 1; i < _dataManagers.Count; i++)
+        {
+            isConsistent &= _dataManagers[i].HasStoredSaveData == expected;
+        }
 
-        if (hasCurrency == hasSlime && hasSlime == hasUpgrade) return true;
+        if (isConsistent) return true;
+
+        var details = new StringBuilder();
+        for (int i = 0; i < _dataManagers.Count; i++)
+        {
+            if (i > 0) details.Append(", ");
+            details.Append(_dataDomains[i].DisplayName);
+            details.Append(' ');
+            details.Append(Describe(_dataManagers[i].HasStoredSaveData));
+        }
 
         SaveDataLoadGuard.Report(
             ESaveLoadFailure.Unreadable,
-            "저장 문서가 일부만 있습니다. : " +
-            $"재화 {Describe(hasCurrency)}, " +
-            $"슬라임 {Describe(hasSlime)}, " +
-            $"업그레이드 {Describe(hasUpgrade)}");
+            $"저장 문서가 일부만 있습니다. : {details}");
         return false;
     }
 
@@ -205,10 +264,11 @@ public class GameManager : MonoBehaviour
 
     private void InitializeTutorialProgress()
     {
-        bool hasExistingProgress =
-            CurrencyManager.Instance.HasExistingProgress ||
-            SlimeManager.Instance.HasExistingProgress ||
-            UpgradeManager.Instance.HasExistingProgress;
+        bool hasExistingProgress = false;
+        foreach (IGameDataDomainManager manager in _dataManagers)
+        {
+            hasExistingProgress |= manager.HasExistingProgress;
+        }
 
         TutorialProgress.Initialize(AccountManager.Instance.UserId);
         TutorialProgress.Register(
@@ -222,14 +282,38 @@ public class GameManager : MonoBehaviour
             completeStoredIncomplete: false);
         TutorialProgress.Register(
             TutorialIds.HigherGradeSpawn,
-            order: (int)SlimeManager.Instance.HigherGradeSpawnUnlockGrade,
-            completeByDefault: SlimeManager.Instance.IsHigherGradeSpawnUnlocked,
+            order: (int)_slimeManager.HigherGradeSpawnUnlockGrade,
+            completeByDefault: _slimeManager.IsHigherGradeSpawnUnlocked,
             completeStoredIncomplete: false);
         // 가챠는 이번에 추가된 기능이라 이미 Lv.7을 넘긴 플레이어도 안내를 받아야
         // 한다. 해금 여부로 완료 처리하면 지금 플레이 중인 사람 전원이 건너뛴다.
         TutorialProgress.Register(
             TutorialIds.Gacha,
             order: (int)UnlockGrades.Gacha,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
+        // 도감 마일스톤 안내도 이번에 추가된 기능이라 이미 10종·12종을 넘긴
+        // 플레이어에게 한 번은 보여 준다. 순서는 도감 수를 그대로 쓴다. 앞 순서인
+        // 해금 등급과 같은 축이고, 도감 10종은 최고 Lv.10을 넘긴 뒤에만 닿는다.
+        TutorialProgress.Register(
+            TutorialIds.CollectionAutoMerge,
+            order: NormalCollectionRules.AutoMergeCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.CollectionTicketCollect,
+            order: NormalCollectionRules.TicketBulkCollectCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
+        TutorialProgress.Register(
+            TutorialIds.CollectionOfflineTicket,
+            order: NormalCollectionRules.OfflineTicketRewardCount,
+            completeByDefault: false,
+            completeStoredIncomplete: false);
+        // 상점은 이번에 추가된 안내라 이미 Lv.9를 넘긴 플레이어도 한 번은 본다.
+        TutorialProgress.Register(
+            TutorialIds.Shop,
+            order: (int)UnlockGrades.Shop,
             completeByDefault: false,
             completeStoredIncomplete: false);
         GameplaySaveGate.SetSavingEnabled(
@@ -252,10 +336,13 @@ public class GameManager : MonoBehaviour
 
         GameplaySaveGate.SetSavingEnabled(true);
 
-        await UniTask.WhenAll(
-            CurrencyManager.Instance.SaveCurrentAsync(),
-            SlimeManager.Instance.SaveCurrentAsync(),
-            UpgradeManager.Instance.SaveCurrentAsync());
+        var saveTasks = new UniTask[_dataManagers.Count];
+        for (int i = 0; i < _dataManagers.Count; i++)
+        {
+            saveTasks[i] = _dataManagers[i].SaveCurrentAsync();
+        }
+
+        await UniTask.WhenAll(saveTasks);
 
         TutorialProgress.MarkCompleted(TutorialIds.Main);
     }
@@ -266,27 +353,55 @@ public class GameManager : MonoBehaviour
 
         if (pauseStatus)
         {
-            // 받지 않은 보상이 있으면 마지막 저장 시간을 유지해 다음 실행에서 누적한다.
-            if (!HasPendingOfflineReward)
-            {
-                CurrencyManager.Instance.SaveCurrent();
-                // 간격을 기다리다 프로세스가 멈추면 클라우드에 못 올라간다.
-                CurrencyManager.Instance.FlushPendingSave();
-            }
-
-            // 위 조건은 재화의 마지막 저장 시각을 지키는 규칙이라 업그레이드와는 무관하다.
-            // 보상이 미뤄진 튜토리얼 중에도 업그레이드는 구매되므로 따로 내보낸다.
-            UpgradeManager.Instance?.FlushPendingSave();
+            FlushAllDomainsForAppLifecycle();
         }
         else
         {
-            OfflineRewardManager.Instance?.GrantAfterResync().Forget();
+            _offlineRewardManager.GrantAfterResync().Forget();
         }
     }
 
-    private static bool HasPendingOfflineReward =>
-        OfflineRewardManager.Instance != null &&
-        OfflineRewardManager.Instance.HasPending;
+    // 종료 경로에서도 세 도메인 flush를 보장한다. Android처럼 종료 시
+    // OnApplicationPause(true)가 오지 않을 수 있어, pause와 동일한 가드로
+    // 같은 단일 진입점을 호출해 Currency·Upgrade flush 누락을 막는다.
+    private void OnApplicationQuit()
+    {
+        if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
+
+        FlushAllDomainsForAppLifecycle();
+    }
+
+    // pause(true)와 quit이 공유하는 앱 수명 flush 단일 진입점.
+    //
+    // 등록된 세 도메인(Currency·SlimeStatus·Upgrade)을 _dataManagers 순회로
+    // 균일하게 처리한다. 새 도메인도 TryBindDataManagers에 등록되기만 하면
+    // 자동으로 포함된다.
+    //
+    // 오프라인 보상 예외: 받지 않은 보상이 대기 중이면(HasPendingOfflineReward)
+    // Currency의 SaveCurrentAsync만 건너뛴다. SaveCurrentAsync가 LastSaveTime을
+    // 현재 시각으로 갱신하는데, 보상 대기 중에 갱신하면 다음 실행의 누적 기준
+    // 시각이 틀어지기 때문이다. FlushPendingSave는 LastSaveTime과 무관하게
+    // 미뤄 둔 쓰기만 밀어내므로 예외와 상관없이 모든 도메인에서 항상 호출한다.
+    private void FlushAllDomainsForAppLifecycle()
+    {
+        for (int i = 0; i < _dataManagers.Count; i++)
+        {
+            IGameDataDomainManager manager = _dataManagers[i];
+
+            bool skipSave =
+                ReferenceEquals(manager, _currencyManager) && HasPendingOfflineReward;
+
+            // 저장은 최신 상태를 큐에 넣고, flush는 간격을 기다리다 프로세스가
+            // 멈추면 클라우드에 못 올라가는 미뤄 둔 쓰기를 지금 내보낸다.
+            if (!skipSave)
+            {
+                manager.SaveCurrentAsync().Forget();
+            }
+            manager.FlushPendingSave();
+        }
+    }
+
+    private bool HasPendingOfflineReward => _offlineRewardManager.HasPending;
 
     // 보상 팝업이 화면을 잡는 동안에는 플레이를 멈춘다. 판단은 보상 쪽이 하고
     // 실제로 끄고 켜는 것은 여기서 한다. IsGameplayActive는 초기화·진행도

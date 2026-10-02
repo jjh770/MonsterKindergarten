@@ -5,9 +5,8 @@
 // 두 곳을 같이 고쳐야 하는 구조라 한곳으로 모은다.
 public static class SystemUpgradeVisibility
 {
-    public static bool IsShown(EUpgradeType type)
+    public static bool IsShown(EUpgradeType type, SlimeManager slimeManager)
     {
-        SlimeManager slimeManager = SlimeManager.Instance;
         return type switch
         {
             // 상위 등장 확률은 안내 튜토리얼이 카드를 처음 보여 준다. 그 전에 먼저
@@ -17,7 +16,7 @@ public static class SystemUpgradeVisibility
                 slimeManager.IsHigherGradeSpawnUnlocked &&
                 (TutorialProgress.IsCompleted(TutorialIds.HigherGradeSpawn) ||
                  TutorialManager.IsActive(TutorialIds.HigherGradeSpawn)),
-            EUpgradeType.AutoMergeTimeSub =>
+            EUpgradeType.AutoMergePairAdd =>
                 slimeManager != null && slimeManager.IsAutoMergeUnlocked,
             _ => true,
         };

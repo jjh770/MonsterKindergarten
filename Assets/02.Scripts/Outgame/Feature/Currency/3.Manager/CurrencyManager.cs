@@ -9,7 +9,7 @@ using UnityEngine;
 // 일방향 의존성
 // 상위 폴더(Manager)는 하위 폴더의 내용을 알 수 있지만
 // 하위 폴더(Repository)는 상위 폴더의 내용을 몰라도 개발할 수 있게 하기
-public class CurrencyManager : MonoBehaviour
+public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
 {
     // 재화에 대한 CRUD 생성 조회 사용 소모 + 재화에 대한 이벤트 추가
     // 비즈니스 로직 - 데이터를 어떻게 다룰 것인가에 대한 핵심 규칙
@@ -44,10 +44,9 @@ public class CurrencyManager : MonoBehaviour
     }
 
     //public Currency Point { get; private set; }
-    // 다른 두 매니저와 같이 static으로 둔다. 인스턴스 이벤트는 매니저가 생긴 뒤에만
-    // 붙일 수 있고, 먼저 파괴되면 구독 해제마다 null 검사가 필요했다.
-    public static event Action<ECurrencyType, Currency> OnDataChanged;
-    public static event Action OnDataInitialized;
+    public event Action<ECurrencyType, Currency> DataChanged;
+    public event Action DataInitialized;
+    public bool IsInitialized { get; private set; }
 
 
     private async void Awake()
@@ -60,68 +59,92 @@ public class CurrencyManager : MonoBehaviour
 
         Instance = this;
 
-        await UniTask.Yield();
+        // async void라 이 아래에서 던진 예외는 SynchronizationContext로 흘러가
+        // 호출부가 잡을 수 없다. 초기화 본문을 통째로 감싸는 것이 유일한 포착 수단이다.
+        // 예외가 난 자리가 신고할 종류를 정한다. 읽어 온 문서를 해석하는 구간의 예외만 저장
+        // 문제(Unreadable)이고, 그 밖은 앱 코드의 결함이라 초기화 수단을 열면 안 된다.
+        ESaveLoadFailure exceptionFailure = ESaveLoadFailure.InitializationFailed;
+        try
+        {
+            await UniTask.Yield();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.UserId), new FirebaseCurrencyRepository());
+            _repository = new HybridRepository<CurrencySaveData>(new LocalCurrencyRepository(AccountManager.Instance.UserId), new FirebaseCurrencyRepository());
 #else
-        _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
+            _repository = new LocalCurrencyRepository(AccountManager.Instance.UserId);
 #endif
 
-        SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
-        if (loadResult.IsFailed)
-        {
-            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
-            SaveDataLoadGuard.Report(
-                loadResult.Failure,
-                $"Currency : {loadResult.FailureMessage}");
-            return;
-        }
+            SaveLoadResult<CurrencySaveData> loadResult = await _repository.Load();
+            if (loadResult.IsFailed)
+            {
+                // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
+                SaveDataLoadGuard.Report(
+                    loadResult.Failure,
+                    $"Currency : {loadResult.FailureMessage}");
+                return;
+            }
 
-        HasStoredSaveData = loadResult.IsLoaded;
-        CurrencySaveData saveData = loadResult.IsLoaded
-            ? loadResult.Data
-            : CurrencySaveData.Default;
-        // 저장된 배열이 현재보다 짧은 것은 재화 종류를 늘리기 전에 저장된 문서다.
-        // 정상적으로 만들어질 수 있는 값이므로 차단하지 않고 흡수한다. 없는 자리는
-        // 아래에서 0으로 채운다.
-        //
-        // 반대로 현재보다 긴 배열은 이 앱이 모르는 재화가 들어 있다는 뜻이다. 상위
-        // 스키마 버전은 저장소가 이미 막으므로, 버전은 맞는데 길이만 긴 문서는 변조로
-        // 본다. 배열이 아예 없는 것도 해석할 수 없다. 0으로 채우면 재화가 조용히 사라진다.
-        double[] currencyValues = saveData.Currencies;
-        if (currencyValues == null || currencyValues.Length > _currencies.Length)
-        {
-            SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
-                $"Currency : 재화 배열을 해석할 수 없습니다. : " +
-                $"{currencyValues?.Length.ToString() ?? "없음"}");
-            return;
-        }
-
-        // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
-        // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
-        foreach (double value in currencyValues)
-        {
-            if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+            HasStoredSaveData = loadResult.IsLoaded;
+            // 여기서부터는 읽어 온 문서를 해석한다. 이 구간의 예외는 저장 문제다.
+            exceptionFailure = ESaveLoadFailure.Unreadable;
+            CurrencySaveData saveData = loadResult.IsLoaded
+                ? loadResult.Data
+                : CurrencySaveData.Default;
+            // 저장된 배열이 현재보다 짧은 것은 재화 종류를 늘리기 전에 저장된 문서다.
+            // 정상적으로 만들어질 수 있는 값이므로 차단하지 않고 흡수한다. 없는 자리는
+            // 아래에서 0으로 채운다.
+            //
+            // 반대로 현재보다 긴 배열은 이 앱이 모르는 재화가 들어 있다는 뜻이다. 상위
+            // 스키마 버전은 저장소가 이미 막으므로, 버전은 맞는데 길이만 긴 문서는 변조로
+            // 본다. 배열이 아예 없는 것도 해석할 수 없다. 0으로 채우면 재화가 조용히 사라진다.
+            double[] currencyValues = saveData.Currencies;
+            if (currencyValues == null || currencyValues.Length > _currencies.Length)
             {
                 SaveDataLoadGuard.Report(
                     ESaveLoadFailure.Unreadable,
-                    $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                    $"Currency : 재화 배열을 해석할 수 없습니다. : " +
+                    $"{currencyValues?.Length.ToString() ?? "없음"}");
                 return;
             }
-        }
 
-        LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
-        for (int i = 0; i < _currencies.Length; i++)
+            // 음수는 Currency 생성자가 예외를 던져 초기화를 멈추고, NaN과 무한대는
+            // 그대로 통과해 이후 계산과 표기를 망가뜨린다. 셋 다 정상 경로에 없는 값이다.
+            foreach (double value in currencyValues)
+            {
+                if (value < 0d || double.IsNaN(value) || double.IsInfinity(value))
+                {
+                    SaveDataLoadGuard.Report(
+                        ESaveLoadFailure.Unreadable,
+                        $"Currency : 재화 값을 해석할 수 없습니다. : {value}");
+                    return;
+                }
+            }
+
+            LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
+            for (int i = 0; i < _currencies.Length; i++)
+            {
+                // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
+                double stored = i < currencyValues.Length
+                    ? currencyValues[i]
+                    : 0d;
+
+                // 재화는 모두 정수 단위로 센다. 배율을 곱한 값이 소수로 남던 시절의
+                // 저장값이 그대로 올라오므로 여기서 한 번 내림한다. 1 미만을 버리는
+                // 것이라 진행에는 영향이 없고, 이후로는 더하는 쪽에서 정수만 넣는다.
+                _currencies[i] = Math.Floor(stored);
+            }
+
+            // 복원이 끝났다. 이제 호출되는 것은 구독자 코드라 저장과 무관하다.
+            exceptionFailure = ESaveLoadFailure.InitializationFailed;
+            IsInitialized = true;
+            DataInitialized?.Invoke();
+        }
+        catch (Exception e)
         {
-            // 짧은 배열에는 그때 없던 재화 자리가 비어 있다. 0으로 채운다.
-            _currencies[i] = i < currencyValues.Length
-                ? currencyValues[i]
-                : 0d;
+            SaveDataLoadGuard.Report(
+                exceptionFailure,
+                $"Currency : 초기화 중 예외 : {e.Message}");
         }
-
-        OnDataInitialized?.Invoke();
     }
 
     // 재화 조회
@@ -133,22 +156,92 @@ public class CurrencyManager : MonoBehaviour
     // 재화 추가
     public void Add(ECurrencyType type, Currency amount)
     {
-        _currencies[(int)type] += amount;
-        OnDataChanged?.Invoke(type, _currencies[(int)type]);
-        Save();
+        TryApplyChange(CurrencyChange.Add(type, amount));
     }
 
     // 재화 소모
     public bool TrySpend(ECurrencyType type, Currency amount)
     {
-        if (_currencies[(int)type] >= amount)
+        return TryApplyChange(CurrencyChange.Spend(type, amount));
+    }
+
+    // 클릭과 자동 생산의 단일 재화 변경은 매우 자주 호출되므로 params 배열을 만들지 않는다.
+    private bool TryApplyChange(CurrencyChange change)
+    {
+        int index = ValidateType(change.Type);
+        if ((double)change.Amount == 0d) return true;
+
+        if (change.IsSpend)
         {
-            _currencies[(int)type] -= amount;
-            OnDataChanged?.Invoke(type, _currencies[(int)type]);
-            Save();
-            return true;
+            if (_currencies[index] < change.Amount) return false;
+            _currencies[index] -= change.Amount;
         }
-        return false;
+        else
+        {
+            _currencies[index] += change.Amount;
+        }
+
+        DataChanged?.Invoke(change.Type, _currencies[index]);
+        Save();
+        return true;
+    }
+
+    // 한 보상이나 거래에 여러 재화가 참여해도 전부 검증한 뒤 한 번만 저장한다.
+    // 중간 변경은 외부에 보이지 않으며, 하나라도 부족하면 아무것도 바꾸지 않는다.
+    public bool TryApplyChanges(params CurrencyChange[] changes)
+    {
+        if (changes == null) throw new ArgumentNullException(nameof(changes));
+        if (changes.Length == 0) return true;
+
+        Currency[] next = (Currency[])_currencies.Clone();
+        bool[] changedTypes = new bool[next.Length];
+        bool hasChange = false;
+
+        foreach (CurrencyChange change in changes)
+        {
+            int index = ValidateType(change.Type);
+
+            if ((double)change.Amount == 0d) continue;
+
+            if (change.IsSpend)
+            {
+                if (next[index] < change.Amount) return false;
+                next[index] -= change.Amount;
+            }
+            else
+            {
+                next[index] += change.Amount;
+            }
+
+            changedTypes[index] = true;
+            hasChange = true;
+        }
+
+        if (!hasChange) return true;
+
+        _currencies = next;
+        for (int i = 0; i < changedTypes.Length; i++)
+        {
+            if (!changedTypes[i]) continue;
+            DataChanged?.Invoke((ECurrencyType)i, _currencies[i]);
+        }
+
+        Save();
+        return true;
+    }
+
+    private int ValidateType(ECurrencyType type)
+    {
+        int index = (int)type;
+        if (index < 0 || index >= _currencies.Length)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(type),
+                type,
+                "지원하지 않는 재화 종류입니다.");
+        }
+
+        return index;
     }
 
     // 재화 저장
@@ -178,7 +271,7 @@ public class CurrencyManager : MonoBehaviour
         LastSaveTime = ServerClock.TrustedUtcNow;
         return _repository.Save(new CurrencySaveData()
         {
-            SchemaVersion = SaveSchema.CurrencyCurrentVersion,
+            SchemaVersion = GameDataDomains.Currency.CurrentSchemaVersion,
             Currencies = ToSaveData(),
             LastSaveTime = LastSaveTime.ToString("O")
         });

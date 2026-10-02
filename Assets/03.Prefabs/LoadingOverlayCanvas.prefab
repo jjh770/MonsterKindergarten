@@ -85,6 +85,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2836367029649853605}
   - component: {fileID: 3652952337439700843}
+  - component: {fileID: 4703356804736463834}
   m_Layer: 5
   m_Name: OverlayRoot
   m_TagString: Untagged
@@ -126,9 +127,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FadeCurtainUI
   _root: {fileID: 4034407190131402824}
   _canvasGroup: {fileID: 8527977623452582620}
-  _fadeDuration: 0.3
-  _minimumCoveredSeconds: 0.8
+  _fadeDuration: 0.5
+  _minimumCoveredSeconds: 2
   _startCovered: 1
+--- !u!114 &4703356804736463834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3406816241971967680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f93d9f28cfa0a47be62bed9b3e23d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LoadingOverlayRevealer
+  _curtain: {fileID: 3652952337439700843}
 --- !u!1 &3766221394739589302
 GameObject:
   m_ObjectHideFlags: 0
@@ -293,7 +307,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7344520133805137567
 RectTransform:
   m_ObjectHideFlags: 0

@@ -15,6 +15,7 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
     [SerializeField] private TMP_Text _stateLabel;
     [SerializeField] private Color _onColor = new(0.45f, 0.85f, 0.35f);
     [SerializeField] private Color _offColor = new(0.6f, 0.6f, 0.6f);
+    [SerializeField] private SlimeManager _slimeManager;
 
     public RectTransform ButtonTarget => _view != null ? _view.ButtonTarget : null;
     public event Action<bool> StateChanged;
@@ -40,7 +41,15 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
                 _onColor, _offColor);
         }
         _view.Clicked += OnButtonClicked;
-        SlimeManager.OnDataInitialized += Refresh;
+        if (_slimeManager == null)
+        {
+            Debug.LogError("자동 스폰 버튼의 SlimeManager 참조가 없습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        _slimeManager.DataInitialized += Refresh;
+        _slimeManager.AutoSpawnChanged += OnAutoSpawnChanged;
         Refresh();
     }
 
@@ -51,23 +60,31 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
             _view.Clicked -= OnButtonClicked;
         }
 
-        SlimeManager.OnDataInitialized -= Refresh;
+        if (_slimeManager != null)
+        {
+            _slimeManager.DataInitialized -= Refresh;
+            _slimeManager.AutoSpawnChanged -= OnAutoSpawnChanged;
+        }
     }
 
     private void OnButtonClicked()
     {
-        if (SlimeManager.Instance == null) return;
+        if (_slimeManager == null) return;
 
-        bool isEnabled = !SlimeManager.Instance.IsAutoSpawnEnabled;
-        SlimeManager.Instance.SetAutoSpawnEnabled(isEnabled);
-        Refresh();
+        bool isEnabled = !_slimeManager.IsAutoSpawnEnabled;
+        _slimeManager.SetAutoSpawnEnabled(isEnabled);
         StateChanged?.Invoke(isEnabled);
     }
 
     private void Refresh()
     {
-        if (SlimeManager.Instance == null) return;
+        if (_slimeManager == null) return;
 
-        _view.SetState(SlimeManager.Instance.IsAutoSpawnEnabled);
+        _view.SetState(_slimeManager.IsAutoSpawnEnabled);
+    }
+
+    private void OnAutoSpawnChanged(bool isEnabled)
+    {
+        _view.SetState(isEnabled);
     }
 }

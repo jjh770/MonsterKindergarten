@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 장식장 슬라임 선택과 기획서 §8의 관찰 진입 UI를 담당한다.
-// 카메라 연출은 StageTransitionPlayer에 위임하고 이 컴포넌트는 표시 상태만 소유한다.
+// 카메라 조작은 DisplayRoomCameraController에 위임하고 이 컴포넌트는 표시 상태만 소유한다.
 //
 // DisplayRoomUI와 합치지 않는다. GameExitManager가 소유자별로 뒤로가기 핸들러를
 // 하나만 유지하므로, 같은 소유자가 장식장 나가기와 정보 UI 닫기를 함께 등록하면
@@ -17,6 +17,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private ToastMessageUI _toast;
+    [SerializeField] private GameplaySpaceManager _spaceManager;
+    [SerializeField] private SpawnManager _spawnManager;
 
     [Header("Info Panel")]
     [SerializeField] private GameObject _infoRoot;
@@ -32,13 +34,16 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [Header("Observation Mode")]
     [SerializeField] private GameObject _observationInputRoot;
     [SerializeField] private HudVisibility _hudVisibility;
+    // 상점 서랍은 HudVisibility가 옮기는 두 루트에 들어 있지 않다. 자기 폭과
+    // 세이프에어리어로 숨는 자리를 스스로 계산하므로 서랍에 맡겨야 한다.
+    [SerializeField] private UpgradeUI _upgradeUI;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
     [SerializeField, Min(0f)] private float _observationDuration = 0.3f;
 
     private Tween _fadeTween;
-    private Sequence _observationSequence;
+    private GameplayModeSession _observationSession;
     private SlimeController _target;
     private Vector3 _takeOutStartPosition;
     private bool _isTakeOutPlaying;
@@ -46,6 +51,10 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     public bool IsVisible => _target != null;
     public bool IsObserving => _isObserving;
+
+    // 대포가 물고 있는 동안이다. 이때 꺼내면 필드로 보낸 슬라임을 대포가 3초 뒤에
+    // 장식장 좌표로 끌어다 놓고 쏜다. 저장과 화면이 갈라지므로 손을 떼고 기다린다.
+    private bool IsTargetHeld => _target != null && _target.IsPresentationLocked;
     public RectTransform InfoSummaryTarget => _infoSummaryTarget;
     public RectTransform ObserveButtonTarget =>
         _observeButton != null ? _observeButton.transform as RectTransform : null;
@@ -72,18 +81,30 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
         _infoCanvasGroup.interactable = false;
         _infoRoot.SetActive(false);
-        _observationInputRoot.SetActive(false);
+        _observationSession = new GameplayModeSession(
+            _upgradeUI,
+            _clicker,
+            _gameExitManager,
+            _hudVisibility,
+            EHudParts.All,
+            _observationInputRoot,
+            _infoCanvasGroup,
+            _observationDuration,
+            activeAlpha: 0f,
+            inactiveAlpha: 1f,
+            manageRaycasts: false);
+        _observationSession.ResetPresentation();
         _observeButton.onClick.AddListener(EnterObservationMode);
         _closeButton.onClick.AddListener(Close);
         _takeOutButton.onClick.AddListener(OnTakeOutButtonClicked);
         _clicker.TargetClicked += OnTargetClicked;
-        StageManager.Instance.SpaceChanged += OnSpaceChanged;
+        _spaceManager.SpaceChanged += OnSpaceChanged;
     }
 
     private void OnDestroy()
     {
         _fadeTween?.Kill();
-        _observationSequence?.Kill();
+        _observationSession?.Dispose();
         _observeButton?.onClick.RemoveListener(EnterObservationMode);
         _closeButton?.onClick.RemoveListener(Close);
         _takeOutButton?.onClick.RemoveListener(OnTakeOutButtonClicked);
@@ -94,9 +115,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             _clicker.ReleaseMode(this);
         }
 
-        if (StageManager.Instance != null)
+        if (_spaceManager != null)
         {
-            StageManager.Instance.SpaceChanged -= OnSpaceChanged;
+            _spaceManager.SpaceChanged -= OnSpaceChanged;
         }
 
         _gameExitManager?.UnregisterBackHandler(this);
@@ -118,7 +139,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _takeOutButton != null &&
                              _observationInputRoot != null &&
                              _hudVisibility != null &&
-                             StageManager.Instance != null;
+                             _upgradeUI != null &&
+                             _spaceManager != null &&
+                             _spawnManager != null;
         if (!hasReferences)
         {
             Debug.LogError("장식장 정보 UI의 필수 참조가 비어 있습니다.", this);
@@ -129,13 +152,13 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void OnTargetClicked(SlimeController target)
     {
-        StageManager stageManager = StageManager.Instance;
+        GameplaySpaceManager spaceManager = _spaceManager;
         if (target == null ||
             _isTakeOutPlaying ||
             IsVisible ||
-            stageManager == null ||
-            stageManager.IsMainStageActive ||
-            stageManager.IsTransitioning ||
+            spaceManager == null ||
+            spaceManager.IsMainFieldActive ||
+            spaceManager.IsTransitioning ||
             target.Location != ESlimeLocation.DisplayRoom)
         {
             return;
@@ -160,7 +183,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _numberText.text = $"No.{(int)target.Grade}";
         _descriptionText.text = specData?.Description ?? string.Empty;
 
-        StageManager.Instance.FocusDisplayRoomSlime(
+        _spaceManager.FocusDisplayRoomSlime(
             target,
             () => ShowInfo(target));
     }
@@ -193,7 +216,10 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             return true;
         }
 
-        if (_observationSequence != null) return true;
+        if (_observationSession.IsTransitioning) return true;
+
+        // 물려 있는 동안에는 닫지 않되 입력은 소비한다.
+        if (IsTargetHeld) return true;
 
         // 꺼내기 연출 중에는 닫지 않되 입력은 소비한다.
         // false를 반환하면 GameExitManager가 이 핸들러를 목록에서 제거해
@@ -214,9 +240,9 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
             });
         // 카메라가 원래 자리로 돌아온 뒤에 입력을 돌려준다.
         // 즉시 해제하면 축소가 풀리는 동안 슬라임이 탭돼 패널이 다시 열린다.
-        if (StageManager.Instance != null)
+        if (_spaceManager != null)
         {
-            StageManager.Instance.RestoreDisplayRoomFocus(
+            _spaceManager.RestoreDisplayRoomFocus(
                 () => _clicker.ReleaseMode(this));
         }
         else
@@ -238,23 +264,19 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
 
     private void EnterObservationMode()
     {
-        if (!IsVisible || _isTakeOutPlaying || _isObserving) return;
+        if (!IsVisible || _isTakeOutPlaying || _isObserving || IsTargetHeld) return;
 
         _isObserving = true;
         _infoCanvasGroup.interactable = false;
         _infoCanvasGroup.blocksRaycasts = false;
-        _observationInputRoot.SetActive(true);
-        _observationInputRoot.transform.SetAsLastSibling();
-        StageManager.Instance?.BeginDisplayRoomObservation();
-
+        _spaceManager.BeginDisplayRoomObservation();
         _fadeTween?.Kill();
         _fadeTween = null;
-        _observationSequence?.Kill();
-        _observationSequence = DOTween.Sequence();
-        _observationSequence.Join(
-            _infoCanvasGroup.DOFade(0f, _observationDuration));
-        _observationSequence.OnComplete(() => _observationSequence = null);
-        _hudVisibility.PushHide(this, EHudParts.All);
+        _observationSession.Enter(
+            ClickerInputMode.Blocked,
+            ClickerInputPriority.Modal,
+            TryClose,
+            bringRootToFront: true);
     }
 
     private void ExitObservationMode()
@@ -262,29 +284,19 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         if (!_isObserving) return;
 
         _isObserving = false;
-        _observationInputRoot.SetActive(false);
         _infoCanvasGroup.blocksRaycasts = true;
-        StageManager.Instance?.EndDisplayRoomObservation();
-
-        _observationSequence?.Kill();
-        _observationSequence = DOTween.Sequence();
-        _observationSequence.Join(
-            _infoCanvasGroup.DOFade(1f, _observationDuration));
-        _hudVisibility.Release(this);
-        _observationSequence.OnComplete(() =>
-        {
-            _observationSequence = null;
-            _infoCanvasGroup.interactable = true;
-        });
+        _spaceManager.EndDisplayRoomObservation();
+        _observationSession.Exit(
+            deactivateRootImmediately: true,
+            onCompleted: () => _infoCanvasGroup.interactable = true);
     }
 
     private void OnTakeOutButtonClicked()
     {
-        if (!IsVisible || _isTakeOutPlaying) return;
+        if (!IsVisible || _isTakeOutPlaying || IsTargetHeld) return;
 
         // 기획서 §7.5 - 메인 필드가 가득 차면 꺼낼 수 없다.
-        if (SpawnManager.Instance == null ||
-            !SpawnManager.Instance.HasMainStageRoom())
+        if (!_spawnManager.HasMainFieldRoom())
         {
             _toast.Show("메인 필드가 가득 차서 꺼낼 수 없어요.");
             return;
@@ -294,7 +306,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _isTakeOutPlaying = true;
         _takeOutStartPosition = target.transform.position;
         _infoCanvasGroup.interactable = false;
-        StageManager.Instance.PlayDisplayRoomTransfer(
+        _spaceManager.PlayDisplayRoomTransfer(
             target,
             () => CompleteTakeOut(target));
     }
@@ -303,16 +315,16 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     {
         _isTakeOutPlaying = false;
 
-        StageManager stageManager = StageManager.Instance;
-        if (target == null || stageManager == null)
+        GameplaySpaceManager spaceManager = _spaceManager;
+        if (target == null || spaceManager == null)
         {
             TryClose();
             return;
         }
 
-        if (stageManager.TryRelocateSlime(
+        if (spaceManager.TryRelocateSlime(
                 target,
-                ESlimeLocation.MainStage,
+                ESlimeLocation.MainField,
                 _takeOutStartPosition))
         {
             TryClose();
@@ -349,13 +361,30 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoRoot.SetActive(false);
     }
 
+
+    // 대포가 물어 가면 버튼을 내리고, 놓아 주면 되돌린다.
+    //
+    // 신호를 받아 한 번만 바꾸지 않고 매 프레임 확인한다. 대포가 놓아 주는 경로가
+    // 발사·중단·공간 이탈·배치 모드로 여럿이라, 그중 하나만 신호를 빠뜨려도 버튼이
+    // 꺼진 채로 남고 정보창을 닫을 수도 없게 된다.
+    private void Update()
+    {
+        if (!IsVisible) return;
+
+        bool canUse = !IsTargetHeld && !_isTakeOutPlaying;
+        if (_observeButton != null) _observeButton.interactable = canUse;
+        if (_takeOutButton != null) _takeOutButton.interactable = canUse;
+        if (_closeButton != null) _closeButton.interactable = canUse;
+    }
+
     private void ResetObservationPresentation()
     {
+        if (_observeButton != null) _observeButton.interactable = true;
+        if (_takeOutButton != null) _takeOutButton.interactable = true;
+        if (_closeButton != null) _closeButton.interactable = true;
+
         _isObserving = false;
-        _observationSequence?.Kill();
-        _observationSequence = null;
-        _observationInputRoot.SetActive(false);
-        _hudVisibility.Release(this, animated: false);
+        _observationSession.ResetPresentation();
         _infoCanvasGroup.blocksRaycasts = true;
     }
 

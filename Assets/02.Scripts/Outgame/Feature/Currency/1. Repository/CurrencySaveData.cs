@@ -16,7 +16,7 @@ public class CurrencySaveData : ISaveData
     // 재화 기본값
     public static CurrencySaveData Default => new CurrencySaveData()
     {
-        SchemaVersion = SaveSchema.CurrencyCurrentVersion,
+        SchemaVersion = GameDataDomains.Currency.CurrentSchemaVersion,
         Currencies = new double[(int)ECurrencyType.Count],
         LastSaveTime = null
     };

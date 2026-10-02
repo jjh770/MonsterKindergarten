@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // 유치원과 장식장을 오가는 버튼 하나만 담당한다.
 // 버튼은 지금 있는 공간이 아니라 갈 곳을 가리키므로 라벨이 공간마다 바뀐다.
 //
-// StageUI와 같은 이유로 버튼이 아니라 별도 오브젝트에 붙인다. 버튼이 속한
+// BackgroundThemeUI와 같은 이유로 버튼이 아니라 별도 오브젝트에 붙인다. 버튼이 속한
 // 하단 메뉴 패널은 꺼진 채로 시작하므로, 버튼에 붙이면 Awake가 패널이 처음
 // 열릴 때까지 밀려 참조 검증이 늦어진다.
 public sealed class SpaceToggleButtonUI : MonoBehaviour

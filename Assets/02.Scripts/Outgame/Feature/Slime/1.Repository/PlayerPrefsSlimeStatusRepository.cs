@@ -64,7 +64,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
             int schemaVersion = root.Value<int?>(nameof(ISaveData.SchemaVersion)) ??
                                 SaveSchema.LegacyVersion;
 
-            if (schemaVersion > SaveSchema.SlimeCurrentVersion)
+            if (schemaVersion > GameDataDomains.SlimeStatus.CurrentSchemaVersion)
             {
                 return UniTask.FromResult(
                     SaveLoadResult<SlimeStatusSaveData>.Failed(
@@ -72,7 +72,7 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
                         UnsupportedSaveVersionException.BuildMessage(
                             "SlimeStatus",
                             schemaVersion,
-                            SaveSchema.SlimeCurrentVersion)));
+                            GameDataDomains.SlimeStatus.CurrentSchemaVersion)));
             }
 
             SlimeStatusSaveData saveData;
@@ -89,10 +89,12 @@ public class PlayerPrefsSlimeStatusRepository : ISlimeStatusRepository
                 saveData = JsonConvert.DeserializeObject<SlimeStatusSaveData>(
                     json,
                     LoadSettings);
-                if (schemaVersion < SaveSchema.SlimeCurrentVersion)
+                if (schemaVersion < GameDataDomains.SlimeStatus.CurrentSchemaVersion ||
+                    SlimeStatusSaveMigration.HasLegacyPendingTickets(saveData))
                 {
                     saveData = SlimeStatusSaveMigration.UpgradeInstanceData(
-                        saveData);
+                        saveData,
+                        schemaVersion);
                 }
             }
 

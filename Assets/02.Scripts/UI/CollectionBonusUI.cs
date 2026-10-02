@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -18,7 +18,12 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _bonusText;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private GameExitManager _gameExitManager;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private ToastMessageUI _toast;
     [SerializeField, Min(0f)] private float _fadeDuration = 0.15f;
+    [Tooltip("보너스가 오를 때 띄우는 토스트의 표시 시간(초)입니다. 두 줄이라 기본보다 길게 둡니다.")]
+    [SerializeField, Min(0f)] private float _bonusToastDuration = 2.8f;
 
     private Tween _fadeTween;
     private bool _isOpen;
@@ -35,13 +40,12 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _popupRoot.SetActive(false);
         _openButton.onClick.AddListener(Open);
         _closeButton.onClick.AddListener(Close);
-        GameManager.OnAllDataInitialized += RefreshAvailability;
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameplayActivated += RefreshAvailability;
-        }
+        _gameManager.AllDataInitialized += RefreshAvailability;
+        TutorialManager.Started += RefreshAvailability;
+        TutorialManager.Finished += RefreshAvailability;
+        _gameManager.OnGameplayActivated += RefreshAvailability;
 
-        SlimeManager.OnNormalCollectionCountChanged += OnCollectionCountChanged;
+        _slimeManager.NormalCollectionCountChanged += OnCollectionCountChanged;
         RefreshAvailability();
     }
 
@@ -50,13 +54,18 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _fadeTween?.Kill();
         _openButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
-        GameManager.OnAllDataInitialized -= RefreshAvailability;
-        if (GameManager.Instance != null)
+        TutorialManager.Started -= RefreshAvailability;
+        TutorialManager.Finished -= RefreshAvailability;
+        if (_gameManager != null)
         {
-            GameManager.Instance.OnGameplayActivated -= RefreshAvailability;
+            _gameManager.AllDataInitialized -= RefreshAvailability;
+            _gameManager.OnGameplayActivated -= RefreshAvailability;
         }
 
-        SlimeManager.OnNormalCollectionCountChanged -= OnCollectionCountChanged;
+        if (_slimeManager != null)
+        {
+            _slimeManager.NormalCollectionCountChanged -= OnCollectionCountChanged;
+        }
         _clicker?.ReleaseMode(this);
         _gameExitManager?.UnregisterBackHandler(this);
     }
@@ -85,7 +94,10 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
                              _progressText != null &&
                              _bonusText != null &&
                              _clicker != null &&
-                             _gameExitManager != null;
+                             _gameExitManager != null &&
+                             _slimeManager != null &&
+                             _gameManager != null &&
+                             _toast != null;
         if (!hasReferences)
         {
             Debug.LogError("도감 효과 UI의 필수 씬 참조가 비어 있습니다.", this);
@@ -152,27 +164,64 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
 
     private void OnCollectionCountChanged(int count)
     {
+        ShowBonusToast(count);
         if (_isOpen)
         {
             RefreshContent();
         }
     }
 
+    // 등록할 때마다 한 칸씩 늘어나므로 이전 수와 비교하면 보너스가 오른 순간만 골라낼 수 있다.
+    // 15종 뒤에는 보너스가 오르지 않아 토스트도 뜨지 않는다.
+    private void ShowBonusToast(int count)
+    {
+        double current = NormalCollectionRules.GetPointBonusPercent(count);
+        if (current <= NormalCollectionRules.GetPointBonusPercent(count - 1)) return;
+
+        _toast.Show(
+            "도감에 더 많은 슬라임들이 등록되었어요!" + "\n" +
+            "슬라임 포인트 획득량이 " +
+            NormalCollectionRules.PointBonusPercentPerStep.ToString("0") +
+            "% 추가됩니다. 현재 +" + current.ToString("0") + "%",
+            _bonusToastDuration);
+    }
+
     private void RefreshContent()
     {
-        int count = SlimeManager.Instance?.NormalCollectionCount ?? 0;
+        int count = _slimeManager.NormalCollectionCount;
         _progressText.text = $"현재 도감  {count}/{SlimeStatusSaveData.NormalCollectionSize}";
 
         var builder = new StringBuilder();
+        AppendPointBonus(builder, count);
         AppendBonus(builder, count, NormalCollectionRules.AutoMergeCount,
-            "자동 합성", "같은 등급 슬라임을 자동으로 합성해요.");
-        AppendBonus(builder, count, NormalCollectionRules.AutoTicketCollectCount,
-            "가챠권 자동 회수", "필드에 떨어진 가챠권을 자동으로 회수해요.");
+            "자동 합성", "버튼을 누르면 같은 등급 슬라임을 한 번에 합성해요.");
+        AppendBonus(builder, count, NormalCollectionRules.TicketBulkCollectCount,
+            "티켓 회수", "필드에 떨어진 티켓을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
-            "오프라인 가챠권 보상", "접속하지 않은 시간에 가챠권도 모아줘요.");
-        AppendBonus(builder, count, NormalCollectionRules.HiddenFeverCount,
-            "???", "???");
+            "오프라인 티켓 회수", "접속하지 않은 시간에 티켓도 모아줘요.");
+        AppendGraduation(builder, count);
         _bonusText.text = builder.ToString();
+    }
+
+    // 해금이 아니라 계속 쌓이는 보너스라 마일스톤 항목과 따로 적는다.
+    private static void AppendPointBonus(StringBuilder builder, int currentCount)
+    {
+        double current = NormalCollectionRules.GetPointBonusPercent(currentCount);
+        int step = NormalCollectionRules.PointBonusStepCount;
+        int next = (currentCount / step + 1) * step;
+        string nextText = currentCount / step < NormalCollectionRules.PointBonusMaxStepCount
+            ? $"다음 {next}종"
+            : "최대";
+
+        builder.Append("<b>도감 ")
+            .Append(step)
+            .Append("종마다 - 포인트 +")
+            .Append(NormalCollectionRules.PointBonusPercentPerStep.ToString("0"))
+            .Append("%</b>   <color=#4F8A3B>현재 +")
+            .Append(current.ToString("0"))
+            .Append("%</color>\n<size=88%>모든 슬라임의 터치, 자동 포인트가 늘어나요. (")
+            .Append(nextText)
+            .Append(")</size>");
     }
 
     private static void AppendBonus(
@@ -199,8 +248,58 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             .Append('>')
             .Append(state)
             .Append("</color>\n<size=88%>")
-            .Append(description)
+            .Append(unlocked ? description : "???")
             .Append("</size>");
+    }
+
+    private void AppendGraduation(StringBuilder builder, int registeredCount)
+    {
+        if (builder.Length > 0)
+        {
+            builder.Append("\n\n");
+        }
+
+        int requiredCount = NormalCollectionRules.MainEndingCount;
+        int displayedCount = Mathf.Clamp(
+            _slimeManager.DisplayRoomSlimeCount,
+            0,
+            requiredCount);
+        string stateColor = displayedCount >= requiredCount ? "#4F8A3B" : "#8B7868";
+
+        if (_slimeManager.IsMainEndingSeen)
+        {
+            builder.Append("<b>도감 20종 - 유치원 졸업</b>   <color=")
+                .Append(stateColor)
+                .Append('>')
+                .Append(displayedCount)
+                .Append('/')
+                .Append(requiredCount)
+                .Append("</color>\n")
+                .Append("<size=88%>슬라임 유치원 졸업을 축하합니다!</size>");
+            return;
+        }
+
+        if (registeredCount < requiredCount)
+        {
+            builder.Append("<b>도감 20종 - ???</b>   <color=")
+                .Append(stateColor)
+                .Append('>')
+                .Append(displayedCount)
+                .Append('/')
+                .Append(requiredCount)
+                .Append("</color>\n")
+                .Append("<size=88%>???</size>");
+            return;
+        }
+
+        builder.Append("<b>도감 20종 - 유치원 졸업</b>   <color=")
+            .Append(stateColor)
+            .Append('>')
+            .Append(displayedCount)
+            .Append('/')
+            .Append(requiredCount)
+            .Append("</color>\n")
+            .Append("<size=88%>장식장에 20종을 모두 모으면...?</size>");
     }
 
     private static bool CanOpen()

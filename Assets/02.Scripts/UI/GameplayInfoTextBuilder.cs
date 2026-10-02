@@ -46,6 +46,9 @@ public static class GameplayInfoTextBuilder
     }
 
     public static string BuildSystemUpgradeText(
+        UpgradeManager upgradeManager,
+        SlimeManager slimeManager,
+        SpawnManager spawnManager,
         bool includeTitle = true,
         bool includeCloseHint = false)
     {
@@ -55,9 +58,9 @@ public static class GameplayInfoTextBuilder
             builder.Append("시스템 업그레이드 현황\n");
         }
 
-        if (UpgradeManager.Instance == null) return builder.ToString();
+        if (upgradeManager == null) return builder.ToString();
 
-        List<Upgrade> upgrades = UpgradeManager.Instance.GetSystemUpgrades();
+        List<Upgrade> upgrades = upgradeManager.GetSystemUpgrades();
         upgrades.Sort((left, right) =>
             ((int)left.SpecData.Type).CompareTo((int)right.SpecData.Type));
 
@@ -65,7 +68,7 @@ public static class GameplayInfoTextBuilder
         foreach (Upgrade upgrade in upgrades)
         {
             EUpgradeType type = upgrade.SpecData.Type;
-            if (!SystemUpgradeVisibility.IsShown(type)) continue;
+            if (!SystemUpgradeVisibility.IsShown(type, slimeManager)) continue;
 
             if (hasVisibleUpgrade)
             {
@@ -79,7 +82,7 @@ public static class GameplayInfoTextBuilder
                     : $"Lv.{upgrade.Level}/{upgrade.SpecData.MaxLevel}")
                 .Append('\n')
                 .Append("<size=92%>")
-                .Append(BuildEffect(type, upgrade))
+                .Append(BuildEffect(type, upgrade, spawnManager))
                 .Append("</size>");
 
             hasVisibleUpgrade = true;
@@ -93,9 +96,84 @@ public static class GameplayInfoTextBuilder
         return builder.ToString();
     }
 
-    private static string BuildEffect(EUpgradeType type, Upgrade upgrade)
+    // 뽑기 후보가 이 수를 넘으면 한 줄에 두 등급씩 두 열로 보여 준다. 스무 줄을 한 열에 놓으면
+    // 상세 텍스트 영역을 넘어 뒤로 버튼 밑으로 흘러내린다.
+    private const int GachaProbabilityColumnRows = 10;
+
+    // 두 열의 시작 위치(텍스트 영역 폭 기준). 오른쪽 열의 끝이 영역 밖으로 나가면 줄이 꺾이므로
+    // 폭에 여유를 두고 잡는다.
+    private const string GachaLeftColumnPosition = "4%";
+    private const string GachaRightColumnPosition = "52%";
+
+    public static string BuildNormalGachaProbabilityText(
+        ESlimeGrade highestGrade,
+        bool includeTitle = true)
     {
-        SpawnManager spawnManager = SpawnManager.Instance;
+        var builder = new StringBuilder();
+        if (includeTitle)
+        {
+            builder.Append("현재 슬라임 뽑기 확률\n");
+        }
+
+        builder.Append("현재 최고 등급 Lv.")
+            .Append((int)highestGrade)
+            .Append(" 기준\n\n");
+
+        List<NormalGachaProbability> probabilities =
+            NormalGachaPool.GetProbabilities(highestGrade);
+        if (probabilities.Count <= GachaProbabilityColumnRows)
+        {
+            foreach (NormalGachaProbability probability in probabilities)
+            {
+                AppendGachaRow(builder, probability);
+                builder.Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        // 왼쪽 열은 앞의 열 등급, 오른쪽 열은 나머지다. 줄마다 왼쪽 정렬로 바꾸고 위치 태그로
+        // 두 열을 맞춘다. 가운데 정렬 그대로면 오른쪽 열이 없는 줄만 가운데로 쏠린다.
+        for (int row = 0; row < GachaProbabilityColumnRows; row++)
+        {
+            builder.Append("<align=left><pos=")
+                .Append(GachaLeftColumnPosition)
+                .Append('>');
+            AppendGachaRow(builder, probabilities[row]);
+
+            int rightIndex = row + GachaProbabilityColumnRows;
+            if (rightIndex < probabilities.Count)
+            {
+                builder.Append("<pos=")
+                    .Append(GachaRightColumnPosition)
+                    .Append('>');
+                AppendGachaRow(builder, probabilities[rightIndex]);
+            }
+
+            builder.Append("</align>\n");
+        }
+
+        return builder.ToString();
+    }
+
+    private static void AppendGachaRow(
+        StringBuilder builder,
+        NormalGachaProbability probability)
+    {
+        builder.Append("<sprite name=\"")
+            .Append(((int)probability.Grade).ToString("00"))
+            .Append("\"> Lv.")
+            .Append((int)probability.Grade)
+            .Append("   ")
+            .Append((probability.Probability * 100d).ToString("F1"))
+            .Append('%');
+    }
+
+    private static string BuildEffect(
+        EUpgradeType type,
+        Upgrade upgrade,
+        SpawnManager spawnManager)
+    {
         switch (type)
         {
             case EUpgradeType.SpawnTimeSub:
@@ -110,11 +188,11 @@ public static class GameplayInfoTextBuilder
                 return spawnManager == null
                     ? string.Empty
                     : $"자연 등장 최고 Lv.{GetHighestSpawnGrade(spawnManager)}";
-            case EUpgradeType.AutoMergeTimeSub:
-                return AutoMergeManager.Instance == null
-                    ? string.Empty
-                    : $"주기 {AutoMergeManager.Instance.Interval:F1}초, 한 번에 " +
-                      $"{AutoMergeManager.GetPairCountForLevel(upgrade.Level)}쌍";
+            case EUpgradeType.AutoMergePairAdd:
+                return $"버튼을 누를 때마다 한 번에 " +
+                       $"{AutoMergeManager.GetPairCountForLevel(upgrade.Level)}쌍";
+            case EUpgradeType.AllSlimePointPercentAdd:
+                return $"모든 포인트 획득량 +{upgrade.Point:0.#}%";
             default:
                 return string.Empty;
         }

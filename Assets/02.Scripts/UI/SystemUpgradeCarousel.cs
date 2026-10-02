@@ -50,6 +50,9 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
     public bool IsReady => _slots.Count == RequiredSlotCount;
     public int SelectedIndex => _selectedIndex;
     public int DataCount => _dataCount;
+    public RectTransform CenterTarget => IsReady
+        ? _slots[CenterSlotIndex].Root
+        : null;
     private bool IsBusy => _rotationTween != null || _isDragging;
 
     // 가운데 슬롯을 눌렀다. 항목 인덱스를 준다.
@@ -134,6 +137,22 @@ public sealed class SystemUpgradeCarousel : MonoBehaviour,
         int forwardDistance = WrapIndex(dataIndex - _selectedIndex);
         Rotate(forwardDistance <= _dataCount / 2 ? 1 : -1);
         return true;
+    }
+
+    // 목록이 재구성될 때 선택을 특정 인덱스로 즉시 맞춘다. 회전 연출을 쓰지 않으므로
+    // 커진 목록에서 가운데 카드가 튀지 않는다. 회전/드래그 중에는 사용자가 진행 중인
+    // 조작을 존중해 무시한다.
+    public void SetSelectedIndexImmediate(int dataIndex)
+    {
+        if (_dataCount == 0 || IsBusy) return;
+        if (dataIndex < 0 || dataIndex >= _dataCount) return;
+
+        _selectedIndex = dataIndex;
+        if (IsReady)
+        {
+            Rebuild();
+        }
+        SelectionChanged?.Invoke();
     }
 
     // 슬롯을 지금 선택 위치에 맞춰 다시 채우고 제자리에 놓는다.

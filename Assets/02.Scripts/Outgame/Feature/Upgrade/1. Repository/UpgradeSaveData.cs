@@ -43,7 +43,7 @@ public class UpgradeSaveData : ISaveData
     /// <summary>기본값 (새 게임)</summary>
     public static UpgradeSaveData Default => new UpgradeSaveData
     {
-        SchemaVersion = SaveSchema.UpgradeCurrentVersion,
+        SchemaVersion = GameDataDomains.Upgrade.CurrentSchemaVersion,
         Entries = new List<UpgradeEntry>(),
     };
 

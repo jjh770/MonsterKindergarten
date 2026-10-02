@@ -3,23 +3,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-public class UpgradeManager : MonoBehaviour
+public class UpgradeManager : MonoBehaviour, IGameDataDomainManager
 {
     private const int GroundMaxCountUpgradeLevel = 20;
 
     public static UpgradeManager Instance { get; private set; }
 
-    // 이벤트는 도메인이 아닌 매니저가 가져야함.
-    public static event Action OnDataChanged;
-    public static event Action OnDataInitialized;
-    // 업그레이드 성공 시 어떤 업그레이드가 변경되었는지 알려주는 이벤트 (SpawnManager 등이 구독)
-    public static event Action<EUpgradeType, ESlimeGrade> OnUpgraded;
+    // 이벤트는 도메인이 아닌 매니저가 가져야 한다.
+    public event Action DataChanged;
+    public event Action DataInitialized;
+    public event Action<EUpgradeType, ESlimeGrade> Upgraded;
+    [Header("Scene References")]
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+
     [SerializeField] private UpgradeSpecTableSO _specTable;
     private IRepository<UpgradeSaveData> _repository;
     private Dictionary<(EUpgradeType, ESlimeGrade), Upgrade> _upgrades = new();
     public bool HasExistingProgress => _upgrades.Values.Any(upgrade => upgrade.Level > 0);
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }
+    public bool IsInitialized { get; private set; }
 
     private void Awake()
     {
@@ -31,104 +35,127 @@ public class UpgradeManager : MonoBehaviour
 
         Instance = this;
 
+        if (_currencyManager == null || _slimeManager == null)
+        {
+            Debug.LogError("업그레이드 매니저의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+            SaveDataLoadGuard.Report(
+                ESaveLoadFailure.InitializationFailed,
+                "Upgrade : GameScene 참조가 비어 있습니다.");
+            return;
+        }
+
         _ = InitAsync();
     }
 
     private async UniTaskVoid InitAsync()
     {
-        await UniTask.Yield();
+        // 예외가 난 자리가 신고할 종류를 정한다. 읽어 온 문서를 해석하는 구간의 예외만 저장
+        // 문제(Unreadable)이고, 그 밖은 앱 코드의 결함이라 초기화 수단을 열면 안 된다.
+        ESaveLoadFailure exceptionFailure = ESaveLoadFailure.InitializationFailed;
+        try
+        {
+            await UniTask.Yield();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-        _repository = new HybridRepository<UpgradeSaveData>(new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId), new FirebaseUpgradeRepository());
+            _repository = new HybridRepository<UpgradeSaveData>(new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId), new FirebaseUpgradeRepository());
 #else
-        _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId);
+            _repository = new PlayerPrefsUpgradeRepository(AccountManager.Instance.UserId);
 #endif
 
-        SaveLoadResult<UpgradeSaveData> loadResult = await _repository.Load();
-        if (loadResult.IsFailed)
-        {
-            // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
-            SaveDataLoadGuard.Report(
-                loadResult.Failure,
-                $"Upgrade : {loadResult.FailureMessage}");
-            return;
-        }
-
-        HasStoredSaveData = loadResult.IsLoaded;
-        UpgradeSaveData saveData = loadResult.IsLoaded
-            ? loadResult.Data
-            : UpgradeSaveData.Default;
-        // 저장은 스펙 테이블의 모든 업그레이드를 레벨 0까지 포함해 기록한다.
-        // 그러므로 읽어 온 목록이 비어 있으면 정상 경로가 아니다.
-        //
-        // null만 보면 안 된다. Firestore에서 필드가 없어도 UpgradeSaveData.Entries의
-        // 속성 초기화자 때문에 null이 아니라 빈 목록으로 들어오기 때문이다.
-        // 저장이 없는 신규 계정의 기본값은 비어 있는 게 정상이므로 제외한다.
-        if (loadResult.IsLoaded &&
-            (saveData.Entries == null || saveData.Entries.Count == 0))
-        {
-            SaveDataLoadGuard.Report(
-                ESaveLoadFailure.Unreadable,
-                "Upgrade : 업그레이드 목록이 비어 있습니다.");
-            return;
-        }
-
-        // Entries를 딕셔너리로 변환해서 빠르게 조회
-        var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
-        foreach (var entry in saveData.Entries)
-        {
-            if (entry == null)
+            SaveLoadResult<UpgradeSaveData> loadResult = await _repository.Load();
+            if (loadResult.IsFailed)
             {
+                // 읽지 못한 세션은 초기화하지 않는다. 세션 처리는 SaveDataLoadGuard가 맡는다.
                 SaveDataLoadGuard.Report(
-                    ESaveLoadFailure.Unreadable,
-                    "Upgrade : 비어 있는 업그레이드 항목이 있습니다.");
+                    loadResult.Failure,
+                    $"Upgrade : {loadResult.FailureMessage}");
                 return;
             }
 
-            // 저장은 항상 유효한 열거형 값과 0 이상의 레벨을 쓴다. 범위를 벗어난 항목은
-            // 변질이고, 그대로 두면 딕셔너리에서 매칭되지 않아 그 업그레이드만 조용히
-            // 0레벨로 시작한다. 열거형 범위 안이면서 스펙 테이블에 없는 조합은
-            // 밸런스 개편으로도 생기므로 아래에서 그냥 무시한다.
-            if (entry.Type < 0 || entry.Type >= (int)EUpgradeType.Count ||
-                entry.Grade < 0 || entry.Grade >= (int)ESlimeGrade.Count ||
-                entry.Level < 0)
+            HasStoredSaveData = loadResult.IsLoaded;
+            // 여기서부터는 읽어 온 문서를 해석한다. 이 구간의 예외는 저장 문제다.
+            exceptionFailure = ESaveLoadFailure.Unreadable;
+            UpgradeSaveData saveData = loadResult.IsLoaded
+                ? loadResult.Data
+                : UpgradeSaveData.Default;
+            // 저장은 스펙 테이블의 모든 업그레이드를 레벨 0까지 포함해 기록한다.
+            // 그러므로 읽어 온 목록이 비어 있으면 정상 경로가 아니다.
+            //
+            // null만 보면 안 된다. Firestore에서 필드가 없어도 UpgradeSaveData.Entries의
+            // 속성 초기화자 때문에 null이 아니라 빈 목록으로 들어오기 때문이다.
+            // 저장이 없는 신규 계정의 기본값은 비어 있는 게 정상이므로 제외한다.
+            if (loadResult.IsLoaded &&
+                (saveData.Entries == null || saveData.Entries.Count == 0))
             {
                 SaveDataLoadGuard.Report(
                     ESaveLoadFailure.Unreadable,
-                    "Upgrade : 해석할 수 없는 업그레이드 항목이 있습니다. : " +
-                    $"Type {entry.Type}, Grade {entry.Grade}, Level {entry.Level}");
+                    "Upgrade : 업그레이드 목록이 비어 있습니다.");
                 return;
             }
 
-            savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
-        }
-
-        foreach (var specData in _specTable.Datas)
-        {
-            var key = (specData.Type, specData.SlimeGrade);
-            if (_upgrades.ContainsKey(key))
+            // Entries를 딕셔너리로 변환해서 빠르게 조회
+            var savedLevels = new Dictionary<(EUpgradeType, ESlimeGrade), int>();
+            foreach (var entry in saveData.Entries)
             {
-                throw new Exception($"이미 같은 타입의 업그레이드 정보를 가지고 있습니다. {specData.Type}, {specData.SlimeGrade}");
+                if (entry == null)
+                {
+                    SaveDataLoadGuard.Report(
+                        ESaveLoadFailure.Unreadable,
+                        "Upgrade : 비어 있는 업그레이드 항목이 있습니다.");
+                    return;
+                }
+
+                // 저장은 항상 유효한 열거형 값과 0 이상의 레벨을 쓴다. 범위를 벗어난 항목은
+                // 변질이고, 그대로 두면 딕셔너리에서 매칭되지 않아 그 업그레이드만 조용히
+                // 0레벨로 시작한다. 열거형 범위 안이면서 스펙 테이블에 없는 조합은
+                // 밸런스 개편으로도 생기므로 아래에서 그냥 무시한다.
+                if (entry.Type < 0 || entry.Type >= (int)EUpgradeType.Count ||
+                    entry.Grade < 0 || entry.Grade >= (int)ESlimeGrade.Count ||
+                    entry.Level < 0)
+                {
+                    SaveDataLoadGuard.Report(
+                        ESaveLoadFailure.Unreadable,
+                        "Upgrade : 해석할 수 없는 업그레이드 항목이 있습니다. : " +
+                        $"Type {entry.Type}, Grade {entry.Grade}, Level {entry.Level}");
+                    return;
+                }
+
+                savedLevels[(entry.GetUpgradeType(), entry.GetSlimeGrade())] = entry.Level;
             }
 
-            // 스펙에서 MaxLevel을 낮추는 개편은 정상이므로 차단하지 않고 조인다.
-            int savedLevel = savedLevels.TryGetValue(key, out var lv)
-                ? Math.Min(lv, specData.MaxLevel)
-                : 0;
-            _upgrades.Add(key, new Upgrade(specData, savedLevel));
-        }
+            foreach (var specData in _specTable.Datas)
+            {
+                var key = (specData.Type, specData.SlimeGrade);
+                if (_upgrades.ContainsKey(key))
+                {
+                    throw new Exception($"이미 같은 타입의 업그레이드 정보를 가지고 있습니다. {specData.Type}, {specData.SlimeGrade}");
+                }
 
-        OnDataChanged?.Invoke();
-        OnDataInitialized?.Invoke();
+                // 스펙에서 MaxLevel을 낮추는 개편은 정상이므로 차단하지 않고 조인다.
+                int savedLevel = savedLevels.TryGetValue(key, out var lv)
+                    ? Math.Min(lv, specData.MaxLevel)
+                    : 0;
+                _upgrades.Add(key, new Upgrade(specData, savedLevel));
+            }
+
+            // 복원이 끝났다. 이제 호출되는 것은 구독자 코드라 저장과 무관하다.
+            exceptionFailure = ESaveLoadFailure.InitializationFailed;
+            IsInitialized = true;
+            DataChanged?.Invoke();
+            DataInitialized?.Invoke();
+        }
+        catch (Exception e)
+        {
+            SaveDataLoadGuard.Report(
+                exceptionFailure,
+                $"Upgrade : 초기화 중 예외 : {e.Message}");
+        }
     }
 
     // 업그레이드를 가져오기
     public Upgrade Get(EUpgradeType type, ESlimeGrade grade) =>
         _upgrades.TryGetValue((type, grade), out var upgrade) ? upgrade : null;
-
-    // 슬라임 개별 업그레이드만 반환 (SpawnTimeSub, MaxCountAdd 등 전체 공통 업그레이드 제외)
-    public List<Upgrade> GetSlimeUpgrades() =>
-        _upgrades.Values.Where(u => u.SpecData.SlimeGrade != ESlimeGrade.None).ToList();
 
     public List<Upgrade> GetSystemUpgrades() =>
         _upgrades.Values.Where(u => u.SpecData.SlimeGrade == ESlimeGrade.None).ToList();
@@ -142,7 +169,7 @@ public class UpgradeManager : MonoBehaviour
         // 문제 : 왜 도메인에서 Currency 관련 유효성 검사를 하지 않는가.?
         // 도메인 단에서 Currency를 가져오는건 도메인끼리 침범하는 문제가 발생함.
         // 도메인끼리 협력해서 유효성 검사를 하는 곳은 매니저 단에서 실행.
-        return CurrencyManager.Instance.CanAfford(ECurrencyType.Point, upgrade.Cost);
+        return _currencyManager.CanAfford(ECurrencyType.Point, upgrade.Cost);
     }
 
     // EUpgradeType + ESlimeGrade 키로 직접 레벨업 시도
@@ -153,17 +180,19 @@ public class UpgradeManager : MonoBehaviour
 
         Currency cost = upgrade.Cost;
 
-        if (!CurrencyManager.Instance.TrySpend(ECurrencyType.Point, cost)) return false;
-
-        if (!upgrade.TryLevelUp())
+        EEconomyTransactionResult result =
+            EconomyTransactionService.TryPurchase(
+                _currencyManager,
+                ECurrencyType.Point,
+                cost,
+                upgrade.TryLevelUp);
+        if (result != EEconomyTransactionResult.Success)
         {
-            // 레벨업 실패 시 포인트 환불
-            CurrencyManager.Instance.Add(ECurrencyType.Point, cost);
             return false;
         }
         Save();
-        OnDataChanged?.Invoke();
-        OnUpgraded?.Invoke(type, grade);
+        DataChanged?.Invoke();
+        Upgraded?.Invoke(type, grade);
 
         return true;
     }
@@ -171,17 +200,17 @@ public class UpgradeManager : MonoBehaviour
     public bool IsLockedByProgress(Upgrade upgrade)
     {
         if (upgrade != null &&
-            upgrade.SpecData.Type == EUpgradeType.AutoMergeTimeSub)
+            upgrade.SpecData.Type == EUpgradeType.AutoMergePairAdd)
         {
-            return SlimeManager.Instance == null ||
-                   !SlimeManager.Instance.IsAutoMergeUnlocked;
+            return _slimeManager == null ||
+                   !_slimeManager.IsAutoMergeUnlocked;
         }
 
         if (upgrade != null &&
             upgrade.SpecData.Type == EUpgradeType.HigherGradeSpawnWeightAdd)
         {
-            return SlimeManager.Instance == null ||
-                   SlimeManager.Instance.IsHigherGradeSpawnTierLocked(upgrade.Level);
+            return _slimeManager == null ||
+                   _slimeManager.IsHigherGradeSpawnTierLocked(upgrade.Level);
         }
 
         if (upgrade == null ||
@@ -191,8 +220,8 @@ public class UpgradeManager : MonoBehaviour
             return false;
         }
 
-        return SlimeManager.Instance == null ||
-               !SlimeManager.Instance.IsSkyUnlocked;
+        return _slimeManager == null ||
+               !_slimeManager.IsMaxCountExpansionUnlocked;
     }
 
     private void Save()
@@ -215,7 +244,7 @@ public class UpgradeManager : MonoBehaviour
 
         var data = new UpgradeSaveData
         {
-            SchemaVersion = SaveSchema.UpgradeCurrentVersion,
+            SchemaVersion = GameDataDomains.Upgrade.CurrentSchemaVersion,
         };
         foreach (var pair in _upgrades)
         {

@@ -14,12 +14,21 @@ public sealed class OfflineRewardManager : MonoBehaviour
 {
     public static OfflineRewardManager Instance { get; private set; }
 
+    [Header("Scene References")]
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SlimeManager _slimeManager;
+
     [SerializeField] private float _minimumOfflineSeconds = 60f;
     [SerializeField] private float _maximumOfflineHours = 8f;
     [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
     [SerializeField, Min(0)] private int _maximumOfflineTickets = 5;
 
     private OfflineRewardResult? _pendingReward;
+
+    // 대기 중인 보상의 등급별 몫. 받는 순간 생산 기록에 더한다. 보상을 다시 계산하지 않고
+    // 그대로 두는 경우에는 이 값도 그대로라서 같은 보상과 항상 짝이 맞는다.
+    private double[] _pendingGradePoints;
     private bool _isConsumed;
     private bool _isClaimed;
 
@@ -46,6 +55,12 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         Instance = this;
+
+        if (_gameManager == null || _currencyManager == null || _slimeManager == null)
+        {
+            Debug.LogError("오프라인 보상 매니저의 GameScene 참조가 비어 있습니다.", this);
+            enabled = false;
+        }
     }
 
     private void Start()
@@ -68,8 +83,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         await ServerClock.TrySync(AccountManager.Instance?.UserId, force: true);
 
         if (this == null || GameplaySaveGate.IsResetting) return;
-        if (GameManager.Instance == null ||
-            !GameManager.Instance.IsAllDataInitialized) return;
+        if (_gameManager == null || !_gameManager.IsAllDataInitialized) return;
         if (IsPresentingClaimedReward) return;
 
         Grant();
@@ -77,7 +91,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
     public void Grant()
     {
-        DateTime lastSaveTime = CurrencyManager.Instance.LastSaveTime;
+        DateTime lastSaveTime = _currencyManager.LastSaveTime;
         DateTime currentTime = ServerClock.TrustedUtcNow;
 
         if (lastSaveTime == DateTime.MinValue || currentTime <= lastSaveTime)
@@ -96,7 +110,8 @@ public sealed class OfflineRewardManager : MonoBehaviour
         double maximumSeconds = Math.Max(0f, _maximumOfflineHours) * 60d * 60d;
         elapsedSeconds = Math.Min(elapsedSeconds, maximumSeconds);
 
-        double pointPerSecond = CalculateAutoPointPerSecond();
+        var secondShares = new double[SlimeStatusSaveData.NormalCollectionSize];
+        double pointPerSecond = CalculateAutoPointPerSecond(secondShares);
         double reward = Math.Floor(
             pointPerSecond * elapsedSeconds * _offlineRewardEfficiency);
         int ticketReward = CalculateOfflineTickets(elapsedSeconds, maximumSeconds);
@@ -119,12 +134,13 @@ public sealed class OfflineRewardManager : MonoBehaviour
         {
             _isConsumed = false;
             _isClaimed = false;
+            _pendingGradePoints = DistributeByGrade(secondShares, pointPerSecond, reward);
             _pendingReward = new OfflineRewardResult(
                 TimeSpan.FromSeconds(elapsedSeconds),
                 reward,
                 ticketReward,
-                CurrencyManager.Instance.Point,
-                CurrencyManager.Instance.Point + (Currency)reward);
+                _currencyManager.Point,
+                _currencyManager.Point + (Currency)reward);
         }
 
         TryPresent();
@@ -139,7 +155,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
         // 미뤄 둔 사이 포인트가 늘었을 수 있다. 카운트업 시작값은 발표 시점에 잡는다.
         OfflineRewardResult pendingReward = _pendingReward.Value;
-        Currency pointBeforeReward = CurrencyManager.Instance.Point;
+        Currency pointBeforeReward = _currencyManager.Point;
         _pendingReward = new OfflineRewardResult(
             pendingReward.ElapsedTime,
             pendingReward.Reward,
@@ -156,42 +172,70 @@ public sealed class OfflineRewardManager : MonoBehaviour
     // 게임플레이가 켜지는 경로이기도 하다.
     private void SettleWithoutReward()
     {
-        CurrencyManager.Instance.SaveCurrent();
+        _currencyManager.SaveCurrent();
         if (_pendingReward.HasValue) return;
 
         PresentationBlockChanged?.Invoke(false);
     }
 
-    private static double CalculateAutoPointPerSecond()
+    // 등급별 초당 포인트를 secondShares에 채우고 합을 돌려준다. 생산 기록을 등급별로
+    // 남겨야 해서 합만 구하지 않고 몫을 함께 모은다.
+    private double CalculateAutoPointPerSecond(double[] secondShares)
     {
         double total = 0d;
 
-        foreach (SlimeInstance instance in SlimeManager.Instance.ActiveSlimes)
+        foreach (SlimeInstance instance in _slimeManager.ActiveSlimes)
         {
-            if (instance.Location != ESlimeLocation.MainStage)
+            if (instance.Location != ESlimeLocation.MainField)
             {
                 continue;
             }
 
             ESlimeGrade grade = instance.Grade;
-            Slime slime = SlimeManager.Instance.Get(grade);
+            Slime slime = _slimeManager.Get(grade);
             if (slime == null || slime.SpecData.AutoClickInterval <= 0f) continue;
 
             double point = PointCalculator.Calculate(
                 slime.SpecData.Point,
                 grade,
-                EClickType.Auto);
+                EClickType.Auto,
+                instance.IsSpecial);
 
-            total += point / slime.SpecData.AutoClickInterval;
+            double perSecond = point / slime.SpecData.AutoClickInterval;
+            total += perSecond;
+            secondShares[(int)grade - (int)ESlimeGrade.Grade1] += perSecond;
         }
 
         return total;
     }
 
+    // 받는 포인트를 등급별로 나눈다. 내림한 몫의 합이 모자란 만큼은 몫이 가장 큰 등급에 얹어
+    // 합이 받은 포인트와 정확히 같게 한다. 받을 포인트가 없으면 기록할 것도 없다.
+    private static double[] DistributeByGrade(
+        double[] secondShares,
+        double totalPerSecond,
+        double reward)
+    {
+        if (reward <= 0d || totalPerSecond <= 0d) return null;
+
+        var result = new double[secondShares.Length];
+        double distributed = 0d;
+        int largest = 0;
+        for (int i = 0; i < secondShares.Length; i++)
+        {
+            result[i] = Math.Floor(reward * secondShares[i] / totalPerSecond);
+            distributed += result[i];
+            if (secondShares[i] > secondShares[largest]) largest = i;
+        }
+
+        result[largest] += reward - distributed;
+        return result;
+    }
+
     private int CalculateOfflineTickets(double elapsedSeconds, double maximumSeconds)
     {
-        if (SlimeManager.Instance == null ||
-            !SlimeManager.Instance.IsOfflineTicketRewardUnlocked ||
+        if (_slimeManager == null ||
+            !_slimeManager.IsOfflineTicketRewardUnlocked ||
             maximumSeconds <= 0d ||
             _maximumOfflineTickets <= 0)
         {
@@ -239,16 +283,15 @@ public sealed class OfflineRewardManager : MonoBehaviour
         }
 
         OfflineRewardResult result = _pendingReward.Value;
-        if ((double)result.Reward > 0d)
-        {
-            CurrencyManager.Instance.Add(ECurrencyType.Point, result.Reward);
-        }
-
-        if (result.TicketReward > 0)
-        {
-            CurrencyManager.Instance.Add(
+        bool applied = _currencyManager.TryApplyChanges(
+            CurrencyChange.Add(ECurrencyType.Point, result.Reward),
+            CurrencyChange.Add(
                 ECurrencyType.GachaTicket,
-                result.TicketReward);
+                result.TicketReward));
+        if (applied) _slimeManager.RecordGachaTicketsObtained(result.TicketReward);
+        if (applied && _pendingGradePoints != null)
+        {
+            _slimeManager.RecordOfflineProduction(_pendingGradePoints);
         }
         _isClaimed = true;
         return true;
@@ -259,6 +302,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
         if (!_isClaimed) return;
 
         _pendingReward = null;
+        _pendingGradePoints = null;
         _isConsumed = false;
         _isClaimed = false;
         PresentationBlockChanged?.Invoke(false);

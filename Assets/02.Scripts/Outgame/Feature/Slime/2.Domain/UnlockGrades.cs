@@ -9,8 +9,13 @@ public static class UnlockGrades
     // 기획서 §11.1 - 가챠권 드랍 + 가챠 시스템 (Phase 4에서 사용 예정)
     public const ESlimeGrade Gacha = ESlimeGrade.Grade7;
 
-    // 기획서 §6 - 하늘 스테이지
-    public const ESlimeGrade SkyStage = ESlimeGrade.Grade11;
+    // 9레벨 달성 시 왼쪽 서랍(상점)의 손잡이가 나타난다. 상점의 물건(놀이터 오브젝트와 배경)은
+    // 장식장과 배경 테마가 열린 뒤에 쓸 수 있고, 가장 싼 물건도 모으는 데 한참 걸려서
+    // 포인트가 모일 즈음에 알려 주려고 이 등급에 둔다.
+    public const ESlimeGrade Shop = ESlimeGrade.Grade9;
+
+    // 최대 개체 수 업그레이드의 후반 31~50 구간은 기존처럼 Lv.11에서 열린다.
+    public const ESlimeGrade MaxCountExpansion = ESlimeGrade.Grade11;
 
     // 상위 슬라임 등장(Lv.5)은 여기 두지 않는다.
     // SpawnWeightTable의 _spawnCaps에서 파생되는 값이므로 상수로 복제하면

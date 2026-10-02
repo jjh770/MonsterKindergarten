@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,9 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private Clicker _clicker;
     [SerializeField] private float _movingDuration = 0.5f;
 
+    [Tooltip("서랍의 다음 콘텐츠가 준비되기 전까지 손잡이를 숨깁니다.")]
+    [SerializeField] private bool _isContentAvailable;
+
     [Tooltip("서랍이 이 아래에서 시작합니다. 강화하는 동안 포인트가 가려지지 않게 합니다.")]
     [SerializeField] private RectTransform _topBar;
 
@@ -18,8 +22,14 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private RectTransform _toggleArrow;
 
     private bool _isOpened = false;
+
+    // 공간과 튜토리얼이 정하는 기본값이다. 연출이 잠시 치우는 것과는 별개라,
+    // 연출이 끝나면 이 값으로 돌아간다.
     private bool _isToggleInputEnabled = true;
     private bool _isToggleVisible = true;
+
+    // 서랍을 치워 둔 연출들. 하나라도 남아 있으면 치운 채로 둔다.
+    private readonly List<object> _standDownOwners = new();
     private bool _isInitialized;
     private bool _isRefreshingLayout;
     private RectTransform _toggleRectTransform;
@@ -35,6 +45,7 @@ public class UpgradeUI : MonoBehaviour
     public RectTransform PanelTarget => _panelTarget;
     public bool IsToggleInputEnabled => _isToggleInputEnabled;
     public bool IsToggleVisible => _isToggleVisible;
+    private bool IsStandingDown => _standDownOwners.Count > 0;
     public event System.Action Opened;
     public event System.Action Closed;
 
@@ -60,6 +71,9 @@ public class UpgradeUI : MonoBehaviour
         }
 
         _toggleEdgeOffset = _toggleRectTransform.anchoredPosition.x;
+        _isToggleVisible = _isContentAvailable;
+        _isToggleInputEnabled = _isContentAvailable;
+        _uiButton.interactable = _isContentAvailable;
         _uiButton.onClick.AddListener(ViewUI);
         _dismissBackdropButton.onClick.AddListener(CloseFromBackdrop);
         _dismissBackdropButton.gameObject.SetActive(false);
@@ -121,7 +135,7 @@ public class UpgradeUI : MonoBehaviour
 
     private void ViewUI()
     {
-        if (!_isToggleInputEnabled) return;
+        if (!_isToggleInputEnabled || IsStandingDown) return;
 
         SetOpened(!_isOpened);
     }
@@ -205,11 +219,16 @@ public class UpgradeUI : MonoBehaviour
 
     private void MoveDrawer(bool animated)
     {
+        // 씬이 내려가는 중에 다른 UI의 OnDestroy가 스탠드다운을 풀면 이 자리로 온다. 그때는
+        // 서랍의 사각형이 이미 파괴돼 있을 수 있고, 어느 쪽이 먼저 정리될지는 정해져 있지
+        // 않다. 움직일 대상이 없으면 아무것도 하지 않는다.
+        if (_panelTarget == null || _toggleRectTransform == null) return;
+
         _moveTween?.Kill();
         _moveTween = null;
 
         float panelX = _isOpened ? _openPanelX : _closedPanelX;
-        float toggleX = !_isToggleVisible
+        float toggleX = !_isToggleVisible || IsStandingDown
             ? _hiddenToggleX
             : _isOpened
                 ? _openToggleX
@@ -261,16 +280,75 @@ public class UpgradeUI : MonoBehaviour
 
     public void SetToggleInputEnabled(bool isEnabled)
     {
-        _isToggleInputEnabled = isEnabled;
+        _isToggleInputEnabled = _isContentAvailable && isEnabled;
+        ApplyToggleInput();
+    }
 
-        if (_uiButton != null)
+    // 연출이 서랍을 잠시 치운다. 소유자별로 쌓고 하나라도 남아 있으면 치운 채로
+    // 둔다. HudVisibility의 숨김 요청, Clicker의 입력 모드와 같은 방식이다.
+    //
+    // 연출마다 들어올 때의 값을 따로 기억하면, 둘이 겹쳤을 때 나중에 끝난 쪽이
+    // 먼저 끝난 쪽이 기억한 값을 되살린다. 기억하는 곳이 하나면 그럴 수 없다.
+    public void PushStandDown(object owner)
+    {
+        if (owner == null || _standDownOwners.Contains(owner)) return;
+
+        _standDownOwners.Add(owner);
+        TryClose();
+        ApplyStandDown(animated: true);
+    }
+
+    // 연출 없이 즉시 되돌려야 하는 정리 경로에서는 animated를 끈다.
+    public void ReleaseStandDown(object owner, bool animated = true)
+    {
+        if (owner == null || !_standDownOwners.Remove(owner)) return;
+
+        ApplyStandDown(animated);
+    }
+
+    private void ApplyStandDown(bool animated)
+    {
+        ApplyToggleInput();
+
+        if (_isInitialized)
         {
-            _uiButton.interactable = isEnabled;
+            MoveDrawer(animated);
         }
+    }
+
+    private void ApplyToggleInput()
+    {
+        if (_uiButton == null) return;
+
+        _uiButton.interactable = _isToggleInputEnabled && !IsStandingDown;
+    }
+
+    // 서랍을 열어 줄지는 진행도가 정한다. 처음에는 손잡이를 치워 두었다가 상점이 열리는 순간 불러낸다.
+    // 입력 가능 여부는 공간과 튜토리얼이 정하므로 여기서는 켜 두기만 하고, 호출부가 그 규칙을
+    // 다시 적용하게 한다(GameplaySpaceManager.RefreshInteraction).
+    public void SetContentAvailable(bool isAvailable, bool animated = true)
+    {
+        if (_isContentAvailable == isAvailable) return;
+
+        _isContentAvailable = isAvailable;
+        // Start가 이 값으로 처음 상태를 정하므로 아직 시작 전이면 값만 바꿔 둔다.
+        if (!_isInitialized) return;
+
+        _isToggleInputEnabled = isAvailable;
+        _isToggleVisible = isAvailable;
+        if (!isAvailable && _isOpened)
+        {
+            SetOpened(false);
+            return;
+        }
+
+        ApplyToggleInput();
+        MoveDrawer(animated);
     }
 
     public void SetToggleVisible(bool isVisible, bool animated = true)
     {
+        isVisible = _isContentAvailable && isVisible;
         if (_isToggleVisible == isVisible) return;
 
         _isToggleVisible = isVisible;

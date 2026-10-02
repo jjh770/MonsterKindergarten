@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum DialogueId
 {
@@ -21,6 +22,15 @@ public enum DialogueId
     SkyFinal = 14,
     Gacha = 15,
     GachaResult = 16,
+    CollectionAutoMerge = 17,
+    CollectionTicketCollect = 18,
+    Shop = 19,
+    ShopTabs = 20,
+    CollectionAutoMergeDone = 21,
+    CollectionAutoMergeNoPair = 22,
+    CollectionOfflineTicket = 23,
+    ShopObjects = 24,
+    ShopFinal = 25,
 }
 
 [Serializable]
@@ -60,13 +70,12 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _pointMessage;
     [SerializeField] private string _dragMessage;
     [SerializeField] private string _mergeMessage;
-    [SerializeField] private string _upgradeMessage;
-    [SerializeField] private string _upgradePanelMessage;
     [SerializeField] private string _systemUpgradeCarouselMessage;
     [SerializeField] private string _spawnPoolButtonMessage;
     [SerializeField] private string _autoSpawnToggleMessage;
     [SerializeField] private string _gachaMakeRoomMessage;
     [SerializeField] private string _gachaButtonMessage;
+    [SerializeField] private string _autoMergeButtonMessage;
     [SerializeField] private string _displayRoomButtonMessage;
     [SerializeField] private string _displayRoomSendButtonMessage;
     [SerializeField] private string _displayRoomSelectSlimeMessage;
@@ -76,25 +85,28 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomObserveMessage;
     [SerializeField] private string _displayRoomTakeOutMessage;
     [SerializeField] private string _displayRoomCloseMessage;
+    [SerializeField] private string _shopButtonMessage;
+    [SerializeField] private string _shopObjectsTabMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
 
-    [Header("Stage")]
-    [SerializeField] private string _stageMenuButtonMessage;
-    [SerializeField] private string _stageButtonMessage;
+    [Header("Background Theme")]
+    [FormerlySerializedAs("_stageMenuButtonMessage")]
+    [SerializeField] private string _backgroundMenuButtonMessage;
+    [FormerlySerializedAs("_stageButtonMessage")]
+    [SerializeField] private string _backgroundButtonMessage;
 
     public string ClickMessage => _clickMessage;
     public string PointMessage => _pointMessage;
     public string DragMessage => _dragMessage;
     public string MergeMessage => _mergeMessage;
-    public string UpgradeMessage => _upgradeMessage;
-    public string UpgradePanelMessage => _upgradePanelMessage;
     public string SystemUpgradeCarouselMessage => _systemUpgradeCarouselMessage;
     public string SpawnPoolButtonMessage => _spawnPoolButtonMessage;
     public string AutoSpawnToggleMessage => _autoSpawnToggleMessage;
     public string GachaMakeRoomMessage => _gachaMakeRoomMessage;
     public string GachaButtonMessage => _gachaButtonMessage;
+    public string AutoMergeButtonMessage => _autoMergeButtonMessage;
     public string DisplayRoomButtonMessage => _displayRoomButtonMessage;
     public string DisplayRoomSendButtonMessage => _displayRoomSendButtonMessage;
     public string DisplayRoomSelectSlimeMessage => _displayRoomSelectSlimeMessage;
@@ -104,8 +116,10 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomObserveMessage => _displayRoomObserveMessage;
     public string DisplayRoomTakeOutMessage => _displayRoomTakeOutMessage;
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
-    public string StageMenuButtonMessage => _stageMenuButtonMessage;
-    public string StageButtonMessage => _stageButtonMessage;
+    public string ShopButtonMessage => _shopButtonMessage;
+    public string ShopObjectsTabMessage => _shopObjectsTabMessage;
+    public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
+    public string BackgroundButtonMessage => _backgroundButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)
     {
