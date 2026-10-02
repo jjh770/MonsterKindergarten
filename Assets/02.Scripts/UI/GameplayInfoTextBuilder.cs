@@ -96,6 +96,15 @@ public static class GameplayInfoTextBuilder
         return builder.ToString();
     }
 
+    // 뽑기 후보가 이 수를 넘으면 한 줄에 두 등급씩 두 열로 보여 준다. 스무 줄을 한 열에 놓으면
+    // 상세 텍스트 영역을 넘어 뒤로 버튼 밑으로 흘러내린다.
+    private const int GachaProbabilityColumnRows = 10;
+
+    // 두 열의 시작 위치(텍스트 영역 폭 기준). 오른쪽 열의 끝이 영역 밖으로 나가면 줄이 꺾이므로
+    // 폭에 여유를 두고 잡는다.
+    private const string GachaLeftColumnPosition = "4%";
+    private const string GachaRightColumnPosition = "52%";
+
     public static string BuildNormalGachaProbabilityText(
         ESlimeGrade highestGrade,
         bool includeTitle = true)
@@ -110,19 +119,54 @@ public static class GameplayInfoTextBuilder
             .Append((int)highestGrade)
             .Append(" 기준\n\n");
 
-        foreach (NormalGachaProbability probability in
-                 NormalGachaPool.GetProbabilities(highestGrade))
+        List<NormalGachaProbability> probabilities =
+            NormalGachaPool.GetProbabilities(highestGrade);
+        if (probabilities.Count <= GachaProbabilityColumnRows)
         {
-            builder.Append("<sprite name=\"")
-                .Append(((int)probability.Grade).ToString("00"))
-                .Append("\"> Lv.")
-                .Append((int)probability.Grade)
-                .Append("   ")
-                .Append((probability.Probability * 100d).ToString("F1"))
-                .Append("%\n");
+            foreach (NormalGachaProbability probability in probabilities)
+            {
+                AppendGachaRow(builder, probability);
+                builder.Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        // 왼쪽 열은 앞의 열 등급, 오른쪽 열은 나머지다. 줄마다 왼쪽 정렬로 바꾸고 위치 태그로
+        // 두 열을 맞춘다. 가운데 정렬 그대로면 오른쪽 열이 없는 줄만 가운데로 쏠린다.
+        for (int row = 0; row < GachaProbabilityColumnRows; row++)
+        {
+            builder.Append("<align=left><pos=")
+                .Append(GachaLeftColumnPosition)
+                .Append('>');
+            AppendGachaRow(builder, probabilities[row]);
+
+            int rightIndex = row + GachaProbabilityColumnRows;
+            if (rightIndex < probabilities.Count)
+            {
+                builder.Append("<pos=")
+                    .Append(GachaRightColumnPosition)
+                    .Append('>');
+                AppendGachaRow(builder, probabilities[rightIndex]);
+            }
+
+            builder.Append("</align>\n");
         }
 
         return builder.ToString();
+    }
+
+    private static void AppendGachaRow(
+        StringBuilder builder,
+        NormalGachaProbability probability)
+    {
+        builder.Append("<sprite name=\"")
+            .Append(((int)probability.Grade).ToString("00"))
+            .Append("\"> Lv.")
+            .Append((int)probability.Grade)
+            .Append("   ")
+            .Append((probability.Probability * 100d).ToString("F1"))
+            .Append('%');
     }
 
     private static string BuildEffect(
