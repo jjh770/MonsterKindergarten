@@ -18,8 +18,8 @@ public class SpawnSliderUI : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private UpgradeManager _upgradeManager;
 
-    private const string AutoSpawnOffMessage = "등장을 잠시 멈췄어요";
-    private const string FieldFullMessage = "유치원이 꽉 찼어요!";
+    private static string AutoSpawnOffMessage => UiMessages.AutoSpawnOff;
+    private static string FieldFullMessage => UiMessages.FieldFull;
 
     // 게이지가 멈춰 있어도 숫자만 남으면 고장처럼 보인다. 멈춘 이유를 따로 알린다.
     private enum SpawnGaugeState

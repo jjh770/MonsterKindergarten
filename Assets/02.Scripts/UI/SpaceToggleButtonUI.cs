@@ -11,8 +11,8 @@ using UnityEngine.UI;
 // 열릴 때까지 밀려 참조 검증이 늦어진다.
 public sealed class SpaceToggleButtonUI : MonoBehaviour
 {
-    private const string EnterDisplayRoomLabel = "장식장 가기";
-    private const string ExitDisplayRoomLabel = "유치원 가기";
+    private static string EnterDisplayRoomLabel => UiMessages.EnterDisplayRoom;
+    private static string ExitDisplayRoomLabel => UiMessages.ExitDisplayRoom;
 
     [SerializeField] private Button _button;
     [SerializeField] private TMP_Text _label;

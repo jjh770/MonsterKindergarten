@@ -194,7 +194,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         if (!CanPlace(type))
         {
-            _toast?.Show("지금은 배치할 수 없어요.");
+            _toast?.Show(UiMessages.PlacementUnavailable);
             return;
         }
 
@@ -382,14 +382,14 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (manager != null &&
             !manager.IsPlaygroundPositionAvailable(x, y, index))
         {
-            _toast?.Show("다른 것과 너무 가까워요.");
+            _toast?.Show(UiMessages.TooCloseToOther);
             _field.Rebuild();
             return;
         }
 
         if (manager == null || !manager.TryMovePlacedObject(index, x, y))
         {
-            _toast?.Show("여기에는 옮길 수 없어요.");
+            _toast?.Show(UiMessages.CannotMoveHere);
             _field.Rebuild();
         }
     }
@@ -398,7 +398,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         if (!PlaygroundRules.Contains(world.x, world.y))
         {
-            _toast?.Show("장식장 안쪽에 놓아 주세요.");
+            _toast?.Show(UiMessages.PlaceInsideRoom);
             return;
         }
 
@@ -409,14 +409,14 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (manager != null &&
             !manager.IsPlaygroundPositionAvailable(x, y))
         {
-            _toast?.Show("다른 것과 너무 가까워요.");
+            _toast?.Show(UiMessages.TooCloseToOther);
             return;
         }
 
         if (manager == null ||
             !manager.TryPlacePlaygroundObject(_selectedType, x, y))
         {
-            _toast?.Show("여기에는 놓을 수 없어요.");
+            _toast?.Show(UiMessages.CannotPlaceHere);
             return;
         }
 

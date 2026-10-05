@@ -12,7 +12,7 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
     [SerializeField] private AutoMergeManager _autoMergeManager;
     [SerializeField] private SlimeManager _slimeManager;
 
-    private const string NoPairMessage = "합성할 수 있는 슬라임이 없어요.";
+    private static string NoPairMessage => UiMessages.NoMergePair;
 
     private bool? _lastInteractable;
 

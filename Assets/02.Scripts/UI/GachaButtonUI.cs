@@ -12,11 +12,9 @@ using UnityEngine;
 // 받아 결과 슬라임을 가리키는데, 연출 도중에는 그 슬라임이 숨겨져 있기 때문이다.
 public sealed class GachaButtonUI : MonoBehaviour
 {
-    private const string NoTicketMessage =
-        "슬라임이 떨어뜨리는 뽑기권을 모아보세요.";
+    private static string NoTicketMessage => UiMessages.NoTicket;
 
-    private const string NoRoomMessage =
-        "유치원이 가득 찼어요.\n슬라임을 합쳐 자리를 만들어 주세요.";
+    private static string NoRoomMessage => UiMessages.NoRoomForPull;
 
     [SerializeField] private UnityEngine.UI.Button _button;
     [SerializeField] private ToastMessageUI _toast;

@@ -227,7 +227,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
 
         if (!_slimeManager.CanMoveToDisplayRoom(target.Grade))
         {
-            _toast.Show("같은 종류의 슬라임이 이미 장식장에 있어요.");
+            _toast.Show(UiMessages.SameKindInDisplayRoom);
             return;
         }
 
@@ -263,7 +263,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
             return;
         }
 
-        _toast.Show("이 슬라임은 장식장으로 보낼 수 없어요.");
+        _toast.Show(UiMessages.CannotSendToDisplayRoom);
     }
 
     private void ApplySendModeInput()

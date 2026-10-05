@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    private const string PortalTapMessage = "포탈을 톡 터치해 보세요";
+    private static string PortalTapMessage => UiMessages.PortalTap;
 
     // 흰색은 UI Image에서 스프라이트 원본 RGB를 그대로 보여준다.
     // 결과 색은 포탈을 누른 뒤 Charge 단계부터 적용한다.
@@ -19,7 +19,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private static readonly Color RareColor = new(0.67f, 0.42f, 1f, 1f);
     private static readonly Color JackpotColor = new(1f, 0.76f, 0.22f, 1f);
 
-    private const string SpecialSubtitle = "뭔가 특별해 보여요...!";
+    private static string SpecialSubtitle => UiMessages.SpecialSlimeSubtitle;
     // 특별한 결과는 터지는 순간의 빛과 충격파를 더 세게 준다.
     private const float SpecialBurstBoost = 1.35f;
 

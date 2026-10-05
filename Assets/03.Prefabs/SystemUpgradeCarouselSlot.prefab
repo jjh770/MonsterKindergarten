@@ -202,7 +202,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC2A4\uD3F0 \uC2DC\uAC04 \uB2E8\uCD95"
+  m_text: "\uB4F1\uC7A5 \uC2DC\uAC04 \uB2E8\uCD95"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 6a7c423aacd44a39a66f006e76cfc129, type: 2}
@@ -444,6 +444,7 @@ MonoBehaviour:
   _nameText: {fileID: 214733487}
   _valueText: {fileID: 182474399}
   _costText: {fileID: 2024321986}
+  _currencyManager: {fileID: 0}
   _unaffordableCostAlpha: 0.4
 --- !u!95 &561333964
 Animator:

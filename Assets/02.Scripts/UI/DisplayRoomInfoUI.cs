@@ -298,7 +298,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         // 기획서 §7.5 - 메인 필드가 가득 차면 꺼낼 수 없다.
         if (!_spawnManager.HasMainFieldRoom())
         {
-            _toast.Show("메인 필드가 가득 차서 꺼낼 수 없어요.");
+            _toast.Show(UiMessages.MainFieldFullCannotTakeOut);
             return;
         }
 
@@ -332,7 +332,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         }
 
         _infoCanvasGroup.interactable = true;
-        _toast.Show("이 슬라임은 지금 꺼낼 수 없어요.");
+        _toast.Show(UiMessages.CannotTakeOutNow);
     }
 
     private void OnSpaceChanged(EGameplaySpace space)

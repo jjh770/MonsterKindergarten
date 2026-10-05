@@ -232,8 +232,8 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         {
             _emptyText.gameObject.SetActive(shown == 0);
             _emptyText.text = isObjectsTab
-                ? "지금은 살 수 있는 물건이 없어요."
-                : "새 배경은 준비 중이에요.";
+                ? UiMessages.ShopObjectsEmpty
+                : UiMessages.ShopThemesEmpty;
         }
     }
 
@@ -329,7 +329,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 break;
 
             case EPlaygroundShopPurchaseResult.InsufficientPoints:
-                _toast?.Show("포인트가 모자라요.");
+                _toast?.Show(UiMessages.NotEnoughPoints);
                 break;
 
             case EPlaygroundShopPurchaseResult.Unavailable:

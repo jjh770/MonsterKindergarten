@@ -175,7 +175,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void ShowTicketLine(DialogueLine line)
     {
-        _unlockPopupUI.ShowTicketHold("뽑기권 획득!");
+        _unlockPopupUI.ShowTicketHold(UiMessages.TicketObtained);
         ShowDialogue(new[] { line }, FlyTicketToHud, keepGuideVisible: true);
     }
 
