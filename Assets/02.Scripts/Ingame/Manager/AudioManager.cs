@@ -144,6 +144,41 @@ public class AudioManager : MonoBehaviour
         CrossFadeBGM(_catalog?.LoginBgm, crossFadeDuration);
     }
 
+    // 재생 중인 BGM을 서서히 줄여 멈춘다. 장면을 넘어가기 전에 소리가 뚝 끊기지 않게 할 때 쓴다.
+    // 이 매니저는 씬을 넘어 남으므로 페이드는 다음 장면이 시작돼도 이어진다. 다음 곡이 와서 섞이면
+    // 그때는 지금 소리 크기에서 이어 내려간다.
+    public void FadeOutBgm(float duration)
+    {
+        if (_activeBgmSource == null || !_activeBgmSource.isPlaying) return;
+
+        StopBgmFade();
+        _bgmFadeCoroutine = StartCoroutine(FadeOutBgmRoutine(Mathf.Max(0f, duration)));
+    }
+
+    private IEnumerator FadeOutBgmRoutine(float duration)
+    {
+        AudioSource source = _activeBgmSource;
+        float startWeight = GetBgmWeight(source);
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (!_isPaused)
+            {
+                elapsed += Time.unscaledDeltaTime;
+            }
+
+            SetBgmWeight(source, Mathf.Lerp(startWeight, 0f, Mathf.Clamp01(elapsed / duration)));
+            ApplyBgmVolumes();
+            yield return null;
+        }
+
+        source.Stop();
+        SetBgmWeight(source, 0f);
+        ApplyBgmVolumes();
+        _bgmFadeCoroutine = null;
+    }
+
     private void PlayBGM(AudioClip clip)
     {
         if (clip == null) return;
@@ -172,6 +207,8 @@ public class AudioManager : MonoBehaviour
     {
         AudioSource previousSource = _activeBgmSource;
         AudioSource nextSource = _inactiveBgmSource;
+        // 이전 곡이 이미 줄어드는 중이면 그 크기에서 이어 내려간다. 1로 되돌려 시작하면 튄다.
+        float previousStartWeight = GetBgmWeight(previousSource);
         nextSource.clip = clip;
         nextSource.Play();
         SetBgmWeight(nextSource, 0f);
@@ -192,7 +229,7 @@ public class AudioManager : MonoBehaviour
                 }
 
                 float progress = Mathf.Clamp01(elapsed / duration);
-                SetBgmWeight(previousSource, 1f - progress);
+                SetBgmWeight(previousSource, previousStartWeight * (1f - progress));
                 SetBgmWeight(nextSource, progress);
                 ApplyBgmVolumes();
                 yield return null;
@@ -214,6 +251,13 @@ public class AudioManager : MonoBehaviour
 
         StopCoroutine(_bgmFadeCoroutine);
         _bgmFadeCoroutine = null;
+    }
+
+    private float GetBgmWeight(AudioSource source)
+    {
+        if (source == _bgmSource) return _primaryBgmWeight;
+        if (source == _secondaryBgmSource) return _secondaryBgmWeight;
+        return 0f;
     }
 
     private void SetBgmWeight(AudioSource source, float weight)

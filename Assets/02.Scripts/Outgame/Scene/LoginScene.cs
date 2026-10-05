@@ -38,6 +38,9 @@ public class LoginScene : MonoBehaviour
     [Tooltip("로고 착지, 떠오르는 별, 누를 때의 반응을 맡습니다. 비워 두면 연출 없이 동작합니다.")]
     [SerializeField] private LoginSceneEffects _effects;
 
+    [Tooltip("게임으로 넘어가며 로그인 BGM이 줄어들어 사라지는 데 걸리는 시간입니다. 로고 퇴장과 암막이 덮이는 시간에 맞춥니다.")]
+    [SerializeField, Min(0f)] private float _bgmFadeOutSeconds = 0.9f;
+
     private string _popupText;
     private TMP_Text _loginButtonText;
     private Tween _titleTween;
@@ -367,6 +370,9 @@ public class LoginScene : MonoBehaviour
     // 이음매가 보이지 않으므로 두 배경색을 맞춰 둔다.
     private async UniTask EnterGameScene()
     {
+        // 소리도 화면과 함께 줄어든다. 화면만 부드럽게 바뀌고 음악이 뚝 끊기면 전환이 거칠게 들린다.
+        AudioManager.Instance?.FadeOutBgm(_bgmFadeOutSeconds);
+
         // 누른 반응이 끝나기 전에 화면이 바뀌면 효과가 도중에 끊긴다. 로고가 떠오르며 사라지는 동안
         // 먼저 기다리다가, 거의 사라질 때 덮기 시작해 두 연출이 겹쳐 이어지게 한다.
         if (_effects != null)
