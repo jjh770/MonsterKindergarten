@@ -5544,7 +5544,7 @@ GameObject:
   - component: {fileID: 360699712}
   - component: {fileID: 360699711}
   m_Layer: 5
-  m_Name: UpgradeLabel
+  m_Name: ShopToggleLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6757,7 +6757,7 @@ GameObject:
   m_Component:
   - component: {fileID: 445006842}
   m_Layer: 0
-  m_Name: SkySlimeRoot
+  m_Name: SpaceSlimeRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9037,7 +9037,7 @@ GameObject:
   - component: {fileID: 575360224}
   - component: {fileID: 575360226}
   m_Layer: 5
-  m_Name: UpgradeTitle
+  m_Name: ShopTitle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14000,7 +14000,7 @@ GameObject:
   - component: {fileID: 864966578}
   - component: {fileID: 864966580}
   m_Layer: 0
-  m_Name: Playground
+  m_Name: MainFieldBounds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16424,7 +16424,7 @@ GameObject:
   - component: {fileID: 954765605}
   - component: {fileID: 954765606}
   m_Layer: 0
-  m_Name: SkyBackgroundTile3
+  m_Name: SpaceBackgroundTile3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20422,7 +20422,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 920019898}
-  - {fileID: 1831718103}
   - {fileID: 66315038}
   - {fileID: 846107035}
   - {fileID: 998200102}
@@ -20430,6 +20429,7 @@ RectTransform:
   - {fileID: 558640588}
   - {fileID: 975735616}
   - {fileID: 1977863040}
+  - {fileID: 1831718103}
   - {fileID: 993100202}
   m_Father: {fileID: 457349917}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -23387,7 +23387,7 @@ GameObject:
   - component: {fileID: 2099300003}
   - component: {fileID: 2099300004}
   m_Layer: 5
-  m_Name: UpgradeButton
+  m_Name: ShopToggleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -25076,7 +25076,7 @@ GameObject:
   - component: {fileID: 2212700001}
   - component: {fileID: 2212700002}
   m_Layer: 5
-  m_Name: UpgradeDismissBackdrop
+  m_Name: ShopDismissBackdrop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28606,7 +28606,7 @@ GameObject:
   - component: {fileID: 1406314768}
   - component: {fileID: 1406314769}
   m_Layer: 0
-  m_Name: SkyBackgroundTile1
+  m_Name: SpaceBackgroundTile1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -34459,7 +34459,7 @@ GameObject:
   - component: {fileID: 1800751684}
   - component: {fileID: 1800751683}
   m_Layer: 5
-  m_Name: UpgradeArrow
+  m_Name: ShopToggleArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -39622,7 +39622,7 @@ GameObject:
   - component: {fileID: 2041840381}
   - component: {fileID: 2041840382}
   m_Layer: 0
-  m_Name: SkyBackgroundTile4
+  m_Name: SpaceBackgroundTile4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -40009,7 +40009,7 @@ GameObject:
   - component: {fileID: 2078516226}
   - component: {fileID: 2078516227}
   m_Layer: 0
-  m_Name: SkyBackgroundTile2
+  m_Name: SpaceBackgroundTile2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
