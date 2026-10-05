@@ -325,10 +325,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 ESlimeGrade requiredGrade =
                     _slimeManager.GetRequiredHighestGradeForSpawnTier(
                         upgrade.Level);
-                return $"최고 Lv.{(int)requiredGrade} 해금 필요";
+                return $"Lv.{(int)requiredGrade} 슬라임을 만나면 열려요";
             }
 
-            return $"레벨 {(int)UnlockGrades.MaxCountExpansion} 해금 필요";
+            return $"Lv.{(int)UnlockGrades.MaxCountExpansion} 슬라임을 만나면 열려요";
         }
 
         if (isMax)

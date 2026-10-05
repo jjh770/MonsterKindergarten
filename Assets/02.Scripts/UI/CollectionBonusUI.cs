@@ -196,9 +196,9 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         AppendBonus(builder, count, NormalCollectionRules.AutoMergeCount,
             "자동 합성", "버튼을 누르면 같은 등급 슬라임을 한 번에 합성해요.");
         AppendBonus(builder, count, NormalCollectionRules.TicketBulkCollectCount,
-            "티켓 회수", "필드에 떨어진 티켓을 한 번에 회수해요.");
+            "뽑기권 줍기", "필드에 떨어진 뽑기권을 한 번에 회수해요.");
         AppendBonus(builder, count, NormalCollectionRules.OfflineTicketRewardCount,
-            "오프라인 티켓 회수", "접속하지 않은 시간에 티켓도 모아줘요.");
+            "오프라인 뽑기권", "접속하지 않은 시간에 뽑기권도 모아줘요.");
         AppendGraduation(builder, count);
         _bonusText.text = builder.ToString();
     }

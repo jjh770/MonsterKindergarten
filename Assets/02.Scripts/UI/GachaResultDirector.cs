@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    private const string PortalTapMessage = "포탈을 터치하세요";
+    private const string PortalTapMessage = "포탈을 톡 터치해 보세요";
 
     // 흰색은 UI Image에서 스프라이트 원본 RGB를 그대로 보여준다.
     // 결과 색은 포탈을 누른 뒤 Charge 단계부터 적용한다.

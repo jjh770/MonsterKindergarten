@@ -63,14 +63,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         if (_elapsedTimeText != null)
         {
-            _elapsedTimeText.text = $"잠시 떠난 시간 : {FormatElapsedTime(elapsedTime)}";
+            _elapsedTimeText.text = $"자리를 비운 시간 : {FormatElapsedTime(elapsedTime)}";
         }
 
         if (_rewardText != null)
         {
-            string pointLine = $"획득한 포인트 : {CurrencyIcon.Point}{reward}";
+            string pointLine = $"모아 둔 포인트 : {CurrencyIcon.Point}{reward}";
             _rewardText.text = ticketReward > 0
-                ? $"{pointLine}\n획득한 티켓 : {CurrencyIcon.GachaTicket}+{ticketReward}"
+                ? $"{pointLine}\n모아 둔 뽑기권 : {CurrencyIcon.GachaTicket}+{ticketReward}"
                 : pointLine;
         }
 
