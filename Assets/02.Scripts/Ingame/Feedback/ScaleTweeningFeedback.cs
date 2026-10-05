@@ -20,11 +20,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     [SerializeField, Min(0f)] private float _themeReactionSpread = 0.35f;
 
     [Header("Bump")]
-    [Tooltip("장식장에서 슬라임끼리 부딪힐 때 찌그러지는 크기입니다.")]
-    [SerializeField, Min(0f)] private float _bumpPunchScale = 0.35f;
-    [SerializeField, Min(0f)] private float _bumpDuration = 0.35f;
+    [Tooltip("기준 속도로 부딪혔을 때 말랑한 반응의 세기입니다. 1이면 탭을 놓을 때와 같은 크기입니다.")]
+    [SerializeField, Range(0f, 1f)] private float _bumpStrength = 0.6f;
 
-    [Tooltip("이 속도로 부딪히면 위 크기가 그대로 나옵니다. 느릴수록 약해집니다.")]
+    [Tooltip("이 속도로 부딪히면 위 세기가 그대로 나옵니다. 느릴수록 약해집니다.")]
     [SerializeField, Min(0.01f)] private float _bumpReferenceSpeed = 4f;
 
     [Tooltip("이보다 느리게 스치면 반응하지 않습니다. 붙어서 비비는 동안 계속 떨리는 것을 막습니다.")]
@@ -165,6 +164,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
 
     private void HandlePressReleased()
     {
+        if (!CanSquish)
+        {
+            CleanupTween();
+            return;
+        }
+
         PlayJelly();
     }
 
@@ -230,21 +235,40 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     }
 
     // 눌려 있던(또는 늘어나 있던) 현재 모양에서 위로 길쭉하게 튀었다가, 가볍게 눌렸다 돌아온다.
-    private void PlayJelly()
+    // strength가 1이면 탭을 놓을 때와 같은 크기이고, 작을수록 원래 모양에 가깝게 움직인다.
+    // squashFirst는 눌려 있지 않은 상태에서 시작할 때(부딪힘) 먼저 납작하게 찌그러뜨린다.
+    private void PlayJelly(float strength = 1f, bool squashFirst = false)
     {
         if (_owner == null) return;
 
-        _scaleTween?.Kill();
-        if (!CanSquish)
+        if (squashFirst)
         {
             CleanupTween();
-            return;
+        }
+        else
+        {
+            _scaleTween?.Kill();
         }
 
-        float settle = _releaseSettleAmount;
+        float settle = _releaseSettleAmount * strength;
         Sequence sequence = DOTween.Sequence();
+        if (squashFirst)
+        {
+            sequence.Append(_owner.transform
+                .DOScale(
+                    Scaled(
+                        Mathf.Lerp(1f, _pressWidthScale, strength),
+                        Mathf.Lerp(1f, _pressHeightScale, strength)),
+                    _pressDuration)
+                .SetEase(Ease.OutQuad));
+        }
+
         sequence.Append(_owner.transform
-            .DOScale(Scaled(_releaseWidthScale, _releaseHeightScale), _releaseStepDuration)
+            .DOScale(
+                Scaled(
+                    Mathf.Lerp(1f, _releaseWidthScale, strength),
+                    Mathf.Lerp(1f, _releaseHeightScale, strength)),
+                _releaseStepDuration)
             .SetEase(Ease.OutQuad));
         sequence.Append(_owner.transform
             .DOScale(Scaled(1f + settle, 1f - settle), _releaseStepDuration)
@@ -307,8 +331,8 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
 
         _nextBumpTime = Time.time + _bumpCooldown;
 
-        float strength = Mathf.Clamp01(impactSpeed / _bumpReferenceSpeed);
-        PlayPunch(_bumpPunchScale * strength, _bumpDuration);
+        float strength = Mathf.Clamp01(impactSpeed / _bumpReferenceSpeed) * _bumpStrength;
+        PlayJelly(strength, squashFirst: true);
     }
 
     private void PlayPunch(float punchScale, float duration, float delay = 0f)
