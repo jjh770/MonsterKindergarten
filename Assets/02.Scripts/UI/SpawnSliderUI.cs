@@ -18,7 +18,7 @@ public class SpawnSliderUI : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private UpgradeManager _upgradeManager;
 
-    private const string AutoSpawnOffMessage = "자동 스폰 꺼짐";
+    private const string AutoSpawnOffMessage = "등장을 잠시 멈췄어요";
     private const string FieldFullMessage = "유치원이 꽉 찼어요!";
 
     // 게이지가 멈춰 있어도 숫자만 남으면 고장처럼 보인다. 멈춘 이유를 따로 알린다.

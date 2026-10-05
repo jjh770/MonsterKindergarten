@@ -9,7 +9,7 @@ public static class SystemUpgradeNames
     {
         return upgradeType switch
         {
-            EUpgradeType.SpawnTimeSub => "스폰 시간 단축",
+            EUpgradeType.SpawnTimeSub => "등장 시간 단축",
             EUpgradeType.MaxCountAdd => "최대 슬라임 수",
             EUpgradeType.HigherGradeSpawnWeightAdd => "상위 슬라임 등장 확률",
             EUpgradeType.AutoMergePairAdd => "자동 합성 쌍 수",

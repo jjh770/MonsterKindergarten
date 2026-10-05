@@ -169,7 +169,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         if (!_isOpen) return;
 
         bool isUnlocked = _slimeManager.IsHigherGradeSpawnUnlocked;
-        _detailTitle.text = "자연생성 슬라임 확률";
+        _detailTitle.text = "자연 등장 슬라임 확률";
         _detailText.text = GameplayInfoTextBuilder.BuildSpawnProbabilityText(
             _spawnManager.GetCurrentSpawnProbabilities(),
             isUnlocked ? _spawnManager.GetSpawnWeightUpgradeLevel() : -1,
