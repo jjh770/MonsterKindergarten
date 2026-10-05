@@ -2796,7 +2796,7 @@ GameObject:
   - component: {fileID: 178840174}
   - component: {fileID: 178840173}
   m_Layer: 5
-  m_Name: SkyThemeButtonText
+  m_Name: SpaceThemeButtonText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7578,7 +7578,7 @@ GameObject:
   - component: {fileID: 498540986}
   - component: {fileID: 498540985}
   m_Layer: 5
-  m_Name: DonotTouchPanel
+  m_Name: DoNotTouchPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9345,7 +9345,7 @@ GameObject:
   - component: {fileID: 592863655}
   - component: {fileID: 592863654}
   m_Layer: 5
-  m_Name: UpgradeText
+  m_Name: ShopTitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15381,6 +15381,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 920019898}
     m_Modifications:
+    - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: ValueText
+      objectReference: {fileID: 0}
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -15400,6 +15404,10 @@ PrefabInstance:
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: NameText
       objectReference: {fileID: 0}
     - target: {fileID: 214733486, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15436,6 +15444,10 @@ PrefabInstance:
     - target: {fileID: 920100002, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: CostText
       objectReference: {fileID: 0}
     - target: {fileID: 2024321985, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15487,6 +15499,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 920019898}
     m_Modifications:
     - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: ValueText
+      objectReference: {fileID: 0}
+    - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
@@ -15509,6 +15525,10 @@ PrefabInstance:
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: NameText
       objectReference: {fileID: 0}
     - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_IsActive
@@ -15553,6 +15573,10 @@ PrefabInstance:
     - target: {fileID: 920100002, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: CostText
       objectReference: {fileID: 0}
     - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_IsActive
@@ -15607,6 +15631,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 920019898}
     m_Modifications:
+    - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: ValueText
+      objectReference: {fileID: 0}
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -15626,6 +15654,10 @@ PrefabInstance:
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: NameText
       objectReference: {fileID: 0}
     - target: {fileID: 214733486, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15662,6 +15694,10 @@ PrefabInstance:
     - target: {fileID: 920100002, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: CostText
       objectReference: {fileID: 0}
     - target: {fileID: 2024321985, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15712,6 +15748,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 920019898}
     m_Modifications:
+    - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: ValueText
+      objectReference: {fileID: 0}
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -15731,6 +15771,10 @@ PrefabInstance:
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: NameText
       objectReference: {fileID: 0}
     - target: {fileID: 214733486, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15767,6 +15811,10 @@ PrefabInstance:
     - target: {fileID: 920100002, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: CostText
       objectReference: {fileID: 0}
     - target: {fileID: 2024321985, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15817,6 +15865,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 920019898}
     m_Modifications:
+    - target: {fileID: 182474397, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: ValueText
+      objectReference: {fileID: 0}
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -15836,6 +15888,10 @@ PrefabInstance:
     - target: {fileID: 182474398, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 214733485, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: NameText
       objectReference: {fileID: 0}
     - target: {fileID: 214733486, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -15872,6 +15928,10 @@ PrefabInstance:
     - target: {fileID: 920100002, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2024321984, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
+      propertyPath: m_Name
+      value: CostText
       objectReference: {fileID: 0}
     - target: {fileID: 2024321985, guid: 83b41a7ce3b3497d88e2b5e0dbde6351, type: 3}
       propertyPath: m_AnchorMax.y
@@ -24585,7 +24645,7 @@ GameObject:
   - component: {fileID: 1195284134}
   - component: {fileID: 1195284133}
   m_Layer: 5
-  m_Name: CollectionButtonText
+  m_Name: CollectionBonusButtonText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31734,7 +31794,7 @@ GameObject:
   - component: {fileID: 1610921538}
   - component: {fileID: 1610921537}
   m_Layer: 5
-  m_Name: DonotTouchPanel
+  m_Name: DoNotTouchPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32106,7 +32166,7 @@ GameObject:
   - component: {fileID: 1638476705}
   - component: {fileID: 1638476704}
   m_Layer: 5
-  m_Name: DonotTouchPanel
+  m_Name: DoNotTouchPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38266,6 +38326,10 @@ PrefabInstance:
       propertyPath: m_text
       value: "\uD3EC\uC778\uD2B8\uAC00\n\uBAA8\uC790\uB77C\uC694!"
       objectReference: {fileID: 0}
+    - target: {fileID: 6357670901533066214, guid: e7c39f8b6e868e344bb2e68fff79f507, type: 3}
+      propertyPath: m_Name
+      value: DoNotTouchPanel
+      objectReference: {fileID: 0}
     - target: {fileID: 7909819896225883556, guid: e7c39f8b6e868e344bb2e68fff79f507, type: 3}
       propertyPath: _motion
       value: 
@@ -38556,7 +38620,7 @@ GameObject:
   - component: {fileID: 1991582638}
   - component: {fileID: 1991582637}
   m_Layer: 5
-  m_Name: SkyThemeArrow
+  m_Name: SpaceThemeArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -39388,7 +39452,7 @@ GameObject:
   - component: {fileID: 2031509572}
   - component: {fileID: 2031509571}
   m_Layer: 5
-  m_Name: SendToDisplayRoomButtonText
+  m_Name: PlaceObjectButtonText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
