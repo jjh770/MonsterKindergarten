@@ -1707,7 +1707,8 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
 - `TutorialProgress`는 메인 → Lv.3 장식장 → Lv.5 상위 자연 스폰 →
   Lv.7 뽑기 순서로 한 개씩 시작하게 등록되어 있다.
 - Lv.11은 `TutorialProgress`의 트랙이 아니라 `BackgroundThemeUnlockDirector`와
-  `BackgroundUnlockCompleted`가 담당하는 1회성 배경 해금 연출이다.
+  `BackgroundUnlockCompleted`가 담당하는 1회성 배경 해금 연출이었다. 배경이 상점 판매로
+  바뀌면서 이 연출과 디렉터는 삭제됐다.
 - `TutorialManager`, Lv.3·5·7 시퀀스, Lv.11 인트로, 도감 효과 UI,
   메인 엔딩 UI의 컴포넌트와 직렬화 참조가 GameScene에 모두 있음을
   런타임에서 확인했다.
@@ -2688,7 +2689,7 @@ Phase 4에서는 뽑기권의 드랍·수집·사용까지 구현했다. 특별 
 |---|---|
 | `StageManager` | `GameplaySpaceManager` |
 | `StageTransitionPlayer` | `GameplayTransitionPlayer` |
-| `SkyIntroDirector` | `BackgroundThemeUnlockDirector` |
+| `SkyIntroDirector` | `BackgroundThemeUnlockDirector` (이후 호출부가 없어 삭제) |
 | `StageUI` | `BackgroundThemeUI` |
 | `EGameStage` | `EBackgroundTheme` |
 | `ESlimeLocation.MainStage` | `ESlimeLocation.MainField` |

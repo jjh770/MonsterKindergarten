@@ -312,6 +312,13 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         return _slimeManager.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
+    // 열리는 조건은 등급 숫자 대신 그 슬라임의 이름으로 알려 준다. 이름은 모두 슬라임으로 끝나 조사는 항상 "을"이다.
+    private string BuildUnlockText(ESlimeGrade grade)
+    {
+        string slimeName = _slimeManager != null ? _slimeManager.GetName(grade) : $"Lv.{(int)grade} 슬라임";
+        return $"{slimeName}을 만나면 열려요";
+    }
+
     private string BuildCostText(
         Upgrade upgrade,
         bool isMax,
@@ -325,10 +332,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
                 ESlimeGrade requiredGrade =
                     _slimeManager.GetRequiredHighestGradeForSpawnTier(
                         upgrade.Level);
-                return $"Lv.{(int)requiredGrade} 슬라임을 만나면 열려요";
+                return BuildUnlockText(requiredGrade);
             }
 
-            return $"Lv.{(int)UnlockGrades.MaxCountExpansion} 슬라임을 만나면 열려요";
+            return BuildUnlockText(UnlockGrades.MaxCountExpansion);
         }
 
         if (isMax)

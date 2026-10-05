@@ -16713,7 +16713,6 @@ GameObject:
   - component: {fileID: 954826974}
   - component: {fileID: 954826973}
   - component: {fileID: 954826975}
-  - component: {fileID: 954826976}
   - component: {fileID: 2131310039}
   m_Layer: 0
   m_Name: GameplaySpaceManager
@@ -16782,26 +16781,6 @@ MonoBehaviour:
     Distance: 6
     Duration: 0.45
     Ease: 26
---- !u!114 &954826976
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 954826972}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d27893e306905d40a49ff350f7acf06, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BackgroundThemeUnlockDirector
-  _canvas: {fileID: 457349916}
-  _backgroundThemeUI: {fileID: 1324579906}
-  _panelSwitcher: {fileID: 998300001}
-  _dialoguePresentationPrefab: {fileID: 810001, guid: 7f1a9c3e5b2d4a6f8c0e1d3b5a7f9246, type: 3}
-  _tutorialContent: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
-  _slimeManager: {fileID: 376498428}
-  _gameplaySpaceManager: {fileID: 954826973}
-  _chargeDuration: 0.8
 --- !u!1 &963303633
 GameObject:
   m_ObjectHideFlags: 0
