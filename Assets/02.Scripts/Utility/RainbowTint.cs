@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 특별한 슬라임을 보여 주는 UI가 함께 쓰는 무지개 색이다. 색상환을 시간에 따라 돌린다.
-// 같은 색을 어디서든 같은 박자로 내야 가챠 결과와 도감이 서로 다른 반짝임으로 보이지 않는다.
+// 같은 색을 어디서든 같은 박자로 내야 뽑기 결과와 도감이 서로 다른 반짝임으로 보이지 않는다.
 public static class RainbowTint
 {
     private const float CyclesPerSecond = 0.9f;

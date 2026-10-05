@@ -6,7 +6,7 @@ public static class UnlockGrades
     // 기획서 §7.1 - 장식장 + 도감
     public const ESlimeGrade DisplayRoom = ESlimeGrade.Grade3;
 
-    // 기획서 §11.1 - 가챠권 드랍 + 가챠 시스템 (Phase 4에서 사용 예정)
+    // 기획서 §11.1 - 뽑기권 드랍 + 뽑기 시스템 (Phase 4에서 사용 예정)
     public const ESlimeGrade Gacha = ESlimeGrade.Grade7;
 
     // 9레벨 달성 시 왼쪽 서랍(상점)의 손잡이가 나타난다. 상점의 물건(놀이터 오브젝트와 배경)은

@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-// 떨어진 가챠권을 필드의 상태로 만들고 화면에 유지한다. 판정은 GachaTicketDropper가
+// 떨어진 뽑기권을 필드의 상태로 만들고 화면에 유지한다. 판정은 GachaTicketDropper가
 // 하고 여기서는 그 결과를 저장에 반영한 뒤 오브젝트를 놓는다.
 //
 // 판정과 나눈 이유는 티켓의 수명이 판정보다 훨씬 길기 때문이다. 티켓은 주울 때까지
@@ -124,7 +124,7 @@ public class GachaTicketField : MonoBehaviour
             _gameManager == null || _gameplaySpaceManager == null ||
             _slimeManager == null || _currencyManager == null || _spawnManager == null)
         {
-            Debug.LogError("가챠권 필드에 필요한 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기권 필드에 필요한 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -221,7 +221,7 @@ public class GachaTicketField : MonoBehaviour
         Button button = ticket.GetComponentInChildren<Button>();
         if (button == null)
         {
-            Debug.LogError("가챠권 프리팹에 버튼이 없습니다.", ticket);
+            Debug.LogError("뽑기권 프리팹에 버튼이 없습니다.", ticket);
         }
         else
         {

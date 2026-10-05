@@ -10,13 +10,13 @@ public enum EGachaFailure
     SpawnFailed,
 }
 
-// 가챠권 한 장을 슬라임 한 마리로 바꾼다. 기획서 §11.2.
+// 뽑기권 한 장을 슬라임 한 마리로 바꾼다. 기획서 §11.2.
 //
 // 상태가 없어 정적으로 둔다. 필요한 것은 모두 매니저들이 들고 있고, 이 클래스는
 // 그 사이의 순서만 정한다.
 //
 // 순서가 규칙이다. 되돌릴 수 없는 소비를 마지막 확인 뒤로 미룬다. 자리와 후보를
-// 먼저 확인하지 않고 티켓부터 쓰면, 실패한 가챠가 티켓만 먹는다.
+// 먼저 확인하지 않고 티켓부터 쓰면, 실패한 뽑기가 티켓만 먹는다.
 public static class GachaService
 {
     public static EGachaFailure TryPull(
@@ -75,7 +75,7 @@ public static class GachaService
             spawned = pulledSlime;
             rarity = pickedRarity;
 
-            // 실패 횟수는 결과가 실제로 생긴 뒤에만 센다. 환불된 가챠가 피버를 올리면 안 된다.
+            // 실패 횟수는 결과가 실제로 생긴 뒤에만 센다. 환불된 뽑기가 피버를 올리면 안 된다.
             if (!isTutorialPull) slimeManager.RecordSpecialGachaResult(isSpecial);
             slimeManager.RecordGachaObtained(pickedGrade);
             LogPull(pickedGrade, isSpecial, specialChance);
@@ -87,7 +87,7 @@ public static class GachaService
             return EGachaFailure.NoTicket;
         }
 
-        Debug.LogError($"가챠 결과를 생성하지 못했습니다. : {pickedGrade}");
+        Debug.LogError($"뽑기 결과를 생성하지 못했습니다. : {pickedGrade}");
         return EGachaFailure.SpawnFailed;
     }
 

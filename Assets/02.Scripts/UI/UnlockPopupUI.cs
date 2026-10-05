@@ -98,7 +98,7 @@ public class UnlockPopupUI : MonoBehaviour
         });
     }
 
-    // 가챠 튜토리얼이 티켓 한 장을 줄 때 쓴다. 슬라임 해금과 같은 연출이지만 스스로 사라지지
+    // 뽑기 튜토리얼이 티켓 한 장을 줄 때 쓴다. 슬라임 해금과 같은 연출이지만 스스로 사라지지
     // 않는다. 대화가 넘어갈 때까지 떠 있어야 해서 ReleaseHold가 불릴 때까지 붙든다.
     // PresentationCompleted는 슬라임 등급을 싣고 오므로 이 경로에서는 보내지 않는다.
     public void ShowTicketHold(string title)

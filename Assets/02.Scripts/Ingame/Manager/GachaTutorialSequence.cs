@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-// 가챠 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
+// 뽑기 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
 //
 // 자동 스폰을 끄고, 자리가 가득 찼으면 합성으로 한 칸을 만든 뒤, 지급한 티켓으로
-// 직접 가챠를 실행해 결과 슬라임까지 확인한다. 일반 티켓 드랍은 이 흐름이 끝난 뒤
+// 직접 뽑기를 실행해 결과 슬라임까지 확인한다. 일반 티켓 드랍은 이 흐름이 끝난 뒤
 // GachaTicketDropper에서 시작한다.
 public sealed class GachaTutorialSequence : TutorialSequenceBase
 {
@@ -48,7 +48,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         if (_gameManager == null || _spawnManager == null || _slimeManager == null ||
             _currencyManager == null || _gameplaySpaceManager == null)
         {
-            Debug.LogError("가챠 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기 튜토리얼의 GameScene 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -132,7 +132,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _autoClicker == null ||
             _mergeManager == null)
         {
-            Debug.LogError("가챠 튜토리얼의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기 튜토리얼의 필수 참조가 비어 있습니다.", this);
             return;
         }
 
@@ -175,7 +175,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void ShowTicketLine(DialogueLine line)
     {
-        _unlockPopupUI.ShowTicketHold("가챠권 획득!");
+        _unlockPopupUI.ShowTicketHold("뽑기권 획득!");
         ShowDialogue(new[] { line }, FlyTicketToHud, keepGuideVisible: true);
     }
 
@@ -306,7 +306,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         RectTransform target = _gachaButton.ButtonTarget;
         if (target == null)
         {
-            Abort("가챠 버튼 참조가 없습니다.");
+            Abort("뽑기 버튼 참조가 없습니다.");
             return;
         }
 
@@ -326,7 +326,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         RectTransform target = _gachaButton.ButtonTarget;
         if (target == null)
         {
-            Abort("가챠 버튼 참조가 없습니다.");
+            Abort("뽑기 버튼 참조가 없습니다.");
             return;
         }
 

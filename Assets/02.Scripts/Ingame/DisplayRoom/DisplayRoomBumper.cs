@@ -49,7 +49,7 @@ public class DisplayRoomBumper : MonoBehaviour, IPlaygroundObject
 
         // Clicker.TrySelect는 레이어 마스크 없이 Physics2D.Raycast로 맨 앞의 것 하나만
         // 집는다. 범퍼가 슬라임보다 앞에 걸리면 그 탭은 아무것도 고르지 못하고 사라져,
-        // 장식장에서 슬라임을 눌러도 관찰이 열리지 않는다. 가챠권을 월드 콜라이더로
+        // 장식장에서 슬라임을 눌러도 관찰이 열리지 않는다. 뽑기권을 월드 콜라이더로
         // 줍지 않는 이유와 같은 함정이다.
         //
         // 기본 레이캐스트 대상에서 빠진 레이어(Ignore Raycast)에 두면 충돌은 그대로

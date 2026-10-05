@@ -32,7 +32,7 @@ public class SlimeStatus
     public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
     public bool BackgroundUnlockCompleted { get; private set; }
 
-    // 아직 줍지 않은 가챠권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
+    // 아직 줍지 않은 뽑기권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
     public int PendingTickets { get; private set; }
 
     // 플레이어가 켜고 끄는 자연 스폰. 튜토리얼의 일시정지와는 다른 축이다.
@@ -43,7 +43,7 @@ public class SlimeStatus
     public GraduationStatistics? GraduationSnapshot { get; private set; }
     public int SpecialGachaMissCount { get; private set; }
 
-    // 지금까지 얻은 가챠권의 누적과 자동 합성을 쓴 횟수. 쓰거나 줄어도 내려가지 않는다.
+    // 지금까지 얻은 뽑기권의 누적과 자동 합성을 쓴 횟수. 쓰거나 줄어도 내려가지 않는다.
     public long GachaTicketsObtainedTotal { get; private set; }
     public long AutoMergeUseCount { get; private set; }
 
@@ -105,7 +105,7 @@ public class SlimeStatus
         if (pendingTickets < 0)
         {
             throw new ArgumentException(
-                $"미수령 가챠권 수가 올바르지 않습니다. : {pendingTickets}");
+                $"미수령 뽑기권 수가 올바르지 않습니다. : {pendingTickets}");
         }
 
         PendingTickets = pendingTickets;
@@ -121,7 +121,7 @@ public class SlimeStatus
             specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
         {
             throw new ArgumentException(
-                $"스페셜 가챠 실패 횟수가 올바르지 않습니다. : {specialGachaMissCount}");
+                $"스페셜 뽑기 실패 횟수가 올바르지 않습니다. : {specialGachaMissCount}");
         }
 
         SpecialGachaMissCount = specialGachaMissCount;
@@ -130,7 +130,7 @@ public class SlimeStatus
         if (gachaTicketsObtainedTotal < 0 || autoMergeUseCount < 0)
         {
             throw new ArgumentException(
-                $"누적 기록이 올바르지 않습니다. : 가챠권 {gachaTicketsObtainedTotal}, 자동 합성 {autoMergeUseCount}");
+                $"누적 기록이 올바르지 않습니다. : 뽑기권 {gachaTicketsObtainedTotal}, 자동 합성 {autoMergeUseCount}");
         }
 
         GachaTicketsObtainedTotal = gachaTicketsObtainedTotal;

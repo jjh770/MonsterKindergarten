@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-// 가챠권이 떨어지는지만 판정한다. 티켓을 어디에 만들고 어떻게 저장할지는 모른다.
+// 뽑기권이 떨어지는지만 판정한다. 티켓을 어디에 만들고 어떻게 저장할지는 모른다.
 //
 // 스폰·자동 생산과 분리된 자체 주기를 쓴다. 명세가 그렇게 정해 두었고, 스폰 간격은
 // 업그레이드로 줄어들기 때문에 거기 얹으면 업그레이드가 곧 드랍량 증가가 된다.
@@ -12,7 +12,7 @@ using UnityEngine;
 //
 // 대상 규칙은 자동 생산과 같다. 장식장 슬라임은 드랍하지 않는다.
 //
-// 가챠가 해금되고 소개 튜토리얼까지 끝난 뒤에만 판정한다. 튜토리얼 중에는 체험용
+// 뽑기가 해금되고 소개 튜토리얼까지 끝난 뒤에만 판정한다. 튜토리얼 중에는 체험용
 // 한 장만 보여 줘야, 설명을 듣기도 전에 정체 모를 티켓이 필드에 생기지 않는다.
 public class GachaTicketDropper : MonoBehaviour
 {
@@ -35,7 +35,7 @@ public class GachaTicketDropper : MonoBehaviour
     {
         if (_spawnManager != null && _slimeManager != null) return;
 
-        Debug.LogError("가챠권 드랍 판정기의 GameScene 참조가 비어 있습니다.", this);
+        Debug.LogError("뽑기권 드랍 판정기의 GameScene 참조가 비어 있습니다.", this);
         enabled = false;
     }
 
@@ -64,7 +64,7 @@ public class GachaTicketDropper : MonoBehaviour
 
             // 시간당 몇 장 나오는지는 밸런스 조정의 근거가 되고, 드랍은 시간당 몇 번
             // 수준이라 로그가 흐름을 가리지 않는다.
-            Debug.Log($"가챠권 드랍 : {target.Grade} : {target.transform.position}");
+            Debug.Log($"뽑기권 드랍 : {target.Grade} : {target.transform.position}");
             Dropped?.Invoke(target);
         }
     }

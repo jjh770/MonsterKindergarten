@@ -18,7 +18,7 @@ public sealed class AutoMergeManager : MonoBehaviour
     public enum EMergeFailure
     {
         None,
-        // 해금 전이거나 튜토리얼·장식장 선택·가챠 연출처럼 지금 눌러선 안 되는 상황.
+        // 해금 전이거나 튜토리얼·장식장 선택·뽑기 연출처럼 지금 눌러선 안 되는 상황.
         Unavailable,
         // 연출 중이거나 쿨타임이 남았다.
         Cooldown,

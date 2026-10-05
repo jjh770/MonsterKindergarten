@@ -60,7 +60,7 @@ public static class MainEndingCreditsTextBuilder
             $"{endLabel}\n{stats.GraduatedAtUtc.ToLocalTime():yyyy.MM.dd}\n\n" +
             $"함께한 시간\n{daysTogether:N0}일\n\n" +
             $"함께 만든 포인트\n{stats.ProducedPointTotal.ToFormattedString()}\n\n" +
-            $"누적 가챠권 획득\n{stats.GachaTicketsObtainedTotal:N0}장";
+            $"누적 뽑기권 획득\n{stats.GachaTicketsObtainedTotal:N0}장";
         right =
             $"자연 출현한 슬라임\n{stats.NaturalSpawnCount:N0}마리\n\n" +
             $"합성으로 태어난 슬라임\n{stats.MergeCreatedCount:N0}마리\n\n" +

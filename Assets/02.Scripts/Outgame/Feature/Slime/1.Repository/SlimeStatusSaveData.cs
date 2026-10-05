@@ -162,12 +162,12 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public long GraduationAutoMergeUseCount { get; set; }
 
-    // 스페셜 가챠에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
+    // 스페셜 뽑기에 연속 실패한 횟수. 피버 해금 여부는 도감 수에서 파생한다.
     // 이전 문서의 기본값 0은 기본 확률 3%를 뜻한다.
     [FirestoreProperty]
     public int SpecialGachaMissCount { get; set; }
 
-    // v15. 지금까지 얻은 가챠권의 누적과 자동 합성을 쓴 횟수다. 필드가 없는 문서는 0으로 읽혀
+    // v15. 지금까지 얻은 뽑기권의 누적과 자동 합성을 쓴 횟수다. 필드가 없는 문서는 0으로 읽혀
     // "기록 없음"이 된다.
     [FirestoreProperty]
     public long GachaTicketsObtainedTotal { get; set; }
@@ -240,8 +240,8 @@ public sealed class SlimeStatusSaveData : ISaveData
     public List<double> NormalProducedPointTotals { get; set; } =
         CreateEmptyDoubleStats();
 
-    // v14. 등급별로 가챠에서 얻은 횟수다. 다른 통계와 같은 스무 칸이고, 필드가 없는 이전 문서는
-    // 0으로 채워진 목록으로 읽히며 그것이 "가챠로 얻은 기록 없음"이다.
+    // v14. 등급별로 뽑기에서 얻은 횟수다. 다른 통계와 같은 스무 칸이고, 필드가 없는 이전 문서는
+    // 0으로 채워진 목록으로 읽히며 그것이 "뽑기로 얻은 기록 없음"이다.
     [FirestoreProperty]
     public List<long> NormalGachaObtainedCounts { get; set; } =
         CreateEmptyLongStats();

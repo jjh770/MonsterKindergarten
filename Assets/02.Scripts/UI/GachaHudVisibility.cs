@@ -4,8 +4,8 @@ using UnityEngine.Serialization;
 // 하단 기능 버튼들의 해금 및 노출을 한곳에서 정한다.
 //
 // 조건은 하단 메뉴 전환 버튼과 같다. 데이터가 다 올라오고, 게임플레이가 살아 있고,
-// 메인 필드를 보고 있고, 가챠가 해금됐을 때만 보인다. 장식장에서 숨기는 이유는
-// 가챠 결과가 메인 필드에 태어나기 때문이다. 보이지 않는 곳에 슬라임을 만들고
+// 메인 필드를 보고 있고, 뽑기가 해금됐을 때만 보인다. 장식장에서 숨기는 이유는
+// 뽑기 결과가 메인 필드에 태어나기 때문이다. 보이지 않는 곳에 슬라임을 만들고
 // 티켓만 줄어드는 것처럼 보인다.
 //
 // 전송 모드에서는 BottomPanelSwitcher가 하단 패널 영역을 숨긴다. 두 버튼도 같은
@@ -23,10 +23,10 @@ public sealed class GachaHudVisibility : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
 
     [FormerlySerializedAs("_roots")]
-    [Tooltip("게임플레이가 활성화됐을 때 사용할 가챠 버튼들입니다.")]
+    [Tooltip("게임플레이가 활성화됐을 때 사용할 뽑기 버튼들입니다.")]
     [SerializeField] private GameObject[] _gachaRoots;
 
-    [Tooltip("가챠 해금 뒤 상단에 항상 표시할 티켓 HUD입니다.")]
+    [Tooltip("뽑기 해금 뒤 상단에 항상 표시할 티켓 HUD입니다.")]
     [SerializeField] private GameObject[] _ticketHudRoots;
 
     [Tooltip("자동 합성 해금과 함께 나타날 오브젝트들입니다.")]

@@ -432,7 +432,7 @@ public sealed class CollectionBookUI : MonoBehaviour
                $"자연 출현 {stats.NaturalSpawnCount:N0} | " +
                $"합성 탄생 {stats.MergeCreatedCount:N0}\n" +
                (_slimeManager.IsGachaUnlocked
-                   ? $"가챠 획득 {stats.GachaObtainedCount:N0}\n"
+                   ? $"뽑기 획득 {stats.GachaObtainedCount:N0}\n"
                    : string.Empty) +
                $"유효 터치 {stats.ManualTouchCount:N0} | " +
                $"누적 생산 {stats.ProducedPointTotal.ToFormattedString()}";

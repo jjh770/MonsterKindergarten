@@ -368,14 +368,14 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         AutoSpawnChanged?.Invoke(isEnabled);
     }
 
-    // 가챠권이 떨어졌을 때 호출한다.
+    // 뽑기권이 떨어졌을 때 호출한다.
     public void AddPendingTicket()
     {
         _status.AddPendingTicket();
         Save();
     }
 
-    // 가챠권을 한 장 주웠을 때 호출한다. 저장에 남은 장수가 없으면 false다.
+    // 뽑기권을 한 장 주웠을 때 호출한다. 저장에 남은 장수가 없으면 false다.
     public bool TryConsumePendingTicket()
     {
         if (!_status.TryConsumePendingTicket()) return false;
@@ -518,7 +518,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
             : default;
     }
 
-    // 가챠로 슬라임을 얻었을 때 부른다. 특별한 슬라임도 같은 등급의 기록에 합산한다.
+    // 뽑기로 슬라임을 얻었을 때 부른다. 특별한 슬라임도 같은 등급의 기록에 합산한다.
     public void RecordGachaObtained(ESlimeGrade grade)
     {
         if (_collectionStats == null) return;
@@ -527,7 +527,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         MarkStatsDirty();
     }
 
-    // 가챠권이 지갑에 들어간 순간에 부른다. 필드에서 주운 것, 오프라인 보상, 튜토리얼의
+    // 뽑기권이 지갑에 들어간 순간에 부른다. 필드에서 주운 것, 오프라인 보상, 튜토리얼의
     // 한 장이 해당하고, 뽑기 실패로 돌려받은 환불은 해당하지 않는다.
     public void RecordGachaTicketsObtained(int count)
     {

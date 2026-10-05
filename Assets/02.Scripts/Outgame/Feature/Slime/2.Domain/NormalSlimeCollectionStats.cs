@@ -77,7 +77,7 @@ public sealed class NormalSlimeCollectionStats
         Increment(_naturalSpawnCounts, GetIndex(grade));
     }
 
-    // 가챠 결과로 태어난 슬라임을 센다. 특별한 슬라임도 같은 등급의 한 칸에 들어간다.
+    // 뽑기 결과로 태어난 슬라임을 센다. 특별한 슬라임도 같은 등급의 한 칸에 들어간다.
     public void RecordGachaObtained(ESlimeGrade grade)
     {
         Increment(_gachaObtainedCounts, GetIndex(grade));

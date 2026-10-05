@@ -35,10 +35,10 @@ public readonly struct NormalGachaProbability
     }
 }
 
-// 일반 가챠 결과의 후보와 가중치.
+// 일반 뽑기 결과의 후보와 가중치.
 //
 // 후보는 Lv.1부터 최고 해금 등급까지 전부다. 최고 등급 자신도 나올 수 있고, 그 위는
-// 절대 나오지 않는다. 가챠가 아직 만나지 못한 등급의 슬라임을 만들어 주면 안 된다.
+// 절대 나오지 않는다. 뽑기가 아직 만나지 못한 등급의 슬라임을 만들어 주면 안 된다.
 //
 // 낮은 등급일수록 무겁다. Lv.n의 무게는 (최고 - n + 1)이라 Lv.1이 가장 잘 나오고
 // 최고 등급이 가장 드물다. 값은 확정된 밸런스라 에셋으로 빼지 않았다. 조정이 필요해지면
@@ -98,7 +98,7 @@ public static class NormalGachaPool
         return false;
     }
 
-    // 가챠 튜토리얼의 무료 한 장. 첫 경험이 시시하지 않도록 최고 -1과 최고 중에서만
+    // 뽑기 튜토리얼의 무료 한 장. 첫 경험이 시시하지 않도록 최고 -1과 최고 중에서만
     // 같은 확률로 뽑는다. 최고 -1이 Lv.1 아래로 내려가면 그 자리는 뺀다.
     public static bool TryPickTutorial(ESlimeGrade highestGrade, out NormalGachaResult result)
     {

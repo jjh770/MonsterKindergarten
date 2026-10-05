@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 이미 생성되고 저장된 가챠 결과를 포털로 공개한 뒤 필드로 넘긴다.
+// 이미 생성되고 저장된 뽑기 결과를 포털로 공개한 뒤 필드로 넘긴다.
 // 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
@@ -131,7 +131,7 @@ public sealed class GachaResultDirector : MonoBehaviour
             _arrivalShockwave == null || _arrivalSparks == null ||
             _slimeManager == null)
         {
-            Debug.LogError("가챠 포털 연출의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기 포털 연출의 필수 참조가 비어 있습니다.", this);
             return;
         }
 

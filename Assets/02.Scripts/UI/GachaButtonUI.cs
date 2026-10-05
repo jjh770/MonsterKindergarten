@@ -1,19 +1,19 @@
 using System;
 using UnityEngine;
 
-// 가챠권을 쓰는 버튼 하나만 담당한다. 실행 순서는 GachaService가 정한다.
+// 뽑기권을 쓰는 버튼 하나만 담당한다. 실행 순서는 GachaService가 정한다.
 //
 // 언제 보일지는 GachaHudVisibility가 정한다. 여기서는 개수 표기와 클릭만 다룬다.
 //
 // 티켓이 없어도 버튼을 흐리게 두지 않는다. 흐린 버튼은 왜 못 쓰는지 알려주지 않고,
-// 가챠권이라는 것이 있다는 사실 자체가 아직 낯선 시점이라 안내가 필요하다.
+// 뽑기권이라는 것이 있다는 사실 자체가 아직 낯선 시점이라 안내가 필요하다.
 //
 // PullSucceeded는 뽑은 순간이 아니라 연출이 끝난 뒤에 발화한다. 튜토리얼이 이 신호를
 // 받아 결과 슬라임을 가리키는데, 연출 도중에는 그 슬라임이 숨겨져 있기 때문이다.
 public sealed class GachaButtonUI : MonoBehaviour
 {
     private const string NoTicketMessage =
-        "슬라임이 떨어뜨리는 가챠권을 모아보세요.";
+        "슬라임이 떨어뜨리는 뽑기권을 모아보세요.";
 
     private const string NoRoomMessage =
         "유치원이 가득 찼어요.\n슬라임을 합쳐 자리를 만들어 주세요.";
@@ -34,7 +34,7 @@ public sealed class GachaButtonUI : MonoBehaviour
     {
         if (_button == null || _toast == null)
         {
-            Debug.LogError("가챠 버튼의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기 버튼의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -57,7 +57,7 @@ public sealed class GachaButtonUI : MonoBehaviour
         // 티켓 소비만 발생하고 연출은 거절된다. 서비스 호출 전에 막는다.
         if (_resultDirector != null && _resultDirector.IsPlaying) return;
 
-        // 가챠 튜토리얼이 끝나기 전의 첫 뽑기는 튜토리얼이 준 무료 한 장이다.
+        // 뽑기 튜토리얼이 끝나기 전의 첫 뽑기는 튜토리얼이 준 무료 한 장이다.
         EGachaFailure failure = GachaService.TryPull(
             out SlimeController spawned,
             out EGachaRarity rarity,

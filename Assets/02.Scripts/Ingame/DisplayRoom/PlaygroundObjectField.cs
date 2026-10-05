@@ -5,7 +5,7 @@ using UnityEngine;
 // 저장에 남은 배치를 읽어 실제 오브젝트를 만든다. 놀이터에 무엇이 서 있는지는
 // 이 컴포넌트 한 곳이 소유한다.
 //
-// 가챠권이 GachaTicketField를 두는 것과 같은 분담이다. 저장은 "무엇이 어디에"만
+// 뽑기권이 GachaTicketField를 두는 것과 같은 분담이다. 저장은 "무엇이 어디에"만
 // 알고, 화면에 세우고 치우는 일은 여기가 맡는다.
 public sealed class PlaygroundObjectField : MonoBehaviour
 {
