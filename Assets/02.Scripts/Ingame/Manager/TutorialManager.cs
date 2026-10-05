@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // 튜토리얼 실행권과 공용 프레젠테이션만 소유한다.
 // 각 발동 조건과 단계 진행은 TutorialSequenceBase 구현체가 담당한다.
@@ -8,7 +9,8 @@ public sealed class TutorialManager : MonoBehaviour
     [SerializeField] private Canvas _canvas;
     [SerializeField] private GameObject _dialoguePresentationPrefab;
     [SerializeField] private TutorialContent _content;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
 
     private DialoguePresentation _presentation;
     private TutorialSequenceBase _activeSequence;
@@ -71,8 +73,8 @@ public sealed class TutorialManager : MonoBehaviour
             return false;
         }
 
-        Canvas sortingReference = _upgradeUI != null
-            ? _upgradeUI.GetComponentInParent<Canvas>()
+        Canvas sortingReference = _shopUI != null
+            ? _shopUI.GetComponentInParent<Canvas>()
             : _canvas;
         _presentation = new DialoguePresentation(
             _canvas,

@@ -2,6 +2,7 @@
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 // 학자 슬라임을 눌렀을 때 HUD를 비우고 게임 정보를 고르는 전면 안내를 보여 준다.
@@ -11,7 +12,8 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [Header("Owners")]
     [SerializeField] private HudVisibility _hudVisibility;
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private SpawnManager _spawnManager;
@@ -130,7 +132,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
             _detailPanel != null && _detailTitle != null &&
             _detailText != null && _backButton != null &&
             _hudVisibility != null && _clicker != null &&
-            _upgradeUI != null && _gameExitManager != null &&
+            _shopUI != null && _gameExitManager != null &&
             _spaceManager != null && _spawnManager != null &&
             _slimeManager != null && _upgradeManager != null;
     }
@@ -154,7 +156,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
         IsAnyOpen = true;
         _isTransitioning = true;
         _presentationRestored = false;
-        _upgradeUI.PushStandDown(this);
+        _shopUI.PushStandDown(this);
         _hudVisibility.PushHide(this, EHudParts.All);
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, TryHandleBack);
@@ -521,6 +523,6 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
         _presentationRestored = true;
         _hudVisibility.Release(this, animated);
-        _upgradeUI.ReleaseStandDown(this, animated);
+        _shopUI.ReleaseStandDown(this, animated);
     }
 }

@@ -29,7 +29,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private CurrencyManager _currencyManager;
-    [SerializeField] private UpgradeUI _drawer;
+    [SerializeField] private ShopUI _drawer;
     [Tooltip("탭 두 개를 담은 줄입니다. 튜토리얼이 이 줄을 짚습니다.")]
     [SerializeField] private RectTransform _tabsRoot;
 

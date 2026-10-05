@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -16,7 +17,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 {
     [SerializeField] private PlaygroundObjectField _field;
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private ToastMessageUI _toast;
     // 보내기 모드와 같다. 자리를 고르는 동안에는 HUD가 자리를 비켜 준다.
@@ -59,7 +61,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_field == null || _clicker == null || _upgradeUI == null ||
+        if (_field == null || _clicker == null || _shopUI == null ||
             _gameExitManager == null || _modeRoot == null ||
             _modeCanvasGroup == null || _hudVisibility == null ||
             _spaceManager == null || _slimeManager == null)
@@ -71,7 +73,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
         _camera = Camera.main;
         _modeSession = new GameplayModeSession(
-            _upgradeUI,
+            _shopUI,
             _clicker,
             _gameExitManager,
             _hudVisibility,

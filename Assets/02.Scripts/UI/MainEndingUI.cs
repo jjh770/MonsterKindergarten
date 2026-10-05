@@ -1,6 +1,7 @@
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // 장식장에 20종이 실제로 모두 모인 뒤, 플레이어가 장식장에 입장했을 때의
 // 전체 화면 졸업식 연출을 담당한다.
@@ -23,7 +24,8 @@ public sealed class MainEndingUI : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private SpawnManager _spawnManager;
     [SerializeField] private HudVisibility _hudVisibility;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private AutoClicker _autoClicker;
 
     [Header("Ending Presentation")]
@@ -145,7 +147,7 @@ public sealed class MainEndingUI : MonoBehaviour
                              _slimeManager != null &&
                              _spawnManager != null &&
                              _hudVisibility != null &&
-                             _upgradeUI != null &&
+                             _shopUI != null &&
                              _autoClicker != null &&
                              _view != null;
         if (!hasReferences)
@@ -219,7 +221,7 @@ public sealed class MainEndingUI : MonoBehaviour
 
         _ownsHiddenPresentation = true;
         _hudVisibility?.PushHide(this, EHudParts.All);
-        _upgradeUI?.PushStandDown(this);
+        _shopUI?.PushStandDown(this);
     }
 
     // 슬라임 입장 -> 게임 기록 -> 축전과 감사 인사 -> 특별한 슬라임 예고. 예고가 마지막 화면이라
@@ -427,7 +429,7 @@ public sealed class MainEndingUI : MonoBehaviour
         if (_ownsHiddenPresentation)
         {
             _hudVisibility?.Release(this, animated);
-            _upgradeUI?.ReleaseStandDown(this, animated);
+            _shopUI?.ReleaseStandDown(this, animated);
             _ownsHiddenPresentation = false;
         }
 

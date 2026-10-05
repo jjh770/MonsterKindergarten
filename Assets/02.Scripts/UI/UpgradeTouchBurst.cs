@@ -39,6 +39,8 @@ public sealed class UpgradeTouchBurst : MonoBehaviour
     [SerializeField, Min(0f)] private float _arrowRiseDistance = 300f;
     [SerializeField, Min(0.1f)] private float _arrowDuration = 0.85f;
     [SerializeField, Min(0f)] private float _arrowStagger = 0.06f;
+    [Tooltip("화살표가 커지는 크기입니다. 1이 원본 크기이고, 화살표마다 이 범위에서 무작위로 정합니다. 같은 값이면 모두 같은 크기입니다.")]
+    [SerializeField] private Vector2 _arrowSizeRange = new Vector2(1f, 1f);
 
     private sealed class Piece
     {
@@ -122,7 +124,12 @@ public sealed class UpgradeTouchBurst : MonoBehaviour
             // 화살표는 거의 곧게 위로 간다. 좌우로만 조금씩 벌어진다.
             float normalized = _arrowCount <= 1 ? 0.5f : i / (float)(_arrowCount - 1);
             float sideAngle = Mathf.Lerp(-_arrowSpread, _arrowSpread, normalized) * 0.5f;
-            EmitArrow(piece, origin, sideAngle, i * _arrowStagger);
+            EmitArrow(
+                piece,
+                origin,
+                sideAngle,
+                i * _arrowStagger,
+                Random.Range(_arrowSizeRange.x, _arrowSizeRange.y));
         }
     }
 
@@ -175,7 +182,7 @@ public sealed class UpgradeTouchBurst : MonoBehaviour
     }
 
     // 화살표는 터치한 자리에서 커지며 곧장 위로 올라가다 옅어진다.
-    private void EmitArrow(Piece piece, Vector2 origin, float angleFromUp, float delay)
+    private void EmitArrow(Piece piece, Vector2 origin, float angleFromUp, float delay, float scale)
     {
         piece.Tween?.Kill();
 
@@ -186,7 +193,7 @@ public sealed class UpgradeTouchBurst : MonoBehaviour
         piece.Rect.gameObject.SetActive(true);
         piece.Rect.SetAsLastSibling();
         piece.Rect.anchoredPosition = start;
-        piece.Rect.localScale = Vector3.one * 0.2f;
+        piece.Rect.localScale = Vector3.one * (scale * 0.2f);
         piece.Rect.localRotation = Quaternion.identity;
         piece.Graphic.color = new Color(1f, 1f, 1f, 0f);
 
@@ -196,7 +203,7 @@ public sealed class UpgradeTouchBurst : MonoBehaviour
             .DOAnchorPos(target, duration)
             .SetEase(Ease.OutQuad));
         sequence.Insert(delay, piece.Rect
-            .DOScale(1f, duration * 0.3f)
+            .DOScale(scale, duration * 0.3f)
             .SetEase(Ease.OutBack));
         sequence.Insert(delay, piece.Graphic.DOFade(1f, duration * 0.15f));
         sequence.Insert(delay + duration * 0.5f, piece.Graphic

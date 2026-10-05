@@ -16,7 +16,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
     [Header("Scene References")]
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [FormerlySerializedAs("_stageUI")]
     [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private GameplayTransitionPlayer _transitionPlayer;
@@ -112,7 +113,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             return false;
         }
 
-        _upgradeUI.TryClose();
+        _shopUI.TryClose();
         SetInteractionEnabled(false);
         _transitionPlayer.PlaySpace(
             EGameplaySpace.DisplayRoom,
@@ -203,7 +204,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     private bool HasRequiredReferences()
     {
         bool hasReferences = _clicker != null &&
-                             _upgradeUI != null &&
+                             _shopUI != null &&
                              _backgroundThemeUI != null &&
                              _transitionPlayer != null &&
                              _cameraController != null &&
@@ -292,7 +293,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             return;
         }
 
-        _upgradeUI.TryClose();
+        _shopUI.TryClose();
         _backgroundThemeUI.ToggleThemeSelector();
     }
 
@@ -430,7 +431,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
     {
         // 서랍은 상점이라 두 공간에서 모두 열린다. 파는 물건만 공간에 따라 다르다.
         // 보내기 모드와 튜토리얼, 도감, 학자 안내는 저마다 따로 서랍을 닫는다.
-        _upgradeUI.SetToggleInputEnabled(isEnabled);
+        _shopUI.SetToggleInputEnabled(isEnabled);
         _clicker.PushMode(
             this,
             GetSpaceInputMode(isEnabled),

@@ -5,6 +5,7 @@ using DG.Tweening;
 using TMPro;
 using Utility;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public sealed class CollectionBookUI : MonoBehaviour
@@ -13,7 +14,8 @@ public sealed class CollectionBookUI : MonoBehaviour
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private HudVisibility _hudVisibility;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private GameManager _gameManager;
@@ -124,7 +126,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         _gameExitManager?.UnregisterBackHandler(this);
         _clicker?.ReleaseMode(this);
         _hudVisibility?.Release(this, animated: false);
-        _upgradeUI?.ReleaseStandDown(this, animated: false);
+        _shopUI?.ReleaseStandDown(this, animated: false);
     }
 
     private bool HasRequiredReferences()
@@ -132,7 +134,7 @@ public sealed class CollectionBookUI : MonoBehaviour
         bool hasReferences = _gameExitManager != null &&
                              _clicker != null &&
                              _hudVisibility != null &&
-                             _upgradeUI != null &&
+                             _shopUI != null &&
                              _openButton != null &&
                              _bookRoot != null &&
                              _bookCanvasGroup != null &&
@@ -200,7 +202,7 @@ public sealed class CollectionBookUI : MonoBehaviour
             this,
             ClickerInputMode.Blocked,
             ClickerInputPriority.Modal);
-        _upgradeUI.PushStandDown(this);
+        _shopUI.PushStandDown(this);
         _hudVisibility.PushHide(this, EHudParts.All);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         RefreshOpenButton();
@@ -538,7 +540,7 @@ public sealed class CollectionBookUI : MonoBehaviour
     {
         // 상점 토글 보이기는 공간(DisplayRoomUI)이 소유한다. 도감은 자신이 물었던
         // 스탠드다운만 풀고, 보이기 값은 건드리지 않는다.
-        _upgradeUI.ReleaseStandDown(this, animated);
+        _shopUI.ReleaseStandDown(this, animated);
     }
 
     private bool CanOpen()

@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UpgradeUI : MonoBehaviour
+public class ShopUI : MonoBehaviour
 {
     [SerializeField] private RectTransform _rectTransform;
     [SerializeField] private RectTransform _panelTarget;

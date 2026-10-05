@@ -13,7 +13,8 @@ public sealed class DisplayRoomUI : MonoBehaviour
     [SerializeField] private BackgroundThemeUI _backgroundThemeUI;
     [SerializeField] private GameExitManager _gameExitManager;
     [SerializeField] private Clicker _clicker;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private GameManager _gameManager;
     [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private SlimeManager _slimeManager;
@@ -52,7 +53,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
         }
 
         _sendModeSession = new GameplayModeSession(
-            _upgradeUI,
+            _shopUI,
             _clicker,
             _gameExitManager,
             _hudVisibility,
@@ -131,7 +132,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
                              _backgroundThemeUI != null &&
                              _gameExitManager != null &&
                              _clicker != null &&
-                             _upgradeUI != null &&
+                             _shopUI != null &&
                              _sendModeRoot != null &&
                              _sendModeCanvasGroup != null &&
                              _hudVisibility != null &&
@@ -296,7 +297,7 @@ public sealed class DisplayRoomUI : MonoBehaviour
     {
         _spaceToggleButton.SetSpace(isDisplayRoom);
         // 상점은 장식장에서도 쓴다. 공간에 따라 파는 물건만 달라진다.
-        _upgradeUI.SetToggleVisible(true, animated);
+        _shopUI.SetToggleVisible(true, animated);
         Refresh();
     }
 

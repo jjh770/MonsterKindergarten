@@ -2,6 +2,7 @@ using System;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -36,7 +37,8 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private HudVisibility _hudVisibility;
     // 상점 서랍은 HudVisibility가 옮기는 두 루트에 들어 있지 않다. 자기 폭과
     // 세이프에어리어로 숨는 자리를 스스로 계산하므로 서랍에 맡겨야 한다.
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
 
     [Header("Animation")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.2f;
@@ -82,7 +84,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
         _infoCanvasGroup.interactable = false;
         _infoRoot.SetActive(false);
         _observationSession = new GameplayModeSession(
-            _upgradeUI,
+            _shopUI,
             _clicker,
             _gameExitManager,
             _hudVisibility,
@@ -139,7 +141,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
                              _takeOutButton != null &&
                              _observationInputRoot != null &&
                              _hudVisibility != null &&
-                             _upgradeUI != null &&
+                             _shopUI != null &&
                              _spaceManager != null &&
                              _spawnManager != null;
         if (!hasReferences)

@@ -2388,7 +2388,7 @@ Phase 2 본편·2-B 관찰 UX와 후속 튜토리얼·입력 안정화를 완료
   시작 위치를 아는 곳이 하나뿐이라 두 연출이 겹쳐도 HUD가 화면 밖에 남지 않는다.
 - 하단 패널은 `BottomPanelSwitcher`가 활성 상태로 감추므로 HUD 요청 대상이
   아니다. 업그레이드 서랍도 자기 폭과 Safe Area로 숨김 위치를 계산하므로
-  `UpgradeUI.SetToggleVisible()`에 맡기고 좌표를 직접 옮기지 않는다.
+  `ShopUI.SetToggleVisible()`에 맡기고 좌표를 직접 옮기지 않는다.
 - 장식장 입·출고의 완료 처리는 `StageManager.TryRelocateSlime()` 하나로 모았다.
   저장 위치 변경·좌표 재배치·표시 갱신·실패 시 원복이 여기 있고, 토스트 문구와
   후속 UI 동작만 호출부에 남는다.

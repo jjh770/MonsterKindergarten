@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.InputSystem;
 
 public sealed class GameExitManager : MonoBehaviour
 {
     [SerializeField] private GameExitPopupUI _popup;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
 
@@ -27,10 +29,10 @@ public sealed class GameExitManager : MonoBehaviour
         _popup.ExitRequested += ExitGame;
         _popup.Hide();
 
-        if (_upgradeUI != null)
+        if (_shopUI != null)
         {
-            _upgradeUI.Opened += RegisterUpgradeHandler;
-            _upgradeUI.Closed += UnregisterUpgradeHandler;
+            _shopUI.Opened += RegisterUpgradeHandler;
+            _shopUI.Closed += UnregisterUpgradeHandler;
         }
     }
 
@@ -52,10 +54,10 @@ public sealed class GameExitManager : MonoBehaviour
             _popup.ExitRequested -= ExitGame;
         }
 
-        if (_upgradeUI != null)
+        if (_shopUI != null)
         {
-            _upgradeUI.Opened -= RegisterUpgradeHandler;
-            _upgradeUI.Closed -= UnregisterUpgradeHandler;
+            _shopUI.Opened -= RegisterUpgradeHandler;
+            _shopUI.Closed -= UnregisterUpgradeHandler;
         }
 
         _backHandlers.Clear();
@@ -131,12 +133,12 @@ public sealed class GameExitManager : MonoBehaviour
 
     private void RegisterUpgradeHandler()
     {
-        RegisterBackHandler(_upgradeUI, _upgradeUI.TryClose);
+        RegisterBackHandler(_shopUI, _shopUI.TryClose);
     }
 
     private void UnregisterUpgradeHandler()
     {
-        UnregisterBackHandler(_upgradeUI);
+        UnregisterBackHandler(_shopUI);
     }
 
     private void BlockWorldInput()

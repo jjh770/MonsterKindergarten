@@ -2447,7 +2447,7 @@ MonoBehaviour:
   _slimeManager: {fileID: 376498428}
   _spawnManager: {fileID: 1271333080}
   _hudVisibility: {fileID: 336420519}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _autoClicker: {fileID: 2033355240}
   _view: {fileID: 1922949909}
   _celebrationImageSprite: {fileID: 21300000, guid: 5af9b67dbb857b24a9f86a853066b617, type: 3}
@@ -4704,7 +4704,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameExitManager
   _popup: {fileID: 2099200002}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _clicker: {fileID: 115063078}
   _gameplaySpaceManager: {fileID: 954826973}
 --- !u!4 &286711905
@@ -16537,7 +16537,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameplaySpaceManager
   _clicker: {fileID: 115063078}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _backgroundThemeUI: {fileID: 1324579906}
   _transitionPlayer: {fileID: 954826975}
   _cameraController: {fileID: 2063349533}
@@ -16876,7 +16876,7 @@ MonoBehaviour:
   _backgroundThemeUI: {fileID: 1324579906}
   _gameExitManager: {fileID: 286711904}
   _clicker: {fileID: 115063078}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _gameManager: {fileID: 1237951049}
   _spaceManager: {fileID: 954826973}
   _slimeManager: {fileID: 376498428}
@@ -17180,7 +17180,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlaygroundPlacementUI
   _field: {fileID: 59771885}
   _clicker: {fileID: 115063078}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _gameExitManager: {fileID: 286711904}
   _toast: {fileID: 487418094}
   _hudVisibility: {fileID: 336420519}
@@ -18716,7 +18716,7 @@ MonoBehaviour:
   _takeOutButton: {fileID: 995200405}
   _observationInputRoot: {fileID: 995200601}
   _hudVisibility: {fileID: 336420519}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _fadeDuration: 0.2
   _observationDuration: 0.3
 --- !u!224 &995200002
@@ -20422,6 +20422,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 920019898}
+  - {fileID: 1831718103}
   - {fileID: 66315038}
   - {fileID: 846107035}
   - {fileID: 998200102}
@@ -20545,7 +20546,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DisplayRoomTutorialSequence
   _unlockPopupUI: {fileID: 1432576204}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _displayRoomUI: {fileID: 990000001}
   _spaceToggleButton: {fileID: 1790500176}
   _panelSwitcher: {fileID: 998300001}
@@ -21086,6 +21087,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
+      propertyPath: _shopUI
+      value: 
+      objectReference: {fileID: 1526959884}
     - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
       propertyPath: _clicker
       value: 
@@ -21757,7 +21762,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1526959883}
-  - {fileID: 1831718103}
   - {fileID: 153068205}
   - {fileID: 2101000002}
   - {fileID: 1432576203}
@@ -25413,7 +25417,7 @@ MonoBehaviour:
   _canvas: {fileID: 457349916}
   _dialoguePresentationPrefab: {fileID: 810001, guid: 7f1a9c3e5b2d4a6f8c0e1d3b5a7f9246, type: 3}
   _content: {fileID: 11400000, guid: 9bb49bfcf7664a0e861cab1dc5cf3e21, type: 2}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
 --- !u!4 &1215316399
 Transform:
   m_ObjectHideFlags: 0
@@ -28732,7 +28736,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScholarGuideUI
   _hudVisibility: {fileID: 336420519}
   _clicker: {fileID: 115063078}
-  _upgradeUI: {fileID: 1526959884}
+  _shopUI: {fileID: 1526959884}
   _gameExitManager: {fileID: 286711904}
   _spaceManager: {fileID: 954826973}
   _spawnManager: {fileID: 1271333080}
@@ -30171,7 +30175,7 @@ GameObject:
   - component: {fileID: 1526959884}
   - component: {fileID: 1526959885}
   m_Layer: 5
-  m_Name: UpgradeUI
+  m_Name: ShopUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -35006,16 +35010,17 @@ MonoBehaviour:
   _starTemplate: {fileID: 1033711917}
   _arrowTemplate: {fileID: 307928307}
   _maxConcurrentBursts: 3
-  _starCount: 10
-  _starRadius: 210
+  _starCount: 5
+  _starRadius: 75
   _starDuration: 0.85
   _starSpin: 120
-  _starSizeRange: {x: 0.75, y: 0.75}
-  _arrowCount: 5
-  _arrowSpread: 120
-  _arrowRiseDistance: 300
+  _starSizeRange: {x: 0.3, y: 0.3}
+  _arrowCount: 3
+  _arrowSpread: 80
+  _arrowRiseDistance: 200
   _arrowDuration: 0.85
   _arrowStagger: 0.05
+  _arrowSizeRange: {x: 0.5, y: 0.5}
 --- !u!224 &1831718103
 RectTransform:
   m_ObjectHideFlags: 0
@@ -35030,7 +35035,7 @@ RectTransform:
   m_Children:
   - {fileID: 1033711919}
   - {fileID: 307928309}
-  m_Father: {fileID: 1045520513}
+  m_Father: {fileID: 996000011}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}

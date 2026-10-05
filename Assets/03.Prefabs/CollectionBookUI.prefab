@@ -52,7 +52,7 @@ MonoBehaviour:
   _gameExitManager: {fileID: 0}
   _clicker: {fileID: 0}
   _hudVisibility: {fileID: 0}
-  _upgradeUI: {fileID: 0}
+  _shopUI: {fileID: 0}
   _slimeManager: {fileID: 0}
   _spaceManager: {fileID: 0}
   _gameManager: {fileID: 0}

@@ -19,7 +19,7 @@ public sealed class ShopTutorialSequence : TutorialSequenceBase
         Complete,
     }
 
-    [SerializeField] private UpgradeUI _drawer;
+    [SerializeField] private ShopUI _drawer;
     [SerializeField] private PlaygroundShopUI _shop;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
     [SerializeField] private Clicker _clicker;

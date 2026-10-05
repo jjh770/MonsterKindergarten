@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
 {
@@ -22,7 +23,8 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
     }
 
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
-    [SerializeField] private UpgradeUI _upgradeUI;
+    [FormerlySerializedAs("_upgradeUI")]
+    [SerializeField] private ShopUI _shopUI;
     [SerializeField] private DisplayRoomUI _displayRoomUI;
     [SerializeField] private SpaceToggleButtonUI _spaceToggleButton;
     [SerializeField] private BottomPanelSwitcher _panelSwitcher;
@@ -147,7 +149,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
             _panelSwitcher == null ||
             _displayRoomInfoUI == null ||
             _clicker == null ||
-            _upgradeUI == null)
+            _shopUI == null)
         {
             Debug.LogError("장식장 튜토리얼의 필수 참조가 비어 있습니다.", this);
             return;
@@ -158,7 +160,7 @@ public sealed class DisplayRoomTutorialSequence : TutorialSequenceBase
         _tutorialSlime = FindFirstDisplayRoomSlime();
         SubscribeGuideAdvance(OnGuideAdvanceRequested);
         AcquireGameplayHold(_spawnManager, _autoClicker);
-        _upgradeUI.SetToggleInputEnabled(false);
+        _shopUI.SetToggleInputEnabled(false);
 
         // 입고 결과가 저장돼 있으면 추가 입고 없이 장식장 안내를 재개한다.
         if (_tutorialSlime != null)

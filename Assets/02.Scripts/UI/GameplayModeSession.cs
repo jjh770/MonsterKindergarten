@@ -9,7 +9,7 @@ using UnityEngine;
 // 튜토리얼 잠금이나 정보창 입력 차단을 먼저 풀지 않는다.
 public sealed class GameplayModeSession : IDisposable
 {
-    private readonly UpgradeUI _upgradeUI;
+    private readonly ShopUI _shopUI;
     private readonly Clicker _clicker;
     private readonly GameExitManager _gameExitManager;
     private readonly HudVisibility _hudVisibility;
@@ -27,7 +27,7 @@ public sealed class GameplayModeSession : IDisposable
     public bool IsTransitioning => _fadeTween != null;
 
     public GameplayModeSession(
-        UpgradeUI upgradeUI,
+        ShopUI shopUI,
         Clicker clicker,
         GameExitManager gameExitManager,
         HudVisibility hudVisibility,
@@ -39,7 +39,7 @@ public sealed class GameplayModeSession : IDisposable
         float inactiveAlpha = 0f,
         bool manageRaycasts = true)
     {
-        _upgradeUI = upgradeUI;
+        _shopUI = shopUI;
         _clicker = clicker;
         _gameExitManager = gameExitManager;
         _hudVisibility = hudVisibility;
@@ -62,7 +62,7 @@ public sealed class GameplayModeSession : IDisposable
         if (_isActive) return;
 
         _isActive = true;
-        _upgradeUI.PushStandDown(this);
+        _shopUI.PushStandDown(this);
         _clicker.PushMode(this, inputMode, inputPriority);
         _gameExitManager.RegisterBackHandler(this, tryClose);
         _hudVisibility.PushHide(this, _hiddenHudParts);
@@ -171,9 +171,9 @@ public sealed class GameplayModeSession : IDisposable
             _clicker.ReleaseMode(this);
         }
 
-        if (_upgradeUI != null)
+        if (_shopUI != null)
         {
-            _upgradeUI.ReleaseStandDown(this, animated);
+            _shopUI.ReleaseStandDown(this, animated);
         }
 
         if (_hudVisibility != null)
