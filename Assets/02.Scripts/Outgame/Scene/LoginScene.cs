@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class LoginScene : MonoBehaviour
@@ -32,6 +33,10 @@ public class LoginScene : MonoBehaviour
 
     [SerializeField, Min(0f)] private float _titleDropDuration = 1f;
     [SerializeField] private Ease _titleDropEase = Ease.OutBounce;
+
+    [Header("Effects")]
+    [Tooltip("로고 착지, 떠오르는 별, 누를 때의 반응을 맡습니다. 비워 두면 연출 없이 동작합니다.")]
+    [SerializeField] private LoginSceneEffects _effects;
 
     private string _popupText;
     private TMP_Text _loginButtonText;
@@ -94,6 +99,7 @@ public class LoginScene : MonoBehaviour
     private void OnLoginButtonClicked()
     {
         AudioManager.Instance?.PlaySFX(EAudioSfx.LoginButton);
+        PlayPressEffect();
         Login(true).Forget();
     }
 
@@ -126,8 +132,20 @@ public class LoginScene : MonoBehaviour
             .OnComplete(() =>
             {
                 _titleTween = null;
+                _effects?.PlayLanding();
                 SetLoginButtonShown(true);
             });
+    }
+
+    // 누른 자리에서 터지게 한다. 포인터가 없으면(키보드 등) 화면 가운데에서 터진다.
+    private void PlayPressEffect()
+    {
+        if (_effects == null) return;
+
+        Vector2 point = Pointer.current != null
+            ? Pointer.current.position.ReadValue()
+            : new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        _effects.PlayPress(point);
     }
 
     private void SetLoginButtonShown(bool isShown)

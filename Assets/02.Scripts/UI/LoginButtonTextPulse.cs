@@ -24,6 +24,11 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
     [Tooltip("등장할 때의 시작 크기입니다. 1을 향해 커지며 살짝 넘쳤다가 돌아옵니다.")]
     [SerializeField, Range(0.1f, 1f)] private float _enterStartScale = 0.55f;
 
+    [Header("Press")]
+    [Tooltip("버튼을 누른 순간 문구가 이 크기에서 시작해 제 크기로 돌아옵니다.")]
+    [SerializeField, Range(1f, 2f)] private float _pressScale = 1.4f;
+    [SerializeField, Min(0.05f)] private float _pressSeconds = 0.35f;
+
     private TMP_Text _text;
     private RectTransform _rect;
     private Button _button;
@@ -31,6 +36,7 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
     private Vector2 _basePosition;
     private Color _baseColor;
     private float _enabledAt;
+    private float _pressedAt = -999f;
 
     private void Awake()
     {
@@ -40,6 +46,12 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
         _baseScale = transform.localScale;
         _basePosition = _rect.anchoredPosition;
         _baseColor = _text.color;
+    }
+
+    // 버튼을 눌렀을 때 문구가 한 번 커졌다가 제 크기로 돌아온다.
+    public void PlayPress()
+    {
+        _pressedAt = Time.unscaledTime;
     }
 
     private void OnEnable()
@@ -69,7 +81,9 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
         float rise = 1f - EaseOutCubic(enter);
 
         float pulseScale = Mathf.Lerp(1f, Mathf.Lerp(1f, _maximumScale, phase), pulseWeight);
-        float scale = Mathf.LerpUnclamped(_enterStartScale, 1f, eased) * pulseScale;
+        float press = Mathf.Clamp01((Time.unscaledTime - _pressedAt) / _pressSeconds);
+        float pressScale = Mathf.Lerp(_pressScale, 1f, EaseOutCubic(press));
+        float scale = Mathf.LerpUnclamped(_enterStartScale, 1f, eased) * pulseScale * pressScale;
         float alpha = Mathf.Clamp01(enter * 2f) * Mathf.Lerp(1f, Mathf.Lerp(_minimumAlpha, 1f, phase), pulseWeight);
 
         transform.localScale = _baseScale * scale;
