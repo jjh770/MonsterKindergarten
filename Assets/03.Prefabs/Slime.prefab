@@ -223,6 +223,17 @@ MonoBehaviour:
   _bumpReferenceSpeed: 5
   _bumpMinimumSpeed: 1
   _bumpCooldown: 0.2
+  _pressWidthScale: 1.35
+  _pressHeightScale: 0.6
+  _pressDuration: 0.06
+  _releaseWidthScale: 0.75
+  _releaseHeightScale: 1.45
+  _releaseSettleAmount: 0.15
+  _releaseStepDuration: 0.12
+  _releaseReturnDuration: 0.3
+  _dragStretch: 0.25
+  _dragReferenceSpeed: 8
+  _dragSmoothTime: 0.08
   _vibrato: 10
   _elasticity: 1
 --- !u!114 &2205505537005354731

@@ -54,6 +54,13 @@ public class SlimeController : MonoBehaviour, IClickable
     public event Action OnLanded;
     public event Action OnInteracted;
 
+    // 손가락이 슬라임을 잡은 순간과 놓은 순간. 놓는 쪽은 클릭 처리가 꺼진 모드에서도 오므로
+    // 눌림 연출이 남지 않는다. 드래그 시작과 끝은 드래그로 넘어간 선택에서만 온다.
+    public event Action OnPressed;
+    public event Action OnPressReleased;
+    public event Action OnDragStarted;
+    public event Action OnDragEnded;
+
     // 슬라임끼리 부딪혔을 때 그 충돌 속도를 넘긴다. 세기에 따라 반응을 달리하려는
     // 쪽이 쓴다. 메인 필드에서는 레이어 행렬이 서로를 막고 있어 장식장에서만 난다.
     public event Action<float> OnBumped;
@@ -350,6 +357,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public void StartDrag()
     {
         SetDragging(true);
+        OnDragStarted?.Invoke();
         var rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -365,6 +373,7 @@ public class SlimeController : MonoBehaviour, IClickable
     public void EndDrag(SlimeController preferredTarget)
     {
         SetDragging(false);
+        OnDragEnded?.Invoke();
         OnInteracted?.Invoke();
         TryMerge(preferredTarget);
     }
@@ -372,6 +381,17 @@ public class SlimeController : MonoBehaviour, IClickable
     public void CancelDrag()
     {
         SetDragging(false);
+        OnDragEnded?.Invoke();
+    }
+
+    public void NotifyPressed()
+    {
+        OnPressed?.Invoke();
+    }
+
+    public void NotifyPressReleased()
+    {
+        OnPressReleased?.Invoke();
     }
 
     // 슬라임은 모두 같은 정렬 순서와 같은 z에 있어 겹쳤을 때 누가 앞에 그려질지

@@ -114,6 +114,7 @@ public class Clicker : MonoBehaviour
         _mouseDownPos = worldPos;
         _mouseDownTime = Time.time;
         _isDragging = false;
+        clickTarget.NotifyPressed();
     }
 
     // 손가락은 점이 아니다. 콜라이더를 그림보다 작게 잡으면 점 레이캐스트로는 자주
@@ -205,6 +206,7 @@ public class Clicker : MonoBehaviour
     private void OnPointerUp(Vector2 pointerPosition)
     {
         SlimeController selectedTarget = _selectedTarget;
+        bool wasDragging = _isDragging;
 
         if (_isDragging)
         {
@@ -218,7 +220,12 @@ public class Clicker : MonoBehaviour
                 TargetDragCompleted?.Invoke(selectedTarget);
             }
         }
-        else if (_isClickEnabled)
+        else
+        {
+            selectedTarget.NotifyPressReleased();
+        }
+
+        if (!wasDragging && _isClickEnabled)
         {
             if (_invokeClickAction)
             {
@@ -405,6 +412,10 @@ public class Clicker : MonoBehaviour
         if (_selectedTarget != null && _isDragging)
         {
             _selectedTarget.CancelDrag();
+        }
+        else if (_selectedTarget != null)
+        {
+            _selectedTarget.NotifyPressReleased();
         }
 
         _selectedTarget = null;

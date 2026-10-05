@@ -33,6 +33,30 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     [Tooltip("한 번 반응한 뒤 이만큼은 다시 반응하지 않습니다. 연달아 부딪힐 때 찌그러짐이 겹치는 것을 막습니다.")]
     [SerializeField, Min(0f)] private float _bumpCooldown = 0.3f;
 
+    [Header("Press")]
+    [Tooltip("누르는 순간 납작하게 눌리는 정도입니다. 가로는 늘고 세로는 줄어 부피가 비슷하게 유지됩니다.")]
+    [SerializeField, Range(1f, 2f)] private float _pressWidthScale = 1.35f;
+    [SerializeField, Range(0.3f, 1f)] private float _pressHeightScale = 0.6f;
+    [SerializeField, Min(0.01f)] private float _pressDuration = 0.06f;
+
+    [Header("Release")]
+    [Tooltip("손을 뗄 때 눌린 상태에서 위로 길쭉하게 튀는 정도입니다.")]
+    [SerializeField, Range(0.3f, 1f)] private float _releaseWidthScale = 0.75f;
+    [SerializeField, Range(1f, 2f)] private float _releaseHeightScale = 1.45f;
+    [Tooltip("튀어 오른 뒤 한 번 더 가볍게 눌렸다가 돌아오는 정도입니다.")]
+    [SerializeField, Range(0f, 0.4f)] private float _releaseSettleAmount = 0.15f;
+    [SerializeField, Min(0.01f)] private float _releaseStepDuration = 0.12f;
+    [SerializeField, Min(0.01f)] private float _releaseReturnDuration = 0.3f;
+
+    [Header("Drag")]
+    [Tooltip("끌 때 움직이는 방향으로 늘어나는 최대 정도입니다. 잡고만 있을 때는 눌린 모양을 유지하고, 움직일수록 이 모양에 가까워집니다.")]
+    [SerializeField, Range(0f, 0.6f)] private float _dragStretch = 0.25f;
+    [Tooltip("이 속도(월드 거리/초)에서 늘어남이 최대가 됩니다.")]
+    [SerializeField, Min(0.1f)] private float _dragReferenceSpeed = 8f;
+    [SerializeField, Min(0.01f)] private float _dragSmoothTime = 0.08f;
+    [Tooltip("드래그를 놓았을 때 원래 모양으로 돌아오는 시간입니다. 출렁임 없이 부드럽게 돌아옵니다.")]
+    [SerializeField, Min(0.01f)] private float _dragReleaseDuration = 0.15f;
+
     [Header("Common")]
     [SerializeField, Min(1)] private int _vibrato = 10;
     [SerializeField, Range(0f, 1f)] private float _elasticity = 1f;
@@ -42,6 +66,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private Tween _scaleTween;
     private Vector3 _defaultScale;
     private float _nextBumpTime;
+    private bool _isDragStretching;
+    private Vector3 _lastPosition;
+    private Vector2 _stretch = Vector2.one;
+    private Vector2 _stretchVelocity;
 
     private void Awake()
     {
@@ -53,6 +81,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     {
         _owner.OnPromoted += PlayPromoteFeedback;
         _owner.OnBumped += PlayBumpReaction;
+        _owner.OnPressed += HandlePressed;
+        _owner.OnPressReleased += HandlePressReleased;
+        _owner.OnDragStarted += HandleDragStarted;
+        _owner.OnDragEnded += HandleDragEnded;
 
         // 풀에서 다시 나온 오브젝트가 이전 개체의 쿨다운을 물려받지 않게 한다.
         _nextBumpTime = 0f;
@@ -69,6 +101,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     // 역할 : 스케일 트위닝 피드백에 대한 로직을 담당
     public void Play(ClickInfo clickInfo)
     {
+        // 손으로 누른 클릭은 누름과 뗌 이벤트가 이미 모양을 움직였다. 자동 생산만 펀치로 알린다.
+        if (clickInfo.ClickType == EClickType.Manual)
+        {
+            return;
+        }
+
         PlayPunch(_clickPunchScale, _clickDuration);
     }
 
@@ -78,6 +116,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         {
             _owner.OnPromoted -= PlayPromoteFeedback;
             _owner.OnBumped -= PlayBumpReaction;
+            _owner.OnPressed -= HandlePressed;
+            _owner.OnPressReleased -= HandlePressReleased;
+            _owner.OnDragStarted -= HandleDragStarted;
+            _owner.OnDragEnded -= HandleDragEnded;
         }
 
         if (_spaceManager != null)
@@ -104,7 +146,122 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     // 부푼 크기를 "원래 크기"로 기억해 두면 끝난 뒤에도 그대로 남는다.
     public void StopAndReset()
     {
+        _isDragStretching = false;
         CleanupTween();
+    }
+
+    // 메인 필드에서 손으로 잡는 슬라임만 말랑하게 반응한다. 장식장 슬라임은 부딪힘 반응이 따로 있다.
+    private bool CanSquish => _owner != null && _owner.IsMainFieldActive;
+
+    private void HandlePressed()
+    {
+        if (!CanSquish) return;
+
+        _scaleTween?.Kill();
+        _scaleTween = _owner.transform
+            .DOScale(Scaled(_pressWidthScale, _pressHeightScale), _pressDuration)
+            .SetEase(Ease.OutQuad);
+    }
+
+    private void HandlePressReleased()
+    {
+        PlayJelly();
+    }
+
+    private void HandleDragStarted()
+    {
+        if (!CanSquish) return;
+
+        _scaleTween?.Kill();
+        _scaleTween = null;
+        _isDragStretching = true;
+        _lastPosition = _owner.transform.position;
+        _stretchVelocity = Vector2.zero;
+        // 눌려 있던 모양에서 이어서 시작해 드래그로 넘어가는 순간 튀지 않게 한다.
+        Vector3 ratio = _owner.transform.localScale;
+        _stretch = new Vector2(
+            ratio.x / _defaultScale.x,
+            ratio.y / _defaultScale.y);
+    }
+
+    private void HandleDragEnded()
+    {
+        if (!_isDragStretching) return;
+
+        _isDragStretching = false;
+        _scaleTween?.Kill();
+        if (!CanSquish)
+        {
+            CleanupTween();
+            return;
+        }
+
+        // 끄는 동안의 모양에서 출렁임 없이 그대로 돌아온다. 출렁임은 탭을 놓을 때만 쓴다.
+        _scaleTween = _owner.transform
+            .DOScale(_defaultScale, _dragReleaseDuration)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(CompleteTween);
+    }
+
+    // 끄는 동안 움직이는 방향으로 늘린다. 위치는 건드리지 않고 크기만 바꾼다.
+    private void LateUpdate()
+    {
+        if (!_isDragStretching || _owner == null) return;
+
+        Vector3 position = _owner.transform.position;
+        float deltaTime = Time.deltaTime;
+        Vector2 velocity = deltaTime > 0f
+            ? (Vector2)(position - _lastPosition) / deltaTime
+            : Vector2.zero;
+        _lastPosition = position;
+
+        float horizontal = Mathf.Clamp01(Mathf.Abs(velocity.x) / _dragReferenceSpeed);
+        float vertical = Mathf.Clamp01(Mathf.Abs(velocity.y) / _dragReferenceSpeed);
+        // 한쪽으로 늘어난 만큼 반대쪽은 조금 줄여 부피가 비슷해 보이게 한다.
+        var stretched = new Vector2(
+            1f + _dragStretch * (horizontal - 0.6f * vertical),
+            1f + _dragStretch * (vertical - 0.6f * horizontal));
+        // 잡고만 있을 때는 눌린 모양을 유지하고, 움직이는 만큼만 늘어난 모양으로 옮겨 간다.
+        var pressed = new Vector2(_pressWidthScale, _pressHeightScale);
+        float movement = Mathf.Max(horizontal, vertical);
+        Vector2 target = Vector2.Lerp(pressed, stretched, movement);
+        _stretch = Vector2.SmoothDamp(_stretch, target, ref _stretchVelocity, _dragSmoothTime);
+        _owner.transform.localScale = Scaled(_stretch.x, _stretch.y);
+    }
+
+    // 눌려 있던(또는 늘어나 있던) 현재 모양에서 위로 길쭉하게 튀었다가, 가볍게 눌렸다 돌아온다.
+    private void PlayJelly()
+    {
+        if (_owner == null) return;
+
+        _scaleTween?.Kill();
+        if (!CanSquish)
+        {
+            CleanupTween();
+            return;
+        }
+
+        float settle = _releaseSettleAmount;
+        Sequence sequence = DOTween.Sequence();
+        sequence.Append(_owner.transform
+            .DOScale(Scaled(_releaseWidthScale, _releaseHeightScale), _releaseStepDuration)
+            .SetEase(Ease.OutQuad));
+        sequence.Append(_owner.transform
+            .DOScale(Scaled(1f + settle, 1f - settle), _releaseStepDuration)
+            .SetEase(Ease.InOutQuad));
+        sequence.Append(_owner.transform
+            .DOScale(_defaultScale, _releaseReturnDuration)
+            .SetEase(Ease.OutSine));
+        sequence.OnComplete(CompleteTween);
+        _scaleTween = sequence;
+    }
+
+    private Vector3 Scaled(float width, float height)
+    {
+        return new Vector3(
+            _defaultScale.x * width,
+            _defaultScale.y * height,
+            _defaultScale.z);
     }
 
     private void PlayPromoteFeedback()
