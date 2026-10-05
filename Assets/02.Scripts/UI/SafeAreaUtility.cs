@@ -27,7 +27,15 @@ public static class SafeAreaUtility
     {
         if (referenceRect == null) return default;
 
+        // 넓은 화면에서는 세로 영역(PortraitColumn) 밖도 쓸 수 없는 여백으로 본다. 노치 여백과 영역의
+        // 바깥쪽 중 더 안쪽을 쓰므로, 이 계산을 쓰는 HUD와 서랍이 영역 안으로 들어온다.
         Rect safeArea = Screen.safeArea;
+        Rect column = PortraitColumn.GetPixelRect();
+        safeArea = Rect.MinMaxRect(
+            Mathf.Max(safeArea.xMin, column.xMin),
+            Mathf.Max(safeArea.yMin, column.yMin),
+            Mathf.Min(safeArea.xMax, column.xMax),
+            Mathf.Min(safeArea.yMax, column.yMax));
         float width = referenceRect.rect.width;
         float height = referenceRect.rect.height;
 

@@ -298,6 +298,7 @@ public sealed class MainEndingUI : MonoBehaviour
         var origins = new Vector2[count];
         var found = new bool[count];
         Camera worldCamera = Camera.main;
+        Rect column = PortraitColumn.GetPixelRect();
 
         if (worldCamera != null && _spawnManager != null)
         {
@@ -314,7 +315,7 @@ public sealed class MainEndingUI : MonoBehaviour
 
                 Vector3 screen = worldCamera.WorldToScreenPoint(target.transform.position);
                 origins[index] = new Vector2(
-                    Mathf.Clamp(screen.x, Screen.width * 0.08f, Screen.width * 0.92f),
+                    Mathf.Clamp(screen.x, column.xMin + column.width * 0.08f, column.xMin + column.width * 0.92f),
                     Mathf.Clamp(screen.y, Screen.height * 0.16f, Screen.height * 0.84f));
                 found[index] = true;
             }
@@ -324,7 +325,7 @@ public sealed class MainEndingUI : MonoBehaviour
         {
             if (found[i]) continue;
 
-            float x = Mathf.Lerp(Screen.width * 0.14f, Screen.width * 0.86f,
+            float x = Mathf.Lerp(column.xMin + column.width * 0.14f, column.xMin + column.width * 0.86f,
                 (i % 4) / 3f);
             origins[i] = new Vector2(x, Screen.height * 0.18f);
         }

@@ -724,7 +724,8 @@ public class GachaTicketField : MonoBehaviour
         Vector2 screenPath = targetScreenPosition - startScreenPosition;
 
         // 화면의 짧은 축을 기준으로 삼아야 해상도가 달라져도 궤적이 같아 보인다.
-        float shortSide = Mathf.Min(Screen.width, Screen.height);
+        // 넓은 화면에서는 세로 영역(PortraitColumn)의 폭이 짧은 축이다.
+        float shortSide = Mathf.Min(PortraitColumn.GetPixelRect().width, Screen.height);
         float lift = shortSide * _collectArcScreenRatio * RandomArcScale();
         float spread = shortSide * _collectSideSpreadRatio;
 
