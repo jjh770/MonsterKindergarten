@@ -2041,6 +2041,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 104382433}
+  - component: {fileID: 104382434}
   m_Layer: 0
   m_Name: Menu
   m_TagString: Untagged
@@ -2070,6 +2071,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &104382434
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 104382432}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &115063077
 GameObject:
   m_ObjectHideFlags: 0
@@ -6774,6 +6787,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 453603082}
+  - component: {fileID: 453603083}
   m_Layer: 0
   m_Name: Detail
   m_TagString: Untagged
@@ -6803,6 +6817,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &453603083
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453603081}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &457081411
 GameObject:
   m_ObjectHideFlags: 0
@@ -28720,6 +28746,13 @@ MonoBehaviour:
   _dialogueGroup: {fileID: 1076031530}
   _moveDuration: 0.6
   _centerScale: 1.5
+  _returnDuration: 0.5
+  _arcBend: 0.22
+  _flyTilt: 14
+  _returnTilt: 10
+  _landingPunch: 0.1
+  _menuGroup: {fileID: 104382434}
+  _detailGroup: {fileID: 453603083}
   _menuRoot: {fileID: 104382432}
   _probabilityButton: {fileID: 1559864951}
   _upgradeStatusButton: {fileID: 1536552636}
@@ -30184,6 +30217,11 @@ MonoBehaviour:
   _dismissBackdropButton: {fileID: 2212700001}
   _clicker: {fileID: 115063078}
   _movingDuration: 0.5
+  _openEase: 27
+  _openOvershoot: 1.3
+  _closeDuration: 0.35
+  _closeEase: 26
+  _closeOvershoot: 1
   _isContentAvailable: 0
   _topBar: {fileID: 1954789098}
   _toggleArrow: {fileID: 1800751682}

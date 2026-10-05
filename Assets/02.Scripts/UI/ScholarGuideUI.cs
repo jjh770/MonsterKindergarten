@@ -28,6 +28,23 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [SerializeField, Min(0f)] private float _moveDuration = 0.6f;
     [SerializeField, Min(1f)] private float _centerScale = 1.5f;
 
+    [Header("Motion")]
+    [Tooltip("학자가 제자리로 돌아가는 데 걸리는 시간입니다.")]
+    [SerializeField, Min(0.1f)] private float _returnDuration = 0.5f;
+    [Tooltip("날아가는 길이 휘는 정도입니다. 이동 거리에 대한 비율이고 0이면 일직선입니다.")]
+    [SerializeField, Range(0f, 0.6f)] private float _arcBend = 0.22f;
+    [Tooltip("날아오는 동안 기울어지는 각도(도)입니다. 도착하며 똑바로 섭니다.")]
+    [SerializeField, Range(0f, 40f)] private float _flyTilt = 14f;
+    [Tooltip("돌아갈 때 흔들리는 각도(도)의 최댓값입니다.")]
+    [SerializeField, Range(0f, 40f)] private float _returnTilt = 10f;
+    [Tooltip("도착했을 때 통통 튀는 정도입니다. 0이면 튀지 않습니다.")]
+    [SerializeField, Range(0f, 0.4f)] private float _landingPunch = 0.1f;
+
+    [Header("Panels")]
+    [Tooltip("메뉴와 상세가 바뀔 때 쓰는 그룹입니다. 비워 두면 연출 없이 바로 바뀝니다.")]
+    [SerializeField] private CanvasGroup _menuGroup;
+    [SerializeField] private CanvasGroup _detailGroup;
+
     [Header("Menu")]
     [SerializeField] private GameObject _menuRoot;
     [SerializeField] private Button _probabilityButton;
@@ -43,7 +60,14 @@ public sealed class ScholarGuideUI : MonoBehaviour
     [SerializeField] private Button _backButton;
 
     private Tween _scholarTween;
+    private Tween _landingTween;
     private Tween _dialogueTween;
+    private Tween _swapTween;
+    private bool _isSwapping;
+    private Vector3 _dialogueBaseScale = Vector3.one;
+    private Vector3 _menuBaseScale = Vector3.one;
+    private Vector3 _detailBaseScale = Vector3.one;
+    private readonly System.Collections.Generic.Dictionary<Transform, Vector3> _buttonBaseScales = new();
     private Vector2 _sourcePosition;
     private Vector2 _sourceSize;
     private bool _isOpen;
@@ -74,7 +98,25 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _gachaProbabilityButton.onClick.AddListener(ShowGachaProbability);
         _closeButton.onClick.AddListener(Close);
         _backButton.onClick.AddListener(ShowMenu);
+        CacheBaseScales();
         _root.gameObject.SetActive(false);
+    }
+
+    // 연출이 크기를 줄였다 키우므로, 돌아올 기준 크기는 연출 전에 읽어 둔다.
+    private void CacheBaseScales()
+    {
+        _dialogueBaseScale = _dialogueGroup.transform.localScale;
+        _menuBaseScale = _menuRoot.transform.localScale;
+        _detailBaseScale = _detailRoot.transform.localScale;
+        foreach (Button button in MenuButtons())
+        {
+            _buttonBaseScales[button.transform] = button.transform.localScale;
+        }
+    }
+
+    private Button[] MenuButtons()
+    {
+        return new[] { _probabilityButton, _upgradeStatusButton, _gachaProbabilityButton, _closeButton };
     }
 
     private bool HasRequiredReferences()
@@ -127,21 +169,136 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _dialogueGroup.alpha = 0f;
         _dialogueGroup.interactable = false;
         _dialogueGroup.blocksRaycasts = false;
+        ResetPanels();
+        _dialogueGroup.transform.localScale = _dialogueBaseScale * 0.85f;
 
         Vector2 destination = GetLocalPosition(_scholarDestination);
         _scholarTween?.Kill();
-        _scholarTween = DOTween.Sequence()
-            .Join(_scholarImage.rectTransform.DOAnchorPos(destination, _moveDuration))
-            .Join(_scholarImage.rectTransform.DOScale(_centerScale, _moveDuration))
-            .SetEase(Ease.OutBack)
-            .OnComplete(() =>
+        _scholarTween = FlyScholar(
+            _sourcePosition,
+            destination,
+            _centerScale,
+            _moveDuration,
+            Ease.OutCubic,
+            Ease.OutBack,
+            _flyTilt,
+            wobble: false,
+            () =>
             {
                 _isTransitioning = false;
                 _dialogueGroup.interactable = true;
                 _dialogueGroup.blocksRaycasts = true;
-                _dialogueTween = _dialogueGroup.DOFade(1f, 0.2f);
+                PlayLanding();
+                PlayDialogueIn();
+                PlayMenuEntrance();
                 MenuOpened?.Invoke();
             });
+    }
+
+    // 곡선을 그리며 날아가고, 도착할 때까지 기울어졌다가 똑바로 선다. 직선으로 같은 곡선에 위치와 크기가
+    // 함께 붙으면 기계적으로 보여서, 위치는 휘는 길을 따르고 크기는 따로 튀게 한다.
+    private Sequence FlyScholar(
+        Vector2 from,
+        Vector2 to,
+        float targetScale,
+        float duration,
+        Ease positionEase,
+        Ease scaleEase,
+        float tilt,
+        bool wobble,
+        TweenCallback onComplete)
+    {
+        RectTransform rect = _scholarImage.rectTransform;
+        Vector2 delta = to - from;
+        // 길은 위쪽으로 휘게 한다. 아래로 휘면 땅으로 파고드는 것처럼 보인다.
+        Vector2 side = new Vector2(-delta.y, delta.x).normalized;
+        if (side.y < 0f) side = -side;
+        Vector2 control = (from + to) * 0.5f + side * (delta.magnitude * _arcBend);
+        // 가는 쪽으로 몸을 기울인다. 돌아올 때는 흔들렸다 선다.
+        float lean = -Mathf.Sign(delta.x) * tilt;
+
+        Sequence sequence = DOTween.Sequence();
+        sequence.Join(DOVirtual.Float(0f, 1f, duration, t =>
+        {
+            float u = 1f - t;
+            rect.anchoredPosition = u * u * from + 2f * u * t * control + t * t * to;
+            float angle = wobble ? lean * Mathf.Sin(Mathf.PI * t) : lean * (1f - t);
+            rect.localRotation = Quaternion.Euler(0f, 0f, angle);
+        }).SetEase(positionEase));
+        sequence.Join(rect.DOScale(targetScale, duration).SetEase(scaleEase, 1.2f));
+        sequence.OnComplete(onComplete);
+        return sequence;
+    }
+
+    // 도착한 학자가 통통 튄다. 대화창이 나타나는 것과 같은 순간에 시작한다.
+    private void PlayLanding()
+    {
+        _landingTween?.Kill();
+        if (_landingPunch <= 0f) return;
+
+        _landingTween = _scholarImage.rectTransform
+            .DOPunchScale(Vector3.one * _landingPunch, 0.35f, 6, 0.6f);
+    }
+
+    private void PlayDialogueIn()
+    {
+        _dialogueTween?.Kill();
+        _dialogueTween = DOTween.Sequence()
+            .Join(_dialogueGroup.DOFade(1f, 0.2f))
+            .Join(_dialogueGroup.transform
+                .DOScale(_dialogueBaseScale, 0.35f)
+                .SetEase(Ease.OutBack));
+    }
+
+    // 메뉴 버튼이 위에서부터 차례로 튀어나온다.
+    private void PlayMenuEntrance()
+    {
+        int order = 0;
+        foreach (Button button in MenuButtons())
+        {
+            if (!button.gameObject.activeSelf) continue;
+
+            Transform target = button.transform;
+            Vector3 baseScale = _buttonBaseScales.TryGetValue(target, out Vector3 stored) ? stored : Vector3.one;
+            target.DOKill();
+            target.localScale = baseScale * 0.5f;
+            target.DOScale(baseScale, 0.35f)
+                .SetEase(Ease.OutBack)
+                .SetDelay(order * 0.06f);
+            order++;
+        }
+    }
+
+    private void ResetPanels()
+    {
+        // 씬이 내려가는 중에는 화면 오브젝트가 이미 파괴됐을 수 있다.
+        if (_menuRoot == null || _detailRoot == null) return;
+
+        _swapTween?.Kill();
+        _swapTween = null;
+        _isSwapping = false;
+        _menuRoot.transform.localScale = _menuBaseScale;
+        _detailRoot.transform.localScale = _detailBaseScale;
+        ResetGroup(_menuGroup);
+        ResetGroup(_detailGroup);
+        foreach (Button button in MenuButtons())
+        {
+            if (button == null) continue;
+
+            button.transform.DOKill();
+            if (_buttonBaseScales.TryGetValue(button.transform, out Vector3 baseScale))
+            {
+                button.transform.localScale = baseScale;
+            }
+        }
+    }
+
+    private static void ResetGroup(CanvasGroup group)
+    {
+        if (group == null) return;
+
+        group.alpha = 1f;
+        group.interactable = true;
     }
 
     public void Close()
@@ -152,16 +309,35 @@ public sealed class ScholarGuideUI : MonoBehaviour
         _dialogueGroup.interactable = false;
         _dialogueGroup.blocksRaycasts = false;
         RestorePresentation(animated: true);
+        _swapTween?.Kill();
+        _isSwapping = false;
+        _landingTween?.Kill();
+        _scholarImage.rectTransform.localScale = Vector3.one * _centerScale;
+
+        // 대화창은 살짝 움츠러들며 사라지고, 학자는 그동안 곡선을 그리며 제자리로 돌아간다.
         _dialogueTween?.Kill();
         _dialogueTween = DOTween.Sequence()
             .Join(_dialogueGroup.DOFade(0f, 0.2f))
-            .Join(_portraitBackgroundGroup.DOFade(0f, 0.2f));
+            .Join(_dialogueGroup.transform
+                .DOScale(_dialogueBaseScale * 0.88f, 0.22f)
+                .SetEase(Ease.InBack))
+            .Join(_portraitBackgroundGroup.DOFade(0f, 0.3f));
         _scholarTween?.Kill();
-        _scholarTween = DOTween.Sequence()
-            .Join(_scholarImage.rectTransform.DOAnchorPos(_sourcePosition, _moveDuration))
-            .Join(_scholarImage.rectTransform.DOScale(Vector3.one, _moveDuration))
-            .SetEase(Ease.InOutQuad)
-            .OnComplete(() => Cleanup(animated: true, notify: true));
+        _scholarTween = FlyScholar(
+            GetLocalPositionOfScholar(),
+            _sourcePosition,
+            1f,
+            _returnDuration,
+            Ease.InOutCubic,
+            Ease.InOutBack,
+            _returnTilt,
+            wobble: true,
+            () => Cleanup(animated: true, notify: true));
+    }
+
+    private Vector2 GetLocalPositionOfScholar()
+    {
+        return _scholarImage.rectTransform.anchoredPosition;
     }
 
     public void ShowProbability()
@@ -204,11 +380,10 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
     public void ShowMenu()
     {
-        if (!_isOpen || _isTransitioning) return;
+        if (!_isOpen || _isTransitioning || _isSwapping) return;
 
         RefreshMenuAvailability();
-        _detailRoot.SetActive(false);
-        _menuRoot.SetActive(true);
+        SwapPanels(_detailRoot, _detailGroup, _detailBaseScale, _menuRoot, _menuGroup, _menuBaseScale, menuEntrance: true);
     }
 
     private void RefreshMenuAvailability()
@@ -218,14 +393,68 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
     private void ShowDetail()
     {
-        _menuRoot.SetActive(false);
-        _detailRoot.SetActive(true);
+        if (_isSwapping) return;
+
+        SwapPanels(_menuRoot, _menuGroup, _menuBaseScale, _detailRoot, _detailGroup, _detailBaseScale, menuEntrance: false);
         _detailPanel.SetAsLastSibling();
+    }
+
+    // 나가는 쪽이 살짝 줄며 빠르게 사라지고, 들어오는 쪽이 작은 크기에서 통통 튀며 나타난다.
+    // 연출 중에는 두 쪽 모두 입력을 받지 않아 버튼을 연달아 눌러도 꼬이지 않는다.
+    private void SwapPanels(
+        GameObject from,
+        CanvasGroup fromGroup,
+        Vector3 fromScale,
+        GameObject to,
+        CanvasGroup toGroup,
+        Vector3 toScale,
+        bool menuEntrance)
+    {
+        _swapTween?.Kill();
+        if (fromGroup == null || toGroup == null)
+        {
+            from.SetActive(false);
+            to.SetActive(true);
+            if (menuEntrance) PlayMenuEntrance();
+            return;
+        }
+
+        _isSwapping = true;
+        fromGroup.interactable = false;
+        Transform fromTransform = from.transform;
+        Transform toTransform = to.transform;
+        Sequence sequence = DOTween.Sequence();
+        sequence.Append(fromGroup.DOFade(0f, 0.12f).SetEase(Ease.InQuad));
+        sequence.Join(fromTransform.DOScale(fromScale * 0.92f, 0.12f).SetEase(Ease.InQuad));
+        sequence.AppendCallback(() =>
+        {
+            from.SetActive(false);
+            fromGroup.alpha = 1f;
+            fromGroup.interactable = true;
+            fromTransform.localScale = fromScale;
+
+            to.SetActive(true);
+            toGroup.alpha = 0f;
+            toGroup.interactable = false;
+            toTransform.localScale = toScale * 0.85f;
+            if (menuEntrance) PlayMenuEntrance();
+        });
+        sequence.Append(toGroup.DOFade(1f, 0.15f));
+        sequence.Join(toTransform.DOScale(toScale, 0.3f).SetEase(Ease.OutBack));
+        sequence.OnComplete(() =>
+        {
+            toGroup.interactable = true;
+            _isSwapping = false;
+            _swapTween = null;
+        });
+        _swapTween = sequence;
     }
 
     private bool TryHandleBack()
     {
         if (!_isOpen) return false;
+        // 패널이 바뀌는 중에는 뒤로가기를 소비만 하고 아무것도 하지 않는다.
+        if (_isSwapping) return true;
 
         if (_detailRoot.activeSelf)
         {
@@ -241,6 +470,7 @@ public sealed class ScholarGuideUI : MonoBehaviour
 
     private void PrepareScholarImage()
     {
+        _scholarImage.rectTransform.localRotation = Quaternion.identity;
         _scholarImage.sprite = _sourceImage.sprite;
         _scholarImage.overrideSprite = _sourceImage.overrideSprite;
         _scholarImage.color = _sourceImage.color;
@@ -265,8 +495,11 @@ public sealed class ScholarGuideUI : MonoBehaviour
     {
         _scholarTween?.Kill();
         _scholarTween = null;
+        _landingTween?.Kill();
+        _landingTween = null;
         _dialogueTween?.Kill();
         _dialogueTween = null;
+        ResetPanels();
 
         if (!_isOpen && !_isTransitioning) return;
 
