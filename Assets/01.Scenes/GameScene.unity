@@ -1006,6 +1006,7 @@ GameObject:
   - component: {fileID: 59229553}
   - component: {fileID: 59229555}
   - component: {fileID: 59229554}
+  - component: {fileID: 59229556}
   m_Layer: 5
   m_Name: ElapsedTimeText
   m_TagString: Untagged
@@ -1132,6 +1133,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 59229552}
   m_CullTransparentMesh: 1
+--- !u!225 &59229556
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 59229552}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &59771882
 GameObject:
   m_ObjectHideFlags: 0
@@ -8630,7 +8643,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 723c00b0b4195814f99e5bf4e7985bfb, type: 3}
   _pointTarget: {fileID: 734613838}
   _ticketTarget: {fileID: 1291526711}
-  _flySpawnInterval: 0.04
+  _flySpawnInterval: 0.016
   _scatterDuration: 0.18
   _scatterDistance: {x: 150, y: 100}
   _flyDuration: 0.65
@@ -8638,6 +8651,17 @@ MonoBehaviour:
   _fadeDuration: 0.5
   _punchDuration: 0.35
   _canvasGroup: {fileID: 2099600002}
+  _popupMotion: {fileID: 2099600004}
+  _revealItems:
+  - {fileID: 1920909410}
+  - {fileID: 59229553}
+  - {fileID: 2123721246}
+  - {fileID: 888259153}
+  _revealStartDelay: 0.15
+  _revealInterval: 0.1
+  _revealDuration: 0.35
+  _revealStartScale: 0.6
+  _flyArc: 0.3
 --- !u!1 &551388352
 GameObject:
   m_ObjectHideFlags: 0
@@ -14666,6 +14690,7 @@ GameObject:
   - component: {fileID: 888259155}
   - component: {fileID: 888259154}
   - component: {fileID: 888259157}
+  - component: {fileID: 888259158}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -14792,6 +14817,18 @@ MonoBehaviour:
   _pressDuration: 0.06
   _releaseDuration: 0.3
   _overshoot: 2.5
+--- !u!225 &888259158
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888259152}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &890627647
 GameObject:
   m_ObjectHideFlags: 0
@@ -25759,6 +25796,7 @@ GameObject:
   - component: {fileID: 1218932543}
   - component: {fileID: 1218932542}
   - component: {fileID: 2099600002}
+  - component: {fileID: 2099600004}
   m_Layer: 5
   m_Name: PopupPanel
   m_TagString: Untagged
@@ -36681,6 +36719,7 @@ GameObject:
   - component: {fileID: 1920909410}
   - component: {fileID: 1920909412}
   - component: {fileID: 1920909411}
+  - component: {fileID: 1920909413}
   m_Layer: 5
   m_Name: TitleText
   m_TagString: Untagged
@@ -36807,6 +36846,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1920909409}
   m_CullTransparentMesh: 1
+--- !u!225 &1920909413
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1920909409}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1922949908
 GameObject:
   m_ObjectHideFlags: 0
@@ -40812,6 +40863,25 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &2099600004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1218932540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1445de0492d56654f8d8001afda6bbda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PopupMotion
+  _panel: {fileID: 1218932541}
+  _group: {fileID: 2099600002}
+  _openStartScale: 0.7
+  _openDuration: 0.3
+  _overshoot: 1.7
+  _closeEndScale: 0.7
+  _closeDuration: 0.25
 --- !u!1 &2101000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -41736,6 +41806,7 @@ GameObject:
   - component: {fileID: 2123721246}
   - component: {fileID: 2123721248}
   - component: {fileID: 2123721247}
+  - component: {fileID: 2123721249}
   m_Layer: 5
   m_Name: RewardText
   m_TagString: Untagged
@@ -41862,6 +41933,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2123721245}
   m_CullTransparentMesh: 1
+--- !u!225 &2123721249
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2123721245}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!114 &2130228844
 MonoBehaviour:
   m_ObjectHideFlags: 0

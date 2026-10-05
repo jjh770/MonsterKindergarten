@@ -367,6 +367,14 @@ public class LoginScene : MonoBehaviour
     // 이음매가 보이지 않으므로 두 배경색을 맞춰 둔다.
     private async UniTask EnterGameScene()
     {
+        // 누른 반응이 끝나기 전에 화면이 바뀌면 효과가 도중에 끊긴다. 로고가 떠오르며 사라지는 동안
+        // 먼저 기다리다가, 거의 사라질 때 덮기 시작해 두 연출이 겹쳐 이어지게 한다.
+        if (_effects != null)
+        {
+            float exitSeconds = _effects.PlayExit();
+            await UniTask.Delay(TimeSpan.FromSeconds(exitSeconds * 0.7f));
+        }
+
         if (_curtain != null) await _curtain.CoverAsync();
 
         SceneManagerEx.Instance.LoadGameScene();

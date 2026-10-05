@@ -43,6 +43,11 @@ public sealed class LoginSceneEffects : MonoBehaviour
     [Tooltip("떠오르는 높이 범위입니다(캔버스 단위).")]
     [SerializeField] private Vector2 _sparkleRise = new Vector2(220f, 520f);
 
+    [Header("Exit")]
+    [Tooltip("게임으로 넘어가기 전에 로고가 위로 사라지는 데 걸리는 시간입니다. 장면 전환은 이 시간의 일부가 지나면 시작합니다.")]
+    [SerializeField, Min(0.1f)] private float _exitSeconds = 0.6f;
+    [SerializeField] private float _exitRise = 220f;
+
     [Header("Press")]
     [SerializeField, Min(1f)] private float _pressTitleScale = 1.1f;
     [SerializeField, Min(0.1f)] private float _pressRingScale = 4.5f;
@@ -142,6 +147,38 @@ public sealed class LoginSceneEffects : MonoBehaviour
     private Vector3 GetTitleCenter()
     {
         return _title.TransformPoint(_title.rect.center);
+    }
+
+    // 게임 씬으로 넘어가기 전의 퇴장이다. 문구가 지워지고, 별이 사라지고, 로고가 한 번 부풀었다가
+    // 위로 떠오르며 사라진다. 이어서 화면을 덮으면 누른 반응에서 곧바로 장면 전환으로 이어진다.
+    // 연출이 끝나는 시간을 돌려준다.
+    public float PlayExit()
+    {
+        if (!_isReady) return 0f;
+
+        _labelPulse?.PlayExit(_exitSeconds * 0.5f);
+
+        foreach (Image piece in _sparkles)
+        {
+            piece.DOFade(0f, _exitSeconds * 0.5f);
+        }
+
+        _titleTween?.Kill();
+        Image titleImage = _title.GetComponent<Image>();
+        Sequence exit = DOTween.Sequence();
+        exit.Append(_title
+            .DOScale(Scale(1.07f, 1.07f), 0.15f)
+            .SetEase(Ease.OutQuad));
+        exit.Insert(0.1f, _title
+            .DOAnchorPosY(_title.anchoredPosition.y + _exitRise, _exitSeconds - 0.1f)
+            .SetEase(Ease.InQuad));
+        if (titleImage != null)
+        {
+            exit.Insert(_exitSeconds * 0.35f, titleImage.DOFade(0f, _exitSeconds * 0.65f));
+        }
+
+        _titleTween = exit;
+        return _exitSeconds;
     }
 
     private Vector3 Scale(float x, float y)

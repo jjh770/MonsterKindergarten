@@ -31,8 +31,25 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private float _punchDuration = 0.35f;
     [SerializeField] private CanvasGroup _canvasGroup;
 
+    [Header("Open Motion")]
+    [Tooltip("팝업 본체가 열리고 닫힐 때의 크기 연출입니다. 비우면 예전처럼 살짝 부풀기만 합니다.")]
+    [SerializeField] private PopupMotion _popupMotion;
+    [Tooltip("코인이 다 도착한 뒤 본체가 움츠러들어 사라지는 데 걸리는 시간입니다. PopupMotion의 Close Duration과 맞춥니다.")]
+    [SerializeField, Min(0.05f)] private float _popupMotionCloseSeconds = 0.25f;
+    [Tooltip("위에서부터 차례로 나타날 내용입니다(제목, 시간, 보상, 버튼). 각 항목에 CanvasGroup이 있어야 투명도가 움직입니다.")]
+    [SerializeField] private RectTransform[] _revealItems;
+    [SerializeField, Min(0f)] private float _revealStartDelay = 0.15f;
+    [SerializeField, Min(0f)] private float _revealInterval = 0.1f;
+    [SerializeField, Min(0.05f)] private float _revealDuration = 0.35f;
+    [SerializeField, Range(0.3f, 1f)] private float _revealStartScale = 0.6f;
+
+    [Header("Fly Path")]
+    [Tooltip("코인이 목표로 날아갈 때 옆으로 휘는 정도입니다. 이동 거리에 대한 비율이고 0이면 직선입니다.")]
+    [SerializeField, Range(0f, 0.6f)] private float _flyArc = 0.3f;
+
     private Sequence _currentSequence;
     private readonly List<RectTransform> _flyingVisuals = new();
+    private Vector3[] _revealBaseScales;
 
     private void Awake()
     {
@@ -45,6 +62,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
             return;
         }
 
+        CaptureRevealScales();
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
         _confirmButton?.onClick.AddListener(OnConfirmClicked);
@@ -95,7 +113,12 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(1f, _fadeDuration));
 
-        if (_popupRectTransform != null)
+        if (_popupMotion != null)
+        {
+            // 본체는 작은 크기에서 튀어 오르며 나타난다.
+            _currentSequence.Join(_popupMotion.PlayOpen());
+        }
+        else if (_popupRectTransform != null)
         {
             _currentSequence.Join(
                 _popupRectTransform.DOPunchScale(
@@ -103,6 +126,74 @@ public class OfflineRewardPopupUI : MonoBehaviour
                     _punchDuration,
                     6,
                     0.5f));
+        }
+
+        PlayReveal();
+    }
+
+    private void CaptureRevealScales()
+    {
+        if (_revealItems == null) return;
+
+        _revealBaseScales = new Vector3[_revealItems.Length];
+        for (int i = 0; i < _revealItems.Length; i++)
+        {
+            _revealBaseScales[i] = _revealItems[i] != null
+                ? _revealItems[i].localScale
+                : Vector3.one;
+        }
+    }
+
+    // 내용이 한꺼번에 나오지 않고 읽는 순서대로 하나씩 튀어 오른다.
+    private void PlayReveal()
+    {
+        if (_revealItems == null || _revealBaseScales == null) return;
+
+        for (int i = 0; i < _revealItems.Length; i++)
+        {
+            RectTransform item = _revealItems[i];
+            if (item == null) continue;
+
+            item.DOKill();
+            item.localScale = _revealBaseScales[i] * _revealStartScale;
+
+            CanvasGroup itemGroup = item.GetComponent<CanvasGroup>();
+            float delay = _revealStartDelay + i * _revealInterval;
+
+            _currentSequence.Insert(
+                delay,
+                item.DOScale(_revealBaseScales[i], _revealDuration).SetEase(Ease.OutBack));
+
+            if (itemGroup != null)
+            {
+                itemGroup.DOKill();
+                itemGroup.alpha = 0f;
+                _currentSequence.Insert(
+                    delay,
+                    itemGroup.DOFade(1f, _revealDuration * 0.6f));
+            }
+        }
+    }
+
+    // 받기를 일찍 눌러 등장이 끝나기 전에 끊겨도 내용이 반쯤 투명하게 남지 않게 한다.
+    private void ShowRevealItemsAtOnce()
+    {
+        if (_revealItems == null || _revealBaseScales == null) return;
+
+        for (int i = 0; i < _revealItems.Length; i++)
+        {
+            RectTransform item = _revealItems[i];
+            if (item == null) continue;
+
+            item.DOKill();
+            item.localScale = _revealBaseScales[i];
+
+            CanvasGroup itemGroup = item.GetComponent<CanvasGroup>();
+            if (itemGroup != null)
+            {
+                itemGroup.DOKill();
+                itemGroup.alpha = 1f;
+            }
         }
     }
 
@@ -121,6 +212,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
 
         PlaySound(EAudioSfx.OfflineRewardCollect);
         _currentSequence?.Kill();
+        ShowRevealItemsAtOnce();
 
         if (_confirmButton != null)
         {
@@ -148,8 +240,18 @@ public class OfflineRewardPopupUI : MonoBehaviour
             ECurrencyType.GachaTicket,
             _ticketTarget);
 
-        // 모든 보상 이미지가 도착한 뒤 팝업과 입력 차단 패널을 닫는다.
-        _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+        // 모든 보상 이미지가 도착한 뒤에 팝업을 닫는다. 코인이 날아가는 동안에는 본체가 그대로 있어
+        // 코인이 어디서 나와 어디로 가는지 보이고, 다 도착하면 움츠러들며 사라진다.
+        if (_popupMotion != null)
+        {
+            _currentSequence.AppendCallback(() => _popupMotion.PlayClose());
+            _currentSequence.AppendInterval(_popupMotionCloseSeconds);
+        }
+        else
+        {
+            _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+        }
+
         float duration = _currentSequence.Duration();
         _currentSequence.OnComplete(() =>
         {
@@ -198,6 +300,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
                 randomDirection.y * _scatterDistance.y,
                 0f));
             Vector3 scatterPosition = flyingVisual.position + scatterOffset;
+            Vector3 flyControl = GetFlyControlPoint(scatterPosition, target.position);
 
             float flyDuration = _flyDuration * UnityEngine.Random.Range(0.85f, 1.15f);
             float startDelay = i * Mathf.Max(0f, _flySpawnInterval);
@@ -206,15 +309,32 @@ public class OfflineRewardPopupUI : MonoBehaviour
             flyingSequence.Append(
                 flyingVisual.DOMove(scatterPosition, _scatterDuration)
                     .SetEase(Ease.OutQuad));
+            // 직선이 아니라 옆으로 휘어 날아가 도착하는 모습이 살아 있다.
+            Vector3 flyStart = scatterPosition;
+            Vector3 flyEnd = target.position;
             flyingSequence.Append(
-                flyingVisual.DOMove(target.position, flyDuration)
-                    .SetEase(Ease.InCubic));
+                DOVirtual.Float(0f, 1f, flyDuration, t =>
+                {
+                    float u = 1f - t;
+                    flyingVisual.position =
+                        u * u * flyStart + 2f * u * t * flyControl + t * t * flyEnd;
+                }).SetEase(Ease.InQuad));
             flyingSequence.Insert(
                 _scatterDuration + flyDuration * 0.9f,
                 flyingCanvasGroup.DOFade(0f, flyDuration * 0.1f));
 
             _currentSequence.Insert(startDelay, flyingSequence);
         }
+    }
+
+    // 시작점과 목표 사이의 가운데에서 수직 방향으로 비켜선 점. 코인마다 좌우가 달라 한 줄로 쏠리지 않는다.
+    private Vector3 GetFlyControlPoint(Vector3 from, Vector3 to)
+    {
+        Vector3 delta = to - from;
+        Vector3 perpendicular = new Vector3(-delta.y, delta.x, 0f);
+        float side = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+        float bend = _flyArc * UnityEngine.Random.Range(0.6f, 1.2f);
+        return (from + to) * 0.5f + perpendicular * (bend * side);
     }
 
     private static int GetFlyVisualCount(TimeSpan elapsedTime)
@@ -285,6 +405,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
     {
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+        _popupMotion?.PlayClose();
         float duration = _currentSequence.Duration();
         _currentSequence.OnComplete(() =>
         {

@@ -1105,6 +1105,8 @@ MonoBehaviour:
   _sparkleSize: {x: 22, y: 48}
   _sparkleLife: {x: 2.4, y: 4.2}
   _sparkleRise: {x: 220, y: 520}
+  _exitSeconds: 0.6
+  _exitRise: 220
   _pressTitleScale: 1.1
   _pressRingScale: 4.5
   _pressRingSeconds: 0.7
@@ -1803,10 +1805,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 3652952337439700843, guid: 506e6c05478550744ac98064bc588319, type: 3}
-      propertyPath: _fadeDuration
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 3652952337439700843, guid: 506e6c05478550744ac98064bc588319, type: 3}
       propertyPath: _startCovered
       value: 1
       objectReference: {fileID: 0}
@@ -1820,7 +1818,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5610970295948341858, guid: 506e6c05478550744ac98064bc588319, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7344520133805137567, guid: 506e6c05478550744ac98064bc588319, type: 3}
       propertyPath: m_Pivot.x
@@ -1906,7 +1904,8 @@ PrefabInstance:
       propertyPath: m_IgnoreParentGroups
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4703356804736463834, guid: 506e6c05478550744ac98064bc588319, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

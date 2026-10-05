@@ -18,7 +18,7 @@ public sealed class FadeCurtainUI : MonoBehaviour
     [Tooltip("화면을 덮는 패널입니다.")]
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField, Min(0f)] private float _fadeDuration = 0.3f;
+    [SerializeField, Min(0f)] private float _fadeDuration = 0.5f;
 
     // 덮인 뒤 이만큼은 유지한다.
     //
@@ -171,8 +171,9 @@ public sealed class FadeCurtainUI : MonoBehaviour
             if (_canvasGroup == null || _fadeGeneration != generation) return false;
 
             elapsed += Time.unscaledDeltaTime;
+            // 선형이면 시작과 끝이 딱딱해 장면이 툭 바뀐 것처럼 느껴진다. 부드럽게 시작하고 끝낸다.
             _canvasGroup.alpha = Mathf.Lerp(
-                start, target, Mathf.Clamp01(elapsed / duration));
+                start, target, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration)));
             await UniTask.Yield();
         }
 

@@ -37,6 +37,8 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
     private Color _baseColor;
     private float _enabledAt;
     private float _pressedAt = -999f;
+    private float _exitAt = float.MaxValue;
+    private float _exitSeconds = 0.3f;
 
     private void Awake()
     {
@@ -54,25 +56,31 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
         _pressedAt = Time.unscaledTime;
     }
 
+    // 화면을 떠날 때 문구를 서서히 지운다.
+    public void PlayExit(float seconds)
+    {
+        _exitAt = Time.unscaledTime;
+        _exitSeconds = Mathf.Max(0.01f, seconds);
+    }
+
     private void OnEnable()
     {
         _enabledAt = Time.unscaledTime;
+        _exitAt = float.MaxValue;
         // 지연 동안 기본 모습이 한 프레임 비치지 않게 바로 시작 상태로 둔다.
         Apply(0f, 0f);
     }
 
     private void Update()
     {
-        if (_button != null && !_button.interactable)
-        {
-            RestoreBasePresentation();
-            return;
-        }
+        // 로그인 중에는 버튼이 눌리지 않지만, 누름 반응과 퇴장은 그 동안에도 보여야 한다.
+        // 깜박임만 멈추고 나머지는 그대로 계산한다.
+        bool isPulsing = _button == null || _button.interactable;
 
         float enter = Mathf.Clamp01((Time.unscaledTime - _enabledAt - _enterDelay) / _enterSeconds);
         float phase = Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f / _cycleSeconds) * 0.5f + 0.5f;
         // 등장이 끝나기 전에는 깜박임을 약하게 섞어 이음매가 튀지 않게 한다.
-        Apply(enter, enter, phase);
+        Apply(enter, isPulsing ? enter : 0f, phase);
     }
 
     private void Apply(float enter, float pulseWeight, float phase = 0f)
@@ -85,6 +93,7 @@ public sealed class LoginButtonTextPulse : MonoBehaviour
         float pressScale = Mathf.Lerp(_pressScale, 1f, EaseOutCubic(press));
         float scale = Mathf.LerpUnclamped(_enterStartScale, 1f, eased) * pulseScale * pressScale;
         float alpha = Mathf.Clamp01(enter * 2f) * Mathf.Lerp(1f, Mathf.Lerp(_minimumAlpha, 1f, phase), pulseWeight);
+        alpha *= 1f - Mathf.Clamp01((Time.unscaledTime - _exitAt) / _exitSeconds);
 
         transform.localScale = _baseScale * scale;
         _rect.anchoredPosition = _basePosition + new Vector2(0f, -_enterRise * rise);
