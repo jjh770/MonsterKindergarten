@@ -94,6 +94,8 @@ MonoBehaviour:
   _nextButton: {fileID: 140005}
   _bottomPanelPosition: {x: 0, y: 270}
   _topPanelPosition: {x: 0, y: -270}
+  _spotlightGap: 56
+  _screenMargin: 24
 --- !u!1 &120001
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,6 +324,7 @@ GameObject:
   - component: {fileID: 140004}
   - component: {fileID: 140005}
   - component: {fileID: 750525220597423441}
+  - component: {fileID: 3544102866711293557}
   m_Layer: 5
   m_Name: NextButton
   m_TagString: Untagged
@@ -444,6 +447,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &3544102866711293557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 140001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &150001
 GameObject:
   m_ObjectHideFlags: 0

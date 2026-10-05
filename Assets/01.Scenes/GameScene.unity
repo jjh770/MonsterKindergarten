@@ -4127,6 +4127,7 @@ GameObject:
   - component: {fileID: 265287999}
   - component: {fileID: 265287998}
   - component: {fileID: 265287997}
+  - component: {fileID: 265288001}
   m_Layer: 5
   m_Name: ThemesTab
   m_TagString: Untagged
@@ -4249,6 +4250,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265287995}
   m_CullTransparentMesh: 1
+--- !u!114 &265288001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265287995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &271202105
 GameObject:
   m_ObjectHideFlags: 0
@@ -4469,6 +4486,7 @@ GameObject:
   - component: {fileID: 277893843}
   - component: {fileID: 277893842}
   - component: {fileID: 277893845}
+  - component: {fileID: 277893846}
   m_Layer: 5
   m_Name: SpaceThemeButton
   m_TagString: Untagged
@@ -4592,6 +4610,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &277893846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 277893840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &282534615
 GameObject:
   m_ObjectHideFlags: 0
@@ -4751,6 +4785,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 289706092}
   m_CullTransparentMesh: 1
+--- !u!114 &289824637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &307243430
 GameObject:
   m_ObjectHideFlags: 0
@@ -5375,6 +5425,22 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &348945855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &354876652
 GameObject:
   m_ObjectHideFlags: 0
@@ -5875,6 +5941,7 @@ GameObject:
   - component: {fileID: 372814107}
   - component: {fileID: 372814109}
   - component: {fileID: 372814110}
+  - component: {fileID: 372814111}
   m_Layer: 0
   m_Name: BumperButton
   m_TagString: Untagged
@@ -5998,6 +6065,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &372814111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372814105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &374569367
 GameObject:
   m_ObjectHideFlags: 0
@@ -7999,6 +8082,7 @@ GameObject:
   - component: {fileID: 535994524}
   - component: {fileID: 535994523}
   - component: {fileID: 535994522}
+  - component: {fileID: 535994526}
   m_Layer: 5
   m_Name: FrameRateButton
   m_TagString: Untagged
@@ -8121,6 +8205,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 535994520}
   m_CullTransparentMesh: 1
+--- !u!114 &535994526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 535994520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &544447736
 GameObject:
   m_ObjectHideFlags: 0
@@ -9312,6 +9412,7 @@ GameObject:
   - component: {fileID: 606430598}
   - component: {fileID: 606430597}
   - component: {fileID: 606430600}
+  - component: {fileID: 606430601}
   m_Layer: 5
   m_Name: GroundThemeButton
   m_TagString: Untagged
@@ -9435,6 +9536,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &606430601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606430595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &610738555
 GameObject:
   m_ObjectHideFlags: 0
@@ -9744,6 +9861,7 @@ GameObject:
   - component: {fileID: 633652555}
   - component: {fileID: 633652554}
   - component: {fileID: 633652553}
+  - component: {fileID: 633652557}
   m_Layer: 5
   m_Name: ObjectsTab
   m_TagString: Untagged
@@ -9866,6 +9984,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 633652551}
   m_CullTransparentMesh: 1
+--- !u!114 &633652557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633652551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &637135212
 GameObject:
   m_ObjectHideFlags: 0
@@ -10733,6 +10867,7 @@ GameObject:
   - component: {fileID: 683023414}
   - component: {fileID: 683023413}
   - component: {fileID: 683023412}
+  - component: {fileID: 683023416}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -10855,6 +10990,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 683023410}
   m_CullTransparentMesh: 1
+--- !u!114 &683023416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 683023410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &688391450
 GameObject:
   m_ObjectHideFlags: 0
@@ -12151,6 +12302,7 @@ GameObject:
   - component: {fileID: 767234364}
   - component: {fileID: 767234363}
   - component: {fileID: 767234366}
+  - component: {fileID: 767234367}
   m_Layer: 5
   m_Name: CollectionButton
   m_TagString: Untagged
@@ -12274,6 +12426,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &767234367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 767234361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &768223075
 GameObject:
   m_ObjectHideFlags: 0
@@ -12627,6 +12795,7 @@ GameObject:
   - component: {fileID: 781742367}
   - component: {fileID: 781742369}
   - component: {fileID: 781742370}
+  - component: {fileID: 781742371}
   m_Layer: 0
   m_Name: CannonButton
   m_TagString: Untagged
@@ -12750,6 +12919,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &781742371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 781742365}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &789961964
 GameObject:
   m_ObjectHideFlags: 0
@@ -13436,6 +13621,7 @@ GameObject:
   - component: {fileID: 859280893}
   - component: {fileID: 859280892}
   - component: {fileID: 859280891}
+  - component: {fileID: 859280895}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -13558,6 +13744,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 859280889}
   m_CullTransparentMesh: 1
+--- !u!114 &859280895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859280889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &863468874
 GameObject:
   m_ObjectHideFlags: 0
@@ -13821,6 +14023,7 @@ GameObject:
   - component: {fileID: 867482915}
   - component: {fileID: 867482914}
   - component: {fileID: 867482917}
+  - component: {fileID: 867482918}
   m_Layer: 5
   m_Name: SkyThemeButton
   m_TagString: Untagged
@@ -13944,6 +14147,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &867482918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 867482912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &871705298
 GameObject:
   m_ObjectHideFlags: 0
@@ -14217,6 +14436,7 @@ GameObject:
   - component: {fileID: 888259156}
   - component: {fileID: 888259155}
   - component: {fileID: 888259154}
+  - component: {fileID: 888259157}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -14327,6 +14547,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 888259152}
   m_CullTransparentMesh: 1
+--- !u!114 &888259157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 888259152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &890627647
 GameObject:
   m_ObjectHideFlags: 0
@@ -16358,6 +16594,7 @@ GameObject:
   - component: {fileID: 975735618}
   - component: {fileID: 975735617}
   - component: {fileID: 975735621}
+  - component: {fileID: 975735622}
   m_Layer: 5
   m_Name: TicketCollectButtonUI
   m_TagString: Untagged
@@ -16494,6 +16731,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &975735622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 975735615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!114 &990000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16535,6 +16788,7 @@ GameObject:
   - component: {fileID: 990000104}
   - component: {fileID: 990000105}
   - component: {fileID: 990000106}
+  - component: {fileID: 990000107}
   m_Layer: 5
   m_Name: SpaceToggleButton
   m_TagString: Untagged
@@ -16658,6 +16912,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &990000107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990000101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &990000111
 GameObject:
   m_ObjectHideFlags: 0
@@ -17487,6 +17757,7 @@ GameObject:
   - component: {fileID: 993100104}
   - component: {fileID: 993100105}
   - component: {fileID: 993100106}
+  - component: {fileID: 993100107}
   m_Layer: 5
   m_Name: SendToDisplayRoomButton
   m_TagString: Untagged
@@ -17610,6 +17881,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &993100107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993100101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &993100111
 GameObject:
   m_ObjectHideFlags: 0
@@ -17994,6 +18281,7 @@ GameObject:
   - component: {fileID: 993100504}
   - component: {fileID: 993100505}
   - component: {fileID: 993100506}
+  - component: {fileID: 993100507}
   m_Layer: 5
   m_Name: CancelSendModeButton
   m_TagString: Untagged
@@ -18116,6 +18404,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &993100507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993100501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &993100511
 GameObject:
   m_ObjectHideFlags: 0
@@ -18956,6 +19260,7 @@ GameObject:
   - component: {fileID: 995200404}
   - component: {fileID: 995200405}
   - component: {fileID: 995200406}
+  - component: {fileID: 995200407}
   m_Layer: 5
   m_Name: TakeOutButton
   m_TagString: Untagged
@@ -19078,6 +19383,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &995200407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995200401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &995200411
 GameObject:
   m_ObjectHideFlags: 0
@@ -19228,6 +19549,7 @@ GameObject:
   - component: {fileID: 995200504}
   - component: {fileID: 995200505}
   - component: {fileID: 995200506}
+  - component: {fileID: 995200507}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -19350,6 +19672,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &995200507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995200501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &995200511
 GameObject:
   m_ObjectHideFlags: 0
@@ -19575,6 +19913,7 @@ GameObject:
   - component: {fileID: 995200704}
   - component: {fileID: 995200705}
   - component: {fileID: 995200706}
+  - component: {fileID: 995200707}
   m_Layer: 5
   m_Name: ObserveButton
   m_TagString: Untagged
@@ -19697,6 +20036,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &995200707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 995200701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &995200711
 GameObject:
   m_ObjectHideFlags: 0
@@ -20149,6 +20504,7 @@ GameObject:
   - component: {fileID: 998200104}
   - component: {fileID: 998200105}
   - component: {fileID: 998200106}
+  - component: {fileID: 998200107}
   m_Layer: 5
   m_Name: BottomPanelSwitchButton
   m_TagString: Untagged
@@ -20271,6 +20627,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &998200107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998200101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &998200201
 GameObject:
   m_ObjectHideFlags: 0
@@ -21973,6 +22345,7 @@ GameObject:
   - component: {fileID: 1090733244}
   - component: {fileID: 1090733243}
   - component: {fileID: 1090733247}
+  - component: {fileID: 1090733248}
   m_Layer: 5
   m_Name: CollectionBonusButton
   m_TagString: Untagged
@@ -22096,6 +22469,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1090733248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090733242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1094182088
 GameObject:
   m_ObjectHideFlags: 0
@@ -22880,6 +23269,7 @@ GameObject:
   - component: {fileID: 1134167831}
   - component: {fileID: 2099300002}
   - component: {fileID: 2099300003}
+  - component: {fileID: 2099300004}
   m_Layer: 5
   m_Name: UpgradeButton
   m_TagString: Untagged
@@ -23429,6 +23819,7 @@ GameObject:
   - component: {fileID: 1163591913}
   - component: {fileID: 1163591917}
   - component: {fileID: 1163591918}
+  - component: {fileID: 1163591919}
   m_Layer: 5
   m_Name: AutoSpawnToggleUI
   m_TagString: Untagged
@@ -23592,6 +23983,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1163591919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1163591911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1177413975
 GameObject:
   m_ObjectHideFlags: 0
@@ -25110,6 +25517,7 @@ GameObject:
   - component: {fileID: 1225446717}
   - component: {fileID: 1225446716}
   - component: {fileID: 1225446715}
+  - component: {fileID: 1225446719}
   m_Layer: 0
   m_Name: GachaProbabilityButton
   m_TagString: Untagged
@@ -25232,6 +25640,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1225446713}
   m_CullTransparentMesh: 1
+--- !u!114 &1225446719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1225446713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1228513111
 GameObject:
   m_ObjectHideFlags: 0
@@ -25320,6 +25744,7 @@ GameObject:
   - component: {fileID: 1237220779}
   - component: {fileID: 1237220778}
   - component: {fileID: 1237220781}
+  - component: {fileID: 1237220782}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -25442,6 +25867,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1237220782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237220776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1237951048
 GameObject:
   m_ObjectHideFlags: 0
@@ -26467,6 +26908,7 @@ GameObject:
   - component: {fileID: 1300541599}
   - component: {fileID: 1300541598}
   - component: {fileID: 1300541597}
+  - component: {fileID: 1300541601}
   m_Layer: 5
   m_Name: StatisticsButton
   m_TagString: Untagged
@@ -26589,6 +27031,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1300541595}
   m_CullTransparentMesh: 1
+--- !u!114 &1300541601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1300541595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1309308789
 GameObject:
   m_ObjectHideFlags: 0
@@ -27702,6 +28160,7 @@ GameObject:
   - component: {fileID: 1380768086}
   - component: {fileID: 1380768085}
   - component: {fileID: 1380768088}
+  - component: {fileID: 1380768089}
   m_Layer: 5
   m_Name: ContentRoot
   m_TagString: Untagged
@@ -27824,6 +28283,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1380768089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1380768083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1390630011
 GameObject:
   m_ObjectHideFlags: 0
@@ -29198,6 +29673,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1492005384}
   m_CullTransparentMesh: 1
+--- !u!114 &1512120377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1518208327
 GameObject:
   m_ObjectHideFlags: 0
@@ -29549,6 +30040,7 @@ GameObject:
   - component: {fileID: 1527574477}
   - component: {fileID: 1527574476}
   - component: {fileID: 1527574479}
+  - component: {fileID: 1527574480}
   m_Layer: 0
   m_Name: BackButton
   m_TagString: Untagged
@@ -29671,6 +30163,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1527574480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1527574474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1535383006
 GameObject:
   m_ObjectHideFlags: 0
@@ -29834,6 +30342,7 @@ GameObject:
   - component: {fileID: 1536552637}
   - component: {fileID: 1536552636}
   - component: {fileID: 1536552639}
+  - component: {fileID: 1536552640}
   m_Layer: 0
   m_Name: SystemUpgradeStatusButton
   m_TagString: Untagged
@@ -29956,6 +30465,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1536552640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1536552634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1541946066
 GameObject:
   m_ObjectHideFlags: 0
@@ -30408,6 +30933,7 @@ GameObject:
   - component: {fileID: 1559864952}
   - component: {fileID: 1559864951}
   - component: {fileID: 1559864954}
+  - component: {fileID: 1559864955}
   m_Layer: 0
   m_Name: SpawnProbabilityButton
   m_TagString: Untagged
@@ -30530,6 +31056,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1559864955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1559864949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1577494348
 GameObject:
   m_ObjectHideFlags: 0
@@ -33910,6 +34452,7 @@ GameObject:
   - component: {fileID: 1823254063}
   - component: {fileID: 1823254065}
   - component: {fileID: 1823254066}
+  - component: {fileID: 1823254067}
   m_Layer: 0
   m_Name: RemoveButton
   m_TagString: Untagged
@@ -34032,6 +34575,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1823254067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823254061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1828760524
 GameObject:
   m_ObjectHideFlags: 0
@@ -34899,6 +35458,7 @@ GameObject:
   - component: {fileID: 1872367949}
   - component: {fileID: 1872367948}
   - component: {fileID: 1872367951}
+  - component: {fileID: 1872367952}
   m_Layer: 5
   m_Name: BackgroundThemeButton
   m_TagString: Untagged
@@ -35022,6 +35582,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1872367952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872367946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1874090902
 GameObject:
   m_ObjectHideFlags: 0
@@ -36684,6 +37260,7 @@ GameObject:
   - component: {fileID: 1953315131}
   - component: {fileID: 1953315130}
   - component: {fileID: 1953315133}
+  - component: {fileID: 1953315134}
   m_Layer: 0
   m_Name: CloseButton
   m_TagString: Untagged
@@ -36806,6 +37383,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1953315134
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953315128}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1954789097
 GameObject:
   m_ObjectHideFlags: 0
@@ -36860,6 +37453,7 @@ GameObject:
   - component: {fileID: 1960724442}
   - component: {fileID: 1960724441}
   - component: {fileID: 1960724444}
+  - component: {fileID: 1960724445}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -36982,6 +37576,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1960724445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960724439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1964851706
 GameObject:
   m_ObjectHideFlags: 0
@@ -37164,6 +37774,7 @@ GameObject:
   - component: {fileID: 1977863042}
   - component: {fileID: 1977863041}
   - component: {fileID: 1977863045}
+  - component: {fileID: 1977863046}
   m_Layer: 5
   m_Name: GachaButtonUI
   m_TagString: Untagged
@@ -37301,6 +37912,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1977863046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1977863039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1978108568
 GameObject:
   m_ObjectHideFlags: 0
@@ -39683,6 +40310,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &2099300004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134167829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!114 &2099400001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40264,6 +40907,7 @@ GameObject:
   - component: {fileID: 2112184599}
   - component: {fileID: 2112184598}
   - component: {fileID: 2112184601}
+  - component: {fileID: 2112184602}
   m_Layer: 5
   m_Name: PlaceObjectButton
   m_TagString: Untagged
@@ -40387,6 +41031,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &2112184602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2112184596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &2116618830
 GameObject:
   m_ObjectHideFlags: 0
@@ -40920,6 +41580,7 @@ GameObject:
   - component: {fileID: 2138582013}
   - component: {fileID: 2138582015}
   - component: {fileID: 2138582016}
+  - component: {fileID: 2138582017}
   m_Layer: 0
   m_Name: ExitButton
   m_TagString: Untagged
@@ -41042,6 +41703,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &2138582017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2138582011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &2142497631
 GameObject:
   m_ObjectHideFlags: 0
@@ -41117,6 +41794,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2142497631}
   m_CullTransparentMesh: 1
+--- !u!114 &2143549550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &2201000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -41130,6 +41823,7 @@ GameObject:
   - component: {fileID: 2201000003}
   - component: {fileID: 2201000004}
   - component: {fileID: 2201000005}
+  - component: {fileID: 2201000006}
   m_Layer: 5
   m_Name: OptionsButton
   m_TagString: Untagged
@@ -41251,6 +41945,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &2201000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &2201000009
 GameObject:
   m_ObjectHideFlags: 0
@@ -43016,6 +43726,7 @@ GameObject:
   - component: {fileID: 2201000085}
   - component: {fileID: 2201000086}
   - component: {fileID: 399026579}
+  - component: {fileID: 2143549550}
   m_Layer: 5
   m_Name: ResetProgressButton
   m_TagString: Untagged
@@ -43275,6 +43986,7 @@ GameObject:
   - component: {fileID: 2201000094}
   - component: {fileID: 2201000095}
   - component: {fileID: 126292861}
+  - component: {fileID: 289824637}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -43964,6 +44676,7 @@ GameObject:
   - component: {fileID: 2201000119}
   - component: {fileID: 2201000120}
   - component: {fileID: 2130228844}
+  - component: {fileID: 348945855}
   m_Layer: 5
   m_Name: CancelButton
   m_TagString: Untagged
@@ -44223,6 +44936,7 @@ GameObject:
   - component: {fileID: 2201000128}
   - component: {fileID: 2201000129}
   - component: {fileID: 1656173421}
+  - component: {fileID: 1512120377}
   m_Layer: 5
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -44527,6 +45241,7 @@ GameObject:
   - component: {fileID: 2201000143}
   - component: {fileID: 2201000144}
   - component: {fileID: 2201000149}
+  - component: {fileID: 2201000150}
   m_Layer: 5
   m_Name: DeleteAccountButton
   m_TagString: Untagged
@@ -44786,6 +45501,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &2201000150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201000140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!114 &2212700001
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -319,6 +319,7 @@ GameObject:
   - component: {fileID: 240004}
   - component: {fileID: 240005}
   - component: {fileID: 7483634651918213671}
+  - component: {fileID: 7289046172491076028}
   m_Layer: 5
   m_Name: CancelButton
   m_TagString: Untagged
@@ -441,6 +442,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &7289046172491076028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 240001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &250001
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,6 +608,7 @@ GameObject:
   - component: {fileID: 260004}
   - component: {fileID: 4582416439343548609}
   - component: {fileID: 3043977995469448571}
+  - component: {fileID: 3083398937175868012}
   m_Layer: 5
   m_Name: ExitButton
   m_TagString: Untagged
@@ -713,6 +731,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &3083398937175868012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &270001
 GameObject:
   m_ObjectHideFlags: 0

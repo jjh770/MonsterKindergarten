@@ -459,6 +459,7 @@ GameObject:
   - component: {fileID: 1233}
   - component: {fileID: 1234}
   - component: {fileID: 2811319806829208363}
+  - component: {fileID: 8463488875787823337}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -581,6 +582,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &8463488875787823337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1235
 GameObject:
   m_ObjectHideFlags: 0
@@ -2247,6 +2264,7 @@ GameObject:
   - component: {fileID: 1503}
   - component: {fileID: 1504}
   - component: {fileID: 3448100690549099719}
+  - component: {fileID: 8831887735304707649}
   m_Layer: 5
   m_Name: PreviousButton
   m_TagString: Untagged
@@ -2369,6 +2387,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &8831887735304707649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1510
 GameObject:
   m_ObjectHideFlags: 0
@@ -2519,6 +2553,7 @@ GameObject:
   - component: {fileID: 1533}
   - component: {fileID: 1534}
   - component: {fileID: 6858975508056280651}
+  - component: {fileID: 8685635779908633318}
   m_Layer: 5
   m_Name: NextButton
   m_TagString: Untagged
@@ -2641,6 +2676,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &8685635779908633318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &1540
 GameObject:
   m_ObjectHideFlags: 0
@@ -2756,7 +2807,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures:
+  m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2833,7 +2884,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.09, b: 0.04, a: 1}
@@ -3682,6 +3733,7 @@ GameObject:
   - component: {fileID: 7171543323803347510}
   - component: {fileID: 4039105808089659232}
   - component: {fileID: 4987039860604967454}
+  - component: {fileID: 1506761856527417747}
   m_Layer: 5
   m_Name: EndingReplayButton
   m_TagString: Untagged
@@ -3804,6 +3856,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
   _cue: 0
+--- !u!114 &1506761856527417747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8982788224995339063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1c7ba10f95ab44da4bdf38fe14e86f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonPressFeedback
+  _pressedScale: 0.92
+  _pressDuration: 0.06
+  _releaseDuration: 0.3
+  _overshoot: 2.5
 --- !u!1 &9042179850205199100
 GameObject:
   m_ObjectHideFlags: 0
