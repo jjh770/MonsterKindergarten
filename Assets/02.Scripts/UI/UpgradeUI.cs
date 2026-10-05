@@ -11,6 +11,16 @@ public class UpgradeUI : MonoBehaviour
     [SerializeField] private Button _dismissBackdropButton;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private float _movingDuration = 0.5f;
+    [Header("Motion")]
+    [Tooltip("서랍이 열릴 때의 움직임입니다. OutBack은 열린 자리를 살짝 지나쳤다가 돌아옵니다.")]
+    [SerializeField] private Ease _openEase = Ease.OutBack;
+    [Tooltip("열릴 때 지나치는 정도입니다. 클수록 더 튑니다.")]
+    [SerializeField, Min(0f)] private float _openOvershoot = 1.3f;
+    [Tooltip("서랍이 닫힐 때 걸리는 시간입니다. 열 때보다 짧게 두면 빠릿하게 들어갑니다.")]
+    [SerializeField, Min(0.05f)] private float _closeDuration = 0.35f;
+    [Tooltip("서랍이 닫힐 때의 움직임입니다. InBack은 살짝 뒤로 물러났다가 빠르게 들어갑니다.")]
+    [SerializeField] private Ease _closeEase = Ease.InBack;
+    [SerializeField, Min(0f)] private float _closeOvershoot = 1f;
 
     [Tooltip("서랍의 다음 콘텐츠가 준비되기 전까지 손잡이를 숨깁니다.")]
     [SerializeField] private bool _isContentAvailable;
@@ -254,12 +264,17 @@ public class UpgradeUI : MonoBehaviour
             return;
         }
 
+        // 열 때와 닫을 때 움직임을 달리한다. 열 때는 통통 튀며 들어오고, 닫을 때는 살짝 물러났다가 빠르게
+        // 들어간다. 패널, 손잡이, 화살표가 같은 곡선을 써야 따로 놀지 않는다.
+        float duration = _isOpened ? _movingDuration : _closeDuration;
+        Ease ease = _isOpened ? _openEase : _closeEase;
+        float overshoot = _isOpened ? _openOvershoot : _closeOvershoot;
         Sequence sequence = DOTween.Sequence();
-        sequence.Join(_panelTarget.DOAnchorPosX(panelX, _movingDuration));
-        sequence.Join(_toggleRectTransform.DOAnchorPosX(toggleX, _movingDuration));
+        sequence.Join(_panelTarget.DOAnchorPosX(panelX, duration).SetEase(ease, overshoot));
+        sequence.Join(_toggleRectTransform.DOAnchorPosX(toggleX, duration).SetEase(ease, overshoot));
         if (_toggleArrow != null)
         {
-            sequence.Join(_toggleArrow.DOScaleY(arrowScaleY, _movingDuration));
+            sequence.Join(_toggleArrow.DOScaleY(arrowScaleY, duration).SetEase(ease, overshoot));
         }
         _moveTween = sequence.OnComplete(() => _moveTween = null);
     }
