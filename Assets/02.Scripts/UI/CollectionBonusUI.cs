@@ -13,6 +13,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private GameObject _popupRoot;
     [SerializeField] private RectTransform _panel;
     [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private PopupMotion _panelMotion;
     [SerializeField] private Button _closeButton;
     [SerializeField] private TMP_Text _progressText;
     [SerializeField] private TMP_Text _bonusText;
@@ -125,6 +126,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
             .DOFade(1f, _fadeDuration)
             .SetUpdate(true)
             .OnComplete(() => _fadeTween = null);
+        _panelMotion?.PlayOpen();
     }
 
     private void Close()
@@ -143,6 +145,7 @@ public sealed class CollectionBonusUI : MonoBehaviour, IPointerClickHandler
         _clicker.ReleaseMode(this);
 
         _fadeTween?.Kill();
+        _panelMotion?.PlayClose();
         _fadeTween = _canvasGroup
             .DOFade(0f, _fadeDuration)
             .SetUpdate(true)

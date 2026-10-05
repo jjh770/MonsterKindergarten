@@ -13,6 +13,7 @@ public class MessagePopupUI : MonoBehaviour
 
     [SerializeField] private GameObject _popupPanel;
     [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private PopupMotion _motion;
     [SerializeField] private RectTransform _popupRectTransform;
     [SerializeField] private TextMeshProUGUI _messageText;
 
@@ -79,6 +80,7 @@ public class MessagePopupUI : MonoBehaviour
             _messageText.text = message;
         }
 
+        _motion?.PlayOpen();
         _currentSequence = DOTween.Sequence();
         _currentSequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));
         _currentSequence.Join(_popupRectTransform.DOPunchPosition(

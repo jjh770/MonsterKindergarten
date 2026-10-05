@@ -14,6 +14,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private GameObject _panelRoot;
     [SerializeField] private RectTransform _panel;
     [SerializeField] private CanvasGroup _panelGroup;
+    [SerializeField] private PopupMotion _panelMotion;
     [SerializeField] private Button _closeButton;
     [SerializeField] private Slider _bgmSlider;
     [SerializeField] private Slider _sfxSlider;
@@ -142,6 +143,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
         _gameExitManager.RegisterBackHandler(this, TryClose);
         _fadeTween = _panelGroup.DOFade(1f, _fadeDuration).SetUpdate(true);
+        _panelMotion?.PlayOpen();
     }
 
     private void Close() => TryClose();
@@ -183,6 +185,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _panelGroup.interactable = false;
         AudioManager.Instance?.SaveVolumeSettings();
         _fadeTween?.Kill();
+        _panelMotion?.PlayClose();
         _fadeTween = _panelGroup.DOFade(0f, _fadeDuration).SetUpdate(true).OnComplete(() =>
         {
             _fadeTween = null;

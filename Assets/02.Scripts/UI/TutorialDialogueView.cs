@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DG.Tweening;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,11 +24,14 @@ public sealed class TutorialDialogueView : MonoBehaviour
     [SerializeField, Min(0f)] private float _spotlightGap = 56f;
     [Tooltip("안내창이 화면 위아래 끝에서 떨어져야 하는 거리입니다.")]
     [SerializeField, Min(0f)] private float _screenMargin = 24f;
+    [Tooltip("대화창이 나타나고 사라질 때의 연출입니다. 다음 대사로 넘어갈 때는 쓰지 않습니다.")]
+    [SerializeField] private PopupMotion _motion;
 
     public event Action NextRequested;
 
     private Image _backgroundImage;
     private Color _backgroundColor;
+    private bool _isShown;
 
     private void Awake()
     {
@@ -65,8 +69,16 @@ public sealed class TutorialDialogueView : MonoBehaviour
         backgroundColor.a = dimBackground ? _backgroundColor.a : 0f;
         _backgroundImage.color = backgroundColor;
         _dialogueText.text = $"<size=60><color=#875026><b>{speaker}</b></color></size>\n{message}";
+        bool wasShown = _isShown;
+        _isShown = true;
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
+        // 이미 떠 있는 채로 다음 대사로 바뀌는 경우에는 다시 튀지 않는다.
+        if (!wasShown)
+        {
+            _motion?.PlayOpen();
+        }
+
         _nextButton.Select();
     }
 
@@ -119,7 +131,27 @@ public sealed class TutorialDialogueView : MonoBehaviour
 
     public void Hide()
     {
-        gameObject.SetActive(false);
+        bool wasShown = _isShown;
+        _isShown = false;
+        if (!gameObject.activeSelf)
+        {
+            return;
+        }
+
+        if (!wasShown || _motion == null)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
+        _motion.PlayClose().OnComplete(() =>
+        {
+            // 닫히는 동안 다시 열렸으면 끄지 않는다.
+            if (!_isShown)
+            {
+                gameObject.SetActive(false);
+            }
+        });
     }
 
     private void OnNextButtonClicked()

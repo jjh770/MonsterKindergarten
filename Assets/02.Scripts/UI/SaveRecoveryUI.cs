@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using TMPro;
 using UnityEngine;
@@ -13,6 +14,9 @@ public sealed class SaveRecoveryUI : MonoBehaviour
     [SerializeField] private TMP_Text _messageText;
     [SerializeField] private Button _confirmButton;
     [SerializeField] private Button _cancelButton;
+    [SerializeField] private PopupMotion _motion;
+
+    private bool _isShown;
 
     public event Action ConfirmRequested;
 
@@ -48,12 +52,30 @@ public sealed class SaveRecoveryUI : MonoBehaviour
 
         SetMessage(message);
         SetInteractable(true);
+        _isShown = true;
         _root.SetActive(true);
+        _motion?.PlayOpen();
     }
 
     public void Hide()
     {
-        if (_root != null) _root.SetActive(false);
+        if (_root == null) return;
+
+        bool wasShown = _isShown;
+        _isShown = false;
+        if (!_root.activeSelf) return;
+
+        if (!wasShown || _motion == null)
+        {
+            _root.SetActive(false);
+            return;
+        }
+
+        _motion.PlayClose().OnComplete(() =>
+        {
+            // 닫히는 동안 다시 열렸으면 끄지 않는다.
+            if (!_isShown) _root.SetActive(false);
+        });
     }
 
     public void SetMessage(string message)

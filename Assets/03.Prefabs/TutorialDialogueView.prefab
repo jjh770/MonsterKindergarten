@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 110003}
   - component: {fileID: 110004}
   - component: {fileID: 110005}
+  - component: {fileID: 2712268946714519655}
+  - component: {fileID: 8607000227517348767}
   m_Layer: 5
   m_Name: TutorialDialogueView
   m_TagString: Untagged
@@ -96,6 +98,38 @@ MonoBehaviour:
   _topPanelPosition: {x: 0, y: -270}
   _spotlightGap: 56
   _screenMargin: 24
+  _motion: {fileID: 8607000227517348767}
+--- !u!225 &2712268946714519655
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110001}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &8607000227517348767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1445de0492d56654f8d8001afda6bbda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PopupMotion
+  _panel: {fileID: 120002}
+  _group: {fileID: 2712268946714519655}
+  _openStartScale: 0.7
+  _openDuration: 0.3
+  _overshoot: 1.7
+  _closeEndScale: 0.7
+  _closeDuration: 0.25
 --- !u!1 &120001
 GameObject:
   m_ObjectHideFlags: 0
