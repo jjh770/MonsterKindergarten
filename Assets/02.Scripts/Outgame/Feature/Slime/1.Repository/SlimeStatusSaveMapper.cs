@@ -112,7 +112,6 @@ public static class SlimeStatusSaveMapper
                 activeSlimes,
                 registeredNormalCollection,
                 (EBackgroundTheme)saveData.SelectedBackgroundTheme,
-                saveData.BackgroundUnlockCompleted,
                 saveData.PendingTickets,
                 !saveData.AutoSpawnDisabled,
                 saveData.MainEndingSeen,
@@ -267,7 +266,6 @@ public static class SlimeStatusSaveMapper
             HighestGrade = (int)status.HighestGrade,
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             SelectedBackgroundTheme = (int)status.SelectedBackgroundTheme,
-            BackgroundUnlockCompleted = status.BackgroundUnlockCompleted,
             PendingTickets = status.PendingTickets,
             AutoSpawnDisabled = !status.IsAutoSpawnEnabled,
             // 자동 합성은 버튼 발동형이라 ON/OFF 상태가 없다. 필드는 기존 로컬 JSON과

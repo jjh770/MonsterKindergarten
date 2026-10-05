@@ -25,8 +25,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public ESlimeGrade HighestGrade => _status.HighestGrade;
     public EBackgroundTheme SelectedBackgroundTheme =>
         _status.SelectedBackgroundTheme;
-    public bool BackgroundUnlockCompleted =>
-        _status.BackgroundUnlockCompleted;
     public bool IsBackgroundThemeUnlocked =>
         _status != null &&
         BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
@@ -261,19 +259,14 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         return true;
     }
 
-    public void UpdateBackgroundProgress(
-        EBackgroundTheme selectedBackgroundTheme,
-        bool backgroundUnlockCompleted)
+    public void UpdateBackgroundProgress(EBackgroundTheme selectedBackgroundTheme)
     {
-        if (_status.SelectedBackgroundTheme == selectedBackgroundTheme &&
-            _status.BackgroundUnlockCompleted == backgroundUnlockCompleted)
+        if (_status.SelectedBackgroundTheme == selectedBackgroundTheme)
         {
             return;
         }
 
-        _status.UpdateBackgroundProgress(
-            selectedBackgroundTheme,
-            backgroundUnlockCompleted);
+        _status.UpdateBackgroundProgress(selectedBackgroundTheme);
         Save();
     }
 

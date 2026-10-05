@@ -345,9 +345,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
             {
                 if (saveTheme && _slimeManager != null)
                 {
-                    _slimeManager.UpdateBackgroundProgress(
-                        _currentBackgroundTheme,
-                        backgroundUnlockCompleted: true);
+                    _slimeManager.UpdateBackgroundProgress(_currentBackgroundTheme);
                 }
 
                 SetInteractionEnabled(true);

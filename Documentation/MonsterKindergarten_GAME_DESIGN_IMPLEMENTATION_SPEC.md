@@ -2695,8 +2695,9 @@ Phase 4에서는 뽑기권의 드랍·수집·사용까지 구현했다. 특별 
 | `ESlimeLocation.MainStage` | `ESlimeLocation.MainField` |
 | `GameplayGate.IsMainStageReady` | `GameplayGate.IsMainFieldReady` |
 
-세이브 필드 `CurrentStage`와 `SkyIntroCompleted`는 v8 이하 승격용으로 남겨 두고
-새 저장에서는 쓰지 않는다.
+세이브 필드 `CurrentStage`는 v8 이하 승격용으로 남겨 두고 새 저장에서는 쓰지 않는다.
+`SkyIntroCompleted`와 `BackgroundUnlockCompleted`는 하늘 인트로가 없어지면서 삭제했다.
+문서에 남아 있는 값은 읽을 때 무시된다.
 
 ---
 

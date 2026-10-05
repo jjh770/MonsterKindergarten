@@ -30,7 +30,6 @@ public class SlimeStatus
     public bool IsGraduationDisplayComplete =>
         DisplayRoomSlimeCount >= NormalCollectionRules.MainEndingCount;
     public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
-    public bool BackgroundUnlockCompleted { get; private set; }
 
     // 아직 줍지 않은 뽑기권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
     public int PendingTickets { get; private set; }
@@ -66,7 +65,6 @@ public class SlimeStatus
         IEnumerable<SlimeInstance> activeSlimes,
         IEnumerable<ESlimeGrade> registeredNormalCollection,
         EBackgroundTheme selectedBackgroundTheme,
-        bool backgroundUnlockCompleted,
         int pendingTickets,
         bool isAutoSpawnEnabled,
         bool mainEndingSeen,
@@ -96,8 +94,6 @@ public class SlimeStatus
                                   IsBackgroundThemeOwned(selectedBackgroundTheme)
             ? selectedBackgroundTheme
             : EBackgroundTheme.Ground;
-        BackgroundUnlockCompleted = isBackgroundUnlocked &&
-                                    backgroundUnlockCompleted;
 
         // 음수는 쓰는 쪽에서 나올 수 없는 값이다. 재화와 같은 성격의 개수라
         // 같은 규율로 다룬다. 여기서 던지면 SlimeManager가 다른 손상과 같은
@@ -424,9 +420,7 @@ public class SlimeStatus
         }
     }
 
-    public void UpdateBackgroundProgress(
-        EBackgroundTheme selectedBackgroundTheme,
-        bool backgroundUnlockCompleted)
+    public void UpdateBackgroundProgress(EBackgroundTheme selectedBackgroundTheme)
     {
         if (!BackgroundThemeRules.IsValid(selectedBackgroundTheme))
         {
@@ -446,8 +440,6 @@ public class SlimeStatus
         }
 
         SelectedBackgroundTheme = selectedBackgroundTheme;
-        BackgroundUnlockCompleted = backgroundUnlockCompleted &&
-                                    BackgroundThemeRules.IsUnlocked(HighestGrade);
     }
 
     public void AddPendingTicket()

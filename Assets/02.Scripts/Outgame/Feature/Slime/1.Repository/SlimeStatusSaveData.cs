@@ -33,9 +33,6 @@ public sealed class LegacySlimeStatusSaveData : ISaveData
     public int CurrentStage { get; set; }
 
     [FirestoreProperty]
-    public bool SkyIntroCompleted { get; set; }
-
-    [FirestoreProperty]
     public string LastSaveTime { get; set; }
 }
 
@@ -83,16 +80,9 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public int CurrentStage { get; set; }
 
-    [FirestoreProperty]
-    public bool SkyIntroCompleted { get; set; }
-
-    // v8 이하 호환 필드는 위에 남기고, v9부터는 배경 선택과 해금 연출 완료를
-    // 스테이지 진행과 분리해 저장한다.
+    // v8 이하 호환 필드는 위에 남기고, v9부터는 배경 선택을 스테이지 진행과 분리해 저장한다.
     [FirestoreProperty]
     public int SelectedBackgroundTheme { get; set; }
-
-    [FirestoreProperty]
-    public bool BackgroundUnlockCompleted { get; set; }
 
     // v5~v8의 스테이지별 티켓 승격 전용. 새 저장에서는 둘 다 0이다.
     [FirestoreProperty]
@@ -260,7 +250,6 @@ public sealed class SlimeStatusSaveData : ISaveData
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeInstanceSaveData>(),
         SelectedBackgroundTheme = (int)EBackgroundTheme.Ground,
-        BackgroundUnlockCompleted = false,
         NormalCollectionRegistered = CreateEmptyNormalCollection(),
         NormalFirstRegisteredAt = CreateEmptyStringStats(),
         NormalNaturalSpawnCounts = CreateEmptyLongStats(),
@@ -428,7 +417,6 @@ public static class SlimeStatusSaveMigration
             HighestGrade = legacyData.HighestGrade,
             ActiveSlimes = activeSlimes,
             SelectedBackgroundTheme = legacyData.CurrentStage,
-            BackgroundUnlockCompleted = legacyData.SkyIntroCompleted,
             PendingTickets = 0,
             NormalCollectionRegistered =
                 SlimeStatusSaveData.CreateEmptyNormalCollection(),
@@ -455,7 +443,6 @@ public static class SlimeStatusSaveMigration
         if (sourceSchemaVersion < 9)
         {
             saveData.SelectedBackgroundTheme = saveData.CurrentStage;
-            saveData.BackgroundUnlockCompleted = saveData.SkyIntroCompleted;
         }
 
         // v9 개발 중간본이 스테이지별 티켓만 가진 채 저장됐을 가능성도 흡수한다.
