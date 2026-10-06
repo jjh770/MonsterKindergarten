@@ -1,27 +1,24 @@
-using System;
+﻿using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 이미 생성되고 저장된 뽑기 결과를 포털로 공개한 뒤 필드로 넘긴다.
-// 포털 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
+// 이미 생성되고 저장된 뽑기 결과를 뽑기 기계로 공개한 뒤 필드로 넘긴다.
+// 기계 그림과 캡슐 움직임은 GachaMachineView가 맡고, 여기서는 순서와 결과 슬라임의 등장을 정한다.
+// 빛의 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    private static string PortalTapMessage => UiMessages.PortalTap;
+    private static string InsertTapMessage => UiMessages.MachineInsertTap;
+    private static string CapsuleTapMessage => UiMessages.MachineCapsuleTap;
 
-    // 흰색은 UI Image에서 스프라이트 원본 RGB를 그대로 보여준다.
-    // 결과 색은 포탈을 누른 뒤 Charge 단계부터 적용한다.
-    private static readonly Color InitialColor = Color.white;
     private static readonly Color CommonColor = new(0.35f, 1f, 0.72f, 1f);
     private static readonly Color UncommonColor = new(0.32f, 0.78f, 1f, 1f);
     private static readonly Color RareColor = new(0.67f, 0.42f, 1f, 1f);
     private static readonly Color JackpotColor = new(1f, 0.76f, 0.22f, 1f);
 
     private static string SpecialSubtitle => UiMessages.SpecialSlimeSubtitle;
-    // 특별한 결과는 터지는 순간의 빛과 충격파를 더 세게 준다.
-    private const float SpecialBurstBoost = 1.35f;
 
     // 파편이 퍼지는 모양이다. 거리는 캔버스 좌표 단위이고, 끝 거리는 파편마다
     // EndSpread씩 EndSpreadSteps 칸으로 엇갈려 한 줄로 늘어서지 않게 한다.
@@ -36,17 +33,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         public float EndScale;
     }
 
-    private static readonly BurstShape PortalBurstShape = new()
-    {
-        AngleJitter = 0.12f,
-        StartDistance = 25f,
-        EndDistance = 330f,
-        EndSpread = 22f,
-        EndSpreadSteps = 5,
-        StartScale = 1.35f,
-        EndScale = 0.25f,
-    };
-
     private static readonly BurstShape ArrivalBurstShape = new()
     {
         AngleJitter = 0.16f,
@@ -60,20 +46,13 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private GameObject _reelViewport;
     [SerializeField] private Image _resultImage;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private SlimeManager _slimeManager;
 
-    [Header("Portal")]
-    [SerializeField] private RectTransform _portalRoot;
-    [SerializeField] private Image[] _portalRings;
-    [SerializeField] private Image _portalCore;
-    [SerializeField] private RectTransform[] _orbitSparks;
-    [SerializeField] private RectTransform[] _burstSparks;
-    [SerializeField] private Image _shockwave;
-    [SerializeField] private Image _flashImage;
-    [SerializeField] private Button _portalButton;
+    [Header("Machine")]
+    [SerializeField] private GachaMachineView _machine;
+    [SerializeField] private Button _tapButton;
     [SerializeField] private TMP_Text _tapPrompt;
     [SerializeField] private TMP_Text _resultNameText;
     [SerializeField] private RectTransform _arrivalEffectRoot;
@@ -82,17 +61,11 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.25f;
-    [SerializeField, Min(0f)] private float _chargeDuration = 0.35f;
-    [SerializeField, Min(0f)] private float _collapseDuration = 0.2f;
-    [SerializeField, Min(0f)] private float _burstDuration = 0.22f;
     [SerializeField, Min(0f)] private float _emergeDuration = 0.45f;
     [SerializeField, Min(0f)] private float _revealDuration = 0.6f;
     [SerializeField, Min(0f)] private float _holdDuration = 0.7f;
     [SerializeField, Min(0.01f)] private float _moveDuration = 0.5f;
     [SerializeField, Min(0f)] private float _arrivalDuration = 0.45f;
-
-    [Header("Audio")]
-    [SerializeField, Min(0f)] private float _waitSfxFadeOutDuration = 0.75f;
 
     [Header("Look")]
     [SerializeField] private Color _silhouetteColor = Color.black;
@@ -112,7 +85,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private Vector2 _resultNameRestPosition;
     private bool _isReady;
     private bool _isPlaying;
-    private bool _portalTapped;
+    private bool _tapped;
     private bool _isSpecialResult;
     // 결과 그림이 다 드러난 뒤에만 무지개 광택을 입힌다. 드러나는 중에는 실루엣 색이 먼저다.
     private bool _isResultImageShimmering;
@@ -122,16 +95,12 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void Awake()
     {
         if (_root == null || _canvasGroup == null || _resultImage == null ||
-            _portalRoot == null || _portalRings == null ||
-            _portalRings.Length == 0 || _portalCore == null ||
-            _orbitSparks == null || _burstSparks == null ||
-            _shockwave == null || _flashImage == null ||
-            _portalButton == null || _tapPrompt == null ||
+            _machine == null || _tapButton == null || _tapPrompt == null ||
             _resultNameText == null || _arrivalEffectRoot == null ||
             _arrivalShockwave == null || _arrivalSparks == null ||
             _slimeManager == null)
         {
-            Debug.LogError("뽑기 포털 연출의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("뽑기 기계 연출의 필수 참조가 비어 있습니다.", this);
             return;
         }
 
@@ -145,13 +114,13 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             _resultNameRestPosition = _resultNameRect.anchoredPosition;
         }
-        _portalButton.onClick.AddListener(OnPortalTapped);
+        _tapButton.onClick.AddListener(OnTapped);
         _root.SetActive(false);
     }
 
     private void OnDestroy()
     {
-        if (_portalButton != null) _portalButton.onClick.RemoveListener(OnPortalTapped);
+        if (_tapButton != null) _tapButton.onClick.RemoveListener(OnTapped);
         AudioManager.Instance?.StopLoopingSFX();
         _clicker?.ReleaseMode(this);
     }
@@ -205,22 +174,25 @@ public sealed class GachaResultDirector : MonoBehaviour
         EGachaRarity rarity,
         CancellationToken token)
     {
-        // 포털·결과물은 결과 이미지의 부모 캔버스 로컬 좌표로만 움직인다. 화면 픽셀을
+        // 기계와 결과물은 결과 이미지의 부모 캔버스 로컬 좌표로만 움직인다. 화면 픽셀을
         // 그대로 position에 넣으면 CanvasScaler가 켜진 해상도에서 좌표계가 어긋난다.
         _isSpecialResult = rarity == EGachaRarity.Special;
         _isResultImageShimmering = false;
         Vector2 center = GetLocalCenter();
-        PreparePortal(center, target.Grade);
+        PrepareMachine(center, target.Grade);
         _root.SetActive(true);
-        AudioManager.Instance?.PlayLoopingSFX(EAudioSfx.GachaWait);
 
         if (await Fade(0f, 1f, _fadeDuration, token)) return true;
-        if (await WaitForTap(token)) return true;
+        if (await _machine.Appear(token)) return true;
 
-        Color resultColor = GetPortalColor(rarity);
-        if (await Charge(resultColor, token)) return true;
-        if (await Collapse(resultColor, token)) return true;
-        if (await Burst(resultColor, token)) return true;
+        if (await WaitForTap(InsertTapMessage, _machine.Idle, token)) return true;
+        if (await _machine.InsertTicket(token)) return true;
+        if (await _machine.Dispense(token)) return true;
+
+        if (await WaitForTap(CapsuleTapMessage, _machine.IdleCapsule, token)) return true;
+
+        Color resultColor = GetResultColor(rarity);
+        if (await _machine.Open(rarity, resultColor, token)) return true;
         if (await Emerge(GetSprite(target.Grade), resultColor, token)) return true;
         if (await Reveal(resultColor, token)) return true;
         if (await Wait(_holdDuration, token)) return true;
@@ -235,20 +207,15 @@ public sealed class GachaResultDirector : MonoBehaviour
         return false;
     }
 
-    private void PreparePortal(Vector2 centerLocal, ESlimeGrade grade)
+    private void PrepareMachine(Vector2 centerLocal, ESlimeGrade grade)
     {
-        _portalTapped = false;
+        _tapped = false;
         _canvasGroup.alpha = 0f;
         _canvasGroup.interactable = true;
         _canvasGroup.blocksRaycasts = true;
-        _reelViewport?.SetActive(false);
-        _portalRoot.anchoredPosition = Vector2.zero;
-        _portalRoot.localScale = Vector3.one;
-        _portalRoot.gameObject.SetActive(true);
-        _portalButton.interactable = true;
-        _tapPrompt.gameObject.SetActive(true);
-        _tapPrompt.text = PortalTapMessage;
-        _tapPrompt.alpha = 1f;
+        _machine.Prepare(_isSpecialResult);
+        _tapButton.interactable = false;
+        _tapPrompt.gameObject.SetActive(false);
 
         _resultRect.anchoredPosition = centerLocal + Vector2.down * _emergeRise;
         _resultRect.localScale = Vector3.one * 0.2f;
@@ -267,97 +234,29 @@ public sealed class GachaResultDirector : MonoBehaviour
         _arrivalEffectRoot.localScale = Vector3.one;
         SetImageAlpha(_arrivalShockwave, 0f);
         HideSparks(_arrivalSparks);
-
-        SetPortalColor(InitialColor, 1f);
-        SetImageAlpha(_shockwave, 0f);
-        _shockwave.rectTransform.localScale = Vector3.one * 0.35f;
-        SetImageAlpha(_flashImage, 0f);
-        HideSparks(_burstSparks);
     }
 
-    private async UniTask<bool> WaitForTap(CancellationToken token)
+    // 안내 문구를 띄우고 화면을 누를 때까지 기다린다. 기다리는 동안의 움직임은 idle이 그린다.
+    private async UniTask<bool> WaitForTap(
+        string prompt,
+        Action<float> idle,
+        CancellationToken token)
     {
+        _tapped = false;
+        _tapButton.interactable = true;
+        _tapPrompt.text = prompt;
+        _tapPrompt.gameObject.SetActive(true);
         float elapsed = 0f;
-        while (!_portalTapped)
+        while (!_tapped)
         {
             if (await NextFrame(token)) return true;
             elapsed += Time.unscaledDeltaTime;
-            Idle(elapsed);
+            idle(elapsed);
+            _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
         }
 
-        _portalButton.interactable = false;
+        _tapButton.interactable = false;
         _tapPrompt.gameObject.SetActive(false);
-        return false;
-    }
-
-    private void Idle(float elapsed)
-    {
-        _portalRoot.localScale = Vector3.one *
-                                 (1f + Mathf.Sin(elapsed * 2.4f) * 0.035f);
-        RotateRings(elapsed * 26f);
-        SetImageColor(_portalCore, InitialColor,
-            0.55f + Mathf.Sin(elapsed * 3.2f) * 0.12f);
-        _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
-        AnimateOrbit(elapsed, InitialColor, 1f);
-    }
-
-    private async UniTask<bool> Charge(Color color, CancellationToken token)
-    {
-        float elapsed = 0f;
-        while (elapsed < _chargeDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _chargeDuration));
-            Color current = Color.Lerp(InitialColor, Tint(color), ratio);
-            SetPortalColor(current, 1f);
-            RotateRings(elapsed * Mathf.Lerp(90f, 360f, ratio));
-            AnimateOrbit(elapsed * 2.2f, current, Mathf.Lerp(1f, 1.45f, ratio));
-            _portalRoot.localScale = Vector3.one * Mathf.Lerp(1f, 1.12f, ratio);
-        }
-        return false;
-    }
-
-    private async UniTask<bool> Collapse(Color color, CancellationToken token)
-    {
-        Vector3 startScale = _portalRoot.localScale;
-        float elapsed = 0f;
-        while (elapsed < _collapseDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _collapseDuration));
-            _portalRoot.localScale = Vector3.Lerp(startScale, Vector3.one * 0.58f, ratio);
-            RotateRings(360f + elapsed * 720f);
-            AnimateOrbit(elapsed * 3f, Tint(color), Mathf.Lerp(1.45f, 0.45f, ratio));
-        }
-        return false;
-    }
-
-    private async UniTask<bool> Burst(Color color, CancellationToken token)
-    {
-        float elapsed = 0f;
-        Vector2 portalStart = _portalRoot.anchoredPosition;
-        while (elapsed < _burstDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Normalized(elapsed, _burstDuration);
-            float inverse = 1f - ratio;
-            _portalRoot.localScale = Vector3.one * Mathf.Lerp(0.58f, 1.28f, ratio);
-            _portalRoot.anchoredPosition = portalStart + new Vector2(
-                Mathf.Sin(elapsed * 135f) * 11f * inverse,
-                Mathf.Cos(elapsed * 117f) * 8f * inverse);
-            SetImageColor(_flashImage, Tint(color), inverse * 0.82f * BurstBoost);
-            SetImageColor(_shockwave, Tint(color), inverse * 0.9f * BurstBoost);
-            _shockwave.rectTransform.localScale =
-                Vector3.one * Mathf.Lerp(0.35f, 2.15f, ratio);
-            AnimateBurst(ratio, Tint(color));
-        }
-
-        _portalRoot.anchoredPosition = portalStart;
-        SetImageAlpha(_flashImage, 0f);
-        SetImageAlpha(_shockwave, 0f);
         return false;
     }
 
@@ -366,7 +265,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         Color resultColor,
         CancellationToken token)
     {
-        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
         _resultImage.sprite = resultSprite;
         _resultImage.enabled = resultSprite != null;
         _resultImage.color = _silhouetteColor;
@@ -381,10 +279,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _emergeDuration));
             _resultRect.anchoredPosition = Vector2.Lerp(start, end, ratio);
             _resultRect.localScale = Vector3.one * Mathf.Lerp(0.2f, _emergeScale, ratio);
-            _portalRoot.localScale = Vector3.one * Mathf.Lerp(1.28f, 0.72f, ratio);
-            SetPortalAlpha(1f - ratio * 0.45f);
-            RotateRings(720f + elapsed * 250f);
-            AnimateSustainedBurst(elapsed, Tint(resultColor));
+            _machine.SetMachineAlpha(1f - ratio * 0.7f);
+            _machine.Sustain(elapsed, Tint(resultColor));
         }
         return false;
     }
@@ -402,10 +298,6 @@ public sealed class GachaResultDirector : MonoBehaviour
                 0f,
                 1f,
                 Mathf.InverseLerp(0.12f, 0.72f, ratio));
-            float portalCollapse = Mathf.SmoothStep(
-                0f,
-                1f,
-                Mathf.InverseLerp(0.68f, 1f, ratio));
             _resultImage.color = Color.Lerp(_silhouetteColor, Color.white, ratio);
             _resultRect.localScale = Vector3.one *
                                      (Mathf.Lerp(_emergeScale, _revealScale, ratio) + sparkle);
@@ -414,10 +306,8 @@ public sealed class GachaResultDirector : MonoBehaviour
                 _resultNameRestPosition + Vector2.right * _nameSlideDistance,
                 _resultNameRestPosition,
                 nameRatio);
-            _portalRoot.localScale = Vector3.one * Mathf.Lerp(0.72f, 0f, portalCollapse);
-            SetPortalAlpha(0.55f * (1f - portalCollapse));
-            RotateRings(970f + elapsed * 210f);
-            AnimateSustainedBurst(_emergeDuration + elapsed, Tint(resultColor));
+            _machine.SetMachineAlpha(0.3f * (1f - ratio));
+            _machine.Sustain(_emergeDuration + elapsed, Tint(resultColor));
         }
 
         _resultImage.color = Color.white;
@@ -425,48 +315,12 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultRect.localScale = Vector3.one * _revealScale;
         _resultNameText.alpha = 1f;
         _resultNameRect.anchoredPosition = _resultNameRestPosition;
-        _portalRoot.gameObject.SetActive(false);
-        HideSparks(_burstSparks);
+        _machine.EndSustain();
+        _machine.Hide();
         return false;
     }
 
-    private void RotateRings(float angle)
-    {
-        for (int i = 0; i < _portalRings.Length; i++)
-        {
-            Image ring = _portalRings[i];
-            if (ring == null) continue;
-            float direction = i % 2 == 0 ? 1f : -1f;
-            ring.rectTransform.localRotation = Quaternion.Euler(
-                0f, 0f, angle * direction * (1f + i * 0.24f));
-        }
-    }
-
-    private void AnimateOrbit(float elapsed, Color color, float intensity)
-    {
-        int count = _orbitSparks.Length;
-        for (int i = 0; i < count; i++)
-        {
-            RectTransform spark = _orbitSparks[i];
-            if (spark == null) continue;
-            float angle = elapsed * (0.75f + i % 3 * 0.14f) +
-                          Mathf.PI * 2f * i / Mathf.Max(1, count);
-            float radius = (205f + i % 4 * 18f) * intensity;
-            spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-            spark.localScale = Vector3.one *
-                               ((0.7f + Mathf.Sin(elapsed * 4f + i) * 0.25f) * intensity);
-            SetImageColor(spark.GetComponent<Image>(), color,
-                Mathf.Clamp01(0.75f * intensity));
-        }
-    }
-
-    private void AnimateBurst(float ratio, Color color)
-    {
-        AnimateSparkBurst(_burstSparks, PortalBurstShape, ratio, color);
-    }
-
-    // 바깥으로 퍼지며 작아지고 옅어지는 파편이다. 포털이 터질 때와 도착할 때가 같은 수식을
-    // 쓰고 거리, 크기, 엇갈림만 다르다. 그 차이는 BurstShape이 든다.
+    // 바깥으로 퍼지며 작아지고 옅어지는 파편이다. 거리, 크기, 엇갈림은 BurstShape이 든다.
     private static void AnimateSparkBurst(
         RectTransform[] sparks,
         in BurstShape shape,
@@ -496,43 +350,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
     }
 
-    // 슬라임이 모습을 드러내는 동안 한 번 터지고 끝나지 않도록 각 파티클의
-    // 진행도를 엇갈려 반복한다. 포털이 접히기 직전까지 계속 새 빛이 나온다.
-    private void AnimateSustainedBurst(float elapsed, Color color)
-    {
-        int count = _burstSparks.Length;
-        for (int i = 0; i < count; i++)
-        {
-            RectTransform spark = _burstSparks[i];
-            if (spark == null) continue;
-
-            float phase = Mathf.Repeat(elapsed * 1.7f + (float)i / Mathf.Max(1, count), 1f);
-            float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) + elapsed * 0.45f;
-            float distance = Mathf.Lerp(45f, 350f + i % 4 * 22f, phase);
-            float alpha = Mathf.Sin(phase * Mathf.PI);
-            SetRadial(spark, angle, distance);
-            spark.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.2f, alpha);
-            SetImageColor(spark.GetComponent<Image>(), color, alpha * 0.9f);
-        }
-    }
-
-    private void SetPortalColor(Color color, float alpha)
-    {
-        for (int i = 0; i < _portalRings.Length; i++)
-            SetImageColor(_portalRings[i], color, alpha * (0.75f + i * 0.06f));
-        SetImageColor(_portalCore, color, alpha * 0.62f);
-        foreach (RectTransform spark in _orbitSparks)
-            if (spark != null) SetImageColor(spark.GetComponent<Image>(), color, alpha);
-    }
-
-    private void SetPortalAlpha(float alpha)
-    {
-        foreach (Image ring in _portalRings) SetImageAlpha(ring, alpha);
-        SetImageAlpha(_portalCore, alpha * 0.65f);
-        foreach (RectTransform spark in _orbitSparks)
-            if (spark != null) SetImageAlpha(spark.GetComponent<Image>(), alpha);
-    }
-
     private void HideSparks(RectTransform[] sparks)
     {
         foreach (RectTransform spark in sparks)
@@ -549,15 +366,12 @@ public sealed class GachaResultDirector : MonoBehaviour
         AnimateSparkBurst(_arrivalSparks, ArrivalBurstShape, ratio, color);
     }
 
-    private void OnPortalTapped()
+    private void OnTapped()
     {
-        if (!_isPlaying || _portalTapped) return;
+        if (!_isPlaying || _tapped) return;
 
-        _portalTapped = true;
-        AudioManager.Instance?.StopLoopingSFX(_waitSfxFadeOutDuration);
+        _tapped = true;
     }
-
-    private float BurstBoost => _isSpecialResult ? SpecialBurstBoost : 1f;
 
     // 특별한 결과는 정해진 색 대신 색상환을 도는 색을 쓴다. 나머지는 그대로 돌려준다.
     private Color Tint(Color color)
@@ -574,7 +388,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultImage.color = RainbowTint.Shimmer();
     }
 
-    private static Color GetPortalColor(EGachaRarity rarity)
+    private static Color GetResultColor(EGachaRarity rarity)
     {
         return rarity switch
         {
@@ -748,7 +562,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void CloseOverlay()
     {
-        _portalButton.interactable = false;
+        _tapButton.interactable = false;
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
         _root.SetActive(false);
