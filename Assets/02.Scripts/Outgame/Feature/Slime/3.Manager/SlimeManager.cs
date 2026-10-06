@@ -76,6 +76,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public long AutoMergeUseCount => _status?.AutoMergeUseCount ?? 0;
     public float SpecialGachaChance => SpecialGachaFever.GetChance(
         _status?.SpecialGachaMissCount ?? 0);
+    public int SpecialGachaMissCount => _status?.SpecialGachaMissCount ?? 0;
     // 저장된 문서를 읽었는지. 문서가 없어 기본값으로 출발한 경우와 구분한다.
     public bool HasStoredSaveData { get; private set; }
 

@@ -69,7 +69,6 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _mergeMessage;
     [SerializeField] private string _systemUpgradeCarouselMessage;
     [SerializeField] private string _spawnPoolButtonMessage;
-    [SerializeField] private string _autoSpawnToggleMessage;
     [SerializeField] private string _gachaMakeRoomMessage;
     [SerializeField] private string _gachaButtonMessage;
     [SerializeField] private string _autoMergeButtonMessage;
@@ -100,7 +99,6 @@ public sealed class TutorialContent : ScriptableObject
     public string MergeMessage => _mergeMessage;
     public string SystemUpgradeCarouselMessage => _systemUpgradeCarouselMessage;
     public string SpawnPoolButtonMessage => _spawnPoolButtonMessage;
-    public string AutoSpawnToggleMessage => _autoSpawnToggleMessage;
     public string GachaMakeRoomMessage => _gachaMakeRoomMessage;
     public string GachaButtonMessage => _gachaButtonMessage;
     public string AutoMergeButtonMessage => _autoMergeButtonMessage;

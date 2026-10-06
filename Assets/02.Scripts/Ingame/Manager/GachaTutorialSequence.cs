@@ -3,9 +3,11 @@ using UnityEngine;
 
 // 뽑기 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
 //
-// 자동 스폰을 끄고, 자리가 가득 찼으면 합성으로 한 칸을 만든 뒤, 지급한 티켓으로
-// 직접 뽑기를 실행해 결과 슬라임까지 확인한다. 일반 티켓 드랍은 이 흐름이 끝난 뒤
-// GachaTicketDropper에서 시작한다.
+// 자리가 가득 찼으면 합성으로 한 칸을 만든 뒤, 지급한 티켓으로 뽑기 기계에서 직접 1회를 뽑아
+// 결과 슬라임까지 확인한다. 일반 티켓 드랍은 이 흐름이 끝난 뒤 GachaTicketDropper에서 시작한다.
+//
+// 자동 스폰은 끄게 하지 않는다. 뽑기 기계 화면이 열려 있는 동안 스폰이 알아서 멈추고 끝나면 풀리므로,
+// 이 안내가 플레이어의 설정을 건드릴 일이 없다. 기계 화면 안에서는 1회 버튼만 눌리게 한다.
 public sealed class GachaTutorialSequence : TutorialSequenceBase
 {
     public override string TutorialId => TutorialIds.Gacha;
@@ -14,7 +16,6 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     {
         None,
         Dialogue,
-        AutoSpawn,
         MakeRoom,
         GachaButton,
         Result,
@@ -60,13 +61,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.PresentationCompleted += OnUnlockPresentationCompleted;
         }
 
-        if (_autoSpawnToggle != null)
-        {
-            _autoSpawnToggle.StateChanged += OnAutoSpawnStateChanged;
-        }
-
         if (_gachaButton != null)
         {
+            _gachaButton.MachineOpened += OnMachineOpened;
+            _gachaButton.PullCommitted += OnGachaPullCommitted;
             _gachaButton.PullSucceeded += OnGachaPullSucceeded;
         }
 
@@ -82,13 +80,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.PresentationCompleted -= OnUnlockPresentationCompleted;
         }
 
-        if (_autoSpawnToggle != null)
-        {
-            _autoSpawnToggle.StateChanged -= OnAutoSpawnStateChanged;
-        }
-
         if (_gachaButton != null)
         {
+            _gachaButton.MachineOpened -= OnMachineOpened;
+            _gachaButton.PullCommitted -= OnGachaPullCommitted;
             _gachaButton.PullSucceeded -= OnGachaPullSucceeded;
         }
 
@@ -160,7 +155,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         IReadOnlyList<DialogueLine> lines = Content.GetDialogue(DialogueId.Gacha);
         if (_unlockPopupUI == null || lines == null || lines.Count < 2)
         {
-            ShowDialogue(lines, ShowAutoSpawnStep);
+            ShowDialogue(lines, ShowMakeRoomStep);
             return;
         }
 
@@ -193,7 +188,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
                 _slimeManager.RecordGachaTicketsObtained(1);
             }
 
-            ShowAutoSpawnStep();
+            ShowMakeRoomStep();
         }
 
         if (_ticketField == null)
@@ -209,34 +204,6 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             _unlockPopupUI.TicketSprite,
             Arrived);
         _unlockPopupUI.ReleaseHold();
-    }
-
-    private void ShowAutoSpawnStep()
-    {
-        RectTransform target = _autoSpawnToggle.ButtonTarget;
-        if (target == null)
-        {
-            Abort("자동 스폰 버튼 참조가 없습니다.");
-            return;
-        }
-
-        _step = Step.AutoSpawn;
-        SubscribeGuide();
-
-        bool isEnabled = _slimeManager.IsAutoSpawnEnabled;
-        Spotlight.ShowUiTarget(
-            Content.AutoSpawnToggleMessage,
-            target,
-            isEnabled
-                ? SpotlightInteractionMode.PassThroughPrimary
-                : SpotlightInteractionMode.AdvanceOnPrimaryTap);
-    }
-
-    private void OnAutoSpawnStateChanged(bool isEnabled)
-    {
-        if (_step != Step.AutoSpawn || isEnabled) return;
-
-        ShowMakeRoomStep();
     }
 
     private void ShowMakeRoomStep()
@@ -343,18 +310,33 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
 
+    // 뽑기 기계 화면이 열리면 스포트라이트와 안내창은 화면 뒤로 가려져 비쳐 보이므로 걷는다.
+    // 화면 안에서는 기계가 1회 버튼을 가리키는 안내를 직접 띄운다.
+    private void OnMachineOpened()
+    {
+        if (_step != Step.GachaButton || _isGachaButtonInfoOnly) return;
+
+        Spotlight.Hide();
+    }
+
+    // 완료 표시를 결과 대화가 아니라 티켓이 쓰이는 이 순간에 한다. 되돌릴 수 없는 지점이 뽑기라,
+    // 연출이나 대화 도중에 앱이 내려가면 티켓은 이미 쓰였는데 플래그가 없어 다음 실행에서
+    // 한 장을 다시 받는다. 그 반복이 티켓을 무한히 늘린다.
+    //
+    // 뽑기 전에 끊긴 경우는 여전히 처음부터 다시 안내한다. 그때는 준 티켓이
+    // 그대로 남아 있어 TryStart의 지급 가드가 두 장이 되는 것을 막는다.
+    private void OnGachaPullCommitted()
+    {
+        if (_step != Step.GachaButton || _isGachaButtonInfoOnly) return;
+
+        TutorialProgress.MarkCompleted(TutorialIds.Gacha);
+    }
+
     private void OnGachaPullSucceeded(SlimeController spawned)
     {
         if (_step != Step.GachaButton || spawned == null) return;
 
-        // 완료 표시를 결과 대화가 아니라 여기서 한다. 되돌릴 수 없는 지점이 뽑기라,
-        // 대화 도중에 앱이 내려가면 티켓은 이미 쓰였는데 플래그가 없어 다음 실행에서
-        // 한 장을 다시 받는다. 그 반복이 티켓을 무한히 늘린다.
-        //
-        // 뽑기 전에 끊긴 경우는 여전히 처음부터 다시 안내한다. 그때는 준 티켓이
-        // 그대로 남아 있어 TryStart의 지급 가드가 두 장이 되는 것을 막는다.
-        TutorialProgress.MarkCompleted(TutorialIds.Gacha);
-
+        // 완료 표시는 이미 PullCommitted에서 했다. 연출이 끝난 지금은 결과 슬라임을 가리키기만 한다.
         _step = Step.Result;
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
 
@@ -368,20 +350,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
 
     private void OnGuideAdvanceRequested()
     {
-        if (_step == Step.GachaButton)
+        if (_step == Step.GachaButton && _isGachaButtonInfoOnly)
         {
-            if (_isGachaButtonInfoOnly) Complete();
-            return;
+            Complete();
         }
-
-        if (_step != Step.AutoSpawn ||
-            _slimeManager == null ||
-            _slimeManager.IsAutoSpawnEnabled)
-        {
-            return;
-        }
-
-        ShowMakeRoomStep();
     }
 
     private void SubscribeGuide()

@@ -1,16 +1,43 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 이미 생성되고 저장된 뽑기 결과를 뽑기 기계로 공개한 뒤 필드로 넘긴다.
-// 기계 그림과 캡슐 움직임은 GachaMachineView가 맡고, 여기서는 순서와 결과 슬라임의 등장을 정한다.
-// 빛의 색은 뽑을 때 확정된 가중치 희귀도를 표현할 뿐, 터치 시 결과를 다시 뽑지 않는다.
+// 뽑기 기계 화면 한 번을 이끈다. 화면을 열고, 1회·5회 버튼을 기다리고, 눌리면 티켓을 쓰고 결과를 만들어
+// 기계로 보여 주고, 결과를 필드로 보낸 뒤 닫는다. 기계 그림과 캡슐 움직임은 GachaMachineView가,
+// 버튼과 토스트는 GachaPullPanel이 맡고, 여기서는 순서와 결과 슬라임의 등장을 정한다.
+//
+// 티켓은 버튼을 누르는 순간 쓰이고 결과가 만들어져 저장된다. 연출은 그 뒤에 보여 주기만 해서, 도중에
+// 앱이 꺼져도 잃는 것이 없고 닫기 버튼은 그 전까지만 의미가 있다. 빛의 색은 확정된 희귀도를 표현할 뿐이다.
+//
+// 이 화면이 열려 있는 동안 자연 스폰은 정지 요청으로 멈춘다. 플레이어의 자동 스폰 설정은 건드리지 않는다.
+// 정지는 닫기, 끝, 파괴 어느 길로 끝나도 풀린다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    private static string InsertTapMessage => UiMessages.MachineInsertTap;
+    // 한 번 뽑은 결과가 열린 뒤 필드로 날아가기 전까지 머무는 자리다. 여러 개를 뽑을 때 쓴다.
+    [Serializable]
+    private sealed class ResultSlot
+    {
+        public RectTransform Root;
+        public Image Slime;
+        public TMP_Text Name;
+        public Image Ring;
+    }
+
+    private enum SessionState
+    {
+        Closed,
+        Choosing,
+        Presenting,
+    }
+
+    private const int RequestNone = -3;
+    private const int RequestCancelled = -2;
+    private const int RequestClose = -1;
+
     private static string CapsuleTapMessage => UiMessages.MachineCapsuleTap;
 
     private static readonly Color CommonColor = new(0.35f, 1f, 0.72f, 1f);
@@ -49,15 +76,25 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private Image _resultImage;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private CurrencyManager _currencyManager;
+    [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private GameExitManager _gameExitManager;
 
     [Header("Machine")]
     [SerializeField] private GachaMachineView _machine;
+    [SerializeField] private GachaPullPanel _pullPanel;
     [SerializeField] private Button _tapButton;
     [SerializeField] private TMP_Text _tapPrompt;
     [SerializeField] private TMP_Text _resultNameText;
     [SerializeField] private RectTransform _arrivalEffectRoot;
     [SerializeField] private Image _arrivalShockwave;
     [SerializeField] private RectTransform[] _arrivalSparks;
+
+    [Header("Slots")]
+    [SerializeField] private ResultSlot[] _slots;
+    [SerializeField, Min(0f)] private float _slotEmergeSeconds = 0.5f;
+    [SerializeField, Min(0f)] private float _flyStagger = 0.18f;
+    [SerializeField, Min(0f)] private float _slotEndScale = 0.25f;
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.25f;
@@ -79,10 +116,15 @@ public sealed class GachaResultDirector : MonoBehaviour
     // 결과 슬라임이 솟아오르는 세로 이동 거리. 캔버스 좌표(anchoredPosition) 단위다.
     [SerializeField, Min(0f)] private float _emergeRise = 80f;
 
+    private readonly List<SlimeController> _pulled = new();
     private RectTransform _resultRect;
     private RectTransform _resultParentRect;
     private RectTransform _resultNameRect;
     private Vector2 _resultNameRestPosition;
+    private bool[] _slotShimmer;
+    private SessionState _state;
+    private int _pendingRequest = RequestNone;
+    private int _pendingEmerges;
     private bool _isReady;
     private bool _isPlaying;
     private bool _tapped;
@@ -92,13 +134,17 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     public bool IsPlaying => _isPlaying;
 
+    // 티켓이 쓰이고 결과가 만들어져 저장된 순간이다. 이 뒤로는 되돌릴 수 없다.
+    public event Action PullCommitted;
+
     private void Awake()
     {
         if (_root == null || _canvasGroup == null || _resultImage == null ||
-            _machine == null || _tapButton == null || _tapPrompt == null ||
+            _machine == null || _pullPanel == null || _tapButton == null || _tapPrompt == null ||
             _resultNameText == null || _arrivalEffectRoot == null ||
             _arrivalShockwave == null || _arrivalSparks == null ||
-            _slimeManager == null)
+            _slimeManager == null || _currencyManager == null || _spawnManager == null ||
+            !IsValidSlots())
         {
             Debug.LogError("뽑기 기계 연출의 필수 참조가 비어 있습니다.", this);
             return;
@@ -114,85 +160,181 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             _resultNameRestPosition = _resultNameRect.anchoredPosition;
         }
+
+        _slotShimmer = new bool[_slots.Length];
         _tapButton.onClick.AddListener(OnTapped);
+        _pullPanel.PullRequested += OnPullRequested;
+        _pullPanel.CloseRequested += OnCloseRequested;
         _root.SetActive(false);
     }
 
     private void OnDestroy()
     {
         if (_tapButton != null) _tapButton.onClick.RemoveListener(OnTapped);
+        if (_pullPanel != null)
+        {
+            _pullPanel.PullRequested -= OnPullRequested;
+            _pullPanel.CloseRequested -= OnCloseRequested;
+        }
+
         AudioManager.Instance?.StopLoopingSFX();
         _clicker?.ReleaseMode(this);
     }
 
-    public void Play(
-        SlimeController target,
-        EGachaRarity rarity,
-        Action onCompleted)
+    // 뽑기 기계 화면을 연다. 닫히면 뽑은 슬라임 목록과 함께 onFinished가 불린다. 아무것도 뽑지 않고 닫았으면
+    // 목록이 비어 있다.
+    public void Open(Action<IReadOnlyList<SlimeController>> onFinished)
     {
-        if (!_isReady || _isPlaying || target == null)
+        if (!_isReady || _isPlaying)
         {
-            onCompleted?.Invoke();
+            onFinished?.Invoke(Array.Empty<SlimeController>());
             return;
         }
 
-        PlayAsync(target, rarity, onCompleted).Forget();
+        RunSession(onFinished).Forget();
     }
 
-    private async UniTaskVoid PlayAsync(
-        SlimeController target,
-        EGachaRarity rarity,
-        Action onCompleted)
+    private async UniTaskVoid RunSession(Action<IReadOnlyList<SlimeController>> onFinished)
     {
         _isPlaying = true;
+        _pulled.Clear();
         CancellationToken token = this.GetCancellationTokenOnDestroy();
-        target.SetLocationPresentationActive(false);
+        _spawnManager.PushSpawnPause(this);
         _clicker?.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+        _gameExitManager?.RegisterBackHandler(this, OnBackRequested);
         bool isCancelled = false;
         try
         {
-            isCancelled = await Present(
-                target,
-                rarity,
-                token);
+            isCancelled = await Session(token);
         }
         finally
         {
             AudioManager.Instance?.StopLoopingSFX();
+            _gameExitManager?.UnregisterBackHandler(this);
+            _spawnManager?.ReleaseSpawnPause(this);
             _clicker?.ReleaseMode(this);
             _isResultImageShimmering = false;
+            Array.Clear(_slotShimmer, 0, _slotShimmer.Length);
+            _state = SessionState.Closed;
+            _pendingRequest = RequestNone;
             _isPlaying = false;
         }
 
         if (isCancelled) return;
-        target.SetLocationPresentationActive(true);
-        onCompleted?.Invoke();
+
+        foreach (SlimeController slime in _pulled)
+        {
+            if (slime != null) slime.SetLocationPresentationActive(true);
+        }
+
+        onFinished?.Invoke(_pulled);
     }
 
-    private async UniTask<bool> Present(
-        SlimeController target,
-        EGachaRarity rarity,
-        CancellationToken token)
+    private async UniTask<bool> Session(CancellationToken token)
     {
-        // 기계와 결과물은 결과 이미지의 부모 캔버스 로컬 좌표로만 움직인다. 화면 픽셀을
-        // 그대로 position에 넣으면 CanvasScaler가 켜진 해상도에서 좌표계가 어긋난다.
-        _isSpecialResult = rarity == EGachaRarity.Special;
-        _isResultImageShimmering = false;
-        Vector2 center = GetLocalCenter();
-        PrepareMachine(center, target.Grade);
+        _canvasGroup.alpha = 0f;
+        _canvasGroup.interactable = true;
+        _canvasGroup.blocksRaycasts = true;
         _root.SetActive(true);
+        ResetPresentation();
 
         if (await Fade(0f, 1f, _fadeDuration, token)) return true;
         if (await _machine.Appear(token)) return true;
 
-        if (await WaitForTap(InsertTapMessage, _machine.Idle, token)) return true;
-        if (await _machine.InsertTicket(token)) return true;
+        bool isTutorial = IsTutorialPull();
+        _state = SessionState.Choosing;
+        int tickets = GetTicketCount();
+        _pullPanel.Show(tickets, isTutorial);
+        ShowPrompt(GetChoosePrompt(tickets, isTutorial));
+
+        List<GachaPullItem> items = new();
+        int pressed = 0;
+        while (items.Count == 0)
+        {
+            int request = await WaitForRequest(isTutorial, token);
+            if (request == RequestCancelled) return true;
+
+            if (request == RequestClose)
+            {
+                _state = SessionState.Presenting;
+                _tapPrompt.gameObject.SetActive(false);
+                _pullPanel.Hide();
+                if (await Fade(1f, 0f, _fadeDuration, token)) return true;
+
+                CloseOverlay();
+                return false;
+            }
+
+            EGachaFailure failure = GachaService.TryPullMany(request, items, isTutorial);
+            if (failure == EGachaFailure.None)
+            {
+                pressed = request;
+                break;
+            }
+
+            _pullPanel.ShowToast(GetFailureMessage(failure));
+        }
+
+        return await Present(items, pressed, token);
+    }
+
+    // 버튼이 눌려 티켓이 쓰였다. 이 뒤의 모든 것은 이미 정해진 결과를 보여 주는 일이다.
+    private async UniTask<bool> Present(
+        List<GachaPullItem> items,
+        int pressedCount,
+        CancellationToken token)
+    {
+        _state = SessionState.Presenting;
+        int count = items.Count;
+        bool[] specials = new bool[count];
+        for (int i = 0; i < count; i++)
+        {
+            SlimeController slime = items[i].Slime;
+            specials[i] = items[i].Rarity == EGachaRarity.Special;
+            _pulled.Add(slime);
+            slime.SetLocationPresentationActive(false);
+        }
+
+        _pullPanel.SetCommitted(pressedCount);
+        _tapPrompt.gameObject.SetActive(false);
+        PullCommitted?.Invoke();
+        _machine.BeginPull(specials);
+
+        bool isStack = pressedCount == GachaPullPanel.MultiCount;
+        if (await _machine.InsertTicket(
+                _pullPanel.GetIcon(pressedCount),
+                _pullPanel.GetIconSprite(pressedCount),
+                isStack,
+                () => _pullPanel.HideIcon(pressedCount),
+                token))
+        {
+            return true;
+        }
+
         if (await _machine.Dispense(token)) return true;
 
-        if (await WaitForTap(CapsuleTapMessage, _machine.IdleCapsule, token)) return true;
+        return count == 1
+            ? await PresentSingle(items[0], token)
+            : await PresentMultiple(items, token);
+    }
 
-        Color resultColor = GetResultColor(rarity);
-        if (await _machine.Open(rarity, resultColor, token)) return true;
+    // 하나만 뽑았을 때: 배출구 앞의 캡슐을 누르면 화면 가운데로 올라와 열리고 슬라임이 솟는다.
+    private async UniTask<bool> PresentSingle(GachaPullItem item, CancellationToken token)
+    {
+        SlimeController target = item.Slime;
+        _isSpecialResult = item.Rarity == EGachaRarity.Special;
+        _isResultImageShimmering = false;
+        Vector2 center = GetLocalCenter();
+        PrepareSingleResult(center, target.Grade);
+
+        int index = await WaitForCapsule(CapsuleTapMessage, token);
+        if (index < 0) return true;
+
+        _tapPrompt.gameObject.SetActive(false);
+        _machine.SetCapsulesInteractable(false);
+
+        Color resultColor = GetResultColor(item.Rarity);
+        if (await _machine.Open(0, item.Rarity, resultColor, token)) return true;
         if (await Emerge(GetSprite(target.Grade), resultColor, token)) return true;
         if (await Reveal(resultColor, token)) return true;
         if (await Wait(_holdDuration, token)) return true;
@@ -207,16 +349,89 @@ public sealed class GachaResultDirector : MonoBehaviour
         return false;
     }
 
-    private void PrepareMachine(Vector2 centerLocal, ESlimeGrade grade)
+    // 여러 개를 뽑았을 때: 캡슐 다섯이 자리에 늘어서고, 하나씩 눌러 열면 슬라임만 그 자리에 남는다.
+    // 전부 열면 화면을 눌러 한꺼번에 필드로 보낸다.
+    private async UniTask<bool> PresentMultiple(List<GachaPullItem> items, CancellationToken token)
+    {
+        int count = items.Count;
+        PrepareSlots(items);
+        _pendingEmerges = 0;
+
+        // 기계는 뒤로 물러나 늘어선 캡슐만 남는다. 기다리지 않고 바로 누를 수 있다.
+        _machine.FadeMachineTo(0f, 0.4f, token).Forget();
+
+        int openedCount = 0;
+        while (openedCount < count)
+        {
+            int index = await WaitForCapsule(CapsuleTapMessage, token);
+            if (index < 0) return true;
+
+            _machine.SetCapsulesInteractable(false);
+            GachaPullItem item = items[index];
+            Color color = GetResultColor(item.Rarity);
+            if (await _machine.Open(index, item.Rarity, color, token)) return true;
+
+            openedCount++;
+            _pendingEmerges++;
+            EmergeSlot(index, item, color, token).Forget();
+            if (openedCount < count) _machine.SetCapsulesInteractable(true);
+        }
+
+        while (_pendingEmerges > 0)
+        {
+            if (await NextFrame(token)) return true;
+        }
+
+        _tapPrompt.text = UiMessages.MachineAllOpened;
+        _tapPrompt.gameObject.SetActive(true);
+        if (await WaitForScreenTap(token)) return true;
+
+        _tapPrompt.gameObject.SetActive(false);
+        AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
+        UniTask<bool>[] flights = new UniTask<bool>[count];
+        for (int i = 0; i < count; i++)
+        {
+            flights[i] = FlySlot(i, items[i], token);
+        }
+
+        bool[] results = await UniTask.WhenAll(flights);
+        foreach (bool flightCancelled in results)
+        {
+            if (flightCancelled) return true;
+        }
+
+        if (await Fade(1f, 0f, _fadeDuration, token)) return true;
+
+        CloseOverlay();
+        return false;
+    }
+
+    // 화면을 처음 상태로 돌린다. 지난번 연출의 흔적이 남지 않게 모든 조각을 감춘다.
+    private void ResetPresentation()
     {
         _tapped = false;
-        _canvasGroup.alpha = 0f;
-        _canvasGroup.interactable = true;
-        _canvasGroup.blocksRaycasts = true;
-        _machine.Prepare(_isSpecialResult);
-        _tapButton.interactable = false;
+        _tapButton.gameObject.SetActive(false);
         _tapPrompt.gameObject.SetActive(false);
+        _pullPanel.Hide();
+        _machine.Prepare();
+        _resultImage.enabled = false;
+        _resultNameText.alpha = 0f;
+        _resultNameText.gameObject.SetActive(true);
+        _arrivalEffectRoot.gameObject.SetActive(false);
+        _isResultImageShimmering = false;
 
+        foreach (ResultSlot slot in _slots)
+        {
+            slot.Slime.enabled = false;
+            slot.Name.gameObject.SetActive(false);
+            SetImageAlpha(slot.Ring, 0f);
+        }
+
+        Array.Clear(_slotShimmer, 0, _slotShimmer.Length);
+    }
+
+    private void PrepareSingleResult(Vector2 centerLocal, ESlimeGrade grade)
+    {
         _resultRect.anchoredPosition = centerLocal + Vector2.down * _emergeRise;
         _resultRect.localScale = Vector3.one * 0.2f;
         _resultImage.enabled = false;
@@ -236,28 +451,142 @@ public sealed class GachaResultDirector : MonoBehaviour
         HideSparks(_arrivalSparks);
     }
 
-    // 안내 문구를 띄우고 화면을 누를 때까지 기다린다. 기다리는 동안의 움직임은 idle이 그린다.
-    private async UniTask<bool> WaitForTap(
-        string prompt,
-        Action<float> idle,
-        CancellationToken token)
+    private void PrepareSlots(List<GachaPullItem> items)
     {
-        _tapped = false;
-        _tapButton.interactable = true;
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            ResultSlot slot = _slots[i];
+            slot.Slime.enabled = false;
+            slot.Name.gameObject.SetActive(false);
+            SetImageAlpha(slot.Ring, 0f);
+            slot.Root.gameObject.SetActive(i < items.Count);
+        }
+    }
+
+    // 안내 문구를 띄우고 캡슐이 눌릴 때까지 기다린다. 눌린 캡슐 번호를 돌려주고, 취소되면 음수를 돌려준다.
+    private async UniTask<int> WaitForCapsule(string prompt, CancellationToken token)
+    {
         _tapPrompt.text = prompt;
         _tapPrompt.gameObject.SetActive(true);
+        _machine.SetCapsulesInteractable(true);
+        float elapsed = 0f;
+        while (true)
+        {
+            if (_machine.TryConsumeCapsuleTap(out int index)) return index;
+
+            if (await NextFrame(token)) return RequestCancelled;
+
+            elapsed += Time.unscaledDeltaTime;
+            _machine.IdleCapsules(elapsed);
+            _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
+        }
+    }
+
+    // 화면 어디든 한 번 눌릴 때까지 기다린다. 이 버튼은 화면 전체를 덮어 아래의 캡슐과 버튼을 막으므로
+    // 기다리는 동안에만 켠다.
+    private async UniTask<bool> WaitForScreenTap(CancellationToken token)
+    {
+        _tapped = false;
+        _tapButton.gameObject.SetActive(true);
         float elapsed = 0f;
         while (!_tapped)
         {
             if (await NextFrame(token)) return true;
+
             elapsed += Time.unscaledDeltaTime;
-            idle(elapsed);
             _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
         }
 
-        _tapButton.interactable = false;
-        _tapPrompt.gameObject.SetActive(false);
+        _tapButton.gameObject.SetActive(false);
         return false;
+    }
+
+    // 1회·5회·닫기 중 하나가 눌릴 때까지 기다린다. 기다리는 동안 기계 안의 캡슐 더미가 살아 움직인다.
+    private async UniTask<int> WaitForRequest(bool isTutorial, CancellationToken token)
+    {
+        _pendingRequest = RequestNone;
+        float elapsed = 0f;
+        while (_pendingRequest == RequestNone)
+        {
+            if (await NextFrame(token)) return RequestCancelled;
+
+            elapsed += Time.unscaledDeltaTime;
+            _machine.Idle(elapsed);
+            if (isTutorial) _pullPanel.PulseSingle(elapsed);
+            _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
+        }
+
+        int request = _pendingRequest;
+        _pendingRequest = RequestNone;
+        return request;
+    }
+
+    private void OnPullRequested(int count)
+    {
+        if (_state != SessionState.Choosing || _pendingRequest != RequestNone) return;
+
+        _pendingRequest = count;
+    }
+
+    private void OnCloseRequested()
+    {
+        if (_state != SessionState.Choosing || _pendingRequest != RequestNone) return;
+
+        _pendingRequest = RequestClose;
+    }
+
+    // 뒤로 가기: 버튼을 고르는 중에만 닫는다. 연출 중에는 다른 곳으로 새지 않게 삼키기만 한다.
+    // 튜토리얼에서는 닫기 버튼이 없으므로 같은 이유로 닫지 않는다.
+    private bool OnBackRequested()
+    {
+        if (_state == SessionState.Choosing && !IsTutorialPull())
+        {
+            OnCloseRequested();
+        }
+
+        return true;
+    }
+
+    private void ShowPrompt(string text)
+    {
+        _tapPrompt.text = text;
+        _tapPrompt.alpha = 1f;
+        _tapPrompt.gameObject.SetActive(true);
+    }
+
+    private string GetChoosePrompt(int tickets, bool isTutorial)
+    {
+        string count = string.Format(UiMessages.MachineTicketCount, tickets);
+        if (isTutorial) return UiMessages.MachineTutorialPull + "\n" + count;
+
+        return tickets <= 0
+            ? UiMessages.NoTicket + "\n" + count
+            : UiMessages.MachineChoose + "\n" + count;
+    }
+
+    private static string GetFailureMessage(EGachaFailure failure)
+    {
+        switch (failure)
+        {
+            case EGachaFailure.NoRoom:
+                return UiMessages.NoRoomForPull;
+            case EGachaFailure.NoTicket:
+                return UiMessages.NoTicket;
+            default:
+                Debug.LogError($"뽑기에 실패했습니다. : {failure}");
+                return UiMessages.PullFailed;
+        }
+    }
+
+    // 뽑기 튜토리얼이 끝나기 전의 첫 뽑기는 튜토리얼이 준 무료 한 장이다. 그동안은 1회만 허용한다.
+    private static bool IsTutorialPull()
+    {
+        return !TutorialProgress.IsCompleted(TutorialIds.Gacha);
+    }
+
+    private int GetTicketCount()
+    {
+        return Mathf.FloorToInt((float)(double)_currencyManager.Get(ECurrencyType.GachaTicket));
     }
 
     private async UniTask<bool> Emerge(
@@ -279,7 +608,6 @@ public sealed class GachaResultDirector : MonoBehaviour
             float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _emergeDuration));
             _resultRect.anchoredPosition = Vector2.Lerp(start, end, ratio);
             _resultRect.localScale = Vector3.one * Mathf.Lerp(0.2f, _emergeScale, ratio);
-            _machine.SetMachineAlpha(1f - ratio * 0.7f);
             _machine.Sustain(elapsed, Tint(resultColor));
         }
         return false;
@@ -306,7 +634,6 @@ public sealed class GachaResultDirector : MonoBehaviour
                 _resultNameRestPosition + Vector2.right * _nameSlideDistance,
                 _resultNameRestPosition,
                 nameRatio);
-            _machine.SetMachineAlpha(0.3f * (1f - ratio));
             _machine.Sustain(_emergeDuration + elapsed, Tint(resultColor));
         }
 
@@ -317,6 +644,119 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultNameRect.anchoredPosition = _resultNameRestPosition;
         _machine.EndSustain();
         _machine.Hide();
+        return false;
+    }
+
+    // 열린 캡슐 자리에서 슬라임이 솟아 이름과 함께 남는다. 다른 캡슐을 여는 것을 막지 않도록 기다리지
+    // 않고 따로 돈다. 다 끝나면 _pendingEmerges가 줄어 "모두 열었다"를 알 수 있다.
+    private async UniTaskVoid EmergeSlot(
+        int index,
+        GachaPullItem item,
+        Color color,
+        CancellationToken token)
+    {
+        try
+        {
+            ResultSlot slot = _slots[index];
+            ESlimeGrade grade = item.Slime.Grade;
+            bool isSpecial = item.Rarity == EGachaRarity.Special;
+            slot.Slime.sprite = GetSprite(grade);
+            slot.Slime.enabled = slot.Slime.sprite != null;
+            slot.Slime.color = _silhouetteColor;
+            RectTransform rect = slot.Slime.rectTransform;
+            rect.anchoredPosition = Vector2.down * 30f;
+            rect.localScale = Vector3.one * 0.2f;
+            slot.Name.text = isSpecial
+                ? GetName(grade) + "\n<size=65%>" + UiMessages.SpecialSlimeShort + "</size>"
+                : GetName(grade);
+            slot.Name.alpha = 0f;
+            slot.Name.gameObject.SetActive(true);
+
+            float elapsed = 0f;
+            while (elapsed < _slotEmergeSeconds)
+            {
+                if (await NextFrame(token)) return;
+
+                elapsed += Time.unscaledDeltaTime;
+                float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _slotEmergeSeconds));
+                float reveal = Mathf.InverseLerp(0.15f, 0.7f, ratio);
+                rect.anchoredPosition = Vector2.Lerp(Vector2.down * 30f, Vector2.zero, ratio);
+                rect.localScale = Vector3.one * (Mathf.Lerp(0.2f, 1f, ratio) +
+                                                 Mathf.Sin(ratio * Mathf.PI) * 0.15f);
+                slot.Slime.color = Color.Lerp(_silhouetteColor, Color.white, reveal);
+                slot.Name.alpha = Mathf.InverseLerp(0.35f, 0.9f, ratio);
+            }
+
+            rect.localScale = Vector3.one;
+            slot.Slime.color = Color.white;
+            slot.Name.alpha = 1f;
+            _slotShimmer[index] = isSpecial;
+        }
+        finally
+        {
+            _pendingEmerges--;
+        }
+    }
+
+    // 열린 슬라임이 자기 자리에서 필드의 제자리로 호를 그리며 날아간다. 잇따라 출발해 연달아 도착한다.
+    private async UniTask<bool> FlySlot(int index, GachaPullItem item, CancellationToken token)
+    {
+        float delay = index * _flyStagger;
+        if (delay > 0f && await Wait(delay, token)) return true;
+
+        ResultSlot slot = _slots[index];
+        RectTransform rect = slot.Slime.rectTransform;
+        Vector2 destination = GetFieldLocalPosition(item.Slime, slot.Root.anchoredPosition) -
+                              slot.Root.anchoredPosition;
+        Vector2 start = rect.anchoredPosition;
+        Vector2 path = destination - start;
+        Vector2 forward = path.sqrMagnitude > 0.01f ? path.normalized : Vector2.up;
+        Vector2 perpendicular = new(-forward.y, forward.x);
+        float startScale = rect.localScale.x;
+        _slotShimmer[index] = false;
+
+        float elapsed = 0f;
+        while (elapsed < _moveDuration)
+        {
+            if (await NextFrame(token)) return true;
+
+            elapsed += Time.unscaledDeltaTime;
+            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _moveDuration));
+            float angle = ratio * Mathf.PI * 2f;
+            float envelope = Mathf.Sin(ratio * Mathf.PI);
+            Vector2 orbit =
+                (perpendicular * Mathf.Sin(angle) +
+                 forward * (1f - Mathf.Cos(angle)) * 0.45f) *
+                (_moveArcRadius * 0.6f * envelope);
+            rect.anchoredPosition = Vector2.Lerp(start, destination, ratio) + orbit;
+            rect.localScale = Vector3.one * Mathf.Lerp(startScale, _slotEndScale, ratio);
+            rect.localRotation = Quaternion.Euler(0f, 0f, -360f * ratio);
+            slot.Slime.color = Color.white;
+            slot.Name.alpha = 1f - Mathf.Clamp01(ratio * 2.5f);
+        }
+
+        rect.anchoredPosition = destination;
+        rect.localRotation = Quaternion.identity;
+        item.Slime.SetLocationPresentationActive(true);
+        slot.Slime.enabled = false;
+        slot.Name.gameObject.SetActive(false);
+
+        // 도착하면 제자리에서 둥근 파동이 한 번 퍼진다.
+        Color tint = TintFor(item.Rarity);
+        RectTransform ring = slot.Ring.rectTransform;
+        ring.anchoredPosition = destination;
+        float arrival = 0f;
+        while (arrival < _arrivalDuration)
+        {
+            if (await NextFrame(token)) return true;
+
+            arrival += Time.unscaledDeltaTime;
+            float ratio = Normalized(arrival, _arrivalDuration);
+            ring.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.5f, ratio);
+            SetImageColor(slot.Ring, tint, (1f - ratio) * 0.5f);
+        }
+
+        SetImageAlpha(slot.Ring, 0f);
         return false;
     }
 
@@ -381,11 +821,24 @@ public sealed class GachaResultDirector : MonoBehaviour
         return RainbowTint.Pure();
     }
 
+    private static Color TintFor(EGachaRarity rarity)
+    {
+        return rarity == EGachaRarity.Special ? RainbowTint.Pure() : GetResultColor(rarity);
+    }
+
     private void Update()
     {
-        if (!_isResultImageShimmering) return;
+        if (_isResultImageShimmering)
+        {
+            _resultImage.color = RainbowTint.Shimmer();
+        }
 
-        _resultImage.color = RainbowTint.Shimmer();
+        if (_slotShimmer == null) return;
+
+        for (int i = 0; i < _slotShimmer.Length; i++)
+        {
+            if (_slotShimmer[i]) _slots[i].Slime.color = RainbowTint.Shimmer();
+        }
     }
 
     private static Color GetResultColor(EGachaRarity rarity)
@@ -562,10 +1015,28 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void CloseOverlay()
     {
-        _tapButton.interactable = false;
+        _tapButton.gameObject.SetActive(false);
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
+        _pullPanel.Hide();
+        _machine.Hide();
         _root.SetActive(false);
+    }
+
+    private bool IsValidSlots()
+    {
+        if (_slots == null || _slots.Length == 0) return false;
+
+        foreach (ResultSlot slot in _slots)
+        {
+            if (slot == null || slot.Root == null || slot.Slime == null ||
+                slot.Name == null || slot.Ring == null)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static async UniTask<bool> NextFrame(CancellationToken token) =>

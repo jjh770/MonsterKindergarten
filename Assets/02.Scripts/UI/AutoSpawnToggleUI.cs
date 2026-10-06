@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +17,6 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
 
     public RectTransform ButtonTarget => _view != null ? _view.ButtonTarget : null;
-    public event Action<bool> StateChanged;
 
     private void Awake()
     {
@@ -73,7 +71,6 @@ public sealed class AutoSpawnToggleUI : MonoBehaviour
 
         bool isEnabled = !_slimeManager.IsAutoSpawnEnabled;
         _slimeManager.SetAutoSpawnEnabled(isEnabled);
-        StateChanged?.Invoke(isEnabled);
     }
 
     private void Refresh()

@@ -82,7 +82,12 @@ public static class UiMessages
     // 뽑기
     public static string NoTicket => Source.NoTicket;
     public static string NoRoomForPull => Source.NoRoomForPull;
-    public static string MachineInsertTap => Source.MachineInsertTap;
+    public static string MachineChoose => Source.MachineChoose;
+    public static string MachineTicketCount => Source.MachineTicketCount;
+    public static string MachineTutorialPull => Source.MachineTutorialPull;
+    public static string MachineAllOpened => Source.MachineAllOpened;
+    public static string SpecialSlimeShort => Source.SpecialSlimeShort;
+    public static string PullFailed => Source.PullFailed;
     public static string MachineCapsuleTap => Source.MachineCapsuleTap;
     public static string SpecialSlimeSubtitle => Source.SpecialSlimeSubtitle;
     public static string TicketObtained => Source.TicketObtained;

@@ -356,12 +356,12 @@ public class SpawnManager : MonoBehaviour
     public int GetMainFieldSlimeCount() =>
         _slimeSpawner.GetActiveCount(ESlimeLocation.MainField);
 
-    // 메인 필드에 개체를 더 놓을 자리가 있는지 판정한다.
+    // 메인 필드에 개체를 count마리 더 놓을 자리가 있는지 판정한다.
     // 자연 스폰과 장식장 꺼내기(기획서 §7.5)가 같은 기준을 쓰도록 한곳에 둔다.
-    public bool HasMainFieldRoom()
+    public bool HasMainFieldRoom(int count = 1)
     {
         return _slimeSpawner != null &&
-               _slimeSpawner.GetActiveCount(ESlimeLocation.MainField) <
+               _slimeSpawner.GetActiveCount(ESlimeLocation.MainField) + count <=
                _maxActiveCount;
     }
 

@@ -38,7 +38,12 @@ public sealed class UiMessagesSO : ScriptableObject
     [Header("뽑기")]
     [SerializeField] private string _noTicket = "슬라임이 떨어뜨리는 뽑기권을 모아보세요.";
     [TextArea] [SerializeField] private string _noRoomForPull = "유치원이 가득 찼어요.\n슬라임을 합쳐 자리를 만들어 주세요.";
-    [SerializeField] private string _machineInsertTap = "화면을 톡 눌러 뽑기권을 넣어요";
+    [SerializeField] private string _machineChoose = "횟수를 골라 뽑기권을 넣어요";
+    [SerializeField] private string _machineTicketCount = "보유 뽑기권 : {0}장";
+    [TextArea] [SerializeField] private string _machineTutorialPull = "1회 뽑기 버튼을 눌러\n뽑기권을 넣어 보세요!";
+    [TextArea] [SerializeField] private string _machineAllOpened = "모두 확인했어요!\n화면을 눌러 필드로 보내요";
+    [SerializeField] private string _specialSlimeShort = "★ 특별한 슬라임";
+    [TextArea] [SerializeField] private string _pullFailed = "뽑기를 하지 못했어요.\n잠시 뒤에 다시 시도해 주세요.";
     [SerializeField] private string _machineCapsuleTap = "캡슐을 톡 눌러 열어 보세요";
     [SerializeField] private string _specialSlimeSubtitle = "뭔가 특별해 보여요...!";
     [SerializeField] private string _ticketObtained = "뽑기권 획득!";
@@ -62,7 +67,12 @@ public sealed class UiMessagesSO : ScriptableObject
     public string NoMergePair => _noMergePair;
     public string NoTicket => _noTicket;
     public string NoRoomForPull => _noRoomForPull;
-    public string MachineInsertTap => _machineInsertTap;
+    public string MachineChoose => _machineChoose;
+    public string MachineTicketCount => _machineTicketCount;
+    public string MachineTutorialPull => _machineTutorialPull;
+    public string MachineAllOpened => _machineAllOpened;
+    public string SpecialSlimeShort => _specialSlimeShort;
+    public string PullFailed => _pullFailed;
     public string MachineCapsuleTap => _machineCapsuleTap;
     public string SpecialSlimeSubtitle => _specialSlimeSubtitle;
     public string TicketObtained => _ticketObtained;
