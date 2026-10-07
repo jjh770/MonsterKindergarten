@@ -25,8 +25,6 @@ public sealed class GachaMachineView : MonoBehaviour
         public readonly float ChargeSeconds;
         public readonly float GlowScale;
         public readonly int TwinkleCount;
-        public readonly float FlashAlpha;
-        public readonly float ShockwaveAlpha;
         public readonly float ShakeAmplitude;
         public readonly float HitStopSeconds;
         public readonly float BurstShake;
@@ -35,8 +33,6 @@ public sealed class GachaMachineView : MonoBehaviour
             float chargeSeconds,
             float glowScale,
             int twinkleCount,
-            float flashAlpha,
-            float shockwaveAlpha,
             float shakeAmplitude,
             float hitStopSeconds,
             float burstShake)
@@ -44,8 +40,6 @@ public sealed class GachaMachineView : MonoBehaviour
             ChargeSeconds = chargeSeconds;
             GlowScale = glowScale;
             TwinkleCount = twinkleCount;
-            FlashAlpha = flashAlpha;
-            ShockwaveAlpha = shockwaveAlpha;
             ShakeAmplitude = shakeAmplitude;
             HitStopSeconds = hitStopSeconds;
             BurstShake = burstShake;
@@ -72,10 +66,6 @@ public sealed class GachaMachineView : MonoBehaviour
     [Header("Pile")]
     [SerializeField] private RectTransform _pileLayer;
     [SerializeField] private Image[] _pileCapsules;
-    [Tooltip("뽑는 순서대로 바닥으로 떨어지는 _pileCapsules 번호입니다. _capsules와 같은 길이로 둡니다.")]
-    [SerializeField] private int[] _dropIndices;
-    [Tooltip("하나만 뽑을 때 빠진 자리를 메우는 캡슐의 _pileCapsules 번호입니다. 앞 번호부터 차례로 바로 앞 번호의 자리로 굴러 내려갑니다.")]
-    [SerializeField] private int[] _refillChain;
     [SerializeField] private Sprite[] _capsuleSprites;
     [SerializeField] private Sprite _rainbowCapsuleSprite;
 
@@ -110,15 +100,12 @@ public sealed class GachaMachineView : MonoBehaviour
     [Header("Light")]
     [SerializeField] private Image _glow;
     [SerializeField] private Image[] _twinkles;
-    [SerializeField] private Image _shockwave;
-    [SerializeField] private Image _flash;
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _appearDuration = 0.4f;
     [SerializeField, Min(0f)] private float _ticketPopDuration = 0.2f;
     [SerializeField, Min(0f)] private float _ticketFlyDuration = 0.9f;
     [SerializeField, Min(0f)] private float _shuffleDuration = 0.9f;
-    [SerializeField, Min(0f)] private float _dropDuration = 0.45f;
     [SerializeField, Min(0f)] private float _rollOutDuration = 0.75f;
     [SerializeField, Min(0f)] private float _splitDuration = 0.5f;
     [Tooltip("여러 개를 뽑을 때 캡슐이 하나씩 떨어지는 간격입니다.")]
@@ -132,22 +119,12 @@ public sealed class GachaMachineView : MonoBehaviour
     [SerializeField, Min(1f)] private float _ticketZoom = 1.12f;
     [SerializeField, Min(1f)] private float _shuffleZoom = 1.32f;
     [SerializeField, Min(1f)] private float _chargeZoom = 1.45f;
-    [Tooltip("여러 개를 뽑을 때 캡슐을 하나 열면서 당기는 확대 배율입니다. 캡슐이 자기 자리에 머물도록 초점을 제자리에 둡니다.")]
-    [SerializeField, Min(1f)] private float _multiChargeZoom = 1.25f;
 
     [Header("Look")]
-    [Tooltip("캡슐을 열 때 커지는 배율입니다.")]
-    [SerializeField, Min(1f)] private float _openScale = 2.4f;
     [Tooltip("캡슐 그림에서 이음선이 위에서 몇 퍼센트 아래에 있는지입니다. 반쪽으로 가를 때 씁니다.")]
     [SerializeField, Range(0.3f, 0.7f)] private float _seamFraction = 0.56f;
     [SerializeField, Min(0f)] private float _glowBaseScale = 1f;
-    [Tooltip("여러 개를 뽑아 바닥이 비면 남은 캡슐이 한 줄만큼 내려앉는 거리입니다.")]
-    [SerializeField, Min(0f)] private float _collapseDrop = 85f;
-
     private const float WaitSfxFadeOutSeconds = 0.2f;
-    private const float RefillSeconds = 0.4f;
-    private const float RefillStagger = 0.18f;
-    private const float PileHop = 38f;
 
     private float[] _trailBirth;
     private Vector2[] _trailPosition;
@@ -156,11 +133,11 @@ public sealed class GachaMachineView : MonoBehaviour
     private Vector2[] _pileHome;
     private Vector2[] _pileAuthoredHome;
     private int[] _pileSiblingIndex;
+    private Sprite[] _pileAuthoredSprites;
     private Vector2 _rootRest;
 
     // 한 번의 뽑기 상태.
     private int _count;
-    private Sprite[] _chosenSprites;
     private bool[] _opened;
     private Vector2[] _slotLocal;
     private Vector2[] _capsuleRest;
@@ -196,9 +173,8 @@ public sealed class GachaMachineView : MonoBehaviour
             _pileCapsules == null || _pileCapsules.Length == 0 ||
             _capsuleSprites == null || _capsuleSprites.Length == 0 ||
             _rainbowCapsuleSprite == null || _ticketImage == null || _ticketSlot == null ||
-            _outlet == null || !IsValidCapsules() ||
-            !IsValidDropIndices() || !IsValidRefillChain() || _glow == null ||
-            _twinkles == null || _twinkles.Length == 0 || _shockwave == null || _flash == null)
+            _outlet == null || !IsValidCapsules() || _glow == null ||
+            _twinkles == null || _twinkles.Length == 0)
         {
             Debug.LogError("뽑기 기계 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -208,14 +184,15 @@ public sealed class GachaMachineView : MonoBehaviour
         _pileHome = new Vector2[_pileCapsules.Length];
         _pileAuthoredHome = new Vector2[_pileCapsules.Length];
         _pileSiblingIndex = new int[_pileCapsules.Length];
+        _pileAuthoredSprites = new Sprite[_pileCapsules.Length];
         for (int i = 0; i < _pileCapsules.Length; i++)
         {
             _pileAuthoredHome[i] = _pileCapsules[i].rectTransform.anchoredPosition;
             _pileSiblingIndex[i] = _pileCapsules[i].transform.GetSiblingIndex();
+            _pileAuthoredSprites[i] = _pileCapsules[i].sprite;
         }
 
         int slots = _capsules.Length;
-        _chosenSprites = new Sprite[slots];
         _opened = new bool[slots];
         _slotLocal = new Vector2[slots];
         _capsuleRest = new Vector2[slots];
@@ -261,6 +238,7 @@ public sealed class GachaMachineView : MonoBehaviour
             Image capsule = _pileCapsules[i];
             capsule.transform.SetSiblingIndex(_pileSiblingIndex[i]);
             capsule.gameObject.SetActive(true);
+            capsule.sprite = _pileAuthoredSprites[i];
             capsule.rectTransform.anchoredPosition = _pileHome[i];
             capsule.rectTransform.localRotation = Quaternion.identity;
             capsule.rectTransform.localScale = Vector3.one;
@@ -277,13 +255,12 @@ public sealed class GachaMachineView : MonoBehaviour
 
         _ticketImage.gameObject.SetActive(false);
         _glow.gameObject.SetActive(false);
-        _shockwave.gameObject.SetActive(false);
-        SetImageAlpha(_flash, 0f);
         HideTwinkles();
     }
 
     // 결과가 정해진 뒤 불린다. 특별한 결과면 그 캡슐만 무지개이고, 아니면 여섯 색 중 하나다.
-    // 색은 등급과 관계없이 정해서 겉모습으로 결과를 읽지 못하게 한다.
+    // 색은 등급과 관계없이 정해서 겉모습으로 결과를 읽지 못하게 한다. 더미의 그림은
+    // 배출될 때까지 그대로 둬서, 버튼을 누른 순간 결과 색으로 바뀌어 보이지 않게 한다.
     public void BeginPull(IReadOnlyList<bool> isSpecial)
     {
         if (!_isReady) return;
@@ -294,8 +271,6 @@ public sealed class GachaMachineView : MonoBehaviour
             Sprite sprite = isSpecial[i]
                 ? _rainbowCapsuleSprite
                 : _capsuleSprites[UnityEngine.Random.Range(0, _capsuleSprites.Length)];
-            _chosenSprites[i] = sprite;
-            _pileCapsules[_dropIndices[i]].sprite = sprite;
             _capsules[i].Capsule.sprite = sprite;
             _capsules[i].Top.sprite = sprite;
             _capsules[i].Bottom.sprite = sprite;
@@ -498,10 +473,16 @@ public sealed class GachaMachineView : MonoBehaviour
             : await DispenseMany(token);
     }
 
-    // 캡슐을 눌러야 한다고 알려 주는 흔들림이다. 가끔씩만 좌우로 뛰고 흔들려서, 계속 떨리는 것보다
-    // 눈에 띄고 거슬리지 않는다. 캡슐마다 주기가 달라 한꺼번에 움직이지 않는다.
+    // 1회 뽑기에서만 캡슐을 눌러야 한다는 안내 모션을 보인다. 5회는 어떤 캡슐을 고를지
+    // 플레이어가 결정하므로, 모두를 흔들어 선택된 캡슐의 개봉 모션과 섞이지 않게 한다.
     public void IdleCapsules(float elapsed)
     {
+        if (_count > 1)
+        {
+            ResetUnopenedCapsulesToRest(-1);
+            return;
+        }
+
         for (int i = 0; i < _count; i++)
         {
             if (_opened[i] || !_capsules[i].Capsule.gameObject.activeSelf) continue;
@@ -562,19 +543,25 @@ public sealed class GachaMachineView : MonoBehaviour
         Vector2 open = _capsuleRest[index];
         float baseScale = isMulti ? _slotCapsuleScale : _singleCapsuleScale;
         float chargeSeconds = isMulti ? style.ChargeSeconds * _multiChargeRatio : style.ChargeSeconds;
-        float chargeZoom = isMulti ? _multiChargeZoom : _chargeZoom;
         bool cancelled;
+
+        // 5회 뽑기에서는 선택한 캡슐만 충전하며 흔들린다. 대기 모션의 마지막 자세와
+        // 카메라 흔들림이 남으면 다른 네 캡슐도 함께 흔들려 보이므로, 먼저 제자리로 돌린다.
+        if (isMulti) ResetUnopenedCapsulesToRest(index);
 
         // 캡슐은 이미 자기 자리에 있다. 집어 올리지 않고 그 자리에서 흔들다가 가른다.
         capsule.localRotation = Quaternion.identity;
         _glow.gameObject.SetActive(true);
 
         // 모이는 동안 카메라가 점점 빨려 들어가고 화면이 떨린다. 마지막에 가장 가파르게 당겨진다.
-        MoveCamera(chargeZoom, ToCamera(open), chargeSeconds, InExpo, 1f);
+        if (!isMulti) MoveCamera(_chargeZoom, ToCamera(open), chargeSeconds, InExpo, 1f);
         cancelled = await Run(chargeSeconds, ratio =>
         {
             float elapsed = ratio * chargeSeconds;
-            _holdShake = Mathf.Lerp(0f, style.ShakeAmplitude * 0.5f, ratio * ratio);
+            // 여러 캡슐이 보일 때의 화면 흔들림은 모두를 흔들어 보이게 하므로 1회에만 쓴다.
+            _holdShake = isMulti
+                ? 0f
+                : Mathf.Lerp(0f, style.ShakeAmplitude * 0.5f, ratio * ratio);
             float amplitude = Mathf.Lerp(2f, style.ShakeAmplitude, ratio * ratio);
             capsule.anchoredPosition = open + new Vector2(
                 Mathf.Sin(elapsed * 55f) * amplitude,
@@ -597,15 +584,12 @@ public sealed class GachaMachineView : MonoBehaviour
 
         // 가르는 순간: 통짜 캡슐을 감추고 같은 자리에 반쪽 둘을 놓는다.
         AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
-        MoveCamera(1f, Vector2.zero, 0.45f, EaseOutBack, 1f);
-        BurstShake(style.BurstShake, 0.55f);
+        if (!isMulti) MoveCamera(1f, Vector2.zero, 0.45f, EaseOutBack, 1f);
+        if (!isMulti) BurstShake(style.BurstShake, 0.55f);
         float scale = capsule.localScale.x;
         capsule.gameObject.SetActive(false);
         PlaceHalf(slot.Top, open, scale);
         PlaceHalf(slot.Bottom, open, scale);
-        PrepareShockwave(style);
-        float flashPeak = style.FlashAlpha;
-
         cancelled = await Run(_splitDuration, ratio =>
         {
             float outward = 1f - (1f - ratio) * (1f - ratio);
@@ -625,23 +609,26 @@ public sealed class GachaMachineView : MonoBehaviour
             SetImageColor(_glow, tint, 1f - ratio);
 
             AnimateTwinkleBurst(open, style.TwinkleCount, ratio, tint);
-            if (flashPeak > 0f) SetImageColor(_flash, tint, flashPeak * (1f - ratio));
-            if (style.ShockwaveAlpha > 0f)
-            {
-                _shockwave.rectTransform.anchoredPosition = open;
-                _shockwave.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.35f, 2.4f, outward);
-                SetImageColor(_shockwave, tint, style.ShockwaveAlpha * (1f - ratio));
-            }
         }, token);
 
         slot.Top.gameObject.SetActive(false);
         slot.Bottom.gameObject.SetActive(false);
         _glow.gameObject.SetActive(false);
-        _shockwave.gameObject.SetActive(false);
-        SetImageAlpha(_flash, 0f);
         HideTwinkles();
         _opened[index] = true;
         return cancelled;
+    }
+
+    private void ResetUnopenedCapsulesToRest(int openingIndex)
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            if (i == openingIndex || _opened[i] || !_capsules[i].Capsule.gameObject.activeSelf) continue;
+
+            RectTransform rect = _capsules[i].Capsule.rectTransform;
+            rect.anchoredPosition = _capsuleRest[i];
+            rect.localRotation = Quaternion.identity;
+        }
     }
 
     // 슬라임이 솟아오르는 동안 빛이 계속 새로 퍼지게 한다. 한 번 터지고 끝나면 허전하다.
@@ -673,19 +660,12 @@ public sealed class GachaMachineView : MonoBehaviour
         HideTwinkles();
     }
 
-    // 하나만 뽑을 때: 쿵 하고 떨어지면 빈자리를 위 캡슐이 메운다. 그 뒤 캡슐이 배출구에서 화면 가운데로
-    // 날아오는 동안 기계는 뒤로 물러나고, 카메라는 처음 시점으로 돌아와 캡슐만 남는다.
+    // 하나만 뽑을 때: 더미는 그대로 둔 채 결과 캡슐이 배출구에서 화면 가운데로 날아온다.
     private async UniTask<bool> DispenseOne(CancellationToken token)
     {
-        if (await DropPileCapsule(_dropIndices[0], 0.18f, _dropDuration, token)) return true;
-        AudioManager.Instance?.PlaySFX(EAudioSfx.SlimeLand);
-
         MoveCamera(1f, Vector2.zero, 0.6f, InOutQuint, 1f);
         BurstShake(10f, 0.3f);
-        (bool punchCancelled, bool refillCancelled) = await UniTask.WhenAll(
-            Punch(0.03f, 0.25f, token),
-            Refill(token));
-        if (punchCancelled || refillCancelled) return true;
+        if (await Punch(0.03f, 0.25f, token)) return true;
 
         (bool rollCancelled, bool fadeCancelled) = await UniTask.WhenAll(
             RollOut(0, _slotLocal[0], token),
@@ -693,8 +673,7 @@ public sealed class GachaMachineView : MonoBehaviour
         return rollCancelled || fadeCancelled;
     }
 
-    // 여러 개를 뽑을 때: 아래 칸 캡슐부터 하나씩 연달아 떨어져 각자 자리로 굴러 나오고, 바닥이 빈 더미는
-    // 한 줄만큼 내려앉는다. 카메라는 캡슐이 놓이는 자리가 어긋나지 않게 처음 시점으로 돌아온다.
+    // 여러 개를 뽑을 때: 부들댄 더미는 유지하고, 결과 캡슐만 하나씩 각자 자리로 굴러 나온다.
     private async UniTask<bool> DispenseMany(CancellationToken token)
     {
         MoveCamera(1f, Vector2.zero, 0.6f, InOutQuint, 1f);
@@ -705,10 +684,7 @@ public sealed class GachaMachineView : MonoBehaviour
             drops[i] = DropAndRollOut(i, token);
         }
 
-        UniTask<bool> collapse = CollapsePile(token);
         bool[] dropResults = await UniTask.WhenAll(drops);
-        bool collapseCancelled = await collapse;
-        if (collapseCancelled) return true;
 
         foreach (bool dropCancelled in dropResults)
         {
@@ -723,53 +699,9 @@ public sealed class GachaMachineView : MonoBehaviour
         float delay = index * _multiDropStagger;
         if (delay > 0f && await Pause(delay, token)) return true;
 
-        if (await DropPileCapsule(_dropIndices[index], 0.1f, 0.3f, token)) return true;
-        AudioManager.Instance?.PlaySFX(EAudioSfx.SlimeLand);
-        BurstShake(6f, 0.2f);
+        // 이미 나온 캡슐까지 함께 흔들리지 않게, 5회 결과가 나올 때는 화면 흔들림을 쓰지 않는다.
+        if (_count == 1) BurstShake(6f, 0.2f);
         return await RollOut(index, _slotLocal[index], token);
-    }
-
-    // 남은 캡슐이 비워진 바닥으로 한 줄씩 내려앉는다. 마지막 캡슐이 떨어진 뒤에 시작한다.
-    private async UniTask<bool> CollapsePile(CancellationToken token)
-    {
-        float wait = (_count - 1) * _multiDropStagger + 0.4f;
-        if (await Pause(wait, token)) return true;
-
-        List<int> remaining = new();
-        for (int i = 0; i < _pileCapsules.Length; i++)
-        {
-            bool removed = false;
-            for (int k = 0; k < _count; k++)
-            {
-                if (_dropIndices[k] == i) removed = true;
-            }
-
-            if (!removed) remaining.Add(i);
-        }
-
-        Vector2[] from = new Vector2[remaining.Count];
-        Vector2[] to = new Vector2[remaining.Count];
-        for (int i = 0; i < remaining.Count; i++)
-        {
-            int index = remaining[i];
-            from[i] = _pileCapsules[index].rectTransform.anchoredPosition;
-            to[i] = _pileHome[index] + Vector2.down * _collapseDrop;
-            _pileHome[index] = to[i];
-        }
-
-        return await Run(0.5f, ratio =>
-        {
-            for (int i = 0; i < remaining.Count; i++)
-            {
-                RectTransform rect = _pileCapsules[remaining[i]].rectTransform;
-                float local = Mathf.Clamp01(ratio * 1.25f - i * 0.04f);
-                rect.anchoredPosition = new Vector2(
-                    Mathf.Lerp(from[i].x, to[i].x, Mathf.SmoothStep(0f, 1f, local)),
-                    Mathf.Lerp(from[i].y, to[i].y, EaseOutBounce(local)));
-                rect.localRotation = Quaternion.Slerp(
-                    rect.localRotation, Quaternion.identity, local);
-            }
-        }, token);
     }
 
     private async UniTask<bool> Settle(CancellationToken token)
@@ -789,38 +721,6 @@ public sealed class GachaMachineView : MonoBehaviour
                 rect.localRotation = Quaternion.Slerp(rect.localRotation, Quaternion.identity, ratio);
             }
         }, token);
-    }
-
-    // 고른 캡슐이 살짝 뛰었다가 바닥 아래로 떨어진다. 그림 아래쪽 틀이 가려 주므로 따로 지우지 않는다.
-    private async UniTask<bool> DropPileCapsule(
-        int pileIndex,
-        float hopSeconds,
-        float fallSeconds,
-        CancellationToken token)
-    {
-        RectTransform chosen = _pileCapsules[pileIndex].rectTransform;
-        // 떨어지는 동안 이웃 캡슐에 가리지 않도록 더미의 맨 앞으로 꺼낸다.
-        chosen.SetAsLastSibling();
-        Vector2 from = chosen.anchoredPosition;
-        Vector2 top = from + Vector2.up * PileHop;
-        float fallY = -_pileLayer.rect.height * 0.5f - chosen.rect.height;
-
-        bool cancelled = await Run(hopSeconds, ratio =>
-        {
-            float eased = 1f - (1f - ratio) * (1f - ratio);
-            chosen.anchoredPosition = Vector2.Lerp(from, top, eased);
-            chosen.localRotation = Quaternion.Euler(0f, 0f, 12f * eased);
-        }, token);
-        if (cancelled) return true;
-
-        cancelled = await Run(fallSeconds, ratio =>
-        {
-            float eased = ratio * ratio;
-            chosen.anchoredPosition = new Vector2(top.x, Mathf.Lerp(top.y, fallY, eased));
-            chosen.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(12f, 200f, eased));
-        }, token);
-        chosen.gameObject.SetActive(false);
-        return cancelled;
     }
 
     // 배출구 안쪽에서 작게 나타나 호를 그리며 굴러 놓일 자리까지 날아가 선다.
@@ -876,42 +776,6 @@ public sealed class GachaMachineView : MonoBehaviour
         }
     }
 
-    // 떨어진 캡슐이 비운 자리를 위의 캡슐이 굴러 내려와 메운다. 앞 번호부터 차례로 바로 앞 번호의 자리로 내려가서
-    // 맨 위의 한 칸만 비는 자연스러운 더미가 된다.
-    private UniTask<bool> Refill(CancellationToken token)
-    {
-        int count = _refillChain.Length;
-        if (count == 0) return UniTask.FromResult(false);
-
-        Vector2[] from = new Vector2[count];
-        Vector2[] to = new Vector2[count];
-        Vector2 hole = _pileHome[_dropIndices[0]];
-        for (int i = 0; i < count; i++)
-        {
-            int index = _refillChain[i];
-            from[i] = _pileCapsules[index].rectTransform.anchoredPosition;
-            to[i] = hole;
-            hole = _pileHome[index];
-            _pileHome[index] = to[i];
-        }
-
-        float total = RefillSeconds + RefillStagger * (count - 1);
-        return Run(total, ratio =>
-        {
-            float elapsed = ratio * total;
-            for (int i = 0; i < count; i++)
-            {
-                float local = Mathf.Clamp01((elapsed - i * RefillStagger) / RefillSeconds);
-                RectTransform rect = _pileCapsules[_refillChain[i]].rectTransform;
-                rect.anchoredPosition = new Vector2(
-                    Mathf.Lerp(from[i].x, to[i].x, Mathf.SmoothStep(0f, 1f, local)),
-                    Mathf.Lerp(from[i].y, to[i].y, EaseOutBounce(local)));
-                rect.localRotation = Quaternion.Euler(
-                    0f, 0f, Mathf.Sin(local * Mathf.PI) * (i % 2 == 0 ? 12f : -12f));
-            }
-        }, token);
-    }
-
     private bool IsValidCapsules()
     {
         if (_capsules == null || _capsules.Length == 0) return false;
@@ -925,43 +789,6 @@ public sealed class GachaMachineView : MonoBehaviour
         }
 
         return _slotMarkers != null && _slotMarkers.Length >= _capsules.Length;
-    }
-
-    private bool IsValidDropIndices()
-    {
-        if (_dropIndices == null || _capsules == null || _dropIndices.Length != _capsules.Length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < _dropIndices.Length; i++)
-        {
-            if (_dropIndices[i] < 0 || _dropIndices[i] >= _pileCapsules.Length) return false;
-
-            for (int j = 0; j < i; j++)
-            {
-                if (_dropIndices[j] == _dropIndices[i]) return false;
-            }
-        }
-
-        return true;
-    }
-
-    private bool IsValidRefillChain()
-    {
-        if (_refillChain == null) return false;
-
-        foreach (int index in _refillChain)
-        {
-            if (index < 0 || index >= _pileCapsules.Length) return false;
-
-            foreach (int dropped in _dropIndices)
-            {
-                if (index == dropped) return false;
-            }
-        }
-
-        return true;
     }
 
     // 카메라 좌표계는 기계 루트가 놓인 자리를 원점으로 한다. 기계 로컬 점을 그 좌표로 옮긴다.
@@ -1071,12 +898,6 @@ public sealed class GachaMachineView : MonoBehaviour
         SetImageAlpha(half, 1f);
     }
 
-    private void PrepareShockwave(OpenStyle style)
-    {
-        _shockwave.gameObject.SetActive(style.ShockwaveAlpha > 0f);
-        SetImageAlpha(_shockwave, 0f);
-    }
-
     private void AnimateTwinkleBurst(Vector2 center, int count, float ratio, Color color)
     {
         int length = _twinkles.Length;
@@ -1165,11 +986,11 @@ public sealed class GachaMachineView : MonoBehaviour
     {
         return rarity switch
         {
-            EGachaRarity.Special => new OpenStyle(1.2f, 2.1f, 12, 0.7f, 0.9f, 16f, 0.12f, 36f),
-            EGachaRarity.Jackpot => new OpenStyle(1.05f, 1.9f, 12, 0.6f, 0.85f, 15f, 0.1f, 30f),
-            EGachaRarity.Rare => new OpenStyle(0.8f, 1.55f, 9, 0.35f, 0.7f, 12f, 0.06f, 18f),
-            EGachaRarity.Uncommon => new OpenStyle(0.6f, 1.25f, 7, 0f, 0f, 9f, 0f, 8f),
-            _ => new OpenStyle(0.45f, 1f, 5, 0f, 0f, 7f, 0f, 0f),
+            EGachaRarity.Special => new OpenStyle(1.2f, 2.1f, 12, 16f, 0.12f, 36f),
+            EGachaRarity.Jackpot => new OpenStyle(1.05f, 1.9f, 12, 15f, 0.1f, 30f),
+            EGachaRarity.Rare => new OpenStyle(0.8f, 1.55f, 9, 12f, 0.06f, 18f),
+            EGachaRarity.Uncommon => new OpenStyle(0.6f, 1.25f, 7, 9f, 0f, 8f),
+            _ => new OpenStyle(0.45f, 1f, 5, 7f, 0f, 0f),
         };
     }
 

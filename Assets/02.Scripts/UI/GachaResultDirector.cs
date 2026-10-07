@@ -23,8 +23,9 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         public RectTransform Root;
         public Image Slime;
+        public SlimeOutlineImage Outline;
+        public GachaResultAura Aura;
         public TMP_Text Name;
-        public Image Ring;
     }
 
     private enum SessionState
@@ -74,6 +75,8 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private Image _resultImage;
+    [SerializeField] private SlimeOutlineImage _resultOutline;
+    [SerializeField] private GachaResultAura _resultAura;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private CurrencyManager _currencyManager;
@@ -87,7 +90,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private TMP_Text _tapPrompt;
     [SerializeField] private TMP_Text _resultNameText;
     [SerializeField] private RectTransform _arrivalEffectRoot;
-    [SerializeField] private Image _arrivalShockwave;
     [SerializeField] private RectTransform[] _arrivalSparks;
 
     [Header("Slots")]
@@ -105,7 +107,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField, Min(0f)] private float _arrivalDuration = 0.45f;
 
     [Header("Look")]
-    [SerializeField] private Color _silhouetteColor = Color.black;
     [SerializeField, Min(0f)] private float _emergeScale = 1.35f;
     [SerializeField, Min(0f)] private float _revealScale = 1f;
     [SerializeField, Min(0f)] private float _endScale = 0.25f;
@@ -139,10 +140,10 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void Awake()
     {
-        if (_root == null || _canvasGroup == null || _resultImage == null ||
+        if (_root == null || _canvasGroup == null || _resultImage == null || _resultOutline == null ||
+            _resultAura == null ||
             _machine == null || _pullPanel == null || _tapButton == null || _tapPrompt == null ||
-            _resultNameText == null || _arrivalEffectRoot == null ||
-            _arrivalShockwave == null || _arrivalSparks == null ||
+            _resultNameText == null || _arrivalEffectRoot == null || _arrivalSparks == null ||
             _slimeManager == null || _currencyManager == null || _spawnManager == null ||
             !IsValidSlots())
         {
@@ -335,11 +336,12 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         Color resultColor = GetResultColor(item.Rarity);
         if (await _machine.Open(0, item.Rarity, resultColor, token)) return true;
-        if (await Emerge(GetSprite(target.Grade), resultColor, token)) return true;
+        if (await Emerge(GetSprite(target.Grade), item.Rarity, resultColor, token)) return true;
         if (await Reveal(resultColor, token)) return true;
         if (await Wait(_holdDuration, token)) return true;
 
         Vector2 destination = GetFieldLocalPosition(target, center);
+        _resultAura.Hide();
         AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
         if (await MoveTo(destination, token)) return true;
         if (await PlayArrivalEffect(destination, resultColor, token)) return true;
@@ -414,6 +416,8 @@ public sealed class GachaResultDirector : MonoBehaviour
         _tapPrompt.gameObject.SetActive(false);
         _pullPanel.Hide();
         _machine.Prepare();
+        _resultAura.Hide();
+        _resultOutline.Apply(null, false, false);
         _resultImage.enabled = false;
         _resultNameText.alpha = 0f;
         _resultNameText.gameObject.SetActive(true);
@@ -422,9 +426,10 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         foreach (ResultSlot slot in _slots)
         {
+            slot.Aura.Hide();
+            slot.Outline.Apply(null, false, false);
             slot.Slime.enabled = false;
             slot.Name.gameObject.SetActive(false);
-            SetImageAlpha(slot.Ring, 0f);
         }
 
         Array.Clear(_slotShimmer, 0, _slotShimmer.Length);
@@ -435,7 +440,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _resultRect.anchoredPosition = centerLocal + Vector2.down * _emergeRise;
         _resultRect.localScale = Vector3.one * 0.2f;
         _resultImage.enabled = false;
-        _resultImage.color = _silhouetteColor;
+        _resultImage.color = Color.white;
 
         _resultNameText.text = _isSpecialResult
             ? GetName(grade) + "\n<size=65%>" + SpecialSubtitle + "</size>"
@@ -447,7 +452,6 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         _arrivalEffectRoot.gameObject.SetActive(false);
         _arrivalEffectRoot.localScale = Vector3.one;
-        SetImageAlpha(_arrivalShockwave, 0f);
         HideSparks(_arrivalSparks);
     }
 
@@ -458,7 +462,6 @@ public sealed class GachaResultDirector : MonoBehaviour
             ResultSlot slot = _slots[i];
             slot.Slime.enabled = false;
             slot.Name.gameObject.SetActive(false);
-            SetImageAlpha(slot.Ring, 0f);
             slot.Root.gameObject.SetActive(i < items.Count);
         }
     }
@@ -591,12 +594,14 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private async UniTask<bool> Emerge(
         Sprite resultSprite,
+        EGachaRarity rarity,
         Color resultColor,
         CancellationToken token)
     {
-        _resultImage.sprite = resultSprite;
+        _resultAura.Show(rarity);
+        _resultOutline.Apply(resultSprite, resultSprite != null, _isSpecialResult);
         _resultImage.enabled = resultSprite != null;
-        _resultImage.color = _silhouetteColor;
+        _resultImage.color = Color.white;
         Vector2 start = _resultRect.anchoredPosition;
         Vector2 end = start + Vector2.up * _emergeRise;
         float elapsed = 0f;
@@ -626,7 +631,6 @@ public sealed class GachaResultDirector : MonoBehaviour
                 0f,
                 1f,
                 Mathf.InverseLerp(0.12f, 0.72f, ratio));
-            _resultImage.color = Color.Lerp(_silhouetteColor, Color.white, ratio);
             _resultRect.localScale = Vector3.one *
                                      (Mathf.Lerp(_emergeScale, _revealScale, ratio) + sparkle);
             _resultNameText.alpha = nameRatio;
@@ -660,9 +664,11 @@ public sealed class GachaResultDirector : MonoBehaviour
             ResultSlot slot = _slots[index];
             ESlimeGrade grade = item.Slime.Grade;
             bool isSpecial = item.Rarity == EGachaRarity.Special;
-            slot.Slime.sprite = GetSprite(grade);
+            Sprite sprite = GetSprite(grade);
+            slot.Aura.Show(item.Rarity);
+            slot.Outline.Apply(sprite, sprite != null, isSpecial);
             slot.Slime.enabled = slot.Slime.sprite != null;
-            slot.Slime.color = _silhouetteColor;
+            slot.Slime.color = Color.white;
             RectTransform rect = slot.Slime.rectTransform;
             rect.anchoredPosition = Vector2.down * 30f;
             rect.localScale = Vector3.one * 0.2f;
@@ -679,11 +685,9 @@ public sealed class GachaResultDirector : MonoBehaviour
 
                 elapsed += Time.unscaledDeltaTime;
                 float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _slotEmergeSeconds));
-                float reveal = Mathf.InverseLerp(0.15f, 0.7f, ratio);
                 rect.anchoredPosition = Vector2.Lerp(Vector2.down * 30f, Vector2.zero, ratio);
                 rect.localScale = Vector3.one * (Mathf.Lerp(0.2f, 1f, ratio) +
                                                  Mathf.Sin(ratio * Mathf.PI) * 0.15f);
-                slot.Slime.color = Color.Lerp(_silhouetteColor, Color.white, reveal);
                 slot.Name.alpha = Mathf.InverseLerp(0.35f, 0.9f, ratio);
             }
 
@@ -705,6 +709,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (delay > 0f && await Wait(delay, token)) return true;
 
         ResultSlot slot = _slots[index];
+        slot.Aura.Hide();
         RectTransform rect = slot.Slime.rectTransform;
         Vector2 destination = GetFieldLocalPosition(item.Slime, slot.Root.anchoredPosition) -
                               slot.Root.anchoredPosition;
@@ -741,22 +746,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         slot.Slime.enabled = false;
         slot.Name.gameObject.SetActive(false);
 
-        // 도착하면 제자리에서 둥근 파동이 한 번 퍼진다.
-        Color tint = TintFor(item.Rarity);
-        RectTransform ring = slot.Ring.rectTransform;
-        ring.anchoredPosition = destination;
-        float arrival = 0f;
-        while (arrival < _arrivalDuration)
-        {
-            if (await NextFrame(token)) return true;
-
-            arrival += Time.unscaledDeltaTime;
-            float ratio = Normalized(arrival, _arrivalDuration);
-            ring.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.5f, ratio);
-            SetImageColor(slot.Ring, tint, (1f - ratio) * 0.5f);
-        }
-
-        SetImageAlpha(slot.Ring, 0f);
         return false;
     }
 
@@ -819,11 +808,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (!_isSpecialResult) return color;
 
         return RainbowTint.Pure();
-    }
-
-    private static Color TintFor(EGachaRarity rarity)
-    {
-        return rarity == EGachaRarity.Special ? RainbowTint.Pure() : GetResultColor(rarity);
     }
 
     private void Update()
@@ -976,10 +960,6 @@ public sealed class GachaResultDirector : MonoBehaviour
             if (await NextFrame(token)) return true;
             elapsed += Time.unscaledDeltaTime;
             float ratio = Normalized(elapsed, _arrivalDuration);
-            float inverse = 1f - ratio;
-            _arrivalShockwave.rectTransform.localScale =
-                Vector3.one * Mathf.Lerp(0.35f, 2.1f, ratio);
-            SetImageColor(_arrivalShockwave, Tint(color), inverse * 0.85f);
             AnimateArrivalSparks(ratio, Tint(color));
             _resultRect.localScale = Vector3.one *
                                      (_endScale * (1f + Mathf.Sin(ratio * Mathf.PI) * 0.28f));
@@ -1029,8 +1009,9 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         foreach (ResultSlot slot in _slots)
         {
-            if (slot == null || slot.Root == null || slot.Slime == null ||
-                slot.Name == null || slot.Ring == null)
+            if (slot == null || slot.Root == null || slot.Slime == null || slot.Outline == null ||
+                slot.Aura == null ||
+                slot.Name == null)
             {
                 return false;
             }

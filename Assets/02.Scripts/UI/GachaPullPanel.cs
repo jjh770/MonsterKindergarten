@@ -95,6 +95,7 @@ public sealed class GachaPullPanel : MonoBehaviour
         _group.alpha = 0f;
         _fadeTween = _group.DOFade(1f, _fadeSeconds).SetUpdate(true);
 
+        _closeGroup.alpha = 1f;
         _closeGroup.gameObject.SetActive(!tutorialOnly);
         _multiGroup.gameObject.SetActive(!tutorialOnly);
         _singleGroup.alpha = 1f;
