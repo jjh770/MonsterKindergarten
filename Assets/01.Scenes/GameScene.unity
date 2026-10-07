@@ -42804,7 +42804,7 @@ MonoBehaviour:
   _spawnManager: {fileID: 1271333080}
   _slimeManager: {fileID: 376498428}
   _judgeInterval: 60
-  _dropChancePerSlime: 0.00167
+  _dropChancePerSlime: 0.0025
 --- !u!4 &1701297960
 Transform:
   m_ObjectHideFlags: 0

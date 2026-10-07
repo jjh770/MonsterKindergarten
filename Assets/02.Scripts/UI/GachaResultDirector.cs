@@ -96,7 +96,6 @@ public sealed class GachaResultDirector : MonoBehaviour
     [SerializeField] private ResultSlot[] _slots;
     [SerializeField, Min(0f)] private float _slotEmergeSeconds = 0.5f;
     [SerializeField, Min(0f)] private float _flyStagger = 0.18f;
-    [SerializeField, Min(0f)] private float _slotEndScale = 0.25f;
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.25f;
@@ -341,9 +340,13 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (await Wait(_holdDuration, token)) return true;
 
         Vector2 destination = GetFieldLocalPosition(target, center);
-        _resultAura.Hide();
+        _resultAura.PlayTrail(resultColor, _isSpecialResult);
         AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
         if (await MoveTo(destination, token)) return true;
+
+        // 도착하는 순간 진짜 슬라임이 필드에 나타나고, 그 자리에서 빛과 파편이 터진다.
+        target.SetLocationPresentationActive(true);
+        _resultAura.PlayBurst(resultColor, _isSpecialResult);
         if (await PlayArrivalEffect(destination, resultColor, token)) return true;
         if (await Fade(1f, 0f, _fadeDuration, token)) return true;
 
@@ -709,7 +712,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (delay > 0f && await Wait(delay, token)) return true;
 
         ResultSlot slot = _slots[index];
-        slot.Aura.Hide();
+        slot.Aura.PlayTrail(GetResultColor(item.Rarity), item.Rarity == EGachaRarity.Special);
         RectTransform rect = slot.Slime.rectTransform;
         Vector2 destination = GetFieldLocalPosition(item.Slime, slot.Root.anchoredPosition) -
                               slot.Root.anchoredPosition;
@@ -718,6 +721,9 @@ public sealed class GachaResultDirector : MonoBehaviour
         Vector2 forward = path.sqrMagnitude > 0.01f ? path.normalized : Vector2.up;
         Vector2 perpendicular = new(-forward.y, forward.x);
         float startScale = rect.localScale.x;
+        // 슬롯 그림은 1회 결과보다 작아서, 같은 배율로 줄이면 필드 슬라임보다 작게 도착한다.
+        // 도착 크기는 1회 결과가 줄어드는 실제 크기에 맞춘다.
+        float endScale = _endScale * _resultRect.rect.width / Mathf.Max(1f, rect.rect.width);
         _slotShimmer[index] = false;
 
         float elapsed = 0f;
@@ -734,7 +740,7 @@ public sealed class GachaResultDirector : MonoBehaviour
                  forward * (1f - Mathf.Cos(angle)) * 0.45f) *
                 (_moveArcRadius * 0.6f * envelope);
             rect.anchoredPosition = Vector2.Lerp(start, destination, ratio) + orbit;
-            rect.localScale = Vector3.one * Mathf.Lerp(startScale, _slotEndScale, ratio);
+            rect.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, ratio);
             rect.localRotation = Quaternion.Euler(0f, 0f, -360f * ratio);
             slot.Slime.color = Color.white;
             slot.Name.alpha = 1f - Mathf.Clamp01(ratio * 2.5f);
@@ -745,8 +751,8 @@ public sealed class GachaResultDirector : MonoBehaviour
         item.Slime.SetLocationPresentationActive(true);
         slot.Slime.enabled = false;
         slot.Name.gameObject.SetActive(false);
-
-        return false;
+        slot.Aura.PlayBurst(GetResultColor(item.Rarity), item.Rarity == EGachaRarity.Special);
+        return await Wait(slot.Aura.BurstSeconds, token);
     }
 
     // 바깥으로 퍼지며 작아지고 옅어지는 파편이다. 거리, 크기, 엇갈림은 BurstShape이 든다.

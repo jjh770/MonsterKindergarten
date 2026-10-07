@@ -40,11 +40,13 @@ public readonly struct NormalGachaProbability
 // 후보는 Lv.1부터 최고 해금 등급까지 전부다. 최고 등급 자신도 나올 수 있고, 그 위는
 // 절대 나오지 않는다. 뽑기가 아직 만나지 못한 등급의 슬라임을 만들어 주면 안 된다.
 //
-// 낮은 등급일수록 무겁다. Lv.n의 무게는 (최고 - n + 1)이라 Lv.1이 가장 잘 나오고
-// 최고 등급이 가장 드물다. 값은 확정된 밸런스라 에셋으로 빼지 않았다. 조정이 필요해지면
-// 그때 SpawnWeightTable처럼 ScriptableObject로 옮긴다.
+// 낮은 등급일수록 무겁다. Lv.n의 무게는 (최고 - n + 1)의 1.5제곱이라 Lv.1이 가장
+// 잘 나오고 최고 등급에 가까울수록 기존 선형 가중치보다 더 드물다. 값은 확정된 밸런스라
+// 에셋으로 빼지 않았다. 조정이 필요해지면 그때 SpawnWeightTable처럼 ScriptableObject로 옮긴다.
 public static class NormalGachaPool
 {
+    private const double GradeWeightExponent = 1.5d;
+
     // 포털 색은 최고 등급과의 거리로 정한다. 후보가 몇 개든 "얼마나 좋은 결과인지"가
     // 같은 뜻으로 남는다. 거리 0은 최고 등급 자신이다.
     private const int JackpotMaxDistance = 1;
@@ -57,7 +59,7 @@ public static class NormalGachaPool
         if (highestGrade < ESlimeGrade.Grade1) return probabilities;
 
         int highest = (int)highestGrade;
-        int totalWeight = 0;
+        double totalWeight = 0d;
         for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
         {
             totalWeight += GetWeight(highest, grade);
@@ -79,13 +81,13 @@ public static class NormalGachaPool
         if (highestGrade < ESlimeGrade.Grade1) return false;
 
         int highest = (int)highestGrade;
-        int totalWeight = 0;
+        double totalWeight = 0d;
         for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
         {
             totalWeight += GetWeight(highest, grade);
         }
 
-        int roll = Random.Range(0, totalWeight);
+        double roll = Random.value * totalWeight;
         for (int grade = (int)ESlimeGrade.Grade1; grade <= highest; grade++)
         {
             roll -= GetWeight(highest, grade);
@@ -96,6 +98,19 @@ public static class NormalGachaPool
         }
 
         return false;
+    }
+
+    // 특별 슬라임은 이미 낮은 특별 판정을 통과한 결과이므로 일반 가중치를 다시 적용하지 않는다.
+    // 현재 해금된 Lv.1~최고 등급을 모두 같은 확률로 골라 이중 가챠의 부담을 줄인다.
+    public static bool TryPickSpecial(ESlimeGrade highestGrade, out ESlimeGrade grade)
+    {
+        grade = ESlimeGrade.None;
+        if (highestGrade < ESlimeGrade.Grade1) return false;
+
+        grade = (ESlimeGrade)Random.Range(
+            (int)ESlimeGrade.Grade1,
+            (int)highestGrade + 1);
+        return true;
     }
 
     // 뽑기 튜토리얼의 무료 한 장. 첫 경험이 시시하지 않도록 최고 -1과 최고 중에서만
@@ -112,7 +127,8 @@ public static class NormalGachaPool
         return true;
     }
 
-    public static int GetWeight(int highest, int grade) => highest - grade + 1;
+    public static double GetWeight(int highest, int grade) =>
+        System.Math.Pow(highest - grade + 1, GradeWeightExponent);
 
     public static EGachaRarity GetRarity(int highest, int grade)
     {

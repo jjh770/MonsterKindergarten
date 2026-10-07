@@ -87,3 +87,12 @@ firebase-debug.log
 
 # Kiro 스펙 작업 문서 (로컬 전용)
 /.kiro/
+
+# Screenshots and recorded videos
+/Assets/Screenshots/
+/Assets/Screenshots.meta
+*.mp4
+*.mov
+*.avi
+*.webm
+*.mkv

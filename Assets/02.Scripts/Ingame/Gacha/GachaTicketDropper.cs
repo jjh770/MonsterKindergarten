@@ -23,8 +23,8 @@ public class GachaTicketDropper : MonoBehaviour
     [Tooltip("판정 주기(초).")]
     [SerializeField, Min(1f)] private float _judgeInterval = 60f;
 
-    [Tooltip("한 번의 판정에서 슬라임 한 마리가 티켓을 떨어뜨릴 확률. 1차 밸런스 값 0.167%.")]
-    [SerializeField, Range(0f, 1f)] private float _dropChancePerSlime = 0.00167f;
+    [Tooltip("한 번의 판정에서 슬라임 한 마리가 티켓을 떨어뜨릴 확률. 현재 밸런스 값 0.25%.")]
+    [SerializeField, Range(0f, 1f)] private float _dropChancePerSlime = 0.0025f;
 
     private float _timer;
 

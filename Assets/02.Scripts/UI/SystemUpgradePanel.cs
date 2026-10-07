@@ -312,11 +312,12 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         return _slimeManager.IsSpawnCapRaisedAtNextLevel(currentUpgradeLevel);
     }
 
-    // 열리는 조건은 등급 숫자 대신 그 슬라임의 이름으로 알려 준다. 이름은 모두 슬라임으로 끝나 조사는 항상 "을"이다.
+    // 열리는 조건은 등급 숫자 대신 그 슬라임의 이름으로 알려 준다. 이름은 모두 슬라임으로 끝나
+    // 조사는 항상 "을"이다. 가격 줄은 카드 안쪽 폭이 좁으므로 이름 뒤에서 명시적으로 줄을 나눈다.
     private string BuildUnlockText(ESlimeGrade grade)
     {
         string slimeName = _slimeManager != null ? _slimeManager.GetName(grade) : $"Lv.{(int)grade} 슬라임";
-        return $"{slimeName}을 만나면 열려요";
+        return $"{slimeName}을\n만나면 열려요";
     }
 
     private string BuildCostText(

@@ -150,9 +150,8 @@ public static class GachaService
         return EGachaFailure.None;
     }
 
-// 기획서 §15.2: 특별 여부를 가장 먼저 판정한다. 종류는 특별이든 일반이든 같은 일반 풀에서
-    // 고른다. 특별한 슬라임은 외형과 포인트 배율만 다른 같은 등급이라 후보와 가중치를 나눌
-    // 이유가 없다.
+    // 특별 여부를 가장 먼저 판정한다. 특별은 이미 낮은 확률을 통과했으므로 해금 등급을
+    // 균등하게 고르고, 일반 결과에만 낮은 등급이 무거운 일반 풀을 적용한다.
     private static bool TryPick(
         SlimeManager slimeManager,
         float specialChance,
@@ -180,14 +179,25 @@ public static class GachaService
         }
 
         bool isSpecialRoll = UnityEngine.Random.value < specialChance;
+        if (isSpecialRoll)
+        {
+            if (!NormalGachaPool.TryPickSpecial(slimeManager.HighestGrade, out grade))
+            {
+                return false;
+            }
+
+            isSpecial = true;
+            rarity = EGachaRarity.Special;
+            return true;
+        }
+
         if (!NormalGachaPool.TryPick(slimeManager.HighestGrade, out NormalGachaResult result))
         {
             return false;
         }
 
         grade = result.Grade;
-        isSpecial = isSpecialRoll;
-        rarity = isSpecialRoll ? EGachaRarity.Special : result.Rarity;
+        rarity = result.Rarity;
         return true;
     }
 
