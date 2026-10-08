@@ -21,6 +21,9 @@ public class LoginScene : MonoBehaviour
     [Tooltip("저장 데이터를 읽지 못해 게임에 들어갈 수 없을 때만 여는 확인 패널입니다.")]
     [SerializeField] private SaveRecoveryUI _recoveryUI;
 
+    [Tooltip("처음 시작할 때 이용약관과 개인정보 수집·이용, 만 14세 이상 확인을 받는 화면입니다. 동의 전에는 로그인하지 않습니다.")]
+    [SerializeField] private ConsentUI _consentUI;
+
     [Tooltip("씬 전환 때 화면을 덮는 커튼입니다. 비워 두면 즉시 전환합니다.")]
     [SerializeField] private FadeCurtainUI _curtain;
 
@@ -68,6 +71,12 @@ public class LoginScene : MonoBehaviour
             _recoveryUI.ConfirmRequested += OnRecoveryConfirmed;
         }
 
+        if (_consentUI != null)
+        {
+            _consentUI.Agreed += OnConsentAgreed;
+            _consentUI.Declined += OnConsentDeclined;
+        }
+
         ESaveLoadFailure loadFailure = PendingLoadFailure;
         PendingLoadFailure = ESaveLoadFailure.None;
         if (loadFailure != ESaveLoadFailure.None)
@@ -97,13 +106,53 @@ public class LoginScene : MonoBehaviour
         {
             _recoveryUI.ConfirmRequested -= OnRecoveryConfirmed;
         }
+
+        if (_consentUI != null)
+        {
+            _consentUI.Agreed -= OnConsentAgreed;
+            _consentUI.Declined -= OnConsentDeclined;
+        }
     }
 
     private void OnLoginButtonClicked()
     {
         AudioManager.Instance?.PlaySFX(EAudioSfx.LoginButton);
         PlayPressEffect();
+
+        // 동의하기 전에는 로그인을 시작하지 않는다. 로그인하면 계정 식별자와 클라우드 저장이 바로 시작된다.
+        if (!ConsentRecord.HasConsented)
+        {
+            ShowConsent();
+            return;
+        }
+
         Login(true).Forget();
+    }
+
+    private void ShowConsent()
+    {
+        if (_consentUI == null || !_consentUI.IsReady)
+        {
+            // 동의 화면이 없으면 로그인하지 않는다. 동의 없이 넘어가는 쪽이 더 나쁘다.
+            Debug.LogError("동의 화면이 없어 로그인을 시작할 수 없습니다.", this);
+            return;
+        }
+
+        _consentUI.Show();
+    }
+
+    private void OnConsentAgreed()
+    {
+        ConsentRecord.Record();
+        _consentUI.Hide();
+        Login(true).Forget();
+    }
+
+    private void OnConsentDeclined()
+    {
+        _consentUI.Hide();
+        _popupText = "동의하지 않으면\n시작할 수 없어요.";
+        ShowLobbyPopup();
     }
 
     // 로고를 위에서 떨어뜨리고, 내려앉은 뒤에 버튼을 연다.

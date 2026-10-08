@@ -24,6 +24,12 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text _frameRateLabel;
     [SerializeField] private Button _resetButton;
     [SerializeField] private Button _deleteAccountButton;
+    [Header("Legal")]
+    [Tooltip("이용약관 문서를 여는 버튼입니다. 개인정보를 수집하는 앱은 약관과 방침 링크가 앱 안에도 있어야 합니다.")]
+    [SerializeField] private Button _termsButton;
+    [SerializeField] private Button _privacyButton;
+    [Tooltip("약관과 방침을 게임 안에서 보여 주는 팝업입니다. 비어 있으면 웹 주소를 엽니다.")]
+    [SerializeField] private LegalDocumentUI _legalViewer;
     [Header("Play Statistics")]
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private Button _statisticsButton;
@@ -87,6 +93,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _closeButton.onClick.AddListener(Close);
         _resetButton.onClick.AddListener(ShowResetConfirmation);
         _deleteAccountButton.onClick.AddListener(ShowDeleteAccountConfirmation);
+        if (_termsButton != null) _termsButton.onClick.AddListener(OpenTerms);
+        if (_privacyButton != null) _privacyButton.onClick.AddListener(OpenPrivacy);
         _statisticsButton.onClick.AddListener(ShowStatistics);
         _statisticsCloseButton.onClick.AddListener(CloseStatistics);
         _confirmButton.onClick.AddListener(ConfirmDestructiveAction);
@@ -105,6 +113,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _closeButton?.onClick.RemoveListener(Close);
         _resetButton?.onClick.RemoveListener(ShowResetConfirmation);
         _deleteAccountButton?.onClick.RemoveListener(ShowDeleteAccountConfirmation);
+        if (_termsButton != null) _termsButton.onClick.RemoveListener(OpenTerms);
+        if (_privacyButton != null) _privacyButton.onClick.RemoveListener(OpenPrivacy);
         _statisticsButton?.onClick.RemoveListener(ShowStatistics);
         _statisticsCloseButton?.onClick.RemoveListener(CloseStatistics);
         _confirmButton?.onClick.RemoveListener(ConfirmDestructiveAction);
@@ -121,6 +131,27 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     private void RefreshAvailability()
     {
         _openButton.interactable = GameplayGate.IsActive;
+    }
+
+    private void OpenTerms()
+    {
+        OpenDocument(ELegalDocument.Terms, LegalLinks.TermsUrl);
+    }
+
+    private void OpenPrivacy()
+    {
+        OpenDocument(ELegalDocument.Privacy, LegalLinks.PrivacyUrl);
+    }
+
+    private void OpenDocument(ELegalDocument document, string fallbackUrl)
+    {
+        if (_legalViewer != null && _legalViewer.IsReady)
+        {
+            _legalViewer.Show(document);
+            return;
+        }
+
+        Application.OpenURL(fallbackUrl);
     }
 
     private void Open()

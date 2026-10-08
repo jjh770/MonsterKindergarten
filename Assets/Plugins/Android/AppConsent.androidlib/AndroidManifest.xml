@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Firebase Analytics는 동의 화면을 거치기 전에는 수집하지 않는다. (기획서 §21.11)
+이 값으로 앱이 시작할 때의 수집을 끄고, 동의한 뒤 코드에서 켠다.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.skku_say.monster_kindergarten.consent"
+          android:versionCode="1"
+          android:versionName="1.0">
+    <application>
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+    </application>
+</manifest>

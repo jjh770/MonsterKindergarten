@@ -238,6 +238,14 @@ public sealed class AdRewardService : MonoBehaviour
 #if UNITY_EDITOR
         return new FakeAdService();
 #elif UNITY_ANDROID
+        // 동의 화면을 거치지 않은 채 들어온 세션에서는 광고 SDK를 초기화하지 않는다. 기획서 §21.11.
+        // 정상 흐름은 로그인 전에 동의를 받으므로 여기에 걸리지 않는다.
+        if (!ConsentRecord.HasConsented)
+        {
+            Debug.LogError("동의 기록이 없어 광고를 쓰지 않습니다.", this);
+            return new NullAdService();
+        }
+
         string adUnitId = _table.RewardedAdUnitId;
         if (string.IsNullOrWhiteSpace(adUnitId))
         {

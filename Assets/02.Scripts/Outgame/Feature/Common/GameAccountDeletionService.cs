@@ -36,6 +36,9 @@ public static class GameAccountDeletionService
 
             PlayerPrefs.DeleteKey(PendingKey(userId));
             PlayerPrefs.Save();
+
+            // 동의는 계정 삭제로만 철회된다. 삭제가 끝나면 이 기기의 동의 기록도 지워 다음 시작에서 다시 묻는다.
+            ConsentRecord.Clear();
         }
         finally
         {
