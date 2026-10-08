@@ -316,6 +316,14 @@ public class GameManager : MonoBehaviour
             order: (int)UnlockGrades.Shop,
             completeByDefault: false,
             completeStoredIncomplete: false);
+        // 광고 보너스 안내는 해금 레벨이 아니라 "포인트가 모자라 업그레이드를 못 산 순간"이 시작을 정한다.
+        // 그래서 순서 줄 밖에 두고(isQueued: false), 장식장 안내를 마쳤는지는 시퀀스가 직접 본다.
+        TutorialProgress.Register(
+            TutorialIds.AdBonus,
+            order: 0,
+            completeByDefault: false,
+            completeStoredIncomplete: false,
+            isQueued: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
 

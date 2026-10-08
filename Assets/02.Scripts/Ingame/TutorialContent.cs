@@ -28,6 +28,8 @@ public enum DialogueId
     CollectionOfflineTicket = 23,
     ShopObjects = 24,
     ShopFinal = 25,
+    AdBonus = 26,
+    AdBonusPopup = 27,
 }
 
 [Serializable]
@@ -83,6 +85,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _displayRoomCloseMessage;
     [SerializeField] private string _shopButtonMessage;
     [SerializeField] private string _shopObjectsTabMessage;
+    [SerializeField] private string _adBonusButtonMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
@@ -113,6 +116,7 @@ public sealed class TutorialContent : ScriptableObject
     public string DisplayRoomCloseMessage => _displayRoomCloseMessage;
     public string ShopButtonMessage => _shopButtonMessage;
     public string ShopObjectsTabMessage => _shopObjectsTabMessage;
+    public string AdBonusButtonMessage => _adBonusButtonMessage;
     public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
     public string BackgroundButtonMessage => _backgroundButtonMessage;
 

@@ -11,6 +11,7 @@ public static class TutorialIds
     public const string CollectionTicketCollect = "CollectionTicketCollectTutorial";
     public const string Shop = "ShopTutorial";
     public const string CollectionOfflineTicket = "CollectionOfflineTicketTutorial";
+    public const string AdBonus = "AdBonusTutorial";
 
     // 등록과 삭제가 같은 목록을 본다. 튜토리얼을 추가하면 여기만 늘린다.
     // 저장 키 형식이 바뀌는 변경을 할 때 해당 항목의 버전을 올린다.
@@ -24,6 +25,7 @@ public static class TutorialIds
         (CollectionTicketCollect, 1),
         (Shop, 1),
         (CollectionOfflineTicket, 1),
+        (AdBonus, 1),
     };
 }
 
@@ -37,6 +39,8 @@ public static class TutorialProgress
         public string CloudId;
         public bool IsCompleted;
         public int Order;
+        // 순서 줄에 끼지 않는다. 다른 튜토리얼을 기다리지도, 다른 튜토리얼을 막지도 않는다.
+        public bool IsQueued;
     }
 
     private static readonly Dictionary<string, TutorialState> s_stateById =
@@ -57,7 +61,8 @@ public static class TutorialProgress
         string tutorialId,
         int order,
         bool completeByDefault,
-        bool completeStoredIncomplete = true)
+        bool completeStoredIncomplete = true,
+        bool isQueued = true)
     {
         int version = GetVersion(tutorialId);
         if (!IsInitialized)
@@ -87,6 +92,7 @@ public static class TutorialProgress
                 CloudId = cloudId,
                 IsCompleted = isCompleted,
                 Order = order,
+                IsQueued = isQueued,
             };
 
             if (!wasCompleted && isCompleted)
@@ -104,6 +110,7 @@ public static class TutorialProgress
             CloudId = cloudId,
             IsCompleted = isCompletedByDefault,
             Order = order,
+            IsQueued = isQueued,
         };
         SaveCompletionFlag(completionKey, isCompletedByDefault);
     }
@@ -145,6 +152,8 @@ public static class TutorialProgress
     // 같은 세션에서 여러 튜토리얼이 동시에 해금돼도 낮은 해금 레벨부터 시작한다.
     // 아직 해금되지 않은 앞 순서는 뒤 순서보다 먼저 도달해야 하므로 별도 해금
     // 조건을 여기서 다시 알 필요가 없다.
+    // 줄 밖(isQueued: false)의 튜토리얼은 이 순서 규칙을 받지도 적용하지도 않는다. 해금 레벨이 아니라 플레이어의
+    // 행동이 시작을 정하므로, 순서 숫자를 주면 뒤 순서의 튜토리얼을 영영 막거나 자신이 영영 못 시작한다.
     public static bool CanStart(string tutorialId)
     {
         if (!s_stateById.TryGetValue(tutorialId, out TutorialState target) ||
@@ -155,7 +164,8 @@ public static class TutorialProgress
 
         foreach (TutorialState state in s_stateById.Values)
         {
-            if (!state.IsCompleted && state.Order < target.Order)
+            if (state.IsQueued && target.IsQueued &&
+                !state.IsCompleted && state.Order < target.Order)
             {
                 return false;
             }

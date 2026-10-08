@@ -11,6 +11,9 @@ public class MessagePopupUI : MonoBehaviour
 {
     public static MessagePopupUI Instance { get; private set; }
 
+    // 알림이 떠 있는 동안 true다. 이 알림이 사라지기를 기다렸다가 다른 안내를 띄우려는 쪽이 본다.
+    public bool IsShowing => _currentSequence != null;
+
     [SerializeField] private GameObject _popupPanel;
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private PopupMotion _motion;

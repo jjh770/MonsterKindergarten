@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
@@ -39,6 +40,15 @@ public sealed class AdBonusUI : MonoBehaviour, IPointerClickHandler
     private bool _isWatching;
     private float _refreshTimer;
     private float _messageTimer;
+
+    // 하단 메뉴의 버튼이다. 광고 보너스 안내가 이 버튼을 가리킨다.
+    public RectTransform ButtonTarget => _openButton != null ? _openButton.transform as RectTransform : null;
+
+    // 지금 팝업을 열 수 있는 상태인가. 이미 열려 있거나 닫히는 중이면 false다.
+    public bool CanOpenNow => !_isOpen && !_isClosing && CanOpen();
+
+    // 팝업이 열린 직후에 불린다. 안내가 열리기를 기다릴 때 쓴다.
+    public event Action Opened;
 
     private void Start()
     {
@@ -172,6 +182,7 @@ public sealed class AdBonusUI : MonoBehaviour, IPointerClickHandler
             .SetUpdate(true)
             .OnComplete(() => _fadeTween = null);
         _panelMotion?.PlayOpen();
+        Opened?.Invoke();
     }
 
     private void Close()
@@ -344,10 +355,11 @@ public sealed class AdBonusUI : MonoBehaviour, IPointerClickHandler
     }
 
     // 지금 팝업을 열어도 되는가. 다른 화면이 입력을 쥐고 있는 동안은 열지 않는다.
+    // 튜토리얼이 도는 동안에도 광고 보너스 안내만은 연다. 그 안내가 이 팝업을 직접 보여 준다.
     private bool CanOpen()
     {
         return IsUnlocked() &&
-               !TutorialManager.IsRunning &&
+               (!TutorialManager.IsRunning || TutorialManager.IsActive(TutorialIds.AdBonus)) &&
                !ScholarGuideUI.IsAnyOpen &&
                !_gachaDirector.IsPlaying &&
                !_displayRoomUI.IsSendMode &&

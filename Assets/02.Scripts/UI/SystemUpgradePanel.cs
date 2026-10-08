@@ -28,6 +28,9 @@ public sealed class SystemUpgradePanel : MonoBehaviour
     private bool _isInitialized;
 
     public RectTransform TutorialTarget => transform as RectTransform;
+
+    // 포인트가 모자라 업그레이드를 못 샀고 부족 안내를 띄운 직후다. 광고 보너스 안내가 이 순간을 기다린다.
+    public event Action InsufficientPointsNotified;
     public RectTransform SelectedItemTarget => _carousel?.CenterTarget;
     public event Action RotationCompleted;
 
@@ -202,6 +205,7 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         else if (!upgrade.IsMaxLevel)
         {
             _messagePopup.Show();
+            InsufficientPointsNotified?.Invoke();
         }
     }
 

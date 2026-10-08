@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -28,6 +30,7 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
     private int _restoreButtonsAfterFrame = -1;
     private bool _isPointerDown;
     private bool _isDragging;
+    private Tween _scrollTween;
 
     private void Awake()
     {
@@ -59,6 +62,7 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
 
     private void OnDisable()
     {
+        _scrollTween?.Kill();
         RestoreButtonInput();
         _isPointerDown = false;
         _isDragging = false;
@@ -111,6 +115,7 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
                 Mathf.Abs(screenPosition.x - _pressScreenPosition.x) >= _dragThreshold)
             {
                 _isDragging = true;
+                _scrollTween?.Kill();
                 SuspendButtonInput();
             }
 
@@ -136,6 +141,61 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
 
             _isDragging = false;
         }
+    }
+
+    // 항목이 보이는 칸 안에 들어오도록 줄을 옮긴다. 이미 보이면 곧바로 onCompleted를 부른다.
+    // 튜토리얼이 줄 끝쪽 버튼을 가리킬 때, 그 버튼이 화면 밖이면 구멍만 화면 밖에 남기 때문에 쓴다.
+    public void ScrollToVisible(RectTransform item, Action onCompleted, float duration = 0.3f)
+    {
+        if (!isActiveAndEnabled || item == null || _basePositions == null)
+        {
+            onCompleted?.Invoke();
+            return;
+        }
+
+        // 항목이 방금 켜졌거나 패널이 방금 열렸을 수 있다. 위치를 읽기 전에 범위부터 다시 잡는다.
+        RefreshLayout();
+        item.GetWorldCorners(_worldCorners);
+        float itemMin = _viewport.InverseTransformPoint(_worldCorners[0]).x;
+        float itemMax = _viewport.InverseTransformPoint(_worldCorners[2]).x;
+        float viewportMin = _viewport.rect.xMin + _horizontalPadding;
+        float viewportMax = _viewport.rect.xMax - _horizontalPadding;
+
+        float shift = 0f;
+        if (itemMax > viewportMax)
+        {
+            shift = viewportMax - itemMax;
+        }
+        else if (itemMin < viewportMin)
+        {
+            shift = viewportMin - itemMin;
+        }
+
+        float target = Mathf.Clamp(_scrollOffset + shift, _minOffset, _maxOffset);
+        _scrollTween?.Kill();
+        if (Mathf.Approximately(target, _scrollOffset))
+        {
+            onCompleted?.Invoke();
+            return;
+        }
+
+        _scrollTween = DOTween
+            .To(
+                () => _scrollOffset,
+                value =>
+                {
+                    _scrollOffset = value;
+                    ApplyOffset();
+                },
+                target,
+                duration)
+            .SetEase(Ease.OutCubic)
+            .SetUpdate(true)
+            .OnComplete(() =>
+            {
+                _scrollTween = null;
+                onCompleted?.Invoke();
+            });
     }
 
     private void RefreshLayout()
