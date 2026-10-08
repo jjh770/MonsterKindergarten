@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class Clicker : MonoBehaviour
 {
     [SerializeField] private float _dragThresholdTime = 0.2f;
+    [SerializeField] private AdRewardService _adRewardService;
     [SerializeField] private float _dragThresholdDistance = 0.3f;
     [SerializeField] private float _mergeDetectionRadius = 0.65f;
 
@@ -237,7 +238,8 @@ public class Clicker : MonoBehaviour
                         _selectedTarget.Point,
                         _selectedTarget.Grade,
                         EClickType.Manual,
-                        _selectedTarget.IsSpecial),
+                        _selectedTarget.IsSpecial,
+                        GetPointBoostMultiplier()),
                     Position = _mouseDownPos,
                     Grade = _selectedTarget.Grade
                 };
@@ -250,6 +252,11 @@ public class Clicker : MonoBehaviour
         SetMergeCandidate(null);
         _selectedTarget = null;
         _isDragging = false;
+    }
+
+    private double GetPointBoostMultiplier()
+    {
+        return _adRewardService != null ? _adRewardService.PointBoostMultiplier : 1d;
     }
 
     public void PushMode(

@@ -6,8 +6,11 @@ public static class PointCalculator
         double basePoint,
         ESlimeGrade grade,
         EClickType clickType,
-        bool isSpecial = false)
+        bool isSpecial = false,
+        double boostMultiplier = 1d)
     {
+        // 광고 부스트 배율은 다른 배율과 합치지 않고 마지막에 곱한다. 터치와 자동 생산만 이 값을 넘기고,
+        // 오프라인 보상과 도감 능력 표시는 넘기지 않아 기본값 1로 남는다.
         double flatBonus = GetFlatBonus(grade, clickType);
         double percentBonus = GetPercentBonus(grade, clickType);
 
@@ -17,7 +20,7 @@ public static class PointCalculator
         // 버리지 않고 반올림하는 이유는 버림이 매번 1점 미만을 깎아, 한 번에 얻는
         // 값이 작은 낮은 등급일수록 배율이 실제보다 낮게 동작하기 때문이다.
         return Math.Round(
-            (basePoint + flatBonus) * (1 + percentBonus) * GetSpecialMultiplier(isSpecial),
+            (basePoint + flatBonus) * (1 + percentBonus) * GetSpecialMultiplier(isSpecial) * boostMultiplier,
             MidpointRounding.AwayFromZero);
     }
 

@@ -10,6 +10,7 @@ using UnityEngine;
 public class AutoClicker : MonoBehaviour
 {
     [SerializeField] private SpawnManager _spawnManager;
+    [SerializeField] private AdRewardService _adRewardService;
 
     private readonly OwnerPauseSet _pauses = new OwnerPauseSet();
 
@@ -53,7 +54,12 @@ public class AutoClicker : MonoBehaviour
         {
             ClickType = EClickType.Auto,
             Position = target.transform.position,
-            Point = PointCalculator.Calculate(target.Point, target.Grade, EClickType.Auto, target.IsSpecial),
+            Point = PointCalculator.Calculate(
+                target.Point,
+                target.Grade,
+                EClickType.Auto,
+                target.IsSpecial,
+                _adRewardService != null ? _adRewardService.PointBoostMultiplier : 1d),
             Grade = target.Grade
         };
 

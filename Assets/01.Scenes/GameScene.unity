@@ -2901,6 +2901,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Clicker
   _dragThresholdTime: 0.2
+  _adRewardService: {fileID: 297087328}
   _dragThresholdDistance: 0.3
   _mergeDetectionRadius: 0.65
   _selectionRadius: 0.2
@@ -51664,6 +51665,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoClicker
   _spawnManager: {fileID: 1271333080}
+  _adRewardService: {fileID: 297087328}
 --- !u!4 &2033355241
 Transform:
   m_ObjectHideFlags: 0

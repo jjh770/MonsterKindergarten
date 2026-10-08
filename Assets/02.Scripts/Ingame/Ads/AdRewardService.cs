@@ -26,6 +26,10 @@ public sealed class AdRewardService : MonoBehaviour
     public AdRewardTableSO Table => _table;
     public bool IsShowingAd => _adService != null && _adService.IsShowing;
 
+    // 부스트가 켜져 있으면 표의 배율, 아니면 1이다. 터치와 자동 생산만 이 값을 포인트 계산에 넘긴다.
+    public double PointBoostMultiplier =>
+        enabled && _slimeManager.AdRewards.HasPointBoost ? _table.PointBoostMultiplier : 1d;
+
     // 에디터에서 중도 닫기와 불러오기 실패를 흉내 낼 때 가짜 광고를 꺼내 쓴다.
     public IAdService AdService => _adService;
 
