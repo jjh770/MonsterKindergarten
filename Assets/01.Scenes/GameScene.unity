@@ -6679,6 +6679,51 @@ MonoBehaviour:
   _pressDuration: 0.06
   _releaseDuration: 0.3
   _overshoot: 2.5
+--- !u!1 &297087327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 297087329}
+  - component: {fileID: 297087328}
+  m_Layer: 0
+  m_Name: AdRewardService
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &297087328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 297087327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec552bf37a771843846661470e44e2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdRewardService
+  _table: {fileID: 11400000, guid: 8097e7cbef6efb94ba78b31e043188e5, type: 2}
+--- !u!4 &297087329
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 297087327}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &303165408
 GameObject:
   m_ObjectHideFlags: 0
@@ -53209,7 +53254,6 @@ MonoBehaviour:
     Name: {fileID: 773545058}
   _slotEmergeSeconds: 0.5
   _flyStagger: 0.18
-  _slotEndScale: 0.25
   _fadeDuration: 0.3
   _emergeDuration: 0.45
   _revealDuration: 0.6
@@ -58567,6 +58611,7 @@ SceneRoots:
   - {fileID: 135081900}
   - {fileID: 1701297960}
   - {fileID: 1022969828}
+  - {fileID: 297087329}
   - {fileID: 59771884}
   - {fileID: 882830019}
   - {fileID: 2063349534}

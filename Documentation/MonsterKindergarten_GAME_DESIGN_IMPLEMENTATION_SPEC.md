@@ -1973,8 +1973,12 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
 > 범위: §21의 보상형 광고 세 가지. Phase 9는 구현 전이며 아래 순서는 초안이다. 각 단계는 사용자가 확인한 뒤
 > 다음으로 넘어간다.
 
-1. **광고 서비스 뼈대**: `IAdService`, Editor 가짜 광고, `AdRewardService`, `AdRewardTableSO`. SDK 없이
-   Editor에서 보상 지급 흐름을 확인한다.
+1. **광고 서비스 뼈대** — 완료(2026-10-08): `IAdService`, Editor 가짜 광고(`FakeAdService`), 광고 없는 빌드용
+   `NullAdService`, `AdRewardService`, `AdRewardTableSO`(`AdRewardTable.asset`)를 `Assets/02.Scripts/Ingame/Ads/`에
+   두고 GameScene에 `AdRewardService`를 배치했다. 이 단계의 서비스는 광고가 겹치지 않게 하고 보상 신호
+   (`RewardEarned`)를 한 번만 내보낼 뿐 보상을 지급하지 않는다. 지급과 하루 횟수는 2~4단계에서 붙인다. Editor
+   Play Mode에서 정상, 겹침(Busy), 직후 재요청(NotReady), 불러오기 뒤 재준비, 중도 닫기와 실패(신호 없음)를 확인했다.
+   Android 빌드는 AdMob을 붙일 때까지 `NullAdService`를 써서 광고가 없는 것으로 다룬다.
 2. **저장과 규칙**: `SlimeStatus` v16 필드, 하루 횟수(한국 시간 0시, `ServerClock`), 부스트 남은 시간. 로컬
    저장과 승격, 변조 값 방어를 Editor에서 확인한다.
 3. **포인트 계산 연동**: 부스트 배율을 수동·자동 생산 경로에만 곱하고 오프라인·도감 표에는 넘기지 않는다.

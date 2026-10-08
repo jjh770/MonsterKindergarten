@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14ef95e8a51b8f14a8ca3cb640108775, type: 3}
+  m_Name: AdRewardTable
+  m_EditorClassIdentifier: Assembly-CSharp::AdRewardTableSO
+  _offlineRewardMultiplier: 2
+  _pointBoostMultiplier: 2
+  _pointBoostSecondsPerAd: 600
+  _pointBoostMaxRemainingSeconds: 1800
+  _pointBoostDailyLimit: 6
+  _ticketReward: 1
+  _ticketDailyLimit: 3
