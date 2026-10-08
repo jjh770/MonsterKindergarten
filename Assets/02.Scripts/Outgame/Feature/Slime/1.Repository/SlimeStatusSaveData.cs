@@ -165,6 +165,20 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public long AutoMergeUseCount { get; set; }
 
+    // v16. 보상형 광고의 포인트 부스트 남은 초와 하루 횟수, 횟수를 센 날짜 번호다. 필드가 없는 문서는
+    // 0으로 읽혀 "아직 보지 않음"이 된다.
+    [FirestoreProperty]
+    public double AdPointBoostRemainingSeconds { get; set; }
+
+    [FirestoreProperty]
+    public int AdPointBoostCount { get; set; }
+
+    [FirestoreProperty]
+    public int AdTicketCount { get; set; }
+
+    [FirestoreProperty]
+    public int AdCountDayIndex { get; set; }
+
     // 이 계정이 마친 튜토리얼 식별자. 로컬 완료 표시는 앱 데이터를 지우면 사라진다.
     // 기본값은 빈 목록이다. 미리 채운 목록은 로컬 JSON 읽기에서 뒤에 이어 붙는다.
     // 필드가 없는 v7 이하 문서는 빈 목록, 즉 "기록 없음"으로 읽혀 지금까지와 같다.

@@ -74,6 +74,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public GraduationStatistics? GraduationSnapshot => _status?.GraduationSnapshot;
     public long GachaTicketsObtainedTotal => _status?.GachaTicketsObtainedTotal ?? 0;
     public long AutoMergeUseCount => _status?.AutoMergeUseCount ?? 0;
+    public AdRewardProgress AdRewards => _status?.AdRewards ?? default;
     public float SpecialGachaChance => SpecialGachaFever.GetChance(
         _status?.SpecialGachaMissCount ?? 0);
     public int SpecialGachaMissCount => _status?.SpecialGachaMissCount ?? 0;
@@ -519,6 +520,63 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
 
         _collectionStats.RecordGachaObtained(grade);
         MarkStatsDirty();
+    }
+
+    // 뽑기권 광고 보상을 센다. 그 날의 한도에 닿았으면 아무것도 세지 않고 false를 돌려준다.
+    public bool TryRecordAdTicketReward(int dayIndex, int dailyLimit)
+    {
+        if (_status == null) return false;
+
+        AdRewardProgress current = _status.AdRewards;
+        if (current.GetTicketCount(dayIndex) >= dailyLimit) return false;
+
+        _status.SetAdRewards(current.WithTicketRecorded(dayIndex));
+        Save();
+        return true;
+    }
+
+    // 뽑기권을 지갑에 넣지 못했을 때 방금 센 횟수를 되돌린다.
+    public void UndoAdTicketReward()
+    {
+        if (_status == null) return;
+
+        _status.SetAdRewards(_status.AdRewards.WithTicketRecordUndone());
+        Save();
+    }
+
+    // 부스트 광고 보상을 센다. 하루 한도에 닿았거나 더하면 남은 시간이 상한을 넘으면 false다.
+    public bool TryRecordAdPointBoost(
+        int dayIndex,
+        double secondsPerAd,
+        double maxRemainingSeconds,
+        int dailyLimit)
+    {
+        if (_status == null) return false;
+
+        AdRewardProgress current = _status.AdRewards;
+        if (current.GetPointBoostCount(dayIndex) >= dailyLimit) return false;
+        if (current.PointBoostRemainingSeconds + secondsPerAd > maxRemainingSeconds) return false;
+
+        _status.SetAdRewards(current.WithPointBoostAdded(dayIndex, secondsPerAd, maxRemainingSeconds));
+        Save();
+        return true;
+    }
+
+    // 부스트 시간을 흘려보낸다. 저장은 주기 저장에 맡기고, 끝나는 순간에만 바로 저장한다.
+    public void ElapseAdPointBoost(double seconds)
+    {
+        if (_status == null || !_status.AdRewards.HasPointBoost) return;
+
+        AdRewardProgress next = _status.AdRewards.WithPointBoostElapsed(seconds);
+        _status.SetAdRewards(next);
+        if (next.HasPointBoost)
+        {
+            MarkStatsDirty();
+        }
+        else
+        {
+            Save();
+        }
     }
 
     // 뽑기권이 지갑에 들어간 순간에 부른다. 필드에서 주운 것, 오프라인 보상, 튜토리얼의

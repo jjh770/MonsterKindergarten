@@ -45,10 +45,11 @@ public static class GameDataDomains
     // v15: 최초 졸업식 시작 순간의 통계 스냅샷을 추가했다.
     //      아직 배포 전이라 같은 버전에 뽑기권 누적 획득 수와 자동 합성 사용 횟수를 함께 넣었다.
     //      이전 문서에는 필드가 없어 0으로 읽힌다.
+    // v16: 보상형 광고의 포인트 부스트 남은 시간과 하루 횟수를 추가했다. 이전 문서에는 필드가 없어 0으로 읽힌다.
     public static readonly GameDataDomainDefinition SlimeStatus = new(
         displayName: "슬라임",
         cloudCollectionName: "SlimeStatus",
-        currentSchemaVersion: 15,
+        currentSchemaVersion: 16,
         localDataDeleter: userId =>
             new PlayerPrefsSlimeStatusRepository(userId).Delete());
 

@@ -101,6 +101,22 @@ public static class SlimeStatusSaveMapper
             return false;
         }
 
+        // 음수나 잴 수 없는 값은 쓰는 쪽에서 나올 수 없다. 다른 손상과 같은 경로로 보낸다.
+        AdRewardProgress adRewards;
+        try
+        {
+            adRewards = new AdRewardProgress(
+                saveData.AdPointBoostRemainingSeconds,
+                saveData.AdPointBoostCount,
+                saveData.AdTicketCount,
+                saveData.AdCountDayIndex);
+        }
+        catch (ArgumentException e)
+        {
+            failureMessage = $"SlimeStatus : 광고 보상 기록이 올바르지 않습니다. : {e.Message}";
+            return false;
+        }
+
         // HighestGrade가 범위를 벗어나면 도메인이 예외를 던진다. 그대로 두면
         // 초기화가 중단돼 안내 없이 화면이 멈추므로, 다른 손상과 같은 경로로 보낸다.
         // 필드가 없는 문서는 0(None)으로 변환되므로 변질뿐 아니라 결손으로도 닿는다.
@@ -125,7 +141,8 @@ public static class SlimeStatusSaveMapper
                 ToBackgroundThemes(saveData.OwnedBackgroundThemes),
                 legacySpecialCollection,
                 saveData.GachaTicketsObtainedTotal,
-                saveData.AutoMergeUseCount);
+                saveData.AutoMergeUseCount,
+                adRewards);
         }
         catch (ArgumentException e)
         {
@@ -286,6 +303,10 @@ public static class SlimeStatusSaveMapper
             SpecialGachaMissCount = status.SpecialGachaMissCount,
             GachaTicketsObtainedTotal = status.GachaTicketsObtainedTotal,
             AutoMergeUseCount = status.AutoMergeUseCount,
+            AdPointBoostRemainingSeconds = status.AdRewards.PointBoostRemainingSeconds,
+            AdPointBoostCount = status.AdRewards.PointBoostCount,
+            AdTicketCount = status.AdRewards.TicketCount,
+            AdCountDayIndex = status.AdRewards.DayIndex,
             CompletedTutorials = new List<string>(status.CompletedTutorials),
             PlacedObjects = BuildPlacedObjects(status),
             OwnedPlaygroundObjects = BuildOwnedPlaygroundObjects(status),

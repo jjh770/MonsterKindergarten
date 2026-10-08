@@ -46,6 +46,9 @@ public class SlimeStatus
     public long GachaTicketsObtainedTotal { get; private set; }
     public long AutoMergeUseCount { get; private set; }
 
+    // 보상형 광고의 하루 횟수와 포인트 부스트 남은 시간. 바꿀 때는 새 값을 통째로 넣는다.
+    public AdRewardProgress AdRewards { get; private set; }
+
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
     // 계정 문서에도 남긴다. 값은 튜토리얼 쪽이 정하는 식별자이고 여기서는 해석하지 않는다.
     private readonly List<string> _completedTutorials = new();
@@ -78,7 +81,8 @@ public class SlimeStatus
         IEnumerable<EBackgroundTheme> ownedBackgroundThemes = null,
         IEnumerable<ESlimeGrade> legacySpecialCollection = null,
         long gachaTicketsObtainedTotal = 0,
-        long autoMergeUseCount = 0)
+        long autoMergeUseCount = 0,
+        AdRewardProgress adRewards = default)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -131,6 +135,7 @@ public class SlimeStatus
 
         GachaTicketsObtainedTotal = gachaTicketsObtainedTotal;
         AutoMergeUseCount = autoMergeUseCount;
+        AdRewards = adRewards;
 
         if (completedTutorials != null)
         {
@@ -530,6 +535,11 @@ public class SlimeStatus
         return value.Kind == DateTimeKind.Utc
             ? value
             : value.ToUniversalTime();
+    }
+
+    public void SetAdRewards(AdRewardProgress adRewards)
+    {
+        AdRewards = adRewards;
     }
 
     public void RecordGachaTicketsObtained(int count)
