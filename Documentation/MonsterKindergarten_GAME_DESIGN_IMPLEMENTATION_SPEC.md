@@ -2055,8 +2055,10 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
    `AdRewardService`가 SDK를 쓰지 않는다. 알아 둘 점: 뒤로가기는 종료 확인이 아니라 동의 화면을 닫는 것으로 했다.
    로그인 씬의 `PopupCanvas`가 비활성으로 저장돼 있어 `MessagePopupUI.Instance`가 비던 문제(`LoginScene` 실패 안내의
    NullReference)도 이 작업에서 활성으로 고쳤다. 확인하지 못한 것: 기기에서의 동의 화면과 링크 열기, 병합된 매니페스트에
-   분석 끔 값이 들어가는지, `play-services-ads`의 자동 초기화 제공자가 동의 전에 SDK를 초기화하는지(빌드한 매니페스트에서
-   확인), 약관 문구의 법률 검토(§27).
+   분석 끔 값이 들어가는지, `play-services-ads`의 자동 초기화 제공자(`MobileAdsInitProvider`)는 `AppConsent.androidlib`에 제거 표시를
+   두어도 병합 매니페스트에 남았다(개발 APK에서 확인, 같은 단계의 의존성이라 우선순위가 같다). 그래서 Unity가 내보낸
+   unityLibrary 매니페스트에 제거 표시를 넣는 빌드 후처리(`RemoveAdsInitProviderPostProcess`)로 바꿨다(2026-10-08,
+   다시 빌드해 매니페스트에서 사라졌는지와 광고가 정상으로 나오는지 확인 전), 약관 문구의 법률 검토(§27).
 7. **지표** — 완료(2026-10-08, 기기 확인 전): Firebase Analytics Unity 라이브러리(Unity SDK 13.7.0 압축 파일, 약
    1.25GB)를 받는 대신, 빌드에 이미 들어 있는 Android `firebase-analytics` 23.0.0을 JNI로 직접 부르는 얇은
    서비스로 넣었다(`FirebaseAnalyticsService`). 패키지와 Gradle 의존성은 바뀌지 않았다. `IAnalyticsService`는 수집 켜기·
@@ -2073,8 +2075,12 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
    이 서비스를 그것으로 바꾸면 된다.
 8. **정책과 문서**: 개인정보처리방침과 게시, Play Console 광고 ID 선언·데이터 보안(광고·분석 포함), 대상
    연령 13세 이상 확인. 한국만 배포하므로 UMP는 쓰지 않는다.
-9. **기기 확인과 출시**: 개발 APK에서 테스트 광고, 릴리스 AAB에서 실제 광고 단위. 정적 확인, Editor, 기기 결과는
-   서로 대체하지 않고 따로 기록한다.
+9. **기기 확인과 출시** — 개발 APK 확인 완료(2026-10-08), 릴리스 AAB 확인 전: 개발 APK(0.1.17)에서 병합 매니페스트를
+   읽어 앱 ID, `AD_ID` 권한, 분석 수집 끔, 버전을 확인했고, 광고 SDK 자동 초기화(`MobileAdsInitProvider`)가 남아 있어
+   빌드 후처리로 뺐다. 기기에서는 사용자가 동의 화면부터 광고, 오프라인 2배, 분석, 계정 삭제까지 확인해 "다 잘 된다"고
+   보고했고 항목별 결과는 받지 않았다. 기록은 `Builds/Release/0.1.17_debugtest/build-info.txt`에 있다. 남은 것: 릴리스
+   AAB에서 실제 광고 단위와 Play Console 번들 검사, 공개 게시 뒤 실제 광고 노출. 정적 확인, Editor, 기기 결과는 서로
+   대체하지 않고 따로 기록한다.
 10. **뽑기 기계 입구**(선택): 뽑기권 0장일 때 같은 보상으로 가는 버튼.
 
 ---

@@ -2,6 +2,9 @@
 <!--
 Firebase Analytics는 동의 화면을 거치기 전에는 수집하지 않는다. (기획서 §21.11)
 이 값으로 앱이 시작할 때의 수집을 끄고, 동의한 뒤 코드에서 켠다.
+
+광고 SDK의 자동 초기화(MobileAdsInitProvider)를 빼는 일은 여기서 하지 않는다. 이 폴더와 play-services-ads는
+같은 단계의 의존성이라 제거 표시가 먹히지 않는다. 빌드 후처리(RemoveAdsInitProviderPostProcess)가 맡는다.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.skku_say.monster_kindergarten.consent"
