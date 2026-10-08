@@ -19,10 +19,18 @@ public static class MainEndingCreditsTextBuilder
         out string left,
         out string right)
     {
-        if (manager == null || !manager.GraduationSnapshot.HasValue)
+        if (manager == null)
         {
             left = "졸업 기록을\n준비하고 있어요.";
             right = string.Empty;
+            return;
+        }
+
+        // 졸업 스냅샷이 없는 계정(이전 버전에서 졸업식을 본 계정)은 졸업 순간의 기록을 되찾을 수 없다.
+        // 지금 알 수 있는 기록으로 채우고 끝 날짜를 졸업일 대신 오늘로 적는다. 스냅샷으로 굳히지는 않는다.
+        if (!manager.GraduationSnapshot.HasValue)
+        {
+            BuildColumns(manager, manager.CreateCurrentStatistics(DateTime.UtcNow), "오늘", out left, out right);
             return;
         }
 
