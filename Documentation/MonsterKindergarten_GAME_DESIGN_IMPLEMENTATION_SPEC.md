@@ -1378,8 +1378,9 @@ Lv.9 해금 팝업 종료
 
 ## 21.8 정책과 개인정보
 
-- 앱은 아동 전용이 아니지만 아동이 접할 수 있어 AdMob 요청에 **최대 광고 콘텐츠 등급을 G**로 제한한다.
-  수익에 영향이 있으므로 출시 전에 다시 정한다(§27).
+- 앱은 아동 전용이 아니고 대상 연령이 13세 이상(13~15, 16~17, 18+)이다. AdMob 요청에 **최대 광고 콘텐츠 등급을
+  T(청소년)**로 제한한다(2026-10-08, 처음에는 G였다). 성인용 광고(MA)는 13세 이용자에게 노출될 수 있어 쓰지 않는다.
+  코드(`GoogleMobileAdsService`)와 AdMob 콘솔의 앱별 광고 콘텐츠 필터링을 같은 등급으로 맞춘다.
 - 배포가 한국뿐이라 UMP 동의 양식은 쓰지 않는다. 배포 지역을 유럽 경제 지역이나 영국으로 넓힐 때 다시
   정한다.
 - 매니페스트에 `AD_ID` 권한을 선언하고(Android 13 이상), Play Console의 광고 ID 선언과 데이터 보안 양식에
@@ -2027,7 +2028,7 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
    않으려고 빼고 들였다. Android 의존성 해석이 `mainTemplate.gradle`과 `settingsTemplate.gradle`에 광고 쪽 항목
    (`play-services-ads` 25.4.0, `user-messaging-platform` 4.0.0, androidx 3종)만 더했고 Firebase 쪽 버전은 바뀌지
    않았다. 앱 ID는 Google 공개 테스트 앱 ID를 `GoogleMobileAdsSettings`에 넣었다(실제 앱 ID는 9단계 출시 전에 바꾼다).
-   `GoogleMobileAdsService`가 Android의 보상형 광고를 맡는다: 처음 불러올 때 초기화, 광고 등급 G 제한, 광고 이벤트를
+   `GoogleMobileAdsService`가 Android의 보상형 광고를 맡는다: 처음 불러올 때 초기화, 광고 등급 T 제한, 광고 이벤트를
    메인 스레드로 받기, 한 번 쓴 광고는 버리고 다시 불러오기, 한 시간 만료, 실패 뒤 30초 쉬고 재시도. 광고 단위 ID는
    `AdRewardTableSO`에 두었고 개발 빌드는 Google 테스트 단위, 릴리스 빌드는 실제 단위(아직 비어 있어, 비어 있으면
    릴리스 빌드에서 광고가 없는 것으로 다룬다)를 쓴다. 플랫폼 분기는 `AdRewardService.CreateAdService` 한 곳에

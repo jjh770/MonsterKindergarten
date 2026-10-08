@@ -163,10 +163,10 @@ public sealed class GoogleMobileAdsService : IAdService
 
             // 콜백을 유니티 메인 스레드에서 받는다. 광고 이벤트가 다른 스레드에서 오면 게임 객체를 만질 수 없다.
             MobileAds.RaiseAdEventsOnUnityMainThread = true;
-            // 아동 전용 앱은 아니지만 아동이 접할 수 있어 광고 등급을 G까지로 제한한다. 기획서 §21.8.
+            // 대상 연령이 13세 이상(13~15, 16~17, 18+)이라 청소년에게 적절한 T 등급까지로 광고를 제한한다. 기획서 §21.8.
             MobileAds.SetRequestConfiguration(new RequestConfiguration
             {
-                MaxAdContentRating = MaxAdContentRating.G,
+                MaxAdContentRating = MaxAdContentRating.T,
             });
             MobileAds.Initialize(_ => source.TrySetResult(true));
         }
