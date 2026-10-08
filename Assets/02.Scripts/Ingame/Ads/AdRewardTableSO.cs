@@ -24,6 +24,12 @@ public sealed class AdRewardTableSO : ScriptableObject
     [Tooltip("하루에 뽑기권 광고를 보상까지 볼 수 있는 횟수입니다.")]
     [SerializeField, Min(1)] private int _ticketDailyLimit = 3;
 
+    [Header("Ad Unit")]
+    [Tooltip("개발 빌드(Development Build)가 쓰는 보상형 광고 단위 ID입니다. 값은 Google이 공개한 테스트 단위입니다.")]
+    [SerializeField] private string _rewardedAdUnitIdTest = "ca-app-pub-3940256099942544/5224354917";
+    [Tooltip("릴리스 빌드가 쓰는 실제 보상형 광고 단위 ID입니다. 비어 있으면 릴리스 빌드에서는 광고가 없는 것으로 다룹니다.")]
+    [SerializeField] private string _rewardedAdUnitIdRelease = string.Empty;
+
     public float OfflineRewardMultiplier => _offlineRewardMultiplier;
     public float PointBoostMultiplier => _pointBoostMultiplier;
     public float PointBoostSecondsPerAd => _pointBoostSecondsPerAd;
@@ -31,6 +37,9 @@ public sealed class AdRewardTableSO : ScriptableObject
     public int PointBoostDailyLimit => _pointBoostDailyLimit;
     public int TicketReward => _ticketReward;
     public int TicketDailyLimit => _ticketDailyLimit;
+
+    // 개발 빌드는 테스트 단위, 릴리스 빌드는 실제 단위다. 릴리스에서 테스트 광고가 나가지 않게 하려는 것이다.
+    public string RewardedAdUnitId => Debug.isDebugBuild ? _rewardedAdUnitIdTest : _rewardedAdUnitIdRelease;
 
     private void OnValidate()
     {

@@ -2022,8 +2022,21 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
    닿지 않는 문제는 안내가 나오는 시점(장식장 안내 이후)에는 해당하지 않는다.
    부스트가 도는 동안 화면 가장자리에 불꽃 테두리가 숨 쉬듯 맥동하고 아래에서 불씨가 올라온다(`AdBoostVignetteUI`,
    HUD 뒤에 그려 버튼과 글자를 가리지 않으며 입력은 받지 않는다). 남은 시간이 10초 이하이면 맥동만 빨라진다.
-5. **AdMob SDK 도입**: 패키지와 의존성 해석, 매니페스트 `AD_ID`, 테스트 광고 단위, 광고 재생 중 오프라인
-   계산 건너뛰기. 이 단계만 패키지 파일을 바꾼다.
+5. **AdMob SDK 도입** — 완료(2026-10-08, 기기 확인 전): Google Mobile Ads Unity 플러그인 11.5.0을 공식 GitHub
+   릴리스의 unitypackage에서 들였다. 그 안에 든 External Dependency Manager 1.2.188은 프로젝트의 1.2.187을 덮지
+   않으려고 빼고 들였다. Android 의존성 해석이 `mainTemplate.gradle`과 `settingsTemplate.gradle`에 광고 쪽 항목
+   (`play-services-ads` 25.4.0, `user-messaging-platform` 4.0.0, androidx 3종)만 더했고 Firebase 쪽 버전은 바뀌지
+   않았다. 앱 ID는 Google 공개 테스트 앱 ID를 `GoogleMobileAdsSettings`에 넣었다(실제 앱 ID는 9단계 출시 전에 바꾼다).
+   `GoogleMobileAdsService`가 Android의 보상형 광고를 맡는다: 처음 불러올 때 초기화, 광고 등급 G 제한, 광고 이벤트를
+   메인 스레드로 받기, 한 번 쓴 광고는 버리고 다시 불러오기, 한 시간 만료, 실패 뒤 30초 쉬고 재시도. 광고 단위 ID는
+   `AdRewardTableSO`에 두었고 개발 빌드는 Google 테스트 단위, 릴리스 빌드는 실제 단위(아직 비어 있어, 비어 있으면
+   릴리스 빌드에서 광고가 없는 것으로 다룬다)를 쓴다. 플랫폼 분기는 `AdRewardService.CreateAdService` 한 곳에
+   에디터 가짜 광고, Android AdMob, 그 밖의 빌드는 없음으로 두었다. 광고를 보고 앱이 돌아오면 `GameManager`가 오프라인
+   보상을 건너뛰고 서버 시계만 맞춘다(`AdRewardService.IsAdResume`, 광고 중이거나 닫은 지 3초 안). `AD_ID` 권한은
+   `play-services-ads`가 병합해 들여오므로 매니페스트에 따로 적지 않았다. Gradle 빌드와 기기에서 확인하지 못한 것:
+   의존성이 빌드에서 실제로 충돌 없이 합쳐지는지, 병합된 매니페스트에 `AD_ID`와 앱 ID가 들어가는지, 테스트 광고가
+   나오는지. 알아 둘 점: SDK 초기화는 지금 `AdRewardService`가 시작되며 처음 광고를 불러올 때 일어나므로, 6단계에서
+   동의 화면 뒤로 옮겨야 한다.
 6. **약관·동의 화면**(§21.11): 이용약관 문서 작성, 동의 화면, 로컬 동의 기록, 로그인 앞 연결, 옵션의 문서
    링크. 분석과 광고는 동의 뒤에만 초기화한다.
 7. **지표**: Firebase Analytics 도입(패키지를 바꾸는 단계), `IAnalyticsService`, 광고 이벤트(§21.10).

@@ -19,3 +19,5 @@ MonoBehaviour:
   _pointBoostDailyLimit: 6
   _ticketReward: 1
   _ticketDailyLimit: 3
+  _rewardedAdUnitIdTest: ca-app-pub-3940256099942544/5224354917
+  _rewardedAdUnitIdRelease: 

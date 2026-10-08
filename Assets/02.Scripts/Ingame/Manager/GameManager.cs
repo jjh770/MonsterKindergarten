@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private UpgradeManager _upgradeManager;
     [SerializeField] private OfflineRewardManager _offlineRewardManager;
+    [SerializeField] private AdRewardService _adRewardService;
 
     private bool _isAllInitialized;
     private bool _isReturningToLogin;
@@ -362,6 +363,12 @@ public class GameManager : MonoBehaviour
         if (pauseStatus)
         {
             FlushAllDomainsForAppLifecycle();
+        }
+        else if (_adRewardService != null && _adRewardService.IsAdResume)
+        {
+            // 광고를 보느라 앱이 멈췄다 돌아온 것은 오프라인 이탈이 아니다. 오프라인 보상은 건너뛰고
+            // 서버 시계만 기존대로 다시 맞춘다. 기획서 §21.4.
+            ServerClock.TrySync(AccountManager.Instance?.UserId, force: true).Forget();
         }
         else
         {
