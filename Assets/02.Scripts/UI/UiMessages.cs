@@ -91,4 +91,12 @@ public static class UiMessages
     public static string MachineCapsuleTap => Source.MachineCapsuleTap;
     public static string SpecialSlimeSubtitle => Source.SpecialSlimeSubtitle;
     public static string TicketObtained => Source.TicketObtained;
+    public static string AdNotReady => Source.AdNotReady;
+    public static string AdLimitReached => Source.AdLimitReached;
+    public static string AdBoostFull => Source.AdBoostFull;
+    public static string AdLocked => Source.AdLocked;
+    public static string AdFailed => Source.AdFailed;
+    public static string AdClosedEarly => Source.AdClosedEarly;
+    public static string AdBoostRewarded => Source.AdBoostRewarded;
+    public static string AdTicketRewarded => Source.AdTicketRewarded;
 }

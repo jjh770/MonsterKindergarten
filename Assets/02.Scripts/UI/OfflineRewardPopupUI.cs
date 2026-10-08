@@ -9,6 +9,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
 {
     public event Action ConfirmRequested;
     public event Action PresentationCompleted;
+    public event Action AdDoubleRequested;
 
     [SerializeField] private GameObject _popupPanel;
     [SerializeField] private GameObject _doNotTouchPanel;
@@ -16,6 +17,8 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _elapsedTimeText;
     [SerializeField] private TextMeshProUGUI _rewardText;
     [SerializeField] private Button _confirmButton;
+    [Tooltip("광고를 보고 포인트를 두 배로 받는 버튼입니다. 광고를 볼 수 있을 때만 켭니다.")]
+    [SerializeField] private Button _adDoubleButton;
     [Header("Reward Fly Effect")]
     [SerializeField] private RectTransform _rewardFlyVisual;
     [Tooltip("ECurrencyType 순서대로 포인트, 티켓 이미지를 연결합니다.")]
@@ -66,11 +69,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
         _confirmButton?.onClick.AddListener(OnConfirmClicked);
+        _adDoubleButton?.onClick.AddListener(OnAdDoubleClicked);
+        _adDoubleButton?.gameObject.SetActive(false);
     }
 
     private void OnDestroy()
     {
         _confirmButton?.onClick.RemoveListener(OnConfirmClicked);
+        _adDoubleButton?.onClick.RemoveListener(OnAdDoubleClicked);
         _currentSequence?.Kill();
         ClearFlyingVisuals();
     }
@@ -99,6 +105,11 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
         PlaySound(EAudioSfx.OfflineRewardOpen);
+
+        if (_adDoubleButton != null)
+        {
+            _adDoubleButton.interactable = true;
+        }
 
         if (_confirmButton != null)
         {
@@ -197,6 +208,41 @@ public class OfflineRewardPopupUI : MonoBehaviour
         }
     }
 
+    private void OnAdDoubleClicked()
+    {
+        AdDoubleRequested?.Invoke();
+    }
+
+    public void SetAdDoubleVisible(bool isVisible)
+    {
+        _adDoubleButton?.gameObject.SetActive(isVisible);
+    }
+
+    // 광고를 보는 동안 두 버튼을 모두 잠근다.
+    public void SetBusy(bool isBusy)
+    {
+        if (_confirmButton != null)
+        {
+            _confirmButton.interactable = !isBusy;
+        }
+
+        if (_adDoubleButton != null)
+        {
+            _adDoubleButton.interactable = !isBusy;
+        }
+    }
+
+    // 광고를 보고 두 배로 받게 됐을 때 보상 문구를 바뀐 값으로 고친다.
+    public void ShowDoubledReward(Currency reward, int ticketReward)
+    {
+        if (_rewardText == null) return;
+
+        string pointLine = $"모아 둔 포인트 : {CurrencyIcon.Point}{reward} (2배)";
+        _rewardText.text = ticketReward > 0
+            ? $"{pointLine}\n모아 둔 뽑기권 : {CurrencyIcon.GachaTicket}+{ticketReward}"
+            : pointLine;
+    }
+
     private void OnConfirmClicked()
     {
         ConfirmRequested?.Invoke();
@@ -213,6 +259,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         PlaySound(EAudioSfx.OfflineRewardCollect);
         _currentSequence?.Kill();
         ShowRevealItemsAtOnce();
+        SetBusy(true);
 
         if (_confirmButton != null)
         {
@@ -419,6 +466,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
     private void ClosePopup()
     {
         PlaySound(EAudioSfx.OfflineRewardArrival);
+        SetBusy(false);
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);
 

@@ -48,6 +48,16 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _specialSlimeSubtitle = "뭔가 특별해 보여요...!";
     [SerializeField] private string _ticketObtained = "뽑기권 획득!";
 
+    [Header("광고")]
+    [SerializeField] private string _adNotReady = "지금은 볼 수 있는 광고가 없어요.";
+    [SerializeField] private string _adLimitReached = "오늘은 모두 봤어요.";
+    [SerializeField] private string _adBoostFull = "이미 충분히 켜져 있어요.";
+    [SerializeField] private string _adLocked = "뽑기가 열리면 볼 수 있어요.";
+    [TextArea] [SerializeField] private string _adFailed = "광고를 보여 주지 못했어요.\n잠시 뒤에 다시 해 주세요.";
+    [SerializeField] private string _adClosedEarly = "광고를 끝까지 봐야 보상을 받아요.";
+    [SerializeField] private string _adBoostRewarded = "포인트 2배 시간이 늘었어요!";
+    [SerializeField] private string _adTicketRewarded = "뽑기권을 받았어요!";
+
     public string FieldFull => _fieldFull;
     public string AutoSpawnOff => _autoSpawnOff;
     public string EnterDisplayRoom => _enterDisplayRoom;
@@ -76,4 +86,12 @@ public sealed class UiMessagesSO : ScriptableObject
     public string MachineCapsuleTap => _machineCapsuleTap;
     public string SpecialSlimeSubtitle => _specialSlimeSubtitle;
     public string TicketObtained => _ticketObtained;
+    public string AdNotReady => _adNotReady;
+    public string AdLimitReached => _adLimitReached;
+    public string AdBoostFull => _adBoostFull;
+    public string AdLocked => _adLocked;
+    public string AdFailed => _adFailed;
+    public string AdClosedEarly => _adClosedEarly;
+    public string AdBoostRewarded => _adBoostRewarded;
+    public string AdTicketRewarded => _adTicketRewarded;
 }

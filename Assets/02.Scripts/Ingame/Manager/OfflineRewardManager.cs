@@ -277,14 +277,26 @@ public sealed class OfflineRewardManager : MonoBehaviour
 
     public bool TryClaim()
     {
+        return TryClaim(1d, out _);
+    }
+
+    // 광고를 보고 받을 때는 포인트만 pointMultiplier배로 받는다. 뽑기권은 그대로이고, 늘어난 몫은
+    // "함께 만든 포인트" 기록에 넣지 않는다. 기록은 실제로 만든 양이어야 한다.
+    public bool TryClaim(double pointMultiplier, out OfflineRewardResult claimed)
+    {
+        claimed = default;
         if (!_pendingReward.HasValue || _isClaimed)
         {
             return false;
         }
 
         OfflineRewardResult result = _pendingReward.Value;
+        double bonus = Math.Round(
+            (double)result.Reward * Math.Max(0d, pointMultiplier - 1d),
+            MidpointRounding.AwayFromZero);
+        Currency totalReward = result.Reward + (Currency)bonus;
         bool applied = _currencyManager.TryApplyChanges(
-            CurrencyChange.Add(ECurrencyType.Point, result.Reward),
+            CurrencyChange.Add(ECurrencyType.Point, totalReward),
             CurrencyChange.Add(
                 ECurrencyType.GachaTicket,
                 result.TicketReward));
@@ -294,6 +306,12 @@ public sealed class OfflineRewardManager : MonoBehaviour
             _slimeManager.RecordOfflineProduction(_pendingGradePoints);
         }
         _isClaimed = true;
+        claimed = new OfflineRewardResult(
+            result.ElapsedTime,
+            totalReward,
+            result.TicketReward,
+            result.PointBeforeReward,
+            result.PointAfterReward + (Currency)bonus);
         return true;
     }
 
