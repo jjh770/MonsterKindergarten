@@ -14,6 +14,12 @@ public sealed class NullAdService : IAdService
         remove { }
     }
 
+    public event Action<string> LoadFailed
+    {
+        add { }
+        remove { }
+    }
+
     public void Preload()
     {
     }

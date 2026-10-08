@@ -43,6 +43,7 @@ public sealed class GoogleMobileAdsService : IAdService
     public bool IsShowing { get; private set; }
 
     public event Action ReadyChanged;
+    public event Action<string> LoadFailed;
 
     public void Preload()
     {
@@ -109,6 +110,7 @@ public sealed class GoogleMobileAdsService : IAdService
         {
             if (!await InitializeAsync())
             {
+                LoadFailed?.Invoke("init_timeout");
                 ScheduleRetry();
                 return;
             }
@@ -119,6 +121,7 @@ public sealed class GoogleMobileAdsService : IAdService
                 if (error != null || ad == null)
                 {
                     Debug.LogWarning($"보상형 광고를 불러오지 못했습니다. : {error}");
+                    LoadFailed?.Invoke(error != null ? error.GetCode().ToString() : "null_ad");
                     loaded.TrySetResult(null);
                     return;
                 }

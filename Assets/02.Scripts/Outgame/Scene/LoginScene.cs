@@ -144,6 +144,7 @@ public class LoginScene : MonoBehaviour
     private void OnConsentAgreed()
     {
         ConsentRecord.Record();
+        Analytics.ApplyConsent();
         _consentUI.Hide();
         Login(true).Forget();
     }

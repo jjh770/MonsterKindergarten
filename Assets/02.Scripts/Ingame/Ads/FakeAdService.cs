@@ -28,6 +28,13 @@ public sealed class FakeAdService : IAdService
 
     public event Action ReadyChanged;
 
+    // 가짜 광고는 불러오기에 실패하지 않는다. 인터페이스를 맞추려는 자리다.
+    public event Action<string> LoadFailed
+    {
+        add { }
+        remove { }
+    }
+
     public void SetReady(bool isReady)
     {
         if (_isReady == isReady) return;

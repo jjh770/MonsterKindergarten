@@ -10,6 +10,9 @@ public interface IAdService
     bool IsShowing { get; }
     event Action ReadyChanged;
 
+    // 광고를 불러오지 못했을 때 사유 코드와 함께 알린다. 분석이 듣는다.
+    event Action<string> LoadFailed;
+
     // 준비된 광고가 없고 불러오는 중도 아니면 불러오기를 시작한다. 이미 준비됐거나 불러오는 중이면 아무것도 하지 않는다.
     void Preload();
 

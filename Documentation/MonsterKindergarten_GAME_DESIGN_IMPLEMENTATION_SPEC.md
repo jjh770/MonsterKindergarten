@@ -2056,8 +2056,20 @@ Phase 2 본편에 이어 구현을 완료했다. Phase 3 도감 구현 기록은
    NullReference)도 이 작업에서 활성으로 고쳤다. 확인하지 못한 것: 기기에서의 동의 화면과 링크 열기, 병합된 매니페스트에
    분석 끔 값이 들어가는지, `play-services-ads`의 자동 초기화 제공자가 동의 전에 SDK를 초기화하는지(빌드한 매니페스트에서
    확인), 약관 문구의 법률 검토(§27).
-7. **지표**: Firebase Analytics 도입(패키지를 바꾸는 단계), `IAnalyticsService`, 광고 이벤트(§21.10).
-   이벤트가 도착하는지 DebugView로 확인한다.
+7. **지표** — 완료(2026-10-08, 기기 확인 전): Firebase Analytics Unity 라이브러리(Unity SDK 13.7.0 압축 파일, 약
+   1.25GB)를 받는 대신, 빌드에 이미 들어 있는 Android `firebase-analytics` 23.0.0을 JNI로 직접 부르는 얇은
+   서비스로 넣었다(`FirebaseAnalyticsService`). 패키지와 Gradle 의존성은 바뀌지 않았다. `IAnalyticsService`는 수집 켜기·
+   끄기와 광고 이벤트 기록만 하고, 예외는 밖으로 내보내지 않는다. 플랫폼 분기는 `Analytics.Create` 한 곳이다(Android는
+   Firebase, 에디터와 그 밖은 로그만). 수집은 매니페스트로 꺼 둔 채 시작하고 `Analytics.ApplyConsent()`가 동의 기록이
+   있을 때만 켠다(동의 직후, 광고 서비스 시작 때, 계정 삭제로 동의가 지워진 뒤에는 끈다). 이벤트는 §21.10의 다섯 개이고
+   `AdRewardService`가 보낸다: `ad_start`(광고 재생 시작), `ad_reward`(보상 지급, 한도가 있는 보상은 `today_count`),
+   `ad_close_early`(보상 없이 닫음), `ad_load_fail`(`fail_code`, 불러오기 실패는 placement가 `preload`이고 광고를
+   보여 주지 못한 것은 `show_failed`), `ad_limit_reached`(보상으로 하루 한도에 닿음). 공통 매개변수 `placement`는
+   `offline_double`, `point_boost`, `ticket`이다. 에디터에서 광고를 보면 `[Analytics]` 로그로 이벤트와 매개변수가
+   찍히는 것을 확인했다. 확인하지 못한 것: 기기에서 이벤트가 실제로 도착하는지(DebugView), 빌드에서 JNI 호출이 막히지
+   않는지, 동의 전에 수집이 꺼져 있는지. 알아 둘 점: 공식 Unity API가 아니라 직접 만든 래퍼라 firebase-analytics의
+   메서드 이름이 바뀌면 깨지고(그때 예외를 삼켜 보내지 않을 뿐 게임은 멈추지 않는다), 나중에 Unity 라이브러리를 들이면
+   이 서비스를 그것으로 바꾸면 된다.
 8. **정책과 문서**: 개인정보처리방침과 게시, Play Console 광고 ID 선언·데이터 보안(광고·분석 포함), 대상
    연령 13세 이상 확인. 한국만 배포하므로 UMP는 쓰지 않는다.
 9. **기기 확인과 출시**: 개발 APK에서 테스트 광고, 릴리스 AAB에서 실제 광고 단위. 정적 확인, Editor, 기기 결과는

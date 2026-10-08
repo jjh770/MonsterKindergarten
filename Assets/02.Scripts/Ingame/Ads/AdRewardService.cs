@@ -65,6 +65,9 @@ public sealed class AdRewardService : MonoBehaviour
         if (!enabled) return;
 
         _adService.ReadyChanged += OnReadyChanged;
+        _adService.LoadFailed += OnLoadFailed;
+        // 동의 기록이 있을 때만 분석 수집이 켜진다. 정상 흐름은 로그인 전에 동의를 받는다.
+        Analytics.ApplyConsent();
         _adService.Preload();
     }
 
@@ -91,6 +94,7 @@ public sealed class AdRewardService : MonoBehaviour
         if (_adService != null)
         {
             _adService.ReadyChanged -= OnReadyChanged;
+            _adService.LoadFailed -= OnLoadFailed;
         }
     }
 
@@ -172,8 +176,14 @@ public sealed class AdRewardService : MonoBehaviour
         _isRequesting = true;
         try
         {
+            string placementName = GetPlacementName(placement);
+            Analytics.Service.LogAdEvent("ad_start", placementName);
             EAdShowResult result = await _adService.ShowRewardedAsync(destroyCancellationToken);
-            if (result != EAdShowResult.Rewarded) return result;
+            if (result != EAdShowResult.Rewarded)
+            {
+                LogNotRewarded(result, placementName);
+                return result;
+            }
 
             if (!TryGrant(placement))
             {
@@ -182,6 +192,7 @@ public sealed class AdRewardService : MonoBehaviour
             }
 
             RewardEarned?.Invoke(placement);
+            LogRewarded(placement, placementName);
             return EAdShowResult.Rewarded;
         }
         finally
@@ -232,6 +243,58 @@ public sealed class AdRewardService : MonoBehaviour
     }
 
     private void OnReadyChanged() => ReadyChanged?.Invoke();
+
+    private void OnLoadFailed(string code)
+    {
+        // 불러오기는 어느 버튼과도 상관없이 미리 일어나므로 placement는 preload다.
+        Analytics.Service.LogAdEvent("ad_load_fail", "preload", "fail_code", code);
+    }
+
+    private static string GetPlacementName(EAdPlacement placement)
+    {
+        switch (placement)
+        {
+            case EAdPlacement.OfflineDouble:
+                return "offline_double";
+            case EAdPlacement.PointBoost:
+                return "point_boost";
+            default:
+                return "ticket";
+        }
+    }
+
+    private static void LogNotRewarded(EAdShowResult result, string placementName)
+    {
+        switch (result)
+        {
+            case EAdShowResult.ClosedEarly:
+                Analytics.Service.LogAdEvent("ad_close_early", placementName);
+                break;
+            case EAdShowResult.Failed:
+                Analytics.Service.LogAdEvent("ad_load_fail", placementName, "fail_code", "show_failed");
+                break;
+        }
+    }
+
+    // 몇 번째인지와, 이 보상으로 하루 한도에 닿았는지를 기록한다. 한도가 없는 오프라인 2배에는 둘 다 없다.
+    private void LogRewarded(EAdPlacement placement, string placementName)
+    {
+        int limit = placement == EAdPlacement.Ticket
+            ? _table.TicketDailyLimit
+            : placement == EAdPlacement.PointBoost ? _table.PointBoostDailyLimit : 0;
+        if (limit <= 0)
+        {
+            Analytics.Service.LogAdEvent("ad_reward", placementName);
+            return;
+        }
+
+        int remaining = GetRemainingDailyCount(placement);
+        Analytics.Service.LogAdEvent("ad_reward", placementName, "today_count", null, limit - remaining);
+        if (remaining <= 0)
+        {
+            Analytics.Service.LogAdEvent("ad_limit_reached", placementName);
+        }
+    }
 
     private IAdService CreateAdService()
     {
