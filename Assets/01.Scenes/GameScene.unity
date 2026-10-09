@@ -36785,6 +36785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AdBoostVignetteUI
   _adRewardService: {fileID: 297087328}
+  _spaceManager: {fileID: 954826973}
   _frame: {fileID: 879980863}
   _frameGroup: {fileID: 879980866}
   _emberRoot: {fileID: 1847351017}
@@ -56147,6 +56148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AdBoostIndicatorUI
   _adRewardService: {fileID: 297087328}
+  _spaceManager: {fileID: 954826973}
   _pill: {fileID: 1382974927}
   _pillMotion: {fileID: 1382974932}
   _label: {fileID: 251028425}

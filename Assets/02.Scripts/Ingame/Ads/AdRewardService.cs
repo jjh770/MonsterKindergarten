@@ -15,15 +15,14 @@ public sealed class AdRewardService : MonoBehaviour
 {
     // 앱이 멈췄다 돌아온 첫 프레임의 큰 간격을 부스트 시간에서 빼지 않게 한다.
     private const float MaxElapsedPerFrame = 1f;
-
-    [SerializeField] private AdRewardTableSO _table;
-    [SerializeField] private SlimeManager _slimeManager;
-    [SerializeField] private CurrencyManager _currencyManager;
-
     // 준비되지 않은 광고를 다시 불러오라고 서비스에 묻는 간격이다. 서비스가 실패 뒤 쉬는 시간은 따로 지킨다.
     private const float PreloadCheckSeconds = 5f;
     // 광고가 닫힌 직후 앱이 돌아왔다는 신호가 이 시간 안에 오면 광고에서 돌아온 것으로 본다.
     private const float AdReturnGraceSeconds = 3f;
+
+    [SerializeField] private AdRewardTableSO _table;
+    [SerializeField] private SlimeManager _slimeManager;
+    [SerializeField] private CurrencyManager _currencyManager;
 
     private IAdService _adService;
     private bool _isRequesting;
@@ -37,15 +36,11 @@ public sealed class AdRewardService : MonoBehaviour
     public double PointBoostMultiplier =>
         enabled && _slimeManager.AdRewards.HasPointBoost ? _table.PointBoostMultiplier : 1d;
 
-    // 에디터에서 중도 닫기와 불러오기 실패를 흉내 낼 때 가짜 광고를 꺼내 쓴다.
-    public IAdService AdService => _adService;
-
     // 광고를 보는 중이거나 방금 광고를 닫았는가. 광고가 열리면 앱이 일시정지되었다가 돌아오므로, 그 돌아옴을
     // 오프라인 이탈로 세지 않으려고 GameManager가 묻는다. 기획서 §21.4.
     public bool IsAdResume =>
         IsShowingAd || Time.realtimeSinceStartup - _lastShowEndedAt < AdReturnGraceSeconds;
 
-    public event Action<EAdPlacement> RewardEarned;
     public event Action ReadyChanged;
 
     private void Awake()
@@ -66,8 +61,6 @@ public sealed class AdRewardService : MonoBehaviour
 
         _adService.ReadyChanged += OnReadyChanged;
         _adService.LoadFailed += OnLoadFailed;
-        // 동의 기록이 있을 때만 분석 수집이 켜진다. 정상 흐름은 로그인 전에 동의를 받는다.
-        Analytics.ApplyConsent();
         _adService.Preload();
     }
 
@@ -176,12 +169,11 @@ public sealed class AdRewardService : MonoBehaviour
         _isRequesting = true;
         try
         {
-            string placementName = GetPlacementName(placement);
-            Analytics.Service.LogAdEvent("ad_start", placementName);
+            AdAnalytics.LogStart(placement);
             EAdShowResult result = await _adService.ShowRewardedAsync(destroyCancellationToken);
             if (result != EAdShowResult.Rewarded)
             {
-                LogNotRewarded(result, placementName);
+                AdAnalytics.LogNotRewarded(result, placement);
                 return result;
             }
 
@@ -191,8 +183,7 @@ public sealed class AdRewardService : MonoBehaviour
                 return EAdShowResult.Failed;
             }
 
-            RewardEarned?.Invoke(placement);
-            LogRewarded(placement, placementName);
+            LogRewarded(placement);
             return EAdShowResult.Rewarded;
         }
         finally
@@ -244,56 +235,33 @@ public sealed class AdRewardService : MonoBehaviour
 
     private void OnReadyChanged() => ReadyChanged?.Invoke();
 
-    private void OnLoadFailed(string code)
-    {
-        // 불러오기는 어느 버튼과도 상관없이 미리 일어나므로 placement는 preload다.
-        Analytics.Service.LogAdEvent("ad_load_fail", "preload", "fail_code", code);
-    }
+    private void OnLoadFailed(string code) => AdAnalytics.LogLoadFailed(code);
 
-    private static string GetPlacementName(EAdPlacement placement)
+    private int GetDailyLimit(EAdPlacement placement)
     {
         switch (placement)
         {
-            case EAdPlacement.OfflineDouble:
-                return "offline_double";
+            case EAdPlacement.Ticket:
+                return _table.TicketDailyLimit;
             case EAdPlacement.PointBoost:
-                return "point_boost";
+                return _table.PointBoostDailyLimit;
             default:
-                return "ticket";
+                return 0;
         }
     }
 
-    private static void LogNotRewarded(EAdShowResult result, string placementName)
+    // 한도가 있는 보상은 오늘 몇 번째인지와 한도에 닿았는지를 함께 기록한다.
+    private void LogRewarded(EAdPlacement placement)
     {
-        switch (result)
-        {
-            case EAdShowResult.ClosedEarly:
-                Analytics.Service.LogAdEvent("ad_close_early", placementName);
-                break;
-            case EAdShowResult.Failed:
-                Analytics.Service.LogAdEvent("ad_load_fail", placementName, "fail_code", "show_failed");
-                break;
-        }
-    }
-
-    // 몇 번째인지와, 이 보상으로 하루 한도에 닿았는지를 기록한다. 한도가 없는 오프라인 2배에는 둘 다 없다.
-    private void LogRewarded(EAdPlacement placement, string placementName)
-    {
-        int limit = placement == EAdPlacement.Ticket
-            ? _table.TicketDailyLimit
-            : placement == EAdPlacement.PointBoost ? _table.PointBoostDailyLimit : 0;
+        int limit = GetDailyLimit(placement);
         if (limit <= 0)
         {
-            Analytics.Service.LogAdEvent("ad_reward", placementName);
+            AdAnalytics.LogRewarded(placement, 0, false);
             return;
         }
 
         int remaining = GetRemainingDailyCount(placement);
-        Analytics.Service.LogAdEvent("ad_reward", placementName, "today_count", null, limit - remaining);
-        if (remaining <= 0)
-        {
-            Analytics.Service.LogAdEvent("ad_limit_reached", placementName);
-        }
+        AdAnalytics.LogRewarded(placement, limit - remaining, remaining <= 0);
     }
 
     private IAdService CreateAdService()

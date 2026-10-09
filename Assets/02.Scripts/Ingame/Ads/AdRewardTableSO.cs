@@ -14,7 +14,7 @@ public sealed class AdRewardTableSO : ScriptableObject
     [Tooltip("광고 한 번으로 늘어나는 부스트 시간(초)입니다.")]
     [SerializeField, Min(1f)] private float _pointBoostSecondsPerAd = 600f;
     [Tooltip("부스트 남은 시간(초)의 상한입니다. 광고를 보면 이 값을 넘게 되는 상태에서는 볼 수 없습니다.")]
-    [SerializeField, Min(1f)] private float _pointBoostMaxRemainingSeconds = 1800f;
+    [SerializeField, Min(1f)] private float _pointBoostMaxRemainingSeconds = 540f;
     [Tooltip("하루에 부스트 광고를 보상까지 볼 수 있는 횟수입니다.")]
     [SerializeField, Min(1)] private int _pointBoostDailyLimit = 6;
 

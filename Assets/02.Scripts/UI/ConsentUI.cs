@@ -23,7 +23,7 @@ public sealed class ConsentUI : MonoBehaviour
     [SerializeField] private Button _agreeAllButton;
     [SerializeField] private Button _startButton;
     [SerializeField] private Button _declineButton;
-    [Tooltip("약관과 방침을 게임 안에서 보여 주는 팝업입니다. 비어 있으면 웹 주소를 엽니다.")]
+    [Tooltip("약관과 방침을 게임 안에서 보여 주는 팝업입니다. 읽지 못하는 약관에는 동의할 수 없으므로 필수입니다.")]
     [SerializeField] private LegalDocumentUI _legalViewer;
 
     private bool _isShown;
@@ -34,8 +34,6 @@ public sealed class ConsentUI : MonoBehaviour
     // 동의하지 않고 닫았다(거절 버튼 또는 뒤로가기).
     public event Action Declined;
 
-    public bool IsShown => _isShown;
-
     public bool IsReady =>
         _root != null &&
         _termsToggle != null &&
@@ -45,7 +43,9 @@ public sealed class ConsentUI : MonoBehaviour
         _privacyLinkButton != null &&
         _agreeAllButton != null &&
         _startButton != null &&
-        _declineButton != null;
+        _declineButton != null &&
+        _legalViewer != null &&
+        _legalViewer.IsReady;
 
     private void Awake()
     {
@@ -164,22 +164,11 @@ public sealed class ConsentUI : MonoBehaviour
 
     private void OpenTerms()
     {
-        OpenDocument(ELegalDocument.Terms, LegalLinks.TermsUrl);
+        _legalViewer.Show(ELegalDocument.Terms);
     }
 
     private void OpenPrivacy()
     {
-        OpenDocument(ELegalDocument.Privacy, LegalLinks.PrivacyUrl);
-    }
-
-    private void OpenDocument(ELegalDocument document, string fallbackUrl)
-    {
-        if (_legalViewer != null && _legalViewer.IsReady)
-        {
-            _legalViewer.Show(document);
-            return;
-        }
-
-        Application.OpenURL(fallbackUrl);
+        _legalViewer.Show(ELegalDocument.Privacy);
     }
 }

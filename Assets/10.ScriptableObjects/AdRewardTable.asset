@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AdRewardTableSO
   _offlineRewardMultiplier: 2
   _pointBoostMultiplier: 2
-  _pointBoostSecondsPerAd: 600
-  _pointBoostMaxRemainingSeconds: 1800
+  _pointBoostSecondsPerAd: 180
+  _pointBoostMaxRemainingSeconds: 540
   _pointBoostDailyLimit: 6
   _ticketReward: 1
   _ticketDailyLimit: 3

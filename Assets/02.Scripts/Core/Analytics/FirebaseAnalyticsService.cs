@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 // Android의 Firebase Analytics를 JNI로 부른다. 기획서 §21.10.
@@ -22,7 +21,7 @@ public sealed class FirebaseAnalyticsService : IAnalyticsService
             AndroidJavaObject instance = GetInstance();
             instance?.Call("setAnalyticsCollectionEnabled", isEnabled);
         }
-        catch (Exception exception)
+        catch (AndroidJavaException exception)
         {
             Debug.LogWarning($"분석 수집 설정을 바꾸지 못했습니다. : {exception.Message}");
         }
@@ -51,7 +50,7 @@ public sealed class FirebaseAnalyticsService : IAnalyticsService
 
             instance.Call("logEvent", eventName, bundle);
         }
-        catch (Exception exception)
+        catch (AndroidJavaException exception)
         {
             Debug.LogWarning($"분석 이벤트를 보내지 못했습니다. : {eventName}, {exception.Message}");
         }
@@ -70,7 +69,7 @@ public sealed class FirebaseAnalyticsService : IAnalyticsService
             using var analyticsClass = new AndroidJavaClass(AnalyticsClass);
             _analytics = analyticsClass.CallStatic<AndroidJavaObject>("getInstance", activity);
         }
-        catch (Exception exception)
+        catch (AndroidJavaException exception)
         {
             Debug.LogWarning($"Firebase Analytics를 불러오지 못했습니다. : {exception.Message}");
         }

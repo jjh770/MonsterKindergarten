@@ -13,6 +13,8 @@ using UnityEngine.UI;
 public sealed class AdBoostVignetteUI : MonoBehaviour
 {
     [SerializeField] private AdRewardService _adRewardService;
+    [Tooltip("장식장에 있는 동안은 불꽃을 숨긴다. 장식장은 포인트를 만들지 않아 부스트가 의미 없다.")]
+    [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private GameObject _frame;
     [SerializeField] private CanvasGroup _frameGroup;
     [Tooltip("불씨가 움직이는 영역입니다. 테두리와 같은 크기로 채웁니다.")]
@@ -66,7 +68,7 @@ public sealed class AdBoostVignetteUI : MonoBehaviour
 
     private void Awake()
     {
-        if (_adRewardService == null || _frame == null || _frameGroup == null ||
+        if (_adRewardService == null || _spaceManager == null || _frame == null || _frameGroup == null ||
             _emberRoot == null || _emberTemplate == null)
         {
             Debug.LogError("부스트 불꽃 효과의 필수 참조가 비어 있습니다.", this);
@@ -94,7 +96,8 @@ public sealed class AdBoostVignetteUI : MonoBehaviour
             _remaining = _adRewardService.GetPointBoostRemainingSeconds();
         }
 
-        bool isActive = _remaining > 0f;
+        // 장식장에 들어가면 부스트가 남아 있어도 숨는다. 돌아오면 다시 나타난다.
+        bool isActive = _remaining > 0f && _spaceManager.IsMainFieldActive;
         _fade = Mathf.MoveTowards(_fade, isActive ? 1f : 0f, delta / _fadeSeconds);
         if (_fade <= 0f)
         {

@@ -18,22 +18,6 @@ public static class ConsentRecord
 
     public static bool HasConsented => PlayerPrefs.GetInt(VersionKey, 0) == CurrentVersion;
 
-    // 마지막으로 동의한 시각이다. 기록이 없거나 읽을 수 없으면 MinValue다.
-    public static DateTime AgreedAtUtc
-    {
-        get
-        {
-            string stored = PlayerPrefs.GetString(AgreedAtKey, string.Empty);
-            return DateTime.TryParse(
-                stored,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out DateTime parsed)
-                ? parsed
-                : DateTime.MinValue;
-        }
-    }
-
     public static void Record()
     {
         PlayerPrefs.SetInt(VersionKey, CurrentVersion);

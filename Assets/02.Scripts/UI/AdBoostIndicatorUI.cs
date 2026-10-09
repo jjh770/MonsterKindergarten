@@ -7,6 +7,8 @@ using UnityEngine;
 public sealed class AdBoostIndicatorUI : MonoBehaviour
 {
     [SerializeField] private AdRewardService _adRewardService;
+    [Tooltip("장식장에 있는 동안은 남은 시간을 숨긴다. 장식장은 포인트를 만들지 않아 부스트가 의미 없다.")]
+    [SerializeField] private GameplaySpaceManager _spaceManager;
     [SerializeField] private GameObject _pill;
     [Tooltip("알약이 나타나고 사라지는 연출입니다. 공용 팝업 연출을 쓰며 알약 자신을 움직입니다.")]
     [SerializeField] private PopupMotion _pillMotion;
@@ -19,7 +21,7 @@ public sealed class AdBoostIndicatorUI : MonoBehaviour
 
     private void Start()
     {
-        if (_adRewardService == null || _pill == null || _pillMotion == null || _label == null)
+        if (_adRewardService == null || _spaceManager == null || _pill == null || _pillMotion == null || _label == null)
         {
             Debug.LogError("부스트 표시의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -41,7 +43,8 @@ public sealed class AdBoostIndicatorUI : MonoBehaviour
     private void Refresh()
     {
         int seconds = Mathf.CeilToInt(_adRewardService.GetPointBoostRemainingSeconds());
-        if (seconds <= 0)
+        // 장식장에 있는 동안은 부스트가 남아 있어도 보이지 않는다. 돌아오면 다시 나타난다.
+        if (seconds <= 0 || !_spaceManager.IsMainFieldActive)
         {
             Hide();
             return;

@@ -63,6 +63,8 @@ public class LoginScene : MonoBehaviour
         _loginButtonText = _loginButton.GetComponentInChildren<TMP_Text>(true);
         _loginButtonText.text = IdleLabel;
         _loginButton.onClick.AddListener(OnLoginButtonClicked);
+        // 동의 기록이 있을 때만 분석 수집이 켜진다. 앱이 시작될 때는 매니페스트가 꺼 둔 상태다.
+        Analytics.SetCollectionEnabled(ConsentRecord.HasConsented);
         AudioManager.Instance?.PlayLoginBgm();
         PlayIntro();
 
@@ -144,7 +146,7 @@ public class LoginScene : MonoBehaviour
     private void OnConsentAgreed()
     {
         ConsentRecord.Record();
-        Analytics.ApplyConsent();
+        Analytics.SetCollectionEnabled(true);
         _consentUI.Hide();
         Login(true).Forget();
     }

@@ -10,11 +10,12 @@ public static class Analytics
 
     public static IAnalyticsService Service => s_service ??= Create();
 
-    // 동의 기록이 있을 때만 수집을 켠다. 동의하기 전과 계정 삭제로 동의가 지워진 뒤에는 끈다.
-    // 앱이 시작할 때의 수집은 AppConsent.androidlib의 매니페스트가 꺼 둔다.
-    public static void ApplyConsent()
+    // 동의한 뒤에만 수집을 켠다. 켜고 끄는 때는 동의를 아는 쪽(로그인 흐름과 계정 삭제)이 정한다. 이 클래스가
+    // 동의 기록을 직접 읽으면 가장 아래 계층인 Core가 Outgame에 기대게 된다. 앱이 시작할 때의 수집은
+    // AppConsent.androidlib의 매니페스트가 꺼 둔다.
+    public static void SetCollectionEnabled(bool isEnabled)
     {
-        Service.SetCollectionEnabled(ConsentRecord.HasConsented);
+        Service.SetCollectionEnabled(isEnabled);
     }
 
     private static IAnalyticsService Create()

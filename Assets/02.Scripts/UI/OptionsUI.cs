@@ -28,7 +28,7 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
     [Tooltip("이용약관 문서를 여는 버튼입니다. 개인정보를 수집하는 앱은 약관과 방침 링크가 앱 안에도 있어야 합니다.")]
     [SerializeField] private Button _termsButton;
     [SerializeField] private Button _privacyButton;
-    [Tooltip("약관과 방침을 게임 안에서 보여 주는 팝업입니다. 비어 있으면 웹 주소를 엽니다.")]
+    [Tooltip("약관과 방침을 게임 안에서 보여 주는 팝업입니다.")]
     [SerializeField] private LegalDocumentUI _legalViewer;
     [Header("Play Statistics")]
     [SerializeField] private SlimeManager _slimeManager;
@@ -79,7 +79,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
             _confirmationMessage == null ||
             _confirmButton == null || _cancelButton == null || _confirmLabel == null ||
             _cancelLabel == null || _clicker == null || _gameExitManager == null ||
-            _gameManager == null || _spaceManager == null)
+            _gameManager == null || _spaceManager == null ||
+            _termsButton == null || _privacyButton == null || _legalViewer == null)
         {
             Debug.LogError("옵션 UI의 필수 씬 참조가 비어 있습니다.", this);
             enabled = false;
@@ -93,8 +94,8 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
         _closeButton.onClick.AddListener(Close);
         _resetButton.onClick.AddListener(ShowResetConfirmation);
         _deleteAccountButton.onClick.AddListener(ShowDeleteAccountConfirmation);
-        if (_termsButton != null) _termsButton.onClick.AddListener(OpenTerms);
-        if (_privacyButton != null) _privacyButton.onClick.AddListener(OpenPrivacy);
+        _termsButton.onClick.AddListener(OpenTerms);
+        _privacyButton.onClick.AddListener(OpenPrivacy);
         _statisticsButton.onClick.AddListener(ShowStatistics);
         _statisticsCloseButton.onClick.AddListener(CloseStatistics);
         _confirmButton.onClick.AddListener(ConfirmDestructiveAction);
@@ -135,23 +136,12 @@ public sealed class OptionsUI : MonoBehaviour, IPointerClickHandler
 
     private void OpenTerms()
     {
-        OpenDocument(ELegalDocument.Terms, LegalLinks.TermsUrl);
+        _legalViewer.Show(ELegalDocument.Terms);
     }
 
     private void OpenPrivacy()
     {
-        OpenDocument(ELegalDocument.Privacy, LegalLinks.PrivacyUrl);
-    }
-
-    private void OpenDocument(ELegalDocument document, string fallbackUrl)
-    {
-        if (_legalViewer != null && _legalViewer.IsReady)
-        {
-            _legalViewer.Show(document);
-            return;
-        }
-
-        Application.OpenURL(fallbackUrl);
+        _legalViewer.Show(ELegalDocument.Privacy);
     }
 
     private void Open()
