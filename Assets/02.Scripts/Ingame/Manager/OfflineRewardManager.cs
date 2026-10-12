@@ -19,7 +19,7 @@ public sealed class OfflineRewardManager : MonoBehaviour
     [SerializeField] private CurrencyManager _currencyManager;
     [SerializeField] private SlimeManager _slimeManager;
 
-    [SerializeField] private float _minimumOfflineSeconds = 60f;
+    [SerializeField] private float _minimumOfflineSeconds = 300f;
     [SerializeField] private float _maximumOfflineHours = 8f;
     [SerializeField, Range(0f, 1f)] private float _offlineRewardEfficiency = 0.5f;
     [SerializeField, Min(0)] private int _maximumOfflineTickets = 5;

@@ -32414,7 +32414,7 @@ MonoBehaviour:
   _gameManager: {fileID: 1237951049}
   _currencyManager: {fileID: 1577494349}
   _slimeManager: {fileID: 376498428}
-  _minimumOfflineSeconds: 60
+  _minimumOfflineSeconds: 300
   _maximumOfflineHours: 8
   _offlineRewardEfficiency: 0.15
   _maximumOfflineTickets: 5

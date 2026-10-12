@@ -31,10 +31,14 @@ public class GameManager : MonoBehaviour
 
     public bool IsAllDataInitialized => _isAllInitialized;
 
+    private bool IsAdShowing => _adRewardService != null && _adRewardService.IsShowingAd;
+
     private bool _isGameplayActive;
     public bool IsGameplayActive
     {
-        get => _isGameplayActive && !GameplaySaveGate.IsResetting;
+        // 광고 화면이 떠 있는 동안도 플레이를 멈춘다. 광고는 별도 화면이지만 유니티는 계속 돌아서,
+        // 막지 않으면 뒤에서 자동 생산과 스폰, 뽑기권 드랍이 이어진다.
+        get => _isGameplayActive && !GameplaySaveGate.IsResetting && !IsAdShowing;
         private set
         {
             if (_isGameplayActive == value) return;
