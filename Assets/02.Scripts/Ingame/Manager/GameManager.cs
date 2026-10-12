@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AdRewardService _adRewardService;
 
     private bool _isAllInitialized;
+    private float _lastInputTime;
     private bool _isReturningToLogin;
     private readonly List<IGameDataDomainManager> _dataManagers = new();
     private readonly List<GameDataDomainDefinition> _dataDomains = new();
@@ -87,6 +89,8 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        CloudSaveIdleGate.SetIdle(false);
+
         foreach (IGameDataDomainManager manager in _dataManagers)
         {
             manager.DataInitialized -= OnDataInitialized;
@@ -206,6 +210,7 @@ public class GameManager : MonoBehaviour
         if (!HasConsistentStoredSaveData()) return;
 
         _isAllInitialized = true;
+        _lastInputTime = Time.unscaledTime;
 
         // 후반 단계에서 예외가 나면 AllDataInitialized가 끝까지 발화하지 못해 로딩이 멈춘다.
         // _isAllInitialized가 이미 true라 타임아웃 감시는 무력화되므로, 여기서 즉시
@@ -356,9 +361,60 @@ public class GameManager : MonoBehaviour
         TutorialProgress.MarkCompleted(TutorialIds.Main);
     }
 
+    // 입력이 끊기면 클라우드 쓰기 간격을 늘리고, 입력이 돌아오면 줄인다. CloudSaveIdleGate.
+    //
+    // 상태가 바뀌는 순간 미뤄 둔 쓰기를 한 번 내보낸다. 방치로 들어갈 때는 그 직전의 값이,
+    // 돌아올 때는 방치 중에 쌓인 값이 간격을 기다리지 않고 올라간다.
+    private void Update()
+    {
+        if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
+
+        if (HasInputThisFrame())
+        {
+            _lastInputTime = Time.unscaledTime;
+            if (CloudSaveIdleGate.SetIdle(false))
+            {
+                FlushPendingCloudWrites();
+            }
+
+            return;
+        }
+
+        if (Time.unscaledTime - _lastInputTime >= CloudSaveIdleGate.IdleThresholdSeconds &&
+            CloudSaveIdleGate.SetIdle(true))
+        {
+            FlushPendingCloudWrites();
+        }
+    }
+
+    private static bool HasInputThisFrame()
+    {
+        Pointer pointer = Pointer.current;
+        if (pointer != null && (pointer.press.isPressed || pointer.press.wasPressedThisFrame)) return true;
+
+        // 안드로이드 뒤로 가기 키도 입력이다.
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null && keyboard.anyKey.isPressed;
+    }
+
+    private void FlushPendingCloudWrites()
+    {
+        for (int i = 0; i < _dataManagers.Count; i++)
+        {
+            _dataManagers[i].FlushPendingSave();
+        }
+    }
+
     private void OnApplicationPause(bool pauseStatus)
     {
         if (!_isAllInitialized || GameplaySaveGate.IsResetting) return;
+
+        // 앱으로 돌아온 것은 사람이 만진 것이다. 방치 시간은 처음부터 다시 센다.
+        if (!pauseStatus)
+        {
+            _lastInputTime = Time.unscaledTime;
+            CloudSaveIdleGate.SetIdle(false);
+        }
 
         if (pauseStatus)
         {

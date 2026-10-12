@@ -1409,8 +1409,8 @@ Lv.9 해금 팝업 종료
 
 ## 21.10 광고 지표 — 확정 (2026-10-08)
 
-- 광고 시청 지표를 모은다. 이를 위해 **Firebase Analytics**를 도입한다. 기존 Firebase 패키지와 같은 버전
-  (13.7.0)을 쓴다. 패키지를 바꾸는 단계이므로 §25 Phase 9에서 따로 한다.
+- 광고 시청 지표를 모은다. 이를 위해 **Firebase Analytics**를 쓴다. 새 패키지는 들이지 않고, 이미 Gradle 의존성에 있는
+  Android `firebase-analytics` 라이브러리를 JNI로 부른다(§25 Phase 9 7단계).
 - 모으는 것은 **광고 이벤트만**이다. 이벤트 이름은 아래 초안이며 매개변수는 `placement`
   (`offline_double`, `point_boost`, `ticket`)를 공통으로 둔다.
 

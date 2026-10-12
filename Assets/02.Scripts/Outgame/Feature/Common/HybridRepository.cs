@@ -14,7 +14,8 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
     //
     // 로컬 저장은 즉시라서 이 지연이 화면에 보이지 않는다. 뒤처지는 것은
     // 클라우드 사본뿐이고, 그 차이는 재설치나 기기 변경 때만 드러난다.
-    private const float FIREBASE_INTERVAL = 5f;
+    //
+    // 간격은 CloudSaveIdleGate가 정한다. 입력이 끊긴 동안은 늘어난다.
     public HybridRepository(IRepository<T> playerprefs, IRepository<T> firebase)
     {
         _playerprefsRepository = playerprefs;
@@ -83,7 +84,7 @@ public class HybridRepository<T> : IRepository<T> where T : class, ISaveData
     // 문서 전체를 덮어쓰는 방식이라 중간 값을 건너뛰어도 잃는 것이 없다.
     private async UniTaskVoid SaveToFirebase(int resetGeneration, int scheduleGeneration)
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(FIREBASE_INTERVAL));
+        await UniTask.Delay(TimeSpan.FromSeconds(CloudSaveIdleGate.CurrentIntervalSeconds));
 
         // 기다리는 동안 FlushPendingSave가 먼저 보냈으면 여기서 물러난다.
         if (scheduleGeneration != _scheduleGeneration) return;
