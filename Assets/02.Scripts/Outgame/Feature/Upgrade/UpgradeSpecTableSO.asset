@@ -36,9 +36,9 @@ MonoBehaviour:
     CostMultiplier: 1.5
     CostTierSize: 5
     CostTierMultiplier: 1.05
-    LateCostStartLevel: 0
-    LateBaseCost: 0
-    LateCostMultiplier: 1
+    LateCostStartLevel: 20
+    LateBaseCost: 4500000
+    LateCostMultiplier: 1.7
     PointMultiplier: 1
     PointFormula: 0
     PointBreakpoints: []
