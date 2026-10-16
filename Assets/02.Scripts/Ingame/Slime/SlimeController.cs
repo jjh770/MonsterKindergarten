@@ -30,6 +30,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _isPresentationLocked;
     // 현재 공간에서 이 슬라임(Location)이 보여야 하는지. SetLocationPresentationActive가 소유.
     private bool _isSpaceVisible;
+    public bool IsLocationPresentationActive => _isSpaceVisible;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
@@ -175,6 +176,7 @@ public class SlimeController : MonoBehaviour, IClickable
     // 범퍼는 미는 순간에, 대포는 붙잡기 전에 같은 조건을 봐야 한다. 두 곳에
     // 따로 쓰면 한쪽만 고쳐졌을 때 조용히 어긋난다.
     public bool IsPlaygroundTarget =>
+        _isSpaceVisible &&
         !_isDragging &&
         !_isPresentationLocked &&
         _slimeMove != null &&

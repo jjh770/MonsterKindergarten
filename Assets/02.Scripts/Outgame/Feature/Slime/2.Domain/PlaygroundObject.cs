@@ -6,6 +6,10 @@ public enum EPlaygroundObjectType
 {
     Bumper = 0,
     Cannon = 1,
+    FlowerPatch = 2,
+    FlowerCushion = 3,
+    FlowerBasket = 4,
+    FireflyLantern = 5,
 
     Count,
 }
@@ -77,6 +81,12 @@ public static class PlaygroundRules
     {
         return type >= EPlaygroundObjectType.Bumper &&
                type < EPlaygroundObjectType.Count;
+    }
+
+    public static bool IsDecoration(EPlaygroundObjectType type)
+    {
+        return type >= EPlaygroundObjectType.FlowerPatch &&
+               type <= EPlaygroundObjectType.FireflyLantern;
     }
 
     public static float ClampX(float x)

@@ -115,6 +115,41 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public event Action PlaygroundChanged;
     public event Action BackgroundThemesChanged;
     public bool IsInitialized { get; private set; }
+    public IReadOnlyList<ExpeditionRun> ActiveExpeditions => _status?.ActiveExpeditions ?? Array.Empty<ExpeditionRun>();
+    public bool IsOnExpedition(string instanceId) => _status != null && _status.IsOnExpedition(instanceId);
+    public ExpeditionRun ActiveExpedition => _status?.ActiveExpedition;
+    public ExpeditionSettlement ExpeditionSettlement => _status?.ExpeditionSettlement ?? global::ExpeditionSettlement.Empty;
+    public event Action ExpeditionChanged;
+
+    public bool TryStartExpedition(ExpeditionRun run)
+    {
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure ||
+            _status.HighestGrade < UnlockGrades.Gacha || !_status.TryStartExpedition(run)) return false;
+        Save();
+        ExpeditionChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryCompleteExpedition(string runId, DateTime trustedUtcNow)
+    {
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure ||
+            !_status.TryCompleteExpedition(runId, trustedUtcNow)) return false;
+        Save();
+        ExpeditionChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryAdvanceExpeditionSettlement(ExpeditionSettlement next)
+    {
+        if (next == null || !IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure) return false;
+        if (ExpeditionSettlement.Sequence == next.Sequence) return ExpeditionSettlement.CanAdvanceTo(next);
+        if (!_status.TryAdvanceExpeditionSettlement(next)) return false;
+        Save();
+        ExpeditionChanged?.Invoke();
+        PlaygroundChanged?.Invoke();
+        return true;
+    }
 
     private void Awake()
     {
@@ -325,6 +360,21 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     {
         return _status != null &&
                _status.IsPlaygroundPositionAvailable(x, y, ignoreIndex);
+    }
+
+    // 탐험 보상은 한 저장 도메인의 소유권만 더한다. 포인트·뽑기권 정산은 호출자가 따로 맡는다.
+    public bool TryGrantDecoration(EPlaygroundObjectType type)
+    {
+        if (!IsInitialized || _status == null || SaveDataLoadGuard.HasFailure ||
+            !PlaygroundRules.IsDecoration(type) ||
+            !_status.TryAddPlaygroundObject(type))
+        {
+            return false;
+        }
+
+        Save();
+        PlaygroundChanged?.Invoke();
+        return true;
     }
 
     public bool TryPlacePlaygroundObject(EPlaygroundObjectType type, float x, float y)

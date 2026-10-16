@@ -8,6 +8,25 @@ using System.Collections.Generic;
 // 매니저는 저장소 선택, 실패 신고, 이벤트, 저장 시점만 정한다.
 public static class SlimeStatusSaveMapper
 {
+    private static List<ExpeditionRun> RestoreExpeditions(List<ExpeditionRunSaveData> values)
+    {
+        if (values == null) throw new ArgumentException("탐험 목록이 없어요.");
+        var runs = new List<ExpeditionRun>();
+        foreach (ExpeditionRunSaveData value in values)
+        {
+            if (value == null) throw new ArgumentException("비어 있는 탐험이 있어요.");
+            runs.Add(value.ToDomain());
+        }
+        return runs;
+    }
+
+    private static List<ExpeditionRunSaveData> BuildExpeditions(IReadOnlyList<ExpeditionRun> runs)
+    {
+        var values = new List<ExpeditionRunSaveData>();
+        foreach (ExpeditionRun run in runs) values.Add(ExpeditionRunSaveData.FromDomain(run));
+        return values;
+    }
+
     // 실패하면 failureMessage에 SaveDataLoadGuard로 보낼 사유를 담고 false를 돌려준다.
     // needsMigrationSave는 읽은 문서가 현재 형식과 달라 바로 다시 저장해야 하는지다.
     public static bool TryRestore(
@@ -142,7 +161,11 @@ public static class SlimeStatusSaveMapper
                 legacySpecialCollection,
                 saveData.GachaTicketsObtainedTotal,
                 saveData.AutoMergeUseCount,
-                adRewards);
+                adRewards,
+                null,
+                saveData.ExpeditionSettlement?.ToDomain() ??
+                    throw new ArgumentException("탐험 보상 기록이 없습니다."),
+                RestoreExpeditions(saveData.ActiveExpeditions));
         }
         catch (ArgumentException e)
         {
@@ -280,6 +303,9 @@ public static class SlimeStatusSaveMapper
         var saveData = new SlimeStatusSaveData
         {
             SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
+            ActiveExpedition = null,
+            ActiveExpeditions = BuildExpeditions(status.ActiveExpeditions),
+            ExpeditionSettlement = ExpeditionSettlementSaveData.FromDomain(status.ExpeditionSettlement),
             HighestGrade = (int)status.HighestGrade,
             ActiveSlimes = new List<SlimeInstanceSaveData>(),
             SelectedBackgroundTheme = (int)status.SelectedBackgroundTheme,

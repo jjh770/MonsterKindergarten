@@ -156,6 +156,7 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     {
         GameplaySpaceManager spaceManager = _spaceManager;
         if (target == null ||
+            !target.IsLocationPresentationActive ||
             _isTakeOutPlaying ||
             IsVisible ||
             spaceManager == null ||
@@ -372,6 +373,16 @@ public sealed class DisplayRoomInfoUI : MonoBehaviour, IPointerClickHandler
     private void Update()
     {
         if (!IsVisible) return;
+
+        // 열어 둔 대상이 파견으로 숨겨지면 관찰·입력·카메라를 함께 되돌린다.
+        if (!_target.IsLocationPresentationActive)
+        {
+            ForceClose();
+            _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Modal);
+            _spaceManager.RestoreDisplayRoomFocus(() => _clicker.ReleaseMode(this));
+            InfoClosed?.Invoke();
+            return;
+        }
 
         bool canUse = !IsTargetHeld && !_isTakeOutPlaying;
         if (_observeButton != null) _observeButton.interactable = canUse;

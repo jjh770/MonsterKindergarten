@@ -15,6 +15,16 @@ using UnityEngine.UI;
 // 알고 있어서, 빈 자리를 집는 규칙을 그쪽에 넣으면 두 가지 일이 섞인다.
 public sealed class PlaygroundPlacementUI : MonoBehaviour
 {
+    [Serializable]
+    private sealed class DecorationButton
+    {
+        [SerializeField] private EPlaygroundObjectType _type;
+        [SerializeField] private Button _button;
+
+        public EPlaygroundObjectType Type => _type;
+        public Button Button => _button;
+    }
+
     [SerializeField] private PlaygroundObjectField _field;
     [SerializeField] private Clicker _clicker;
     [FormerlySerializedAs("_upgradeUI")]
@@ -37,6 +47,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _bumperText;
     [SerializeField] private TextMeshProUGUI _cannonText;
     [SerializeField] private TextMeshProUGUI _guideText;
+    [SerializeField] private DecorationButton[] _decorationButtons = Array.Empty<DecorationButton>();
 
     [Header("Input")]
     [Tooltip("이만큼 끌어야 옮기는 것으로 본다. 그 아래는 고르기로 본다.")]
@@ -96,6 +107,13 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (_cannonButton != null)
             _cannonButton.onClick.AddListener(() => SelectType(EPlaygroundObjectType.Cannon));
 
+        foreach (DecorationButton binding in _decorationButtons)
+        {
+            if (binding.Button == null) continue;
+            EPlaygroundObjectType type = binding.Type;
+            binding.Button.onClick.AddListener(() => SelectType(type));
+        }
+
         _slimeManager.PlaygroundChanged += Refresh;
 
         _spaceManager.SpaceChanged += OnSpaceChanged;
@@ -107,7 +125,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         DisplayRoomCameraInputGate.Release(this);
         _modeSession?.Dispose();
-        _slimeManager.PlaygroundChanged -= Refresh;
+        if (_slimeManager != null) _slimeManager.PlaygroundChanged -= Refresh;
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
         if (_spaceManager != null) _spaceManager.SpaceChanged -= OnSpaceChanged;
@@ -256,6 +274,12 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (_cannonButton != null)
         {
             _cannonButton.interactable = CanPlace(EPlaygroundObjectType.Cannon);
+        }
+
+        foreach (DecorationButton binding in _decorationButtons)
+        {
+            if (binding.Button != null)
+                binding.Button.interactable = CanPlace(binding.Type);
         }
 
         if (_removeButton != null)

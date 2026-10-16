@@ -68,6 +68,7 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         _backgroundThemeUI.ButtonClicked += OnBackgroundButtonClicked;
         _backgroundThemeUI.ThemeSelected += OnBackgroundThemeSelected;
         _gameManager.AllDataInitialized += OnAllDataInitialized;
+        _slimeManager.ExpeditionChanged += OnExpeditionChanged;
 
         _slimeSpawner.Spawned += OnSlimeSpawned;
 
@@ -91,6 +92,10 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         if (_slimeSpawner != null)
         {
             _slimeSpawner.Spawned -= OnSlimeSpawned;
+        }
+        if (_slimeManager != null)
+        {
+            _slimeManager.ExpeditionChanged -= OnExpeditionChanged;
         }
 
         if (_backgroundThemeUI != null)
@@ -366,6 +371,23 @@ public sealed class GameplaySpaceManager : MonoBehaviour
         }
     }
 
+    private void OnExpeditionChanged()
+    {
+        if (!_isInitialized || _slimeSpawner == null) return;
+
+        // 다른 슬라임의 대포 숨김이나 메인 필드 뽑기 연출을 덮어쓰지 않는다.
+        // 파견·귀환으로 공간 가시성이 달라진 장식장 개체만 갱신한다.
+        foreach (SlimeController target in _slimeSpawner.GetActiveTargets())
+        {
+            if (target == null || target.Location != ESlimeLocation.DisplayRoom) continue;
+            bool isVisible = !IsMainFieldActive && !_slimeManager.IsOnExpedition(target.InstanceId);
+            if (target.IsLocationPresentationActive != isVisible)
+            {
+                RefreshSlimePresentation(target);
+            }
+        }
+    }
+
     // PlayDisplayRoomTransfer의 완료 처리다. 저장 위치를 옮기고 새 자리에 배치한 뒤
     // 표시를 갱신한다. 실패하면 연출 시작 전 자리로 되돌린다.
     //
@@ -409,7 +431,8 @@ public sealed class GameplaySpaceManager : MonoBehaviour
 
         bool isVisible = IsMainFieldActive
             ? target.Location == ESlimeLocation.MainField
-            : target.Location == ESlimeLocation.DisplayRoom;
+            : target.Location == ESlimeLocation.DisplayRoom &&
+              !_slimeManager.IsOnExpedition(target.InstanceId);
         target.SetLocationPresentationActive(isVisible);
     }
 
