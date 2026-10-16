@@ -17,13 +17,16 @@ public sealed class ExpeditionUI : MonoBehaviour
         [Range(0f, 1f)] public float DecorationChance;
         public Button Button;
         public TextMeshProUGUI Label;
+        public Sprite PreviewSprite;
+        public TextMeshProUGUI TimeLabel;
+        public GameObject LockRoot;
+        public TextMeshProUGUI LockLabel;
         public ExpeditionDestination CreateRules() => new(Type, Array.Empty<ESlimeGrade>(), freeParty: true);
     }
 
     [SerializeField] private SlimeManager _slimes;
     [SerializeField] private CurrencyManager _currency;
     [SerializeField] private GameplaySpaceManager _spaces;
-    [SerializeField] private SlimeSpawner _spawner;
     [SerializeField] private GameManager _game;
     [SerializeField] private DisplayRoomInfoUI _info;
     [SerializeField] private ShopUI _shop;
@@ -39,12 +42,19 @@ public sealed class ExpeditionUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _detail;
     [SerializeField] private TextMeshProUGUI _notice;
     [SerializeField] private DestinationView[] _destinations;
+    [SerializeField] private Sprite _destinationTabSprite;
+    [SerializeField] private Sprite _selectedDestinationTabSprite;
+    [SerializeField] private ExpeditionPartyPresentation _party;
+    [SerializeField] private TextMeshProUGUI _nameText;
+    [SerializeField] private Image _destinationImage;
+    [SerializeField] private RectTransform _destinationArea;
+    [SerializeField] private ExpeditionDestinationPresentation _destinationPresentation;
+    [SerializeField] private TextMeshProUGUI _memberHeading;
     [SerializeField] private Button[] _memberButtons;
     [SerializeField] private Image[] _memberImages;
     [SerializeField] private TextMeshProUGUI[] _memberLabels;
-
-    private readonly List<string> _selected = new();
     private readonly SlimeInstance[] _candidates = new SlimeInstance[20];
+    private bool _departing;
     private ExpeditionService _service;
     private ExpeditionRewardCalculator _rewards;
     private GameplayModeSession _session;
@@ -56,12 +66,14 @@ public sealed class ExpeditionUI : MonoBehaviour
 
     private void Start()
     {
-        if (_slimes == null || _currency == null || _spaces == null || _spawner == null || _game == null ||
+        if (_slimes == null || _currency == null || _spaces == null || _game == null ||
             _info == null || _shop == null || _clicker == null || _exit == null || _hud == null ||
             _enterButton == null || _root == null || _group == null || _closeButton == null ||
             _actionButton == null || _actionLabel == null || _detail == null || _notice == null ||
-            _destinations == null || _destinations.Length != 3 || _memberButtons.Length != 20 ||
-            _memberImages.Length != 20 || _memberLabels.Length != 20)
+            _destinations == null || _destinations.Length != 3 || _party == null ||
+            _destinationImage == null || _destinationArea == null || _destinationPresentation == null ||
+            _memberHeading == null || _memberButtons == null || _memberButtons.Length != 20 || _memberImages == null || _memberImages.Length != 20 ||
+            _memberLabels == null || _memberLabels.Length != 20 || _nameText == null)
         {
             Debug.LogError("탐험 화면의 필수 참조가 비어 있어요.", this);
             enabled = false;
@@ -83,8 +95,9 @@ public sealed class ExpeditionUI : MonoBehaviour
         for (int i = 0; i < _memberButtons.Length; i++)
         {
             int index = i;
-            _memberButtons[i].onClick.AddListener(() => ToggleMember(index));
+            _memberButtons[i].onClick.AddListener(() => SelectMember(index));
         }
+        _party.SlotClicked += ReturnSlot;
         _slimes.ExpeditionChanged += Refresh;
         _spaces.SpaceChanged += OnSpaceChanged;
         _game.OnGameplayActivated += OnActivated;
@@ -94,6 +107,8 @@ public sealed class ExpeditionUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        ForceClose();
+        if (_party != null) _party.SlotClicked -= ReturnSlot;
         _session?.Dispose();
         _enterButton?.onClick.RemoveListener(Open);
         _closeButton?.onClick.RemoveListener(Close);
@@ -105,11 +120,16 @@ public sealed class ExpeditionUI : MonoBehaviour
         TutorialManager.Started -= OnTutorialStarted;
     }
 
+    private void OnDisable()
+    {
+        if (_isOpen) ForceClose();
+    }
+
     private void Update()
     {
         if (_service == null) return;
         if (_isOpen && (!GameplayGate.IsActive || TutorialManager.IsRunning || _spaces.IsTransitioning))
-            TryClose();
+            ForceClose();
         if (Time.unscaledTime < _nextRefresh) return;
         _nextRefresh = Time.unscaledTime + 1f;
         if (!_recoveryAttempted && GameplayGate.IsReady)
@@ -121,8 +141,8 @@ public sealed class ExpeditionUI : MonoBehaviour
     }
 
     private void OnActivated() { _recoveryAttempted = false; Refresh(); }
-    private void OnTutorialStarted() { TryClose(); Refresh(); }
-    private void OnSpaceChanged(EGameplaySpace space) { TryClose(); Refresh(); }
+    private void OnTutorialStarted() { ForceClose(); Refresh(); }
+    private void OnSpaceChanged(EGameplaySpace space) { ForceClose(); Refresh(); }
 
     private bool CanOpen() => _slimes.IsInitialized && _slimes.IsGachaUnlocked &&
         !_spaces.IsMainFieldActive && !_spaces.IsTransitioning && GameplayGate.IsActive &&
@@ -136,9 +156,11 @@ public sealed class ExpeditionUI : MonoBehaviour
             if (this == null || !CanOpen()) return;
             _recoveryAttempted = true;
             _recoverySucceeded = _service.TryRecoverSettlement();
-            _selected.Clear();
+            _party.Clear();
+            _group.interactable = true;
             _notice.text = _recoverySucceeded ? "탐험에 보낼 슬라임을 골라 주세요." : "탐험 지급 기록을 확인할 수 없어 출발과 수령을 잠시 멈췄어요.";
             _isOpen = true;
+            DisplayRoomCameraInputGate.Push(this);
             _session.Enter(ClickerInputMode.Blocked, ClickerInputPriority.Modal, TryClose, true);
             Refresh();
         });
@@ -148,17 +170,50 @@ public sealed class ExpeditionUI : MonoBehaviour
     private bool TryClose()
     {
         if (!_isOpen) return false;
-        _isOpen = false;
-        _selected.Clear();
-        _session.Exit(animated: false);
+        if (_departing) return true;
+        ForceClose();
         return true;
     }
 
+    private void ForceClose()
+    {
+        _isOpen = false;
+        _departing = false;
+        if (_party != null) _party.Clear();
+        if (_destinationPresentation != null) _destinationPresentation.Show(null, _slimes);
+        DisplayRoomCameraInputGate.Release(this);
+        _session?.Exit(animated: false);
+    }
+
+    private void OnApplicationPause(bool paused) { if (paused) ForceClose(); }
+
     private void SelectDestination(int index)
     {
-        _destinationIndex = index;
-        _selected.Clear();
-        _notice.text = "필요한 종류를 포함해 최대 3마리까지 보낼 수 있어요.";
+        if (!_isOpen || _departing || _party.IsAnimating || index == _destinationIndex ||
+            _slimes.NormalCollectionCount < _destinations[index].CreateRules().RequiredCollectionCount) return;
+        _party.ReturnAll(() =>
+        {
+            _destinationIndex = index;
+            _notice.text = "아래 목록에서 함께 떠날 슬라임 3종을 골라 주세요.";
+            Refresh();
+        });
+        Refresh();
+    }
+
+    private void ReturnSlot(int slot)
+    {
+        if (!_isOpen || _departing || _party.IsAnimating) return;
+        _party.ReturnSlot(slot, Refresh);
+        Refresh();
+    }
+
+    private void SelectMember(int index)
+    {
+        if (!_isOpen || _departing || _party.IsAnimating) return;
+        SlimeInstance member = _candidates[index];
+        if (!CanSelect(member) || FindRun(_destinations[_destinationIndex].CreateRules()) != null) return;
+        if (!_party.TrySelect(member, (RectTransform)_memberImages[index].transform, _slimes, Refresh))
+            _notice.text = "서로 다른 3종을 골라 주세요. 위 아이콘을 누르면 편성을 취소해요.";
         Refresh();
     }
 
@@ -171,34 +226,20 @@ public sealed class ExpeditionUI : MonoBehaviour
             !_destinations.Any(view => view.CreateRules().DestinationId == run.DestinationId));
     }
 
-    private bool CanSelect(SlimeInstance slime)
-    {
-        if (slime == null || slime.Grade > _slimes.HighestGrade || slime.Location != ESlimeLocation.DisplayRoom || _slimes.IsOnExpedition(slime.InstanceId)) return false;
-        SlimeController target = _spawner.GetActiveTargets().FirstOrDefault(item => item != null && item.InstanceId == slime.InstanceId);
-        return target != null && !target.IsDragging && !target.IsPresentationLocked;
-    }
+    private bool CanSelect(SlimeInstance member) => member != null &&
+        member.Grade <= _slimes.HighestGrade && member.Location == ESlimeLocation.DisplayRoom &&
+        !_slimes.IsOnExpedition(member.InstanceId) &&
+        _slimes.NormalCollectionCount >= _destinations[_destinationIndex].CreateRules().RequiredCollectionCount;
 
-    private List<SlimeInstance> GetSelected() => _slimes.ActiveSlimes.Where(slime => _selected.Contains(slime.InstanceId)).ToList();
-
-    private void ToggleMember(int index)
+    private List<SlimeInstance> GetSelected()
     {
-        SlimeInstance candidate = _candidates[index];
-        if (candidate == null || !CanSelect(candidate)) return;
-        if (!_selected.Remove(candidate.InstanceId))
-        {
-            if (_selected.Count >= ExpeditionDestination.MaxMembers)
-            {
-                _notice.text = "탐험대는 최대 3마리까지 편성할 수 있어요.";
-                return;
-            }
-            _selected.Add(candidate.InstanceId);
-        }
-        Refresh();
+        var ids = new HashSet<string>(_party.MemberIds);
+        return _slimes.ActiveSlimes.Where(slime => ids.Contains(slime.InstanceId)).ToList();
     }
 
     private void OnAction()
     {
-        if (!_isOpen || !GameplayGate.IsActive || TutorialManager.IsRunning || !_recoverySucceeded) return;
+        if (!_isOpen || _departing || _party.IsAnimating || !GameplayGate.IsActive || TutorialManager.IsRunning || !_recoverySucceeded) return;
         DestinationView view = _destinations[_destinationIndex];
         ExpeditionDestination rules = view.CreateRules();
         ExpeditionRun run = FindRun(rules);
@@ -218,11 +259,17 @@ public sealed class ExpeditionUI : MonoBehaviour
         {
             if (_slimes.NormalCollectionCount < rules.RequiredCollectionCount) return;
             List<SlimeInstance> members = GetSelected();
-            if (!rules.HasRequiredGrades(members) || members.Any(member => !CanSelect(member))) return;
+            if (!rules.HasRequiredGrades(members)) return;
             ExpeditionReward reward = _rewards.Roll(members, rules.Duration, view.Tickets, view.DecorationChance);
+            _departing = true;
             bool started = _service.TryStart(rules, members.Select(member => member.InstanceId).ToArray(), reward);
             _notice.text = started ? "탐험을 떠났어요. 돌아오면 보상을 받을 수 있어요." : "지금은 출발할 수 없어요. 편성과 탐험 상태를 다시 확인해 주세요.";
-            if (started) _selected.Clear();
+            if (started)
+            {
+                _group.interactable = false;
+                _party.PlayDeparture(_destinationArea, () => { _departing = false; _group.interactable = true; Refresh(); });
+            }
+            else _departing = false;
         }
         Refresh();
     }
@@ -232,45 +279,54 @@ public sealed class ExpeditionUI : MonoBehaviour
         if (_service == null) return;
         _enterButton.gameObject.SetActive(_slimes.IsInitialized && _slimes.IsGachaUnlocked && !_spaces.IsMainFieldActive);
         _enterButton.interactable = CanOpen();
-        if (!_isOpen) return;
+        if (!_isOpen || _departing) return;
+        bool busy = _party.IsAnimating;
+        _closeButton.interactable = true;
         for (int i = 0; i < _destinations.Length; i++)
         {
             DestinationView item = _destinations[i];
             ExpeditionRun active = FindRun(item.CreateRules());
-            string status = active == null ? (_slimes.NormalCollectionCount < item.CreateRules().RequiredCollectionCount ? $"도감 {item.CreateRules().RequiredCollectionCount}종에 열려요" : "편성하기") : active.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : Remaining(active);
-            item.Button.image.color = i == _destinationIndex ? new Color(.72f, .83f, .63f) : new Color(.89f, .82f, .66f);
-            item.Label.text = (i == _destinationIndex ? "선택 · " : "") + item.Name + "\n" + (2 << i) + "시간 · " + status;
+            bool unlockedTab = _slimes.NormalCollectionCount >= item.CreateRules().RequiredCollectionCount || active != null;
+            item.Button.interactable = unlockedTab && !busy;
+            item.Button.image.sprite = i == _destinationIndex ? _selectedDestinationTabSprite : _destinationTabSprite;
+            item.Button.image.color = Color.white;
+            item.Label.text = item.Name;
+            item.TimeLabel.text = $"{2 << i}시간";
+            item.LockRoot.SetActive(!unlockedTab);
+            item.LockLabel.text = $"도감 {item.CreateRules().RequiredCollectionCount}종\n해금 필요";
         }
         DestinationView view = _destinations[_destinationIndex];
         ExpeditionDestination rules = view.CreateRules();
         ExpeditionRun run = FindRun(rules);
-        _selected.RemoveAll(id => !_slimes.ActiveSlimes.Any(slime => slime.InstanceId == id && CanSelect(slime)));
+        if (run != null && !busy && _party.MemberIds.Any()) _party.Clear();
+        _destinationImage.sprite = view.PreviewSprite;
+        _destinationPresentation.Show(run, _slimes);
         List<SlimeInstance> selected = GetSelected();
+        _memberHeading.text = _slimes.ActiveSlimes.Any(member => member.Location == ESlimeLocation.DisplayRoom)
+            ? "장식장 슬라임 · 좌우로 밀어 골라요" : "장식장에 슬라임을 먼저 보관해 주세요.";
         for (int i = 0; i < _memberButtons.Length; i++)
         {
             ESlimeGrade grade = (ESlimeGrade)(i + 1);
-            var owned = _slimes.ActiveSlimes.Where(slime => slime.Grade == grade && slime.Location == ESlimeLocation.DisplayRoom).ToList();
-            SlimeInstance candidate = owned.FirstOrDefault(slime => _selected.Contains(slime.InstanceId)) ??
+            var owned = _slimes.ActiveSlimes.Where(member => member.Grade == grade && member.Location == ESlimeLocation.DisplayRoom).ToList();
+            SlimeInstance candidate = owned.FirstOrDefault(member => _party.MemberIds.Contains(member.InstanceId)) ??
                 owned.FirstOrDefault(CanSelect) ?? owned.FirstOrDefault();
             _candidates[i] = candidate;
-            SlimeSpecData spec = _slimes.Get(grade).SpecData;
-            _memberImages[i].sprite = spec.Sprite;
-            _memberImages[i].color = candidate == null ? new Color(0f, 0f, 0f, 0.35f) : Color.white;
-            bool chosen = candidate != null && _selected.Contains(candidate.InstanceId);
-            _memberLabels[i].text = $"Lv.{i + 1}" + (candidate?.IsSpecial == true ? " 특별" : "") + "\n" +
-                (chosen ? "편성됨" : candidate == null ? "장식장에 없어요" : _slimes.IsOnExpedition(candidate.InstanceId) ? "파견 중" : "선택하기");
-            _memberButtons[i].interactable = run == null && _slimes.NormalCollectionCount >= rules.RequiredCollectionCount && CanSelect(candidate);
+            _memberButtons[i].gameObject.SetActive(candidate != null);
+            if (candidate == null) continue;
+            bool chosen = _party.MemberIds.Contains(candidate.InstanceId);
+            _memberImages[i].sprite = _slimes.Get(grade).SpecData.Sprite;
+            _memberLabels[i].text = (candidate.IsSpecial ? "특별 " : "") + _slimes.GetName(grade) +
+                (chosen ? "\n편성됨" : _slimes.IsOnExpedition(candidate.InstanceId) ? "\n파견 중" : "");
+            _memberButtons[i].interactable = !busy && run == null && !chosen && CanSelect(candidate);
         }
-        string required = $"최고 Lv.{(int)_slimes.HighestGrade} 이하 · 서로 다른 3종";
-        string party = run == null ? $"편성 {selected.Count}/3마리" : "함께 간 슬라임: " + string.Join(" · ", run.Members.Select(member => $"Lv.{(int)member.Grade}"));
+        bool unlocked = _slimes.NormalCollectionCount >= rules.RequiredCollectionCount;
+        _party.Refresh(run, _slimes, !busy && run == null && unlocked);
+        _nameText.text = view.Name;
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
-        bool unlocked = _slimes.NormalCollectionCount >= rules.RequiredCollectionCount;
-        _detail.text = (unlocked ? "" : $"도감 {rules.RequiredCollectionCount}종 등록 시 열려요. 현재 {_slimes.NormalCollectionCount}종이에요.\n\n") + $"{view.Name}\n필요한 슬라임: {required}\n{party}\n\n포인트 {points:N0} · 뽑기권 {tickets}장\n장식 발견 확률 {view.DecorationChance:P0}\n" +
-            (run == null ? "출발할 때의 자동 생산량으로 보상이 정해져요." : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "탐험을 마쳤어요. 보상을 받아 주세요." : $"돌아오기까지 {Remaining(run)} 남았어요.") +
-            "\n이미 가진 장식은 보유 수가 늘지 않아요.";
-        _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : "탐험 중이에요";
-        _actionButton.interactable = _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
+        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 · 추가 기념품 {view.DecorationChance:P0}";
+        _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
+        _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
     }
 
     private static string Remaining(ExpeditionRun run)
