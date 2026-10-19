@@ -64,7 +64,7 @@ public static class UiMessages
     public static string SameKindInDisplayRoom => Source.SameKindInDisplayRoom;
     public static string CannotSendToDisplayRoom => Source.CannotSendToDisplayRoom;
 
-    // 놀이기구 배치
+    // 소품 배치
     public static string PlacementUnavailable => Source.PlacementUnavailable;
     public static string TooCloseToOther => Source.TooCloseToOther;
     public static string CannotMoveHere => Source.CannotMoveHere;
@@ -104,4 +104,7 @@ public static class UiMessages
     public static string ExpeditionInProgress => Source.ExpeditionInProgress;
     public static string ExpeditionReadyToClaim => Source.ExpeditionReadyToClaim;
     public static string ExpeditionArrived => Source.ExpeditionArrived;
+    public static string ExpeditionHomecoming => Source.ExpeditionHomecoming;
+    public static string ExpeditionDecorationFound => Source.ExpeditionDecorationFound;
+    public static string ExpeditionDecorationOwned => Source.ExpeditionDecorationOwned;
 }

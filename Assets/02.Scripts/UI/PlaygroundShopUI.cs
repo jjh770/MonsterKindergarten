@@ -7,10 +7,10 @@ using Utility;
 
 // 왼쪽 서랍의 상점. 탭 두 개로 장식장 오브젝트와 배경 테마를 나눠 판다.
 //
-//  - 장식장 탭 : 장식장에 놓을 오브젝트
+//  - 소품 탭 : 장식장에 놓을 소품
 //  - 배경 탭 : 배경 테마
 //
-// 처음 열 때의 탭은 지금 있는 공간을 따른다(장식장이면 장식장 탭, 메인 필드면 배경 탭).
+// 처음 열 때의 탭은 지금 있는 공간을 따른다(장식장이면 소품 탭, 메인 필드면 배경 탭).
 // 어느 공간에서든 두 탭을 오갈 수 있다. 공간으로만 갈랐을 때는 메인 필드에서 서랍을 여는
 // 플레이어가 장식장 물건을 볼 길이 없었다.
 //
@@ -88,7 +88,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             _objectsTabButton == null || _themesTabButton == null ||
             _tabsRoot == null)
         {
-            Debug.LogError("장식장 상점의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("소품 상점의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -220,7 +220,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
         if (_titleText != null)
         {
-            _titleText.text = isObjectsTab ? "장식장 상점" : "배경 상점";
+            _titleText.text = isObjectsTab ? "소품 상점" : "배경 상점";
         }
 
         ClearItems();
@@ -304,7 +304,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [놀이기구 놓기] 버튼으로 놓아 보세요.");
+            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [소품 놓기] 버튼으로 놓아 보세요.");
     }
 
     private void BuyTheme(PlaygroundShopTableSO.ThemeEntry entry)

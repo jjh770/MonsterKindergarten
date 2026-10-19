@@ -184,6 +184,8 @@ public class ContentAssetTests
             typeof(GachaSingleResult),
             typeof(ExpeditionReturnNotifier),
             typeof(ExpeditionUI),
+            typeof(ExpeditionRewardPopupUI),
+            typeof(ExpeditionRewardFlight),
             typeof(GachaCapsulePileView),
         };
         var found = new HashSet<Type>();

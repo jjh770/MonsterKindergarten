@@ -20,7 +20,7 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _sameKindInDisplayRoom = "같은 종류의 슬라임이 이미 장식장에 있어요.";
     [SerializeField] private string _cannotSendToDisplayRoom = "이 슬라임은 장식장에 보낼 수 없어요.";
 
-    [Header("놀이기구 배치")]
+    [Header("소품 배치")]
     [SerializeField] private string _placementUnavailable = "지금은 배치할 수 없어요.";
     [SerializeField] private string _tooCloseToOther = "다른 것과 너무 가까워요.";
     [SerializeField] private string _cannotMoveHere = "여기에는 옮길 수 없어요.";
@@ -57,6 +57,12 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _expeditionReadyToClaim = "슬라임들이 돌아왔어요! 보상을 받아 주세요.";
     [Tooltip("돌아온 탐험지 탭에 시간 대신 쓰는 짧은 말입니다.")]
     [SerializeField] private string _expeditionArrived = "도착!";
+    [Tooltip("보상을 받을 때 돌아온 슬라임들 위에 잠깐 뜨는 말입니다.")]
+    [SerializeField] private string _expeditionHomecoming = "다녀왔어요!";
+    [Tooltip("탐험 보상 팝업에서 장식을 처음 얻었을 때의 줄입니다. {0}에 장식 이름이 들어갑니다.")]
+    [SerializeField] private string _expeditionDecorationFound = "{0} 발견!";
+    [Tooltip("탐험 보상 팝업에서 이미 가진 장식이 나왔을 때의 줄입니다. {0}에 장식 이름이 들어갑니다.")]
+    [SerializeField] private string _expeditionDecorationOwned = "{0} 발견! (이미 가지고 있어요)";
 
     [Header("광고")]
     [SerializeField] private string _adNotReady = "지금은 볼 수 있는 광고가 없어요.";
@@ -101,6 +107,9 @@ public sealed class UiMessagesSO : ScriptableObject
     public string ExpeditionInProgress => _expeditionInProgress;
     public string ExpeditionReadyToClaim => _expeditionReadyToClaim;
     public string ExpeditionArrived => _expeditionArrived;
+    public string ExpeditionHomecoming => _expeditionHomecoming;
+    public string ExpeditionDecorationFound => _expeditionDecorationFound;
+    public string ExpeditionDecorationOwned => _expeditionDecorationOwned;
     public string AdNotReady => _adNotReady;
     public string AdLimitReached => _adLimitReached;
     public string AdBoostFull => _adBoostFull;

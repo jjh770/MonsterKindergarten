@@ -74,6 +74,18 @@ public sealed class ExpeditionDestinationPresentation : MonoBehaviour
         }
     }
 
+    // 귀환 연출이 출발할 자리다. 지금 보이는 방문자의 화면 위치와 크기를 돌려준다.
+    public bool TryGetVisitor(int index, out Vector3 position, out Vector2 size)
+    {
+        position = default;
+        size = default;
+        if (_run == null || index < 0 || index >= _visitors.Length || !_visitors[index].gameObject.activeSelf) return false;
+
+        position = _visitors[index].transform.position;
+        size = _visitors[index].rectTransform.rect.size;
+        return true;
+    }
+
     private void Update()
     {
         if (_run == null) return;

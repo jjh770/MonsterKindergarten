@@ -21,6 +21,8 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
     private readonly RectTransform[] _sources = new RectTransform[3];
     private readonly Sprite[] _sprites = new Sprite[3];
     private Sequence _animation;
+    // 출발 문구는 씬에 적힌 것을 쓰고, 귀환 때만 다른 문구로 바꾼다.
+    private string _departureText;
     private static readonly Color EmptyColor = new(.48f, .48f, .48f, 1f);
     public bool IsAnimating => _animation != null;
     public IEnumerable<string> MemberIds => _targets.Where(target => target != null).Select(target => target.InstanceId);
@@ -28,6 +30,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
 
     private void Awake()
     {
+        _departureText = _departureLabel.text;
         for (int i = 0; i < _buttons.Length; i++)
         {
             int slot = i;
@@ -109,12 +112,102 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
             _animation.Insert(0f, fly.rectTransform.DOMove(together, .42f).SetEase(Ease.OutCubic));
 
         }
-        _departureLabel.gameObject.SetActive(true);
-        _departureLabel.transform.position = center + _flightLayer.TransformVector(new Vector3(0f, 145f));
-        _departureLabel.alpha = 0f;
-        _animation.Insert(.35f, _departureLabel.DOFade(1f, .18f));
-        _animation.Insert(.85f, _departureLabel.DOFade(0f, .2f));
+        ShowDepartureLabel(_departureText, center + _flightLayer.TransformVector(new Vector3(0f, 145f)), .35f, .85f);
         _animation.OnComplete(() => { _animation = null; Clear(); completed?.Invoke(); });
+    }
+
+    // 탐험지에서 돌아온 슬라임들이 그 자리에서 공중제비와 좌우 흔들기로 기뻐하는 동안 "다녀왔어요!"가
+    // 떴다 사라지고, 그다음 한 마리씩 통통 튀어 아래 장식장 목록의 제자리(homes)로 돌아간다. 닿으면
+    // 그 자리의 회색 그림을 원래 슬라임으로 되돌린다. starts와 sizes는 탐험지 화면에서 보이던 자리와
+    // 크기다. homes가 비어 있는 슬라임은 그 자리에서 작아지며 사라진다.
+    public void PlayReturn(RectTransform destinationArea, IReadOnlyList<Sprite> sprites,
+        IReadOnlyList<Vector3> starts, IReadOnlyList<Vector2> sizes, IReadOnlyList<Image> homes, Action completed)
+    {
+        _animation?.Kill();
+        _animation = DOTween.Sequence().SetUpdate(true);
+        float flipPower = _flightLayer.TransformVector(new Vector3(0f, 90f)).y;
+        float homePower = _flightLayer.TransformVector(new Vector3(0f, 150f)).y;
+        int count = Mathf.Min(3, sprites.Count);
+        for (int i = 0; i < 3; i++)
+        {
+            _targets[i] = null;
+            ResetSlot(i);
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            int slot = i;
+            Image fly = _flyingIcons[slot];
+            RectTransform rect = fly.rectTransform;
+            SetFly(slot, sprites[slot], starts[slot]);
+            rect.sizeDelta = sizes[slot];
+            float offset = slot * .08f;
+            float turn = slot % 2 == 0 ? 360f : -360f;
+
+            // 축하: 공중제비, 좌우 흔들기, 반대 방향 공중제비.
+            AppendFlip(rect, starts[slot], flipPower, turn, offset, slot == 0);
+            _animation.Insert(offset + .6f, rect.DOPunchRotation(new Vector3(0f, 0f, 22f), .6f, 6, .5f));
+            AppendFlip(rect, starts[slot], flipPower, -turn, offset + 1.25f, slot == 0);
+
+            // 귀환: 장식장 목록의 제자리로 튀어 간다.
+            float leave = CelebrationSeconds + slot * .12f;
+            Image home = slot < homes.Count ? homes[slot] : null;
+            if (home != null)
+            {
+                _animation.Insert(leave, rect.DOJump(home.transform.position, homePower, 1, .6f).SetEase(Ease.Linear));
+                _animation.Insert(leave, rect.DOSizeDelta(home.rectTransform.rect.size, .6f));
+                _animation.InsertCallback(leave + .6f, () =>
+                {
+                    AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.SlimeLand);
+                    fly.gameObject.SetActive(false);
+                    home.sprite = sprites[slot];
+                    home.material = null;
+                    home.color = Color.white;
+                });
+                _animation.Insert(leave + .6f, home.transform.DOPunchScale(Vector3.one * .25f, .3f, 6, .5f));
+            }
+            else
+            {
+                _animation.Insert(leave, rect.DOScale(0f, .3f).SetEase(Ease.InBack));
+            }
+        }
+
+        Vector3 center = destinationArea.TransformPoint(Vector3.zero);
+        _animation.InsertCallback(.3f, () => AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock));
+        ShowDepartureLabel(UiMessages.ExpeditionHomecoming, center + _flightLayer.TransformVector(new Vector3(0f, 145f)),
+            .3f, CelebrationSeconds - .25f);
+        _animation.AppendInterval(.15f);
+        _animation.OnComplete(() => { _animation = null; Clear(); completed?.Invoke(); });
+    }
+
+    // 축하가 끝나고 "다녀왔어요!"가 사라진 뒤 장식장으로 출발하는 때다.
+    private const float CelebrationSeconds = 2f;
+
+    // 제자리에서 한 번 뛰어오르며 한 바퀴 돈다.
+    private void AppendFlip(RectTransform rect, Vector3 position, float power, float turn, float at, bool sound)
+    {
+        _animation.Insert(at, rect.DOJump(position, power, 1, .55f));
+        _animation.Insert(at, rect.DOLocalRotate(new Vector3(0f, 0f, turn), .55f, RotateMode.FastBeyond360)
+            .SetEase(Ease.OutQuad).SetRelative());
+        if (sound) _animation.InsertCallback(at, () => AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.SlimeBounce));
+    }
+
+    // 아래 장식장 목록에서 편성됐거나 떠나 있는 슬라임 자리를 빈자리와 같은 회색 그림으로 둔다.
+    public void ApplyEmptyLook(Image image)
+    {
+        image.sprite = _emptySprite;
+        image.material = _silhouetteMaterial;
+        image.color = EmptyColor;
+    }
+
+    private void ShowDepartureLabel(string text, Vector3 position, float fadeIn, float fadeOut)
+    {
+        _departureLabel.text = text;
+        _departureLabel.gameObject.SetActive(true);
+        _departureLabel.transform.position = position;
+        _departureLabel.alpha = 0f;
+        _animation.Insert(fadeIn, _departureLabel.DOFade(1f, .18f));
+        _animation.Insert(fadeOut, _departureLabel.DOFade(0f, .2f));
     }
 
     public void Refresh(ExpeditionRun run, SlimeManager slimes, bool canEdit)
@@ -142,6 +235,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         for (int i = 0; i < 3; i++)
         {
             _targets[i] = null;
+            if (_icons != null && _icons.Length > i && _icons[i] != null) _icons[i].transform.localScale = Vector3.one;
             if (_icons != null && _icons.Length > i && _icons[i] != null &&
                 _labels != null && _labels.Length > i && _labels[i] != null) ResetSlot(i);
             if (_flyingIcons != null && _flyingIcons.Length > i && _flyingIcons[i] != null)
@@ -165,6 +259,8 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         fly.color = Color.white;
         fly.rectTransform.sizeDelta = _icons[slot].rectTransform.rect.size;
         fly.transform.position = position;
+        fly.transform.localRotation = Quaternion.identity;
+        fly.transform.localScale = Vector3.one;
         fly.gameObject.SetActive(true);
     }
 

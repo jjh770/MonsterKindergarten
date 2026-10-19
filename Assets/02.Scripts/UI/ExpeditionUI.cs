@@ -40,6 +40,8 @@ public sealed class ExpeditionUI : MonoBehaviour
     [SerializeField] private CanvasGroup _group;
     [SerializeField] private Button _closeButton;
     [SerializeField] private Button _actionButton;
+    [Tooltip("보상을 받을 수 있을 때 보상 받기 버튼에 띄우는 느낌표입니다.")]
+    [SerializeField] private GameObject _actionAlert;
     [SerializeField] private TextMeshProUGUI _actionLabel;
     [SerializeField] private TextMeshProUGUI _detail;
     [SerializeField] private TextMeshProUGUI _notice;
@@ -55,7 +57,15 @@ public sealed class ExpeditionUI : MonoBehaviour
     [SerializeField] private Button[] _memberButtons;
     [SerializeField] private Image[] _memberImages;
     [SerializeField] private TextMeshProUGUI[] _memberLabels;
+    [SerializeField] private ExpeditionRewardPopupUI _rewardPopup;
+    [SerializeField] private ExpeditionRewardFlight _rewardFlight;
+    [Tooltip("탐험 화면 본체가 열릴 때 튀어 오르고 닫힐 때 움츠러드는 공용 팝업 연출입니다.")]
+    [SerializeField] private PopupMotion _panelMotion;
     private readonly SlimeInstance[] _candidates = new SlimeInstance[20];
+    private readonly List<Sprite> _returnSprites = new(3);
+    private readonly List<Vector3> _returnStarts = new(3);
+    private readonly List<Vector2> _returnSizes = new(3);
+    private readonly List<Image> _returnHomes = new(3);
     private bool _departing;
     private ExpeditionService _service;
     private ExpeditionRewardCalculator _rewards;
@@ -79,6 +89,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             _destinationImage == null || _destinationArea == null || _destinationPresentation == null ||
             _memberHeading == null || _memberButtons == null || _memberButtons.Length != 20 || _memberImages == null || _memberImages.Length != 20 ||
             _memberLabels == null || _memberLabels.Length != 20 || _nameText == null ||
+            _rewardPopup == null || _rewardFlight == null || _panelMotion == null || _actionAlert == null ||
             _destinations.Any(view => view.AlertRoot == null))
         {
             Debug.LogError("탐험 화면의 필수 참조가 비어 있어요.", this);
@@ -172,6 +183,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             _isOpen = true;
             DisplayRoomCameraInputGate.Push(this);
             _session.Enter(ClickerInputMode.Blocked, ClickerInputPriority.Modal, TryClose, true);
+            _panelMotion.PlayOpen();
             Refresh();
         });
     }
@@ -180,15 +192,37 @@ public sealed class ExpeditionUI : MonoBehaviour
     private bool TryClose()
     {
         if (!_isOpen) return false;
+        // 보상 팝업이 떠 있으면 뒤로 가기는 받기와 같다.
+        if (_rewardPopup.IsVisible) { _rewardPopup.Confirm(); return true; }
         if (_departing) return true;
-        ForceClose();
+        CloseAnimated();
         return true;
+    }
+
+    // 닫기 버튼, 뒤로 가기, 보상 받기로 닫을 때다. 본체가 움츠러들며 화면이 흐려진다. 일시정지나
+    // 튜토리얼처럼 바로 치워야 하는 경로는 ForceClose를 쓴다. 닫히는 동안 다시 열기는 Open이
+    // _session.IsTransitioning으로 막는다.
+    private void CloseAnimated()
+    {
+        if (!_isOpen) return;
+        _isOpen = false;
+        _departing = false;
+        _group.interactable = false;
+        _rewardPopup.HideImmediate();
+        DisplayRoomCameraInputGate.Release(this);
+        _panelMotion.PlayClose();
+        _session.Exit(animated: true, onCompleted: () =>
+        {
+            _party.Clear();
+            _destinationPresentation.Show(null, _slimes);
+        });
     }
 
     private void ForceClose()
     {
         _isOpen = false;
         _departing = false;
+        if (_rewardPopup != null) _rewardPopup.HideImmediate();
         if (_party != null) _party.Clear();
         if (_destinationPresentation != null) _destinationPresentation.Show(null, _slimes);
         DisplayRoomCameraInputGate.Release(this);
@@ -227,6 +261,33 @@ public sealed class ExpeditionUI : MonoBehaviour
         Refresh();
     }
 
+    // 탐험지 화면에서 보이던 슬라임의 그림, 자리, 크기다. 보이지 않는 자리는 탐험지 가운데에서 출발한다.
+    private void CaptureReturn(ExpeditionRun run)
+    {
+        _returnSprites.Clear();
+        _returnStarts.Clear();
+        _returnSizes.Clear();
+        _returnHomes.Clear();
+        for (int i = 0; i < run.Members.Count && i < 3; i++)
+        {
+            _returnSprites.Add(_slimes.Get(run.Members[i].Grade).SpecData.Sprite);
+            // 돌아갈 곳은 아래 장식장 목록의 같은 단계 자리다. 목록에 없으면 그 자리에서 사라진다.
+            int home = (int)run.Members[i].Grade - 1;
+            _returnHomes.Add(home >= 0 && home < _memberImages.Length && _memberButtons[home].gameObject.activeSelf
+                ? _memberImages[home] : null);
+            if (_destinationPresentation.TryGetVisitor(i, out Vector3 position, out Vector2 size))
+            {
+                _returnStarts.Add(position);
+                _returnSizes.Add(size);
+            }
+            else
+            {
+                _returnStarts.Add(_destinationArea.TransformPoint(Vector3.zero));
+                _returnSizes.Add(new Vector2(120f, 120f));
+            }
+        }
+    }
+
     private ExpeditionRun FindRun(ExpeditionDestination rules)
     {
         ExpeditionRun matched = _slimes.ActiveExpeditions.FirstOrDefault(run => run.DestinationId == rules.DestinationId);
@@ -257,14 +318,38 @@ public sealed class ExpeditionUI : MonoBehaviour
         {
             bool alreadyOwned = run.Reward.Decoration.HasValue &&
                 _slimes.GetOwnedPlaygroundObjectCount(run.Reward.Decoration.Value) > 0;
+            // 수령하면 탐험이 목록에서 사라져 탐험지 화면이 비므로, 귀환 연출이 출발할 자리를 먼저 읽는다.
+            // 수령 중에 오는 ExpeditionChanged가 화면을 비우지 않도록 출발처럼 _departing을 먼저 세운다.
+            CaptureReturn(run);
+            _departing = true;
             if (_service.TryClaim(run.RunId, out ExpeditionReward reward))
             {
                 // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
                 ShowEventNotice($"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장" +
-                    (reward.Decoration.HasValue ? $" | {DecorationName(reward.Decoration.Value)} 발견!" +
+                    (reward.Decoration.HasValue ? $" | {ExpeditionRewardPopupUI.DecorationName(reward.Decoration.Value)} 발견!" +
                         (alreadyOwned ? " (이미 보유 중이에요)" : string.Empty) : string.Empty));
+                _group.interactable = false;
+                _actionAlert.SetActive(false);
+                _destinationPresentation.Show(null, _slimes);
+                string destinationName = view.Name;
+                // 돌아온 뒤 보상 팝업을 띄우고, 받으면 화면을 닫아 숨겨 둔 상단 바로 보상을 날린다.
+                // 팝업도 이 화면의 CanvasGroup 아래라, 막아 둔 입력을 팝업을 띄우기 전에 푼다. 뒤의 화면은
+                // 팝업의 블로커가 가리고, _departing이 그대로라 탭과 버튼도 반응하지 않는다.
+                _party.PlayReturn(_destinationArea, _returnSprites, _returnStarts, _returnSizes, _returnHomes, () =>
+                {
+                    _group.interactable = true;
+                    _rewardPopup.Show(destinationName, reward, alreadyOwned, (pointFrom, ticketFrom) =>
+                    {
+                        CloseAnimated();
+                        _rewardFlight.Play(pointFrom, ticketFrom, reward.GachaTickets);
+                    });
+                });
             }
-            else ShowEventNotice("아직 도착 전이거나 지급 기록을 확인할 수 없어요.");
+            else
+            {
+                _departing = false;
+                ShowEventNotice("아직 도착 전이거나 지급 기록을 확인할 수 없어요.");
+            }
         }
         else
         {
@@ -278,7 +363,8 @@ public sealed class ExpeditionUI : MonoBehaviour
             if (started)
             {
                 _group.interactable = false;
-                _party.PlayDeparture(_destinationArea, () => { _departing = false; _group.interactable = true; Refresh(); });
+                // 출발 안내는 연출 동안만 두고, 끝나면 탐험지 상태(탐험 중, 도착)를 따라가게 한다.
+                _party.PlayDeparture(_destinationArea, () => { _departing = false; _group.interactable = true; ShowStateNotice(); Refresh(); });
             }
             else _departing = false;
         }
@@ -330,7 +416,14 @@ public sealed class ExpeditionUI : MonoBehaviour
             _memberButtons[i].gameObject.SetActive(candidate != null);
             if (candidate == null) continue;
             bool chosen = _party.MemberIds.Contains(candidate.InstanceId);
-            _memberImages[i].sprite = _slimes.Get(grade).SpecData.Sprite;
+            // 편성됐거나 탐험을 떠난 슬라임은 위로 올라간 것이라 자리를 빈자리처럼 회색으로 둔다.
+            if (chosen || _slimes.IsOnExpedition(candidate.InstanceId)) _party.ApplyEmptyLook(_memberImages[i]);
+            else
+            {
+                _memberImages[i].sprite = _slimes.Get(grade).SpecData.Sprite;
+                _memberImages[i].material = null;
+                _memberImages[i].color = Color.white;
+            }
             _memberLabels[i].text = (candidate.IsSpecial ? "특별 " : "") + _slimes.GetName(grade) +
                 (chosen ? "\n편성됨" : _slimes.IsOnExpedition(candidate.InstanceId) ? "\n파견 중" : "");
             _memberButtons[i].interactable = !busy && run == null && !chosen && CanSelect(candidate);
@@ -343,6 +436,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 추가 기념품 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
+        _actionAlert.SetActive(run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow));
         if (_noticeFollowsState) _notice.text = GetStateNotice();
     }
 
@@ -402,13 +496,5 @@ public sealed class ExpeditionUI : MonoBehaviour
         return $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
     }
 
-    private static string DecorationName(EPlaygroundObjectType type) => type switch
-    {
-        EPlaygroundObjectType.FlowerPatch => "꽃밭",
-        EPlaygroundObjectType.FlowerCushion => "꽃 방석",
-        EPlaygroundObjectType.FlowerBasket => "꽃바구니",
-        EPlaygroundObjectType.FireflyLantern => "반딧불 랜턴",
-        _ => "장식",
-    };
 }
 
