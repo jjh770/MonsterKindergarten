@@ -304,7 +304,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요! 장식장의 배치 버튼으로 놓아 보세요.");
+            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [놀이기구 놓기] 버튼으로 놓아 보세요.");
     }
 
     private void BuyTheme(PlaygroundShopTableSO.ThemeEntry entry)
@@ -314,7 +314,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{entry.DisplayName} 배경을 샀어요! 이동 메뉴의 배경 버튼에서 바꿀 수 있어요.");
+            $"{entry.DisplayName} 배경을 샀어요!\n[배경 바꾸기] 버튼에서 바꿀 수 있어요.");
     }
 
     private void PresentPurchaseResult(
