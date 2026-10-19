@@ -106,6 +106,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
             return;
         }
 
+        // 끄는 동안은 LateUpdate가 크기를 매 프레임 정한다. 펀치를 겹치면 두 쪽이 크기를 다툰다.
+        if (_isDragStretching)
+        {
+            return;
+        }
+
         PlayPunch(_clickPunchScale, _clickDuration);
     }
 
