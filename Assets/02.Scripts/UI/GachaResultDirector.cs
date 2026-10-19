@@ -38,6 +38,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private const int RequestNone = -3;
     private const int RequestCancelled = -2;
     private const int RequestClose = -1;
+    private const int RequestOpenAll = -4;
 
     private static string CapsuleTapMessage => UiMessages.MachineCapsuleTap;
 
@@ -94,6 +95,8 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     [Header("Slots")]
     [SerializeField] private ResultSlot[] _slots;
+    [Tooltip("여러 개를 뽑았을 때 남은 캡슐을 차례로 모두 여는 버튼입니다. 캡슐을 고르는 동안에만 보입니다.")]
+    [SerializeField] private Button _openAllButton;
     [SerializeField, Min(0f)] private float _slotEmergeSeconds = 0.5f;
     [SerializeField, Min(0f)] private float _flyStagger = 0.18f;
 
@@ -128,6 +131,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private bool _isReady;
     private bool _isPlaying;
     private bool _tapped;
+    private bool _openAllRequested;
     private bool _isSpecialResult;
     // 결과 그림이 다 드러난 뒤에만 무지개 광택을 입힌다. 드러나는 중에는 실루엣 색이 먼저다.
     private bool _isResultImageShimmering;
@@ -142,6 +146,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (_root == null || _canvasGroup == null || _resultImage == null || _resultOutline == null ||
             _resultAura == null ||
             _machine == null || _pullPanel == null || _tapButton == null || _tapPrompt == null ||
+            _openAllButton == null ||
             _resultNameText == null || _arrivalEffectRoot == null || _arrivalSparks == null ||
             _slimeManager == null || _currencyManager == null || _spawnManager == null ||
             !IsValidSlots())
@@ -163,6 +168,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         _slotShimmer = new bool[_slots.Length];
         _tapButton.onClick.AddListener(OnTapped);
+        _openAllButton.onClick.AddListener(OnOpenAllClicked);
         _pullPanel.PullRequested += OnPullRequested;
         _pullPanel.CloseRequested += OnCloseRequested;
         _root.SetActive(false);
@@ -171,6 +177,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void OnDestroy()
     {
         if (_tapButton != null) _tapButton.onClick.RemoveListener(OnTapped);
+        if (_openAllButton != null) _openAllButton.onClick.RemoveListener(OnOpenAllClicked);
         if (_pullPanel != null)
         {
             _pullPanel.PullRequested -= OnPullRequested;
@@ -355,7 +362,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     }
 
     // 여러 개를 뽑았을 때: 캡슐 다섯이 자리에 늘어서고, 하나씩 눌러 열면 슬라임만 그 자리에 남는다.
-    // 전부 열면 화면을 눌러 한꺼번에 필드로 보낸다.
+    // 모두 열기 버튼으로 남은 것을 차례로 열 수도 있다. 전부 열면 화면을 눌러 한꺼번에 필드로 보낸다.
     private async UniTask<bool> PresentMultiple(List<GachaPullItem> items, CancellationToken token)
     {
         int count = items.Count;
@@ -365,10 +372,25 @@ public sealed class GachaResultDirector : MonoBehaviour
         // 기계는 뒤로 물러나 늘어선 캡슐만 남는다. 기다리지 않고 바로 누를 수 있다.
         _machine.FadeMachineTo(0f, 0.4f, token).Forget();
 
+        // 모두 열기를 누르면 남은 캡슐이 한꺼번에 열린다. 하나를 여는 중에 눌러도 그 캡슐이 끝난 뒤 나머지가 열린다.
+        bool[] opened = new bool[count];
+        _openAllRequested = false;
+        _openAllButton.gameObject.SetActive(true);
+
         int openedCount = 0;
         while (openedCount < count)
         {
             int index = await WaitForCapsule(CapsuleTapMessage, token);
+            if (index == RequestOpenAll)
+            {
+                _openAllButton.gameObject.SetActive(false);
+                _tapPrompt.gameObject.SetActive(false);
+                _machine.SetCapsulesInteractable(false);
+                if (await OpenRemaining(items, opened, token)) return true;
+
+                break;
+            }
+
             if (index < 0) return true;
 
             _machine.SetCapsulesInteractable(false);
@@ -376,11 +398,14 @@ public sealed class GachaResultDirector : MonoBehaviour
             Color color = GetResultColor(item.Rarity);
             if (await _machine.Open(index, item.Rarity, color, token)) return true;
 
+            opened[index] = true;
             openedCount++;
             _pendingEmerges++;
             EmergeSlot(index, item, color, token).Forget();
             if (openedCount < count) _machine.SetCapsulesInteractable(true);
         }
+
+        _openAllButton.gameObject.SetActive(false);
 
         while (_pendingEmerges > 0)
         {
@@ -415,7 +440,9 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void ResetPresentation()
     {
         _tapped = false;
+        _openAllRequested = false;
         _tapButton.gameObject.SetActive(false);
+        _openAllButton.gameObject.SetActive(false);
         _tapPrompt.gameObject.SetActive(false);
         _pullPanel.Hide();
         _machine.Prepare();
@@ -480,6 +507,13 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             if (_machine.TryConsumeCapsuleTap(out int index)) return index;
 
+            // 모두 열기 버튼은 여러 개를 뽑았을 때만 보이므로, 1회 뽑기에서는 이 요청이 오지 않는다.
+            if (_openAllRequested)
+            {
+                _openAllRequested = false;
+                return RequestOpenAll;
+            }
+
             if (await NextFrame(token)) return RequestCancelled;
 
             elapsed += Time.unscaledDeltaTime;
@@ -525,6 +559,44 @@ public sealed class GachaResultDirector : MonoBehaviour
         int request = _pendingRequest;
         _pendingRequest = RequestNone;
         return request;
+    }
+
+    // 아직 안 연 캡슐을 한꺼번에 열고, 갈라진 자리마다 슬라임을 솟게 한다. 등급은 각 자리의 오라 색이 보여 준다.
+    private async UniTask<bool> OpenRemaining(
+        List<GachaPullItem> items,
+        bool[] opened,
+        CancellationToken token)
+    {
+        List<int> indices = new();
+        List<EGachaRarity> rarities = new();
+        List<Color> colors = new();
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (opened[i]) continue;
+
+            indices.Add(i);
+            rarities.Add(items[i].Rarity);
+            colors.Add(GetResultColor(items[i].Rarity));
+        }
+
+        if (await _machine.OpenMany(indices, rarities, colors, token)) return true;
+
+        for (int i = 0; i < indices.Count; i++)
+        {
+            int index = indices[i];
+            opened[index] = true;
+            _pendingEmerges++;
+            EmergeSlot(index, items[index], colors[i], token).Forget();
+        }
+
+        return false;
+    }
+
+    private void OnOpenAllClicked()
+    {
+        if (!_isPlaying) return;
+
+        _openAllRequested = true;
     }
 
     private void OnPullRequested(int count)
@@ -1002,6 +1074,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private void CloseOverlay()
     {
         _tapButton.gameObject.SetActive(false);
+        _openAllButton.gameObject.SetActive(false);
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
         _pullPanel.Hide();

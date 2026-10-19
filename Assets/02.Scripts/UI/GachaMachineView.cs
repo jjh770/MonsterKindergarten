@@ -100,6 +100,10 @@ public sealed class GachaMachineView : MonoBehaviour
     [Header("Light")]
     [SerializeField] private Image _glow;
     [SerializeField] private Image[] _twinkles;
+    [Tooltip("여러 개를 한꺼번에 열 때 캡슐마다 하나씩 쓰는 빛입니다. 캡슐과 같은 순서로, 캡슐 수만큼 둡니다.")]
+    [SerializeField] private Image[] _multiGlows;
+    [Tooltip("한꺼번에 열 때 캡슐마다의 빛 크기 배율입니다. 캡슐끼리 가까워 하나일 때보다 작게 씁니다.")]
+    [SerializeField, Min(0.1f)] private float _multiGlowScale = 0.6f;
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _appearDuration = 0.4f;
@@ -174,7 +178,7 @@ public sealed class GachaMachineView : MonoBehaviour
             _capsuleSprites == null || _capsuleSprites.Length == 0 ||
             _rainbowCapsuleSprite == null || _ticketImage == null || _ticketSlot == null ||
             _outlet == null || !IsValidCapsules() || _glow == null ||
-            _twinkles == null || _twinkles.Length == 0)
+            _twinkles == null || _twinkles.Length == 0 || !IsValidMultiGlows())
         {
             Debug.LogError("뽑기 기계 연출의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -255,6 +259,7 @@ public sealed class GachaMachineView : MonoBehaviour
 
         _ticketImage.gameObject.SetActive(false);
         _glow.gameObject.SetActive(false);
+        HideMultiGlows();
         HideTwinkles();
     }
 
@@ -619,6 +624,151 @@ public sealed class GachaMachineView : MonoBehaviour
         return cancelled;
     }
 
+    // 여러 개를 뽑았을 때 남은 캡슐을 한꺼번에 연다. 캡슐마다 자기 희귀도의 색과 크기로 빛나고 흔들리며,
+    // 반짝이는 캡슐 수로 나눠 각자 자리에서 터진다. 뜸 들이는 시간과 멈춤은 그중 가장 좋은 결과의 것을 써서
+    // 모두 같은 순간에 갈라진다. 카메라는 움직이지 않는다. 여러 캡슐이 보이는 화면에서는 Open도 카메라를 쓰지 않는다.
+    public async UniTask<bool> OpenMany(
+        IReadOnlyList<int> indices,
+        IReadOnlyList<EGachaRarity> rarities,
+        IReadOnlyList<Color> colors,
+        CancellationToken token)
+    {
+        int count = indices.Count;
+        if (count == 0) return false;
+
+        int best = 0;
+        for (int i = 1; i < count; i++)
+        {
+            if (rarities[i] > rarities[best]) best = i;
+        }
+
+        OpenStyle bestStyle = GetStyle(rarities[best]);
+        float chargeSeconds = bestStyle.ChargeSeconds * _multiChargeRatio;
+        RectTransform[] capsules = new RectTransform[count];
+        Image[] glows = new Image[count];
+        Vector2[] rests = new Vector2[count];
+        OpenStyle[] styles = new OpenStyle[count];
+        for (int i = 0; i < count; i++)
+        {
+            int index = indices[i];
+            capsules[i] = _capsules[index].Capsule.rectTransform;
+            glows[i] = _multiGlows[index];
+            rests[i] = _capsuleRest[index];
+            styles[i] = GetStyle(rarities[i]);
+            capsules[i].anchoredPosition = rests[i];
+            capsules[i].localRotation = Quaternion.identity;
+            glows[i].rectTransform.anchoredPosition = rests[i];
+            glows[i].gameObject.SetActive(true);
+        }
+
+        // 반짝이는 한 벌뿐이라 캡슐마다 같은 몫으로 나눈다. 몫 안에서는 좋은 결과일수록 많이 쓴다.
+        int twinkleShare = Mathf.Max(1, _twinkles.Length / count);
+        _holdShake = 0f;
+
+        bool cancelled = await Run(chargeSeconds, ratio =>
+        {
+            float elapsed = ratio * chargeSeconds;
+            for (int i = 0; i < count; i++)
+            {
+                float amplitude = Mathf.Lerp(2f, styles[i].ShakeAmplitude, ratio * ratio);
+                // 캡슐마다 위상을 어긋나게 해 한 덩어리로 흔들려 보이지 않게 한다.
+                float time = elapsed + i * 0.37f;
+                capsules[i].anchoredPosition = rests[i] + new Vector2(
+                    Mathf.Sin(time * 55f) * amplitude,
+                    Mathf.Cos(time * 47f) * amplitude * 0.6f);
+                capsules[i].localRotation = Quaternion.Euler(
+                    0f, 0f, Mathf.Sin(time * 40f) * amplitude * 0.9f);
+                capsules[i].localScale = Vector3.one * (_slotCapsuleScale * (1f + 0.1f * ratio * ratio));
+
+                glows[i].rectTransform.localScale = Vector3.one *
+                                                    (_glowBaseScale * _multiGlowScale *
+                                                     Mathf.Lerp(0.7f, styles[i].GlowScale * 0.8f, ratio));
+                SetImageColor(glows[i], TintOf(rarities[i], colors[i]), Mathf.Lerp(0.25f, 0.9f, ratio));
+            }
+        }, token);
+        if (cancelled) return true;
+
+        if (bestStyle.HitStopSeconds > 0f && await Pause(bestStyle.HitStopSeconds, token)) return true;
+
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
+        for (int i = 0; i < count; i++)
+        {
+            CapsuleSlot slot = _capsules[indices[i]];
+            float scale = capsules[i].localScale.x;
+            capsules[i].gameObject.SetActive(false);
+            PlaceHalf(slot.Top, rests[i], scale);
+            PlaceHalf(slot.Bottom, rests[i], scale);
+        }
+
+        cancelled = await Run(_splitDuration, ratio =>
+        {
+            float outward = 1f - (1f - ratio) * (1f - ratio);
+            float fade = 1f - ratio * ratio;
+            for (int i = 0; i < count; i++)
+            {
+                CapsuleSlot slot = _capsules[indices[i]];
+                slot.Top.rectTransform.anchoredPosition = rests[i] + new Vector2(-34f, 170f) * (outward * 0.6f);
+                slot.Top.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 20f * outward);
+                slot.Bottom.rectTransform.anchoredPosition = rests[i] + new Vector2(34f, -170f) * (outward * 0.6f);
+                slot.Bottom.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -20f * outward);
+                SetImageAlpha(slot.Top, fade);
+                SetImageAlpha(slot.Bottom, fade);
+
+                Color tint = TintOf(rarities[i], colors[i]);
+                glows[i].rectTransform.localScale = Vector3.one *
+                                                    (_glowBaseScale * _multiGlowScale *
+                                                     Mathf.Lerp(styles[i].GlowScale * 0.8f,
+                                                         styles[i].GlowScale * 1.25f, outward));
+                SetImageColor(glows[i], tint, 1f - ratio);
+                AnimateTwinkleGroup(
+                    i * twinkleShare,
+                    Mathf.Min(twinkleShare, styles[i].TwinkleCount),
+                    rests[i],
+                    ratio,
+                    tint);
+            }
+        }, token);
+
+        for (int i = 0; i < count; i++)
+        {
+            CapsuleSlot slot = _capsules[indices[i]];
+            slot.Top.gameObject.SetActive(false);
+            slot.Bottom.gameObject.SetActive(false);
+            glows[i].gameObject.SetActive(false);
+            _opened[indices[i]] = true;
+        }
+
+        HideTwinkles();
+        return cancelled;
+    }
+
+    private static Color TintOf(EGachaRarity rarity, Color color)
+    {
+        return rarity == EGachaRarity.Special ? RainbowTint.Pure() : color;
+    }
+
+    // 반짝이 중 [start, start + count) 칸만 써서 center를 둘레로 터뜨린다. 한꺼번에 열 때 캡슐마다 제 몫을 쓴다.
+    // 캡슐끼리 가까우므로 하나만 열 때보다 짧게 퍼진다.
+    private void AnimateTwinkleGroup(int start, int count, Vector2 center, float ratio, Color color)
+    {
+        int end = Mathf.Min(start + count, _twinkles.Length);
+        for (int i = start; i < end; i++)
+        {
+            Image twinkle = _twinkles[i];
+            if (twinkle == null) continue;
+
+            int k = i - start;
+            float angle = Mathf.PI * 2f * k / Mathf.Max(1, count) + start * 0.6f;
+            float distance = Mathf.Lerp(50f, 170f + k % 2 * 30f, 1f - (1f - ratio) * (1f - ratio));
+            twinkle.gameObject.SetActive(true);
+            twinkle.rectTransform.anchoredPosition = center +
+                                                     new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
+            twinkle.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.9f, 0.2f, ratio);
+            twinkle.rectTransform.localRotation = Quaternion.Euler(0f, 0f, ratio * 120f + i * 25f);
+            SetImageColor(twinkle, Color.Lerp(Color.white, color, 0.6f), 1f - ratio);
+        }
+    }
+
     private void ResetUnopenedCapsulesToRest(int openingIndex)
     {
         for (int i = 0; i < _count; i++)
@@ -789,6 +939,26 @@ public sealed class GachaMachineView : MonoBehaviour
         }
 
         return _slotMarkers != null && _slotMarkers.Length >= _capsules.Length;
+    }
+
+    private bool IsValidMultiGlows()
+    {
+        if (_multiGlows == null || _capsules == null || _multiGlows.Length < _capsules.Length) return false;
+
+        foreach (Image glow in _multiGlows)
+        {
+            if (glow == null) return false;
+        }
+
+        return true;
+    }
+
+    private void HideMultiGlows()
+    {
+        foreach (Image glow in _multiGlows)
+        {
+            glow.gameObject.SetActive(false);
+        }
     }
 
     // 카메라 좌표계는 기계 루트가 놓인 자리를 원점으로 한다. 기계 로컬 점을 그 좌표로 옮긴다.
