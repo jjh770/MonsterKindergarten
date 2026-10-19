@@ -303,6 +303,28 @@ public class SlimeStatus
         return true;
     }
 
+#if UNITY_EDITOR
+    // 에디터 확인 메뉴 전용이다. 아직 도착하지 않은 탐험을 지금 도착한 것으로 바꾼다. 보상, 편성, 정산
+    // 순번은 그대로라 받는 과정은 실제와 같다. 바꾼 탐험 수를 돌려준다.
+    public int EditorFinishExpeditions(DateTime trustedUtcNow)
+    {
+        int finished = 0;
+        for (int i = 0; i < _activeExpeditions.Count; i++)
+        {
+            ExpeditionRun run = _activeExpeditions[i];
+            if (run.IsReadyToReturn(trustedUtcNow)) continue;
+
+            // 도착 시각은 출발 시각보다 늦어야 하므로, 시계가 출발 시각보다 앞서 있으면 출발을 1초 당긴다.
+            DateTime started = run.StartedAtUtc < trustedUtcNow ? run.StartedAtUtc : trustedUtcNow.AddSeconds(-1);
+            _activeExpeditions[i] = new ExpeditionRun(
+                run.RunId, run.DestinationId, run.Members, started, trustedUtcNow, run.Reward, run.Sequence);
+            finished++;
+        }
+
+        return finished;
+    }
+#endif
+
     public bool IsOnExpedition(string instanceId)
     {
         foreach (ExpeditionRun run in _activeExpeditions)

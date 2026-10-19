@@ -12,6 +12,7 @@ public static class ExpeditionPreviewTools
 
     private const string MediumPath = "Tools/Expeditions/Start Local Test (20 seconds)";
     private const string LongPath = "Tools/Expeditions/Start Local Test (30 seconds)";
+    private const string FinishPath = "Tools/Expeditions/Finish All Now";
 
     [MenuItem(StartPath)]
     private static void StartShort() => StartTest("expedition-short", 10);
@@ -34,6 +35,17 @@ public static class ExpeditionPreviewTools
         Debug.Log(started
             ? $"Editor 로컬 테스트 탐험 {destinationId}를 1마리로 출발했어요. {seconds}초 뒤 수령하세요. 보상은 포인트 100·뽑기권 1·랜턴이에요."
             : "출발하지 못했어요. Lv.7 해금, 대기 중인 장식장 슬라임, 같은 탐험지 점유와 정산 상태를 확인하세요.");
+    }
+
+    // 진행 중인 탐험을 모두 지금 도착한 것으로 바꾼다. 실제 화면에서 보낸 탐험도 기다리지 않고 받을 수 있다.
+    [MenuItem(FinishPath)]
+    private static void FinishAllNow()
+    {
+        if (!CanUse()) return;
+        int finished = SlimeManager.Instance.EditorFinishExpeditions(ServerClock.TrustedUtcNow);
+        Debug.Log(finished > 0
+            ? $"진행 중이던 탐험 {finished}개를 지금 도착한 것으로 바꿨어요. 탐험 화면에서 보상을 받을 수 있어요."
+            : "진행 중인 탐험이 없거나 지금은 바꿀 수 없어요.");
     }
 
     [MenuItem(ClaimPath)]
@@ -61,6 +73,7 @@ public static class ExpeditionPreviewTools
     [MenuItem(MediumPath, true)]
     [MenuItem(LongPath, true)]
     [MenuItem(ClaimPath, true)]
+    [MenuItem(FinishPath, true)]
     [MenuItem(RecoverPath, true)]
     private static bool CanUse() => EditorApplication.isPlaying && GameplayGate.IsReady &&
                                     SlimeManager.Instance != null && CurrencyManager.Instance != null &&

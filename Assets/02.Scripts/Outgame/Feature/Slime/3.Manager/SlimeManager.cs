@@ -140,6 +140,21 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         return true;
     }
 
+#if UNITY_EDITOR
+    // 에디터 확인 메뉴 전용이다. 진행 중인 탐험을 모두 지금 도착한 것으로 바꾸고 저장한다.
+    public int EditorFinishExpeditions(DateTime trustedUtcNow)
+    {
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure) return 0;
+
+        int finished = _status.EditorFinishExpeditions(trustedUtcNow);
+        if (finished == 0) return 0;
+
+        Save();
+        ExpeditionChanged?.Invoke();
+        return finished;
+    }
+#endif
+
     public bool TryAdvanceExpeditionSettlement(ExpeditionSettlement next)
     {
         if (next == null || !IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure) return false;
