@@ -8,7 +8,8 @@ using UnityEngine.UI;
 
 // 뽑기 기계 화면 한 번을 이끈다. 화면을 열고, 1회·5회 버튼을 기다리고, 눌리면 티켓을 쓰고 결과를 만들어
 // 기계로 보여 주고, 결과를 필드로 보낸 뒤 닫는다. 기계 그림과 캡슐 움직임은 GachaMachineView가,
-// 버튼과 토스트는 GachaPullPanel이 맡고, 여기서는 순서와 결과 슬라임의 등장을 정한다.
+// 버튼과 토스트는 GachaPullPanel이, 1회 결과 슬라임은 GachaSingleResult가, 여러 개를 뽑았을 때 슬라임이
+// 머무는 자리는 GachaResultSlots가 맡고, 여기서는 순서를 정한다.
 //
 // 티켓은 버튼을 누르는 순간 쓰이고 결과가 만들어져 저장된다. 연출은 그 뒤에 보여 주기만 해서, 도중에
 // 앱이 꺼져도 잃는 것이 없고 닫기 버튼은 그 전까지만 의미가 있다. 빛의 색은 확정된 희귀도를 표현할 뿐이다.
@@ -17,17 +18,6 @@ using UnityEngine.UI;
 // 정지는 닫기, 끝, 파괴 어느 길로 끝나도 풀린다.
 public sealed class GachaResultDirector : MonoBehaviour
 {
-    // 한 번 뽑은 결과가 열린 뒤 필드로 날아가기 전까지 머무는 자리다. 여러 개를 뽑을 때 쓴다.
-    [Serializable]
-    private sealed class ResultSlot
-    {
-        public RectTransform Root;
-        public Image Slime;
-        public SlimeOutlineImage Outline;
-        public GachaResultAura Aura;
-        public TMP_Text Name;
-    }
-
     private enum SessionState
     {
         Closed,
@@ -49,35 +39,10 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private static string SpecialSubtitle => UiMessages.SpecialSlimeSubtitle;
 
-    // 파편이 퍼지는 모양이다. 거리는 캔버스 좌표 단위이고, 끝 거리는 파편마다
-    // EndSpread씩 EndSpreadSteps 칸으로 엇갈려 한 줄로 늘어서지 않게 한다.
-    private struct BurstShape
-    {
-        public float AngleJitter;
-        public float StartDistance;
-        public float EndDistance;
-        public float EndSpread;
-        public int EndSpreadSteps;
-        public float StartScale;
-        public float EndScale;
-    }
-
-    private static readonly BurstShape ArrivalBurstShape = new()
-    {
-        AngleJitter = 0.16f,
-        StartDistance = 18f,
-        EndDistance = 170f,
-        EndSpread = 18f,
-        EndSpreadSteps = 4,
-        StartScale = 1.3f,
-        EndScale = 0.2f,
-    };
-
     [SerializeField] private GameObject _root;
     [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private Image _resultImage;
-    [SerializeField] private SlimeOutlineImage _resultOutline;
-    [SerializeField] private GachaResultAura _resultAura;
+    [Tooltip("하나만 뽑았을 때 결과 슬라임이 솟고 필드로 날아가는 연출입니다.")]
+    [SerializeField] private GachaSingleResult _singleResult;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private CurrencyManager _currencyManager;
@@ -86,55 +51,36 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     [Header("Machine")]
     [SerializeField] private GachaMachineView _machine;
+    [Tooltip("버튼을 고르는 동안 통을 잡고 흔들게 하는 컴포넌트입니다. 기계 오브젝트에 있습니다.")]
+    [SerializeField] private GachaMachineGrab _machineGrab;
     [SerializeField] private GachaPullPanel _pullPanel;
     [SerializeField] private Button _tapButton;
     [SerializeField] private TMP_Text _tapPrompt;
-    [SerializeField] private TMP_Text _resultNameText;
-    [SerializeField] private RectTransform _arrivalEffectRoot;
-    [SerializeField] private RectTransform[] _arrivalSparks;
 
     [Header("Slots")]
-    [SerializeField] private ResultSlot[] _slots;
+    [Tooltip("여러 개를 뽑았을 때 열린 슬라임이 머물다 필드로 날아가는 자리들입니다.")]
+    [SerializeField] private GachaResultSlots _resultSlots;
     [Tooltip("여러 개를 뽑았을 때 남은 캡슐을 차례로 모두 여는 버튼입니다. 캡슐을 고르는 동안에만 보입니다.")]
     [SerializeField] private Button _openAllButton;
-    [SerializeField, Min(0f)] private float _slotEmergeSeconds = 0.5f;
-    [SerializeField, Min(0f)] private float _flyStagger = 0.18f;
 
     [Header("Timing")]
     [SerializeField, Min(0f)] private float _fadeDuration = 0.25f;
-    [SerializeField, Min(0f)] private float _emergeDuration = 0.45f;
-    [SerializeField, Min(0f)] private float _revealDuration = 0.6f;
     [SerializeField, Min(0f)] private float _holdDuration = 0.7f;
     [SerializeField, Min(0.01f)] private float _moveDuration = 0.5f;
-    [SerializeField, Min(0f)] private float _arrivalDuration = 0.45f;
 
     [Header("Look")]
-    [SerializeField, Min(0f)] private float _emergeScale = 1.35f;
-    [SerializeField, Min(0f)] private float _revealScale = 1f;
-    [SerializeField, Min(0f)] private float _endScale = 0.25f;
-    [SerializeField, Min(0f)] private float _nameSlideDistance = 180f;
     [SerializeField, Min(0f)] private float _moveArcRadius = 160f;
-    [SerializeField, Min(0f)] private float _moveSpinTurns = 1f;
-
-    // 결과 슬라임이 솟아오르는 세로 이동 거리. 캔버스 좌표(anchoredPosition) 단위다.
-    [SerializeField, Min(0f)] private float _emergeRise = 80f;
+    [SerializeField, Min(0f)] private float _moveSpinTurns = 3f;
 
     private readonly List<SlimeController> _pulled = new();
-    private RectTransform _resultRect;
-    private RectTransform _resultParentRect;
-    private RectTransform _resultNameRect;
-    private Vector2 _resultNameRestPosition;
-    private bool[] _slotShimmer;
+    private RectTransform _overlayRect;
     private SessionState _state;
     private int _pendingRequest = RequestNone;
-    private int _pendingEmerges;
     private bool _isReady;
     private bool _isPlaying;
     private bool _tapped;
     private bool _openAllRequested;
     private bool _isSpecialResult;
-    // 결과 그림이 다 드러난 뒤에만 무지개 광택을 입힌다. 드러나는 중에는 실루엣 색이 먼저다.
-    private bool _isResultImageShimmering;
 
     public bool IsPlaying => _isPlaying;
 
@@ -143,30 +89,20 @@ public sealed class GachaResultDirector : MonoBehaviour
 
     private void Awake()
     {
-        if (_root == null || _canvasGroup == null || _resultImage == null || _resultOutline == null ||
-            _resultAura == null ||
-            _machine == null || _pullPanel == null || _tapButton == null || _tapPrompt == null ||
+        if (_root == null || _canvasGroup == null || _singleResult == null ||
+            _machine == null || _machineGrab == null ||
+            _pullPanel == null || _tapButton == null || _tapPrompt == null ||
             _openAllButton == null ||
-            _resultNameText == null || _arrivalEffectRoot == null || _arrivalSparks == null ||
             _slimeManager == null || _currencyManager == null || _spawnManager == null ||
-            !IsValidSlots())
+            _resultSlots == null)
         {
             Debug.LogError("뽑기 기계 연출의 필수 참조가 비어 있습니다.", this);
             return;
         }
 
-        _resultRect = _resultImage.transform as RectTransform;
-        _resultParentRect = _resultRect != null
-            ? _resultRect.parent as RectTransform
-            : null;
-        _resultNameRect = _resultNameText.transform as RectTransform;
-        _isReady = _resultRect != null && _resultParentRect != null && _resultNameRect != null;
-        if (_resultNameRect != null)
-        {
-            _resultNameRestPosition = _resultNameRect.anchoredPosition;
-        }
+        _overlayRect = _singleResult.OverlayRect;
+        _isReady = _overlayRect != null;
 
-        _slotShimmer = new bool[_slots.Length];
         _tapButton.onClick.AddListener(OnTapped);
         _openAllButton.onClick.AddListener(OnOpenAllClicked);
         _pullPanel.PullRequested += OnPullRequested;
@@ -220,8 +156,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             _gameExitManager?.UnregisterBackHandler(this);
             _spawnManager?.ReleaseSpawnPause(this);
             _clicker?.ReleaseMode(this);
-            _isResultImageShimmering = false;
-            Array.Clear(_slotShimmer, 0, _slotShimmer.Length);
+            _singleResult.StopShimmer();
+            _resultSlots.StopShimmer();
             _state = SessionState.Closed;
             _pendingRequest = RequestNone;
             _isPlaying = false;
@@ -253,6 +189,8 @@ public sealed class GachaResultDirector : MonoBehaviour
         int tickets = GetTicketCount();
         _pullPanel.Show(tickets, isTutorial);
         ShowPrompt(GetChoosePrompt(tickets, isTutorial));
+        // 튜토리얼은 스포트라이트가 1회 버튼만 열어 두므로 통을 잡을 수 없다. 잡으라는 떨림도 띄우지 않는다.
+        _machineGrab.SetGrabbable(!isTutorial);
 
         List<GachaPullItem> items = new();
         int pressed = 0;
@@ -263,6 +201,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
             if (request == RequestClose)
             {
+                _machineGrab.SetGrabbable(false);
                 _state = SessionState.Presenting;
                 _tapPrompt.gameObject.SetActive(false);
                 _pullPanel.Hide();
@@ -282,6 +221,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             _pullPanel.ShowToast(GetFailureMessage(failure));
         }
 
+        if (await _machineGrab.ReturnToRest(token)) return true;
+
         return await Present(items, pressed, token);
     }
 
@@ -293,11 +234,9 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         _state = SessionState.Presenting;
         int count = items.Count;
-        bool[] specials = new bool[count];
         for (int i = 0; i < count; i++)
         {
             SlimeController slime = items[i].Slime;
-            specials[i] = items[i].Rarity == EGachaRarity.Special;
             _pulled.Add(slime);
             slime.SetLocationPresentationActive(false);
         }
@@ -305,7 +244,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _pullPanel.SetCommitted(pressedCount);
         _tapPrompt.gameObject.SetActive(false);
         PullCommitted?.Invoke();
-        _machine.BeginPull(specials);
+        _machine.BeginPull(count);
 
         bool isStack = pressedCount == GachaPullPanel.MultiCount;
         if (await _machine.InsertTicket(
@@ -330,9 +269,11 @@ public sealed class GachaResultDirector : MonoBehaviour
     {
         SlimeController target = item.Slime;
         _isSpecialResult = item.Rarity == EGachaRarity.Special;
-        _isResultImageShimmering = false;
         Vector2 center = GetLocalCenter();
-        PrepareSingleResult(center, target.Grade);
+        string name = _isSpecialResult
+            ? GetName(target.Grade) + "\n<size=65%>" + SpecialSubtitle + "</size>"
+            : GetName(target.Grade);
+        _singleResult.Prepare(center, name, _isSpecialResult);
 
         int index = await WaitForCapsule(CapsuleTapMessage, token);
         if (index < 0) return true;
@@ -342,19 +283,23 @@ public sealed class GachaResultDirector : MonoBehaviour
 
         Color resultColor = GetResultColor(item.Rarity);
         if (await _machine.Open(0, item.Rarity, resultColor, token)) return true;
-        if (await Emerge(GetSprite(target.Grade), item.Rarity, resultColor, token)) return true;
-        if (await Reveal(resultColor, token)) return true;
+        // 슬라임이 솟고 드러나는 동안 기계의 빛이 계속 새로 퍼진다.
+        Action<float> sustain = elapsed => _machine.Sustain(elapsed, Tint(resultColor));
+        if (await _singleResult.Emerge(GetSprite(target.Grade), item.Rarity, sustain, token)) return true;
+        if (await _singleResult.Reveal(sustain, token)) return true;
+
+        _machine.EndSustain();
+        _machine.Hide();
         if (await Wait(_holdDuration, token)) return true;
 
         Vector2 destination = GetFieldLocalPosition(target, center);
-        _resultAura.PlayTrail(resultColor, _isSpecialResult);
+        _singleResult.PlayTrail(resultColor);
         AudioManager.Instance?.PlaySFX(EAudioSfx.GachaResult);
-        if (await MoveTo(destination, token)) return true;
+        if (await _singleResult.MoveTo(destination, Flight, token)) return true;
 
         // 도착하는 순간 진짜 슬라임이 필드에 나타나고, 그 자리에서 빛과 파편이 터진다.
         target.SetLocationPresentationActive(true);
-        _resultAura.PlayBurst(resultColor, _isSpecialResult);
-        if (await PlayArrivalEffect(destination, resultColor, token)) return true;
+        if (await _singleResult.Arrive(destination, resultColor, token)) return true;
         if (await Fade(1f, 0f, _fadeDuration, token)) return true;
 
         CloseOverlay();
@@ -366,8 +311,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private async UniTask<bool> PresentMultiple(List<GachaPullItem> items, CancellationToken token)
     {
         int count = items.Count;
-        PrepareSlots(items);
-        _pendingEmerges = 0;
+        _resultSlots.Prepare(count);
 
         // 기계는 뒤로 물러나 늘어선 캡슐만 남는다. 기다리지 않고 바로 누를 수 있다.
         _machine.FadeMachineTo(0f, 0.4f, token).Forget();
@@ -400,14 +344,13 @@ public sealed class GachaResultDirector : MonoBehaviour
 
             opened[index] = true;
             openedCount++;
-            _pendingEmerges++;
-            EmergeSlot(index, item, color, token).Forget();
+            StartSlotEmerge(index, item, token);
             if (openedCount < count) _machine.SetCapsulesInteractable(true);
         }
 
         _openAllButton.gameObject.SetActive(false);
 
-        while (_pendingEmerges > 0)
+        while (_resultSlots.IsEmerging)
         {
             if (await NextFrame(token)) return true;
         }
@@ -445,55 +388,11 @@ public sealed class GachaResultDirector : MonoBehaviour
         _openAllButton.gameObject.SetActive(false);
         _tapPrompt.gameObject.SetActive(false);
         _pullPanel.Hide();
+        _machineGrab.Stop();
         _machine.Prepare();
-        _resultAura.Hide();
-        _resultOutline.Apply(null, false, false);
-        _resultImage.enabled = false;
-        _resultNameText.alpha = 0f;
-        _resultNameText.gameObject.SetActive(true);
-        _arrivalEffectRoot.gameObject.SetActive(false);
-        _isResultImageShimmering = false;
+        _singleResult.ResetAll();
 
-        foreach (ResultSlot slot in _slots)
-        {
-            slot.Aura.Hide();
-            slot.Outline.Apply(null, false, false);
-            slot.Slime.enabled = false;
-            slot.Name.gameObject.SetActive(false);
-        }
-
-        Array.Clear(_slotShimmer, 0, _slotShimmer.Length);
-    }
-
-    private void PrepareSingleResult(Vector2 centerLocal, ESlimeGrade grade)
-    {
-        _resultRect.anchoredPosition = centerLocal + Vector2.down * _emergeRise;
-        _resultRect.localScale = Vector3.one * 0.2f;
-        _resultImage.enabled = false;
-        _resultImage.color = Color.white;
-
-        _resultNameText.text = _isSpecialResult
-            ? GetName(grade) + "\n<size=65%>" + SpecialSubtitle + "</size>"
-            : GetName(grade);
-        _resultNameText.alpha = 0f;
-        _resultNameText.gameObject.SetActive(true);
-        _resultNameRect.anchoredPosition =
-            _resultNameRestPosition + Vector2.right * _nameSlideDistance;
-
-        _arrivalEffectRoot.gameObject.SetActive(false);
-        _arrivalEffectRoot.localScale = Vector3.one;
-        HideSparks(_arrivalSparks);
-    }
-
-    private void PrepareSlots(List<GachaPullItem> items)
-    {
-        for (int i = 0; i < _slots.Length; i++)
-        {
-            ResultSlot slot = _slots[i];
-            slot.Slime.enabled = false;
-            slot.Name.gameObject.SetActive(false);
-            slot.Root.gameObject.SetActive(i < items.Count);
-        }
+        _resultSlots.ResetAll();
     }
 
     // 안내 문구를 띄우고 캡슐이 눌릴 때까지 기다린다. 눌린 캡슐 번호를 돌려주고, 취소되면 음수를 돌려준다.
@@ -541,7 +440,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         return false;
     }
 
-    // 1회·5회·닫기 중 하나가 눌릴 때까지 기다린다. 기다리는 동안 기계 안의 캡슐 더미가 살아 움직인다.
+    // 1회·5회·닫기 중 하나가 눌릴 때까지 기다린다.
     private async UniTask<int> WaitForRequest(bool isTutorial, CancellationToken token)
     {
         _pendingRequest = RequestNone;
@@ -551,7 +450,6 @@ public sealed class GachaResultDirector : MonoBehaviour
             if (await NextFrame(token)) return RequestCancelled;
 
             elapsed += Time.unscaledDeltaTime;
-            _machine.Idle(elapsed);
             if (isTutorial) _pullPanel.PulseSingle(elapsed);
             _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
         }
@@ -585,8 +483,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             int index = indices[i];
             opened[index] = true;
-            _pendingEmerges++;
-            EmergeSlot(index, items[index], colors[i], token).Forget();
+            StartSlotEmerge(index, items[index], token);
         }
 
         return false;
@@ -667,210 +564,29 @@ public sealed class GachaResultDirector : MonoBehaviour
         return Mathf.FloorToInt((float)(double)_currencyManager.Get(ECurrencyType.GachaTicket));
     }
 
-    private async UniTask<bool> Emerge(
-        Sprite resultSprite,
-        EGachaRarity rarity,
-        Color resultColor,
-        CancellationToken token)
+    // 열린 캡슐 자리에서 슬라임이 솟아 이름과 함께 남는다. 무엇을 보일지만 정하고 움직임은 자리가 맡는다.
+    private void StartSlotEmerge(int index, GachaPullItem item, CancellationToken token)
     {
-        _resultAura.Show(rarity);
-        _resultOutline.Apply(resultSprite, resultSprite != null, _isSpecialResult);
-        _resultImage.enabled = resultSprite != null;
-        _resultImage.color = Color.white;
-        Vector2 start = _resultRect.anchoredPosition;
-        Vector2 end = start + Vector2.up * _emergeRise;
-        float elapsed = 0f;
-
-        while (elapsed < _emergeDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _emergeDuration));
-            _resultRect.anchoredPosition = Vector2.Lerp(start, end, ratio);
-            _resultRect.localScale = Vector3.one * Mathf.Lerp(0.2f, _emergeScale, ratio);
-            _machine.Sustain(elapsed, Tint(resultColor));
-        }
-        return false;
+        ESlimeGrade grade = item.Slime.Grade;
+        string name = item.Rarity == EGachaRarity.Special
+            ? GetName(grade) + "\n<size=65%>" + UiMessages.SpecialSlimeShort + "</size>"
+            : GetName(grade);
+        _resultSlots.StartEmerge(index, GetSprite(grade), name, item.Rarity, token);
     }
 
-    private async UniTask<bool> Reveal(Color resultColor, CancellationToken token)
+    // 열린 슬라임이 자기 자리에서 필드의 제자리로 날아간다. 도착 크기는 1회 결과가 줄어드는 실제 크기에 맞춘다.
+    private UniTask<bool> FlySlot(int index, GachaPullItem item, CancellationToken token)
     {
-        float elapsed = 0f;
-        while (elapsed < _revealDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _revealDuration));
-            float sparkle = Mathf.Sin(ratio * Mathf.PI * 3f) * (1f - ratio) * 0.08f;
-            float nameRatio = Mathf.SmoothStep(
-                0f,
-                1f,
-                Mathf.InverseLerp(0.12f, 0.72f, ratio));
-            _resultRect.localScale = Vector3.one *
-                                     (Mathf.Lerp(_emergeScale, _revealScale, ratio) + sparkle);
-            _resultNameText.alpha = nameRatio;
-            _resultNameRect.anchoredPosition = Vector2.Lerp(
-                _resultNameRestPosition + Vector2.right * _nameSlideDistance,
-                _resultNameRestPosition,
-                nameRatio);
-            _machine.Sustain(_emergeDuration + elapsed, Tint(resultColor));
-        }
-
-        _resultImage.color = Color.white;
-        _isResultImageShimmering = _isSpecialResult;
-        _resultRect.localScale = Vector3.one * _revealScale;
-        _resultNameText.alpha = 1f;
-        _resultNameRect.anchoredPosition = _resultNameRestPosition;
-        _machine.EndSustain();
-        _machine.Hide();
-        return false;
-    }
-
-    // 열린 캡슐 자리에서 슬라임이 솟아 이름과 함께 남는다. 다른 캡슐을 여는 것을 막지 않도록 기다리지
-    // 않고 따로 돈다. 다 끝나면 _pendingEmerges가 줄어 "모두 열었다"를 알 수 있다.
-    private async UniTaskVoid EmergeSlot(
-        int index,
-        GachaPullItem item,
-        Color color,
-        CancellationToken token)
-    {
-        try
-        {
-            ResultSlot slot = _slots[index];
-            ESlimeGrade grade = item.Slime.Grade;
-            bool isSpecial = item.Rarity == EGachaRarity.Special;
-            Sprite sprite = GetSprite(grade);
-            slot.Aura.Show(item.Rarity);
-            slot.Outline.Apply(sprite, sprite != null, isSpecial);
-            slot.Slime.enabled = slot.Slime.sprite != null;
-            slot.Slime.color = Color.white;
-            RectTransform rect = slot.Slime.rectTransform;
-            rect.anchoredPosition = Vector2.down * 30f;
-            rect.localScale = Vector3.one * 0.2f;
-            slot.Name.text = isSpecial
-                ? GetName(grade) + "\n<size=65%>" + UiMessages.SpecialSlimeShort + "</size>"
-                : GetName(grade);
-            slot.Name.alpha = 0f;
-            slot.Name.gameObject.SetActive(true);
-
-            float elapsed = 0f;
-            while (elapsed < _slotEmergeSeconds)
-            {
-                if (await NextFrame(token)) return;
-
-                elapsed += Time.unscaledDeltaTime;
-                float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _slotEmergeSeconds));
-                rect.anchoredPosition = Vector2.Lerp(Vector2.down * 30f, Vector2.zero, ratio);
-                rect.localScale = Vector3.one * (Mathf.Lerp(0.2f, 1f, ratio) +
-                                                 Mathf.Sin(ratio * Mathf.PI) * 0.15f);
-                slot.Name.alpha = Mathf.InverseLerp(0.35f, 0.9f, ratio);
-            }
-
-            rect.localScale = Vector3.one;
-            slot.Slime.color = Color.white;
-            slot.Name.alpha = 1f;
-            _slotShimmer[index] = isSpecial;
-        }
-        finally
-        {
-            _pendingEmerges--;
-        }
-    }
-
-    // 열린 슬라임이 자기 자리에서 필드의 제자리로 호를 그리며 날아간다. 잇따라 출발해 연달아 도착한다.
-    private async UniTask<bool> FlySlot(int index, GachaPullItem item, CancellationToken token)
-    {
-        float delay = index * _flyStagger;
-        if (delay > 0f && await Wait(delay, token)) return true;
-
-        ResultSlot slot = _slots[index];
-        slot.Aura.PlayTrail(GetResultColor(item.Rarity), item.Rarity == EGachaRarity.Special);
-        RectTransform rect = slot.Slime.rectTransform;
-        Vector2 destination = GetFieldLocalPosition(item.Slime, slot.Root.anchoredPosition) -
-                              slot.Root.anchoredPosition;
-        Vector2 start = rect.anchoredPosition;
-        Vector2 path = destination - start;
-        Vector2 forward = path.sqrMagnitude > 0.01f ? path.normalized : Vector2.up;
-        Vector2 perpendicular = new(-forward.y, forward.x);
-        float startScale = rect.localScale.x;
-        // 슬롯 그림은 1회 결과보다 작아서, 같은 배율로 줄이면 필드 슬라임보다 작게 도착한다.
-        // 도착 크기는 1회 결과가 줄어드는 실제 크기에 맞춘다.
-        float endScale = _endScale * _resultRect.rect.width / Mathf.Max(1f, rect.rect.width);
-        _slotShimmer[index] = false;
-
-        float elapsed = 0f;
-        while (elapsed < _moveDuration)
-        {
-            if (await NextFrame(token)) return true;
-
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _moveDuration));
-            float angle = ratio * Mathf.PI * 2f;
-            float envelope = Mathf.Sin(ratio * Mathf.PI);
-            Vector2 orbit =
-                (perpendicular * Mathf.Sin(angle) +
-                 forward * (1f - Mathf.Cos(angle)) * 0.45f) *
-                (_moveArcRadius * 0.6f * envelope);
-            rect.anchoredPosition = Vector2.Lerp(start, destination, ratio) + orbit;
-            rect.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, ratio);
-            rect.localRotation = Quaternion.Euler(0f, 0f, -360f * ratio);
-            slot.Slime.color = Color.white;
-            slot.Name.alpha = 1f - Mathf.Clamp01(ratio * 2.5f);
-        }
-
-        rect.anchoredPosition = destination;
-        rect.localRotation = Quaternion.identity;
-        item.Slime.SetLocationPresentationActive(true);
-        slot.Slime.enabled = false;
-        slot.Name.gameObject.SetActive(false);
-        slot.Aura.PlayBurst(GetResultColor(item.Rarity), item.Rarity == EGachaRarity.Special);
-        return await Wait(slot.Aura.BurstSeconds, token);
-    }
-
-    // 바깥으로 퍼지며 작아지고 옅어지는 파편이다. 거리, 크기, 엇갈림은 BurstShape이 든다.
-    private static void AnimateSparkBurst(
-        RectTransform[] sparks,
-        in BurstShape shape,
-        float ratio,
-        Color color)
-    {
-        int count = sparks.Length;
-        for (int i = 0; i < count; i++)
-        {
-            RectTransform spark = sparks[i];
-            if (spark == null) continue;
-
-            float angle = Mathf.PI * 2f * i / Mathf.Max(1, count) +
-                          (i % 2) * shape.AngleJitter;
-            float endDistance = shape.EndDistance + i % shape.EndSpreadSteps * shape.EndSpread;
-            SetRadial(spark, angle, Mathf.Lerp(shape.StartDistance, endDistance, ratio));
-            spark.localScale = Vector3.one * Mathf.Lerp(shape.StartScale, shape.EndScale, ratio);
-            SetImageColor(spark.GetComponent<Image>(), color, 1f - ratio);
-        }
-    }
-
-    // 중심에서 angle(라디안) 방향으로 distance만큼 떨어진 자리에 놓고 바깥을 향해 세운다.
-    // 스프라이트가 위쪽을 보고 그려져 있어서 90도를 뺀다.
-    private static void SetRadial(RectTransform spark, float angle, float distance)
-    {
-        spark.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * distance;
-        spark.localRotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg - 90f);
-    }
-
-    private void HideSparks(RectTransform[] sparks)
-    {
-        foreach (RectTransform spark in sparks)
-        {
-            if (spark == null) continue;
-            spark.anchoredPosition = Vector2.zero;
-            spark.localScale = Vector3.zero;
-            SetImageAlpha(spark.GetComponent<Image>(), 0f);
-        }
-    }
-
-    private void AnimateArrivalSparks(float ratio, Color color)
-    {
-        AnimateSparkBurst(_arrivalSparks, ArrivalBurstShape, ratio, color);
+        float endScale = _resultSlots.GetEndScaleForWidth(index, _singleResult.ArrivalWidth);
+        return _resultSlots.Fly(
+            index,
+            () => GetFieldLocalPosition(item.Slime, _resultSlots.GetRootPosition(index)),
+            endScale,
+            Flight,
+            GetResultColor(item.Rarity),
+            item.Rarity == EGachaRarity.Special,
+            () => item.Slime.SetLocationPresentationActive(true),
+            token);
     }
 
     private void OnTapped()
@@ -888,21 +604,6 @@ public sealed class GachaResultDirector : MonoBehaviour
         return RainbowTint.Pure();
     }
 
-    private void Update()
-    {
-        if (_isResultImageShimmering)
-        {
-            _resultImage.color = RainbowTint.Shimmer();
-        }
-
-        if (_slotShimmer == null) return;
-
-        for (int i = 0; i < _slotShimmer.Length; i++)
-        {
-            if (_slotShimmer[i]) _slots[i].Slime.color = RainbowTint.Shimmer();
-        }
-    }
-
     private static Color GetResultColor(EGachaRarity rarity)
     {
         return rarity switch
@@ -914,20 +615,6 @@ public sealed class GachaResultDirector : MonoBehaviour
             EGachaRarity.Uncommon => UncommonColor,
             _ => CommonColor
         };
-    }
-
-    private static void SetImageColor(Image image, Color color, float alpha)
-    {
-        if (image != null)
-            image.color = new Color(color.r, color.g, color.b, Mathf.Clamp01(alpha));
-    }
-
-    private static void SetImageAlpha(Image image, float alpha)
-    {
-        if (image == null) return;
-        Color color = image.color;
-        color.a = Mathf.Clamp01(alpha);
-        image.color = color;
     }
 
     private static float Normalized(float elapsed, float duration) =>
@@ -948,7 +635,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     // 부모 rect의 중앙 로컬 좌표. pivot이 가운데가 아니어도 맞도록 rect.center를 쓴다.
     private Vector2 GetLocalCenter()
     {
-        return _resultParentRect != null ? _resultParentRect.rect.center : Vector2.zero;
+        return _overlayRect != null ? _overlayRect.rect.center : Vector2.zero;
     }
 
     // 슬라임의 월드 위치를 화면 좌표로 옮긴 뒤 결과 이미지 부모의 로컬 좌표로 되돌린다.
@@ -956,7 +643,7 @@ public sealed class GachaResultDirector : MonoBehaviour
     private Vector2 GetFieldLocalPosition(SlimeController target, Vector2 fallbackLocal)
     {
         Camera camera = Camera.main;
-        if (camera == null || _resultParentRect == null) return fallbackLocal;
+        if (camera == null || _overlayRect == null) return fallbackLocal;
 
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
             camera, target.transform.position);
@@ -964,15 +651,15 @@ public sealed class GachaResultDirector : MonoBehaviour
         // 오버레이 캔버스면 카메라를 넘기지 않는다. 카메라 캔버스면 그 캔버스 카메라를 쓴다.
         Camera uiCamera = ResolveUiCamera();
         return RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            _resultParentRect, screenPoint, uiCamera, out Vector2 local)
+            _overlayRect, screenPoint, uiCamera, out Vector2 local)
             ? local
             : fallbackLocal;
     }
 
     private Camera ResolveUiCamera()
     {
-        Canvas canvas = _resultParentRect != null
-            ? _resultParentRect.GetComponentInParent<Canvas>()
+        Canvas canvas = _overlayRect != null
+            ? _overlayRect.GetComponentInParent<Canvas>()
             : null;
         if (canvas == null) return null;
 
@@ -981,72 +668,8 @@ public sealed class GachaResultDirector : MonoBehaviour
             : canvas.worldCamera;
     }
 
-    // destination은 결과 이미지 부모의 로컬 좌표다. 시작점도 anchoredPosition을 써서
-    // 두 끝점이 같은 좌표계 위에 놓이게 한다.
-    private async UniTask<bool> MoveTo(Vector2 destination, CancellationToken token)
-    {
-        Vector2 start = _resultRect.anchoredPosition;
-        Vector2 path = destination - start;
-        Vector2 forward = path.sqrMagnitude > 0.01f ? path.normalized : Vector2.up;
-        Vector2 perpendicular = new(-forward.y, forward.x);
-        float startScale = _resultRect.localScale.x;
-        float elapsed = 0f;
-        while (elapsed < _moveDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Mathf.SmoothStep(0f, 1f, Normalized(elapsed, _moveDuration));
-            float angle = ratio * Mathf.PI * 2f;
-            float envelope = Mathf.Sin(ratio * Mathf.PI);
-            Vector2 orbit =
-                (perpendicular * Mathf.Sin(angle) +
-                 forward * (1f - Mathf.Cos(angle)) * 0.45f) *
-                (_moveArcRadius * envelope);
-            _resultRect.anchoredPosition = Vector2.Lerp(start, destination, ratio) + orbit;
-            _resultRect.localScale = Vector3.one * Mathf.Lerp(startScale, _endScale, ratio);
-            _resultRect.localRotation = Quaternion.Euler(
-                0f,
-                0f,
-                -360f * _moveSpinTurns * ratio);
-            _resultNameText.alpha = 1f - Mathf.Clamp01(ratio * 2.5f);
-            _resultNameRect.anchoredPosition =
-                _resultNameRestPosition + Vector2.left * _nameSlideDistance * ratio;
-        }
-
-
-        _resultRect.anchoredPosition = destination;
-        _resultRect.localScale = Vector3.one * _endScale;
-        _resultRect.localRotation = Quaternion.identity;
-        _resultNameText.alpha = 0f;
-        return false;
-    }
-
-    private async UniTask<bool> PlayArrivalEffect(
-        Vector2 destination,
-        Color color,
-        CancellationToken token)
-    {
-        // 도착 이펙트 루트는 결과 이미지와 같은 부모를 공유하므로 로컬 좌표를 그대로 쓴다.
-        _arrivalEffectRoot.anchoredPosition = destination;
-        _arrivalEffectRoot.localScale = Vector3.one;
-        _arrivalEffectRoot.gameObject.SetActive(true);
-        HideSparks(_arrivalSparks);
-        float elapsed = 0f;
-
-        while (elapsed < _arrivalDuration)
-        {
-            if (await NextFrame(token)) return true;
-            elapsed += Time.unscaledDeltaTime;
-            float ratio = Normalized(elapsed, _arrivalDuration);
-            AnimateArrivalSparks(ratio, Tint(color));
-            _resultRect.localScale = Vector3.one *
-                                     (_endScale * (1f + Mathf.Sin(ratio * Mathf.PI) * 0.28f));
-        }
-
-        _resultRect.localScale = Vector3.one * _endScale;
-        _arrivalEffectRoot.gameObject.SetActive(false);
-        return false;
-    }
+    // 1회와 5회가 함께 쓰는 비행 모양이다.
+    private GachaResultFlight Flight => new(_moveDuration, _moveArcRadius, _moveSpinTurns);
 
     private async UniTask<bool> Fade(float from, float to, float duration, CancellationToken token)
     {
@@ -1078,25 +701,9 @@ public sealed class GachaResultDirector : MonoBehaviour
         _canvasGroup.interactable = false;
         _canvasGroup.blocksRaycasts = false;
         _pullPanel.Hide();
+        _machineGrab.Stop();
         _machine.Hide();
         _root.SetActive(false);
-    }
-
-    private bool IsValidSlots()
-    {
-        if (_slots == null || _slots.Length == 0) return false;
-
-        foreach (ResultSlot slot in _slots)
-        {
-            if (slot == null || slot.Root == null || slot.Slime == null || slot.Outline == null ||
-                slot.Aura == null ||
-                slot.Name == null)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static async UniTask<bool> NextFrame(CancellationToken token) =>

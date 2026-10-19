@@ -20749,6 +20749,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 652026894}
+  - component: {fileID: 1987650001}
   m_Layer: 0
   m_Name: CapsulePile
   m_TagString: Untagged
@@ -41265,6 +41266,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1105918480}
+  - component: {fileID: 1987650004}
   m_Layer: 0
   m_Name: CapsuleLayer
   m_TagString: Untagged
@@ -47046,6 +47048,7 @@ GameObject:
   - component: {fileID: 1260754938}
   - component: {fileID: 1260754940}
   - component: {fileID: 1260754939}
+  - component: {fileID: 1987650002}
   m_Layer: 0
   m_Name: GachaMachine
   m_TagString: Untagged
@@ -47092,48 +47095,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GachaMachineView
   _machineRoot: {fileID: 1260754938}
   _machineGroup: {fileID: 1260754940}
-  _camera: {fileID: 1538130388}
+  _machineCamera: {fileID: 1987650003}
   _capsuleLayer: {fileID: 1105918480}
-  _pileLayer: {fileID: 652026894}
-  _pileCapsules:
-  - {fileID: 1842653426}
-  - {fileID: 266129251}
-  - {fileID: 1593530679}
-  - {fileID: 416965382}
-  - {fileID: 730414184}
-  - {fileID: 1043196770}
-  - {fileID: 1637154422}
-  - {fileID: 955347499}
-  - {fileID: 1983672740}
-  - {fileID: 1046226763}
-  - {fileID: 1157859302}
-  - {fileID: 1727336148}
-  - {fileID: 153689857}
-  - {fileID: 932701617}
-  - {fileID: 1054749147}
-  - {fileID: 150433202}
-  - {fileID: 1789564241}
-  - {fileID: 1188688688}
-  - {fileID: 1171159591}
-  - {fileID: 15489650}
-  - {fileID: 865335709}
-  - {fileID: 1257844137}
-  - {fileID: 1017069329}
-  - {fileID: 671316450}
-  - {fileID: 1755457071}
-  - {fileID: 431875504}
-  - {fileID: 525433654}
-  - {fileID: 326792060}
-  - {fileID: 639303324}
-  - {fileID: 882270105}
-  _capsuleSprites:
-  - {fileID: 21300000, guid: 6f87308b08a725d488d8f095922fb52b, type: 3}
-  - {fileID: 21300000, guid: 68dde38fe7bcae94fb2bae48307d4e34, type: 3}
-  - {fileID: 21300000, guid: 7e14c613ae1b0dc4488fcddc57f6f3d4, type: 3}
-  - {fileID: 21300000, guid: 49e33ff7b64850d4aa7168f04c973c41, type: 3}
-  - {fileID: 21300000, guid: 4c1fb92d9e4a1114b91e40828a93ed88, type: 3}
-  - {fileID: 21300000, guid: c18b6096bca42a342b9b8cf114f08caf, type: 3}
-  _rainbowCapsuleSprite: {fileID: 21300000, guid: 797624746a503ce4b8add6ae7011dead, type: 3}
+  _pile: {fileID: 1987650001}
   _ticketImage: {fileID: 1903020277}
   _ticketSlot: {fileID: 1915527516}
   _ticketPopScale: 1.25
@@ -47142,9 +47106,8 @@ MonoBehaviour:
   _flutterWaves: 2.5
   _flutterTilt: 30
   _flutterFlips: 2
-  _trailInterval: 0.04
-  _trailLife: 0.45
   _outlet: {fileID: 1427511517}
+  _lights: {fileID: 1987650004}
   _capsules:
   - Capsule: {fileID: 1214969029}
     Top: {fileID: 61829229}
@@ -47169,27 +47132,6 @@ MonoBehaviour:
   - {fileID: 1289205259}
   _slotCapsuleScale: 1.25
   _singleCapsuleScale: 1.8
-  _glow: {fileID: 122978346}
-  _twinkles:
-  - {fileID: 28109503}
-  - {fileID: 2035975603}
-  - {fileID: 1889651913}
-  - {fileID: 1271324692}
-  - {fileID: 498906715}
-  - {fileID: 1830591945}
-  - {fileID: 689064390}
-  - {fileID: 1881460999}
-  - {fileID: 1705164381}
-  - {fileID: 2056772524}
-  - {fileID: 1831242030}
-  - {fileID: 135507980}
-  _multiGlows:
-  - {fileID: 974183870}
-  - {fileID: 1398992064}
-  - {fileID: 44956033}
-  - {fileID: 1243939792}
-  - {fileID: 597250128}
-  _multiGlowScale: 0.6
   _appearDuration: 0.4
   _ticketPopDuration: 0.2
   _ticketFlyDuration: 0.9
@@ -47198,12 +47140,10 @@ MonoBehaviour:
   _splitDuration: 0.5
   _multiDropStagger: 0.22
   _multiChargeRatio: 0.6
-  _cameraPull: 1.35
   _ticketZoom: 1.12
   _shuffleZoom: 1.32
   _chargeZoom: 1.45
   _seamFraction: 0.56
-  _glowBaseScale: 1
 --- !u!225 &1260754940
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -55124,6 +55064,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1538130388}
+  - component: {fileID: 1987650003}
   m_Layer: 0
   m_Name: MachineCamera
   m_TagString: Untagged
@@ -72733,7 +72674,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -74785,6 +74726,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2101000002}
   - component: {fileID: 2101000003}
+  - component: {fileID: 1987650005}
+  - component: {fileID: 1987650006}
   m_Layer: 5
   m_Name: GachaResultDirector
   m_TagString: Untagged
@@ -74826,77 +74769,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GachaResultDirector
   _root: {fileID: 2101000010}
   _canvasGroup: {fileID: 2101000014}
-  _resultImage: {fileID: 2101000032}
-  _resultOutline: {fileID: 2101000034}
-  _resultAura: {fileID: 1985179996}
+  _singleResult: {fileID: 1987650006}
   _clicker: {fileID: 115063078}
   _slimeManager: {fileID: 376498428}
   _currencyManager: {fileID: 1577494349}
   _spawnManager: {fileID: 1271333080}
   _gameExitManager: {fileID: 286711904}
   _machine: {fileID: 1260754939}
+  _machineGrab: {fileID: 1987650002}
   _pullPanel: {fileID: 2058443052}
   _tapButton: {fileID: 1699911480}
   _tapPrompt: {fileID: 1344641993}
-  _resultNameText: {fileID: 79168860}
-  _arrivalEffectRoot: {fileID: 422885817}
-  _arrivalSparks:
-  - {fileID: 2001899593}
-  - {fileID: 1186686284}
-  - {fileID: 789995578}
-  - {fileID: 1862275542}
-  - {fileID: 137838050}
-  - {fileID: 2120410325}
-  - {fileID: 1484982967}
-  - {fileID: 872060256}
-  - {fileID: 772474141}
-  - {fileID: 257241665}
-  - {fileID: 1015739150}
-  - {fileID: 610738556}
-  - {fileID: 83140976}
-  - {fileID: 1270815351}
-  _slots:
-  - Root: {fileID: 1857500686}
-    Slime: {fileID: 905449757}
-    Outline: {fileID: 905449759}
-    Aura: {fileID: 319216539}
-    Name: {fileID: 303165410}
-  - Root: {fileID: 948755447}
-    Slime: {fileID: 1344203277}
-    Outline: {fileID: 1344203279}
-    Aura: {fileID: 152785237}
-    Name: {fileID: 911449221}
-  - Root: {fileID: 526439980}
-    Slime: {fileID: 1521976203}
-    Outline: {fileID: 1521976205}
-    Aura: {fileID: 89469859}
-    Name: {fileID: 449211289}
-  - Root: {fileID: 2057308437}
-    Slime: {fileID: 1239493134}
-    Outline: {fileID: 1239493136}
-    Aura: {fileID: 1693801238}
-    Name: {fileID: 953883566}
-  - Root: {fileID: 1289205259}
-    Slime: {fileID: 1604705752}
-    Outline: {fileID: 1604705754}
-    Aura: {fileID: 907379080}
-    Name: {fileID: 773545058}
+  _resultSlots: {fileID: 1987650005}
   _openAllButton: {fileID: 1231557536}
-  _slotEmergeSeconds: 0.5
-  _flyStagger: 0.18
   _fadeDuration: 0.3
-  _emergeDuration: 0.45
-  _revealDuration: 0.6
   _holdDuration: 0.75
   _moveDuration: 0.9
-  _arrivalDuration: 0.45
-  _emergeScale: 1.35
-  _revealScale: 2
-  _endScale: 0.5
-  _nameSlideDistance: 180
   _moveArcRadius: 160
   _moveSpinTurns: 3
-  _emergeRise: 80
 --- !u!1 &2101000010
 GameObject:
   m_ObjectHideFlags: 0
@@ -80724,6 +80614,212 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 506e6c05478550744ac98064bc588319, type: 3}
+--- !u!114 &1987650001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652026893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27245050565155541ba54cc9a2d78524, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _capsules:
+  - {fileID: 1842653426}
+  - {fileID: 266129251}
+  - {fileID: 1593530679}
+  - {fileID: 416965382}
+  - {fileID: 730414184}
+  - {fileID: 1043196770}
+  - {fileID: 1637154422}
+  - {fileID: 955347499}
+  - {fileID: 1983672740}
+  - {fileID: 1046226763}
+  - {fileID: 1157859302}
+  - {fileID: 1727336148}
+  - {fileID: 153689857}
+  - {fileID: 932701617}
+  - {fileID: 1054749147}
+  - {fileID: 150433202}
+  - {fileID: 1789564241}
+  - {fileID: 1188688688}
+  - {fileID: 1171159591}
+  - {fileID: 15489650}
+  - {fileID: 865335709}
+  - {fileID: 1257844137}
+  - {fileID: 1017069329}
+  - {fileID: 671316450}
+  - {fileID: 1755457071}
+  - {fileID: 431875504}
+  - {fileID: 525433654}
+  - {fileID: 326792060}
+  - {fileID: 639303324}
+  - {fileID: 882270105}
+  _capsuleSprites:
+  - {fileID: 21300000, guid: 6f87308b08a725d488d8f095922fb52b, type: 3}
+  - {fileID: 21300000, guid: 68dde38fe7bcae94fb2bae48307d4e34, type: 3}
+  - {fileID: 21300000, guid: 7e14c613ae1b0dc4488fcddc57f6f3d4, type: 3}
+  - {fileID: 21300000, guid: 49e33ff7b64850d4aa7168f04c973c41, type: 3}
+  - {fileID: 21300000, guid: 4c1fb92d9e4a1114b91e40828a93ed88, type: 3}
+  - {fileID: 21300000, guid: c18b6096bca42a342b9b8cf114f08caf, type: 3}
+  _colliderRatio: 0.6
+  _visibleCount: 24
+  _gravity: 2600
+  _kickSpeed: 1300
+  _maxTilt: 45
+  _minScale: 0.85
+--- !u!114 &1987650002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1260754937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 087d8742680b42740b8eb697fe14ab87, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _machineRoot: {fileID: 1260754938}
+  _machineGroup: {fileID: 1260754940}
+  _pile: {fileID: 1987650001}
+  _range: 150
+  _inertia: 0.6
+  _rattle: 0.1
+  _maxTilt: 12
+  _hintDelay: 4
+  _hintAmplitude: 18
+--- !u!114 &1987650003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1538130387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 423949c0115cc874daee65f006bfc2fe, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _pull: 1.35
+--- !u!114 &1987650004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1105918479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 105273727b0b8ff44ae1c08959ca00d1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _glow: {fileID: 122978346}
+  _twinkles:
+  - {fileID: 28109503}
+  - {fileID: 2035975603}
+  - {fileID: 1889651913}
+  - {fileID: 1271324692}
+  - {fileID: 498906715}
+  - {fileID: 1830591945}
+  - {fileID: 689064390}
+  - {fileID: 1881460999}
+  - {fileID: 1705164381}
+  - {fileID: 2056772524}
+  - {fileID: 1831242030}
+  - {fileID: 135507980}
+  _multiGlows:
+  - {fileID: 974183870}
+  - {fileID: 1398992064}
+  - {fileID: 44956033}
+  - {fileID: 1243939792}
+  - {fileID: 597250128}
+  _multiGlowScale: 0.6
+  _glowBaseScale: 1
+  _trailInterval: 0.04
+  _trailLife: 0.45
+--- !u!114 &1987650005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1189a7be416876446ba5b8c00ee71744, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _slots:
+  - Root: {fileID: 1857500686}
+    Slime: {fileID: 905449757}
+    Outline: {fileID: 905449759}
+    Aura: {fileID: 319216539}
+    Name: {fileID: 303165410}
+  - Root: {fileID: 948755447}
+    Slime: {fileID: 1344203277}
+    Outline: {fileID: 1344203279}
+    Aura: {fileID: 152785237}
+    Name: {fileID: 911449221}
+  - Root: {fileID: 526439980}
+    Slime: {fileID: 1521976203}
+    Outline: {fileID: 1521976205}
+    Aura: {fileID: 89469859}
+    Name: {fileID: 449211289}
+  - Root: {fileID: 2057308437}
+    Slime: {fileID: 1239493134}
+    Outline: {fileID: 1239493136}
+    Aura: {fileID: 1693801238}
+    Name: {fileID: 953883566}
+  - Root: {fileID: 1289205259}
+    Slime: {fileID: 1604705752}
+    Outline: {fileID: 1604705754}
+    Aura: {fileID: 907379080}
+    Name: {fileID: 773545058}
+  _slotEmergeSeconds: 0.5
+  _flyStagger: 0.18
+--- !u!114 &1987650006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6db5c7b91beada944bbdba32a8b4cb14, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _resultImage: {fileID: 2101000032}
+  _resultOutline: {fileID: 2101000034}
+  _resultAura: {fileID: 1985179996}
+  _resultNameText: {fileID: 79168860}
+  _arrivalEffectRoot: {fileID: 422885817}
+  _arrivalSparks:
+  - {fileID: 2001899593}
+  - {fileID: 1186686284}
+  - {fileID: 789995578}
+  - {fileID: 1862275542}
+  - {fileID: 137838050}
+  - {fileID: 2120410325}
+  - {fileID: 1484982967}
+  - {fileID: 872060256}
+  - {fileID: 772474141}
+  - {fileID: 257241665}
+  - {fileID: 1015739150}
+  - {fileID: 610738556}
+  - {fileID: 83140976}
+  - {fileID: 1270815351}
+  _emergeDuration: 0.45
+  _revealDuration: 0.6
+  _arrivalDuration: 0.45
+  _emergeScale: 1.35
+  _revealScale: 2
+  _endScale: 0.5
+  _nameSlideDistance: 180
+  _emergeRise: 80
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
