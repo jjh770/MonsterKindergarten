@@ -48,6 +48,16 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _specialSlimeSubtitle = "뭔가 특별해 보여요...!";
     [SerializeField] private string _ticketObtained = "뽑기권 획득!";
 
+    [Header("탐험")]
+    [Tooltip("탐험이 끝났을 때 띄우는 토스트입니다. {0}에 탐험지 이름이 들어갑니다.")]
+    [SerializeField] private string _expeditionReturned = "{0}에서 슬라임들이 돌아왔어요!";
+    [SerializeField] private string _expeditionChooseParty = "아래 목록에서 함께 떠날 슬라임 3종을 골라 주세요.";
+    [Tooltip("탐험 화면에서 고른 탐험지가 떠나 있을 때의 안내입니다. {0}에 탐험지 이름이 들어갑니다.")]
+    [SerializeField] private string _expeditionInProgress = "{0} 중이에요. 돌아오면 보상을 받을 수 있어요.";
+    [SerializeField] private string _expeditionReadyToClaim = "슬라임들이 돌아왔어요! 보상을 받아 주세요.";
+    [Tooltip("돌아온 탐험지 탭에 시간 대신 쓰는 짧은 말입니다.")]
+    [SerializeField] private string _expeditionArrived = "도착!";
+
     [Header("광고")]
     [SerializeField] private string _adNotReady = "지금은 볼 수 있는 광고가 없어요.";
     [SerializeField] private string _adLimitReached = "오늘은 모두 봤어요.";
@@ -86,6 +96,11 @@ public sealed class UiMessagesSO : ScriptableObject
     public string MachineCapsuleTap => _machineCapsuleTap;
     public string SpecialSlimeSubtitle => _specialSlimeSubtitle;
     public string TicketObtained => _ticketObtained;
+    public string ExpeditionReturned => _expeditionReturned;
+    public string ExpeditionChooseParty => _expeditionChooseParty;
+    public string ExpeditionInProgress => _expeditionInProgress;
+    public string ExpeditionReadyToClaim => _expeditionReadyToClaim;
+    public string ExpeditionArrived => _expeditionArrived;
     public string AdNotReady => _adNotReady;
     public string AdLimitReached => _adLimitReached;
     public string AdBoostFull => _adBoostFull;

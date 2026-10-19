@@ -21,6 +21,8 @@ public sealed class ExpeditionUI : MonoBehaviour
         public TextMeshProUGUI TimeLabel;
         public GameObject LockRoot;
         public TextMeshProUGUI LockLabel;
+        [Tooltip("보상을 받을 수 있을 때 탭에 띄우는 느낌표입니다.")]
+        public GameObject AlertRoot;
         public ExpeditionDestination CreateRules() => new(Type, Array.Empty<ESlimeGrade>(), freeParty: true);
     }
 
@@ -63,6 +65,9 @@ public sealed class ExpeditionUI : MonoBehaviour
     private bool _recoveryAttempted;
     private bool _recoverySucceeded;
     private float _nextRefresh;
+    // 안내 문구가 고른 탐험지의 상태를 따라가는 중이다. 보상, 출발, 오류처럼 일이 생겨 띄운 안내는
+    // 따라가지 않고 그대로 둔다.
+    private bool _noticeFollowsState;
 
     private void Start()
     {
@@ -73,7 +78,8 @@ public sealed class ExpeditionUI : MonoBehaviour
             _destinations == null || _destinations.Length != 3 || _party == null ||
             _destinationImage == null || _destinationArea == null || _destinationPresentation == null ||
             _memberHeading == null || _memberButtons == null || _memberButtons.Length != 20 || _memberImages == null || _memberImages.Length != 20 ||
-            _memberLabels == null || _memberLabels.Length != 20 || _nameText == null)
+            _memberLabels == null || _memberLabels.Length != 20 || _nameText == null ||
+            _destinations.Any(view => view.AlertRoot == null))
         {
             Debug.LogError("탐험 화면의 필수 참조가 비어 있어요.", this);
             enabled = false;
@@ -158,7 +164,11 @@ public sealed class ExpeditionUI : MonoBehaviour
             _recoverySucceeded = _service.TryRecoverSettlement();
             _party.Clear();
             _group.interactable = true;
-            _notice.text = _recoverySucceeded ? "탐험에 보낼 슬라임을 골라 주세요." : "탐험 지급 기록을 확인할 수 없어 출발과 수령을 잠시 멈췄어요.";
+            // 받을 보상이 있으면 그 탐험지를 바로 보여 준다.
+            int ready = FindReadyDestination();
+            if (ready >= 0) _destinationIndex = ready;
+            if (_recoverySucceeded) ShowStateNotice();
+            else ShowEventNotice("탐험 지급 기록을 확인할 수 없어 출발과 수령을 잠시 멈췄어요.");
             _isOpen = true;
             DisplayRoomCameraInputGate.Push(this);
             _session.Enter(ClickerInputMode.Blocked, ClickerInputPriority.Modal, TryClose, true);
@@ -194,7 +204,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _party.ReturnAll(() =>
         {
             _destinationIndex = index;
-            _notice.text = "아래 목록에서 함께 떠날 슬라임 3종을 골라 주세요.";
+            ShowStateNotice();
             Refresh();
         });
         Refresh();
@@ -213,7 +223,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         SlimeInstance member = _candidates[index];
         if (!CanSelect(member) || FindRun(_destinations[_destinationIndex].CreateRules()) != null) return;
         if (!_party.TrySelect(member, (RectTransform)_memberImages[index].transform, _slimes, Refresh))
-            _notice.text = "서로 다른 3종을 골라 주세요. 위 아이콘을 누르면 편성을 취소해요.";
+            ShowEventNotice("서로 다른 3종을 골라 주세요. 위 아이콘을 누르면 편성을 취소해요.");
         Refresh();
     }
 
@@ -250,11 +260,11 @@ public sealed class ExpeditionUI : MonoBehaviour
             if (_service.TryClaim(run.RunId, out ExpeditionReward reward))
             {
                 // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
-                _notice.text = $"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장" +
+                ShowEventNotice($"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장" +
                     (reward.Decoration.HasValue ? $" | {DecorationName(reward.Decoration.Value)} 발견!" +
-                        (alreadyOwned ? " (이미 보유 중이에요)" : string.Empty) : string.Empty);
+                        (alreadyOwned ? " (이미 보유 중이에요)" : string.Empty) : string.Empty));
             }
-            else _notice.text = "아직 도착 전이거나 지급 기록을 확인할 수 없어요.";
+            else ShowEventNotice("아직 도착 전이거나 지급 기록을 확인할 수 없어요.");
         }
         else
         {
@@ -264,7 +274,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             ExpeditionReward reward = _rewards.Roll(members, rules.Duration, view.Tickets, view.DecorationChance);
             _departing = true;
             bool started = _service.TryStart(rules, members.Select(member => member.InstanceId).ToArray(), reward);
-            _notice.text = started ? "탐험을 떠났어요. 돌아오면 보상을 받을 수 있어요." : "지금은 출발할 수 없어요. 편성과 탐험 상태를 다시 확인해 주세요.";
+            ShowEventNotice(started ? "탐험을 떠났어요. 돌아오면 보상을 받을 수 있어요." : "지금은 출발할 수 없어요. 편성과 탐험 상태를 다시 확인해 주세요.");
             if (started)
             {
                 _group.interactable = false;
@@ -292,7 +302,12 @@ public sealed class ExpeditionUI : MonoBehaviour
             item.Button.image.sprite = i == _destinationIndex ? _selectedDestinationTabSprite : _destinationTabSprite;
             item.Button.image.color = Color.white;
             item.Label.text = item.Name;
-            item.TimeLabel.text = $"{2 << i}시간";
+            // 비어 있으면 걸리는 시간, 떠나 있으면 남은 시간, 돌아왔으면 도착을 보여 준다.
+            bool returned = active != null && active.IsReadyToReturn(ServerClock.TrustedUtcNow);
+            item.TimeLabel.text = active == null
+                ? $"{(int)item.CreateRules().Duration.TotalHours}시간"
+                : returned ? UiMessages.ExpeditionArrived : Remaining(active);
+            item.AlertRoot.SetActive(returned);
             item.LockRoot.SetActive(!unlockedTab);
             item.LockLabel.text = $"도감 {item.CreateRules().RequiredCollectionCount}종\n해금 필요";
         }
@@ -328,6 +343,57 @@ public sealed class ExpeditionUI : MonoBehaviour
         _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 추가 기념품 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
+        if (_noticeFollowsState) _notice.text = GetStateNotice();
+    }
+
+    private void ShowStateNotice()
+    {
+        _noticeFollowsState = true;
+        _notice.text = GetStateNotice();
+    }
+
+    private void ShowEventNotice(string text)
+    {
+        _noticeFollowsState = false;
+        _notice.text = text;
+    }
+
+    // 고른 탐험지가 비어 있으면 편성 안내, 떠나 있으면 탐험 중, 돌아왔으면 보상을 받으라는 안내다.
+    private string GetStateNotice()
+    {
+        DestinationView view = _destinations[_destinationIndex];
+        ExpeditionRun run = FindRun(view.CreateRules());
+        if (run == null) return UiMessages.ExpeditionChooseParty;
+
+        return run.IsReadyToReturn(ServerClock.TrustedUtcNow)
+            ? UiMessages.ExpeditionReadyToClaim
+            : string.Format(UiMessages.ExpeditionInProgress, view.Name);
+    }
+
+    // 보상을 받을 수 있는 첫 탐험지다. 없으면 -1이다.
+    private int FindReadyDestination()
+    {
+        for (int i = 0; i < _destinations.Length; i++)
+        {
+            ExpeditionRun run = FindRun(_destinations[i].CreateRules());
+            if (run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow)) return i;
+        }
+
+        return -1;
+    }
+
+    // 탐험지 이름은 이 화면의 목적지 카드에만 있다. 알 수 없는 목적지는 기존 1팀 저장의 것이라 짧은
+    // 탐험 카드로 수령하므로(FindRun) 그 이름을 쓴다.
+    public string GetDestinationName(string destinationId)
+    {
+        if (_destinations == null || _destinations.Length == 0) return string.Empty;
+
+        foreach (DestinationView view in _destinations)
+        {
+            if (view.CreateRules().DestinationId == destinationId) return view.Name;
+        }
+
+        return _destinations[0].Name;
     }
 
     private static string Remaining(ExpeditionRun run)

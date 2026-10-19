@@ -167,10 +167,11 @@ public class ContentAssetTests
         Assert.IsEmpty(silent, string.Join("\n", silent));
     }
 
-    // 뽑기 기계는 여러 컴포넌트가 씬 참조로 서로를 잡는다. 하나라도 비면 Awake가 스스로를 꺼서
-    // 화면은 열리는데 통이 움직이지 않는다. 컴포넌트를 나누거나 옮길 때 빠뜨린 연결을 잡는다.
+    // 뽑기 기계와 탐험 알림은 여러 컴포넌트가 씬 참조로 서로를 잡는다. 하나라도 비면 Awake가 스스로를
+    // 꺼서 화면은 열리는데 통이 움직이지 않거나 알림이 뜨지 않는다. 컴포넌트를 나누거나 옮길 때 빠뜨린
+    // 연결을 잡는다.
     [Test]
-    public void 뽑기_기계_컴포넌트의_씬_참조가_모두_연결돼_있다()
+    public void 뽑기_기계와_탐험_알림_컴포넌트의_씬_참조가_모두_연결돼_있다()
     {
         var types = new[]
         {
@@ -181,6 +182,8 @@ public class ContentAssetTests
             typeof(GachaMachineLights),
             typeof(GachaResultSlots),
             typeof(GachaSingleResult),
+            typeof(ExpeditionReturnNotifier),
+            typeof(ExpeditionUI),
             typeof(GachaCapsulePileView),
         };
         var found = new HashSet<Type>();

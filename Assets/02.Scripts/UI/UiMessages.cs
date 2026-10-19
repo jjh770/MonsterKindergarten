@@ -99,4 +99,9 @@ public static class UiMessages
     public static string AdClosedEarly => Source.AdClosedEarly;
     public static string AdBoostRewarded => Source.AdBoostRewarded;
     public static string AdTicketRewarded => Source.AdTicketRewarded;
+    public static string ExpeditionReturned => Source.ExpeditionReturned;
+    public static string ExpeditionChooseParty => Source.ExpeditionChooseParty;
+    public static string ExpeditionInProgress => Source.ExpeditionInProgress;
+    public static string ExpeditionReadyToClaim => Source.ExpeditionReadyToClaim;
+    public static string ExpeditionArrived => Source.ExpeditionArrived;
 }
