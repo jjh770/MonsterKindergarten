@@ -630,6 +630,7 @@ GameObject:
   - component: {fileID: 187369356}
   - component: {fileID: 187369355}
   - component: {fileID: 187369354}
+  - component: {fileID: 187369357}
   m_Layer: 5
   m_Name: DeclineButton
   m_TagString: Untagged
@@ -739,6 +740,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 187369352}
   m_CullTransparentMesh: 1
+--- !u!114 &187369357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187369352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &219335799
 GameObject:
   m_ObjectHideFlags: 0
@@ -1181,6 +1195,7 @@ GameObject:
   - component: {fileID: 374774029}
   - component: {fileID: 374774028}
   - component: {fileID: 374774027}
+  - component: {fileID: 374774030}
   m_Layer: 5
   m_Name: LinkButton
   m_TagString: Untagged
@@ -1290,6 +1305,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 374774025}
   m_CullTransparentMesh: 1
+--- !u!114 &374774030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374774025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &513705679
 GameObject:
   m_ObjectHideFlags: 0
@@ -2331,6 +2359,7 @@ GameObject:
   - component: {fileID: 853576048}
   - component: {fileID: 853576047}
   - component: {fileID: 853576046}
+  - component: {fileID: 853576049}
   m_Layer: 5
   m_Name: LinkButton
   m_TagString: Untagged
@@ -2440,6 +2469,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 853576044}
   m_CullTransparentMesh: 1
+--- !u!114 &853576049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 853576044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &883732195
 GameObject:
   m_ObjectHideFlags: 0
@@ -2966,6 +3008,7 @@ GameObject:
   - component: {fileID: 1112870061}
   - component: {fileID: 1112870060}
   - component: {fileID: 1112870059}
+  - component: {fileID: 1112870062}
   m_Layer: 5
   m_Name: StartButton
   m_TagString: Untagged
@@ -3075,6 +3118,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1112870057}
   m_CullTransparentMesh: 1
+--- !u!114 &1112870062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1112870057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1145770634
 GameObject:
   m_ObjectHideFlags: 0
@@ -5350,6 +5406,7 @@ GameObject:
   - component: {fileID: 1761755684}
   - component: {fileID: 1761755683}
   - component: {fileID: 1761755682}
+  - component: {fileID: 1761755685}
   m_Layer: 5
   m_Name: AgreeAllButton
   m_TagString: Untagged
@@ -5459,6 +5516,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1761755680}
   m_CullTransparentMesh: 1
+--- !u!114 &1761755685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1761755680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1795975018
 GameObject:
   m_ObjectHideFlags: 0
@@ -6150,6 +6220,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1225999966}
     m_Modifications:
+    - target: {fileID: 364077924509357297, guid: 0c61fa08893f2b047b970de85dd213fc, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 418694483698405557, guid: 0c61fa08893f2b047b970de85dd213fc, type: 3}
       propertyPath: m_Name
       value: LegalDocumentUI

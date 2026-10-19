@@ -84,6 +84,7 @@ GameObject:
   - component: {fileID: 8682187413775110610}
   - component: {fileID: 45118395017213413}
   - component: {fileID: 6999163536675683216}
+  - component: {fileID: 4971236451078938981}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -193,6 +194,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4971236451078938981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087259644142588167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &2578488832177103845
 GameObject:
   m_ObjectHideFlags: 0
@@ -852,6 +866,7 @@ GameObject:
   - component: {fileID: 4840421869743461577}
   - component: {fileID: 8895681568218372982}
   - component: {fileID: 7115569847887017105}
+  - component: {fileID: 7890958911229941452}
   m_Layer: 5
   m_Name: WebButton
   m_TagString: Untagged
@@ -961,6 +976,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7890958911229941452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7105543633836645212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &8148449671615243172
 GameObject:
   m_ObjectHideFlags: 0
