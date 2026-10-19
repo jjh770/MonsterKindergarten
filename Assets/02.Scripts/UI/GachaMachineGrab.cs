@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 // 뽑기 버튼을 고르는 동안 통을 잡고 좌우로 흔들게 한다. 기계 오브젝트(GachaMachine)에 붙는다.
 //
@@ -13,6 +14,9 @@ using UnityEngine.EventSystems;
 // 드래그는 기계 그림 아래에서만 받는다. 이 오브젝트 아래에는 버튼이 없어서, 드래그 처리기가 버튼의
 // 탭을 취소하는 문제가 생기지 않는다. 결과 캡슐 버튼은 형제인 캡슐 층에 있다. 기계의 CanvasGroup은
 // 평소 터치를 막지 않게 되어 있어서, 잡을 수 있는 동안에만 터치를 받게 켠다.
+//
+// 직접 끌어 흔드는 동안에는 몸체 그림을 어지러워하는 얼굴(_dizzySprite)로 바꾸고, 그 흔들림이 멎으면
+// 원래 그림으로 돌린다. 누르기만 하거나 혼자 떠는 안내 떨림에는 바꾸지 않는다.
 //
 // 잡는 동안에는 이 컴포넌트가 기계의 위치와 기울기를 쓴다. 나타나기와 배출 같은 다른 연출은 잡기가
 // 꺼진 뒤에만 기계를 움직인다.
@@ -37,6 +41,10 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     [SerializeField, Min(0.5f)] private float _hintDelay = 4f;
     [Tooltip("혼자 떨 때 좌우로 움직이는 거리입니다.")]
     [SerializeField, Min(0f)] private float _hintAmplitude = 18f;
+    [Tooltip("기계 몸체 그림입니다. 직접 끌어 흔드는 동안 그림을 바꿉니다.")]
+    [SerializeField] private Image _body;
+    [Tooltip("직접 끌어 흔드는 동안 몸체에 쓰는 그림입니다. 원래 그림과 크기와 배치가 같아야 합니다.")]
+    [SerializeField] private Sprite _dizzySprite;
 
     // 통의 용수철. 잡았을 때와 돌아갈 때는 바로 따라가고, 놓았을 때만 덜 감쇠해서 출렁인다.
     private const float StepSeconds = 1f / 120f;
@@ -45,6 +53,11 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     private const float ReleaseDampingRatio = 0.18f;
     private const float ReturnStiffness = 500f;
     private const float ReturnTimeoutSeconds = 0.45f;
+    // 이만큼 가까이, 이만큼 느리게 움직이면 멈춘 것으로 본다.
+    private const float RestDistance = 0.5f;
+    private const float RestSpeed = 5f;
+    // 손가락이 이만큼 움직여야 끌기로 본다. 누르기만 해서는 그림을 바꾸지 않는다.
+    private const float DragStartDistance = 4f;
     // 속도 1단위/초마다 기우는 각도. 움직이는 쪽 반대로 윗부분이 처진다.
     private const float TiltPerSpeed = 0.008f;
     private const float MaxFrameAcceleration = 20000f;
@@ -71,11 +84,14 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     private float _idleTime;
     private float _hintElapsed = -1f;
     private Vector2 _rest;
+    private Sprite _bodySprite;
+    private bool _dizzy;
     private bool _isReady;
 
     private void Awake()
     {
-        if (_machineRoot == null || _machineGroup == null || _pile == null)
+        if (_machineRoot == null || _machineGroup == null || _pile == null ||
+            _body == null || _dizzySprite == null)
         {
             Debug.LogError("뽑기 통 잡기의 필수 참조가 비어 있습니다.", this);
             enabled = false;
@@ -83,6 +99,7 @@ public sealed class GachaMachineGrab : MonoBehaviour,
         }
 
         _rest = _machineRoot.anchoredPosition;
+        _bodySprite = _body.sprite;
         _isReady = true;
     }
 
@@ -124,8 +141,7 @@ public sealed class GachaMachineGrab : MonoBehaviour,
         SetGrabbable(false);
         _returning = true;
         float waited = 0f;
-        while (waited < ReturnTimeoutSeconds &&
-               (Mathf.Abs(_shakeX) > 0.5f || Mathf.Abs(_velocity) > 5f))
+        while (waited < ReturnTimeoutSeconds && !IsAtRest())
         {
             if (await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow())
             {
@@ -159,6 +175,7 @@ public sealed class GachaMachineGrab : MonoBehaviour,
         _machineRoot.localRotation = Quaternion.identity;
         _machineGroup.blocksRaycasts = false;
         _pile.SetFrameAcceleration(Vector2.zero);
+        SetDizzy(false);
     }
 
     public void OnInitializePotentialDrag(PointerEventData eventData)
@@ -185,6 +202,8 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     {
         if (!_grabbing || eventData.pointerId != _pointerId) return;
         if (!TryGetLocalX(eventData, out float localX)) return;
+
+        if (!_dizzy && Mathf.Abs(localX - _startLocalX) >= DragStartDistance) SetDizzy(true);
 
         // 끝에 가까울수록 고무줄처럼 버틴다.
         float raw = _startOffset + (localX - _startLocalX);
@@ -243,6 +262,9 @@ public sealed class GachaMachineGrab : MonoBehaviour,
             _shakeX += _velocity * StepSeconds;
         }
 
+        // 끌어서 생긴 흔들림이 멎으면 원래 그림으로 돌린다.
+        if (_dizzy && !_grabbing && IsAtRest()) SetDizzy(false);
+
         float tilt = Mathf.Clamp(_velocity * TiltPerSpeed, -_maxTilt, _maxTilt);
         _machineRoot.anchoredPosition = _rest + new Vector2(_shakeX, 0f);
         _machineRoot.localRotation = Quaternion.Euler(0f, 0f, tilt);
@@ -263,6 +285,17 @@ public sealed class GachaMachineGrab : MonoBehaviour,
             _rattleClock = 0f;
             _pile.Kick(jolt * _rattle);
         }
+    }
+
+    private bool IsAtRest()
+    {
+        return Mathf.Abs(_shakeX) <= RestDistance && Mathf.Abs(_velocity) <= RestSpeed;
+    }
+
+    private void SetDizzy(bool dizzy)
+    {
+        _dizzy = dizzy;
+        _body.sprite = dizzy ? _dizzySprite : _bodySprite;
     }
 
     // 잡고 있으면 손가락, 돌아가는 중이면 제자리다. 그 밖에는 한동안 잡지 않을 때 잠깐 부르르 떤다.
