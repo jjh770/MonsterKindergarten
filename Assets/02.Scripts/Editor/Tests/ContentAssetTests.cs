@@ -167,6 +167,52 @@ public class ContentAssetTests
         Assert.IsEmpty(silent, string.Join("\n", silent));
     }
 
+    // 뽑기 기계는 여러 컴포넌트가 씬 참조로 서로를 잡는다. 하나라도 비면 Awake가 스스로를 꺼서
+    // 화면은 열리는데 통이 움직이지 않는다. 컴포넌트를 나누거나 옮길 때 빠뜨린 연결을 잡는다.
+    [Test]
+    public void 뽑기_기계_컴포넌트의_씬_참조가_모두_연결돼_있다()
+    {
+        var types = new[]
+        {
+            typeof(GachaResultDirector),
+            typeof(GachaMachineView),
+            typeof(GachaMachineGrab),
+            typeof(GachaMachineCamera),
+            typeof(GachaMachineLights),
+            typeof(GachaResultSlots),
+            typeof(GachaSingleResult),
+            typeof(GachaCapsulePileView),
+        };
+        var found = new HashSet<Type>();
+        var missing = new List<string>();
+        ForEachSceneRoot(root =>
+        {
+            foreach (Type type in types)
+            {
+                foreach (Component component in root.GetComponentsInChildren(type, true))
+                {
+                    found.Add(type);
+                    var serialized = new SerializedObject(component);
+                    SerializedProperty property = serialized.GetIterator();
+                    while (property.NextVisible(true))
+                    {
+                        if (property.propertyType != SerializedPropertyType.ObjectReference) continue;
+                        if (property.name == "m_Script" || property.objectReferenceValue != null) continue;
+
+                        missing.Add($"{type.Name}.{property.propertyPath} ({PathOf(component.transform)})");
+                    }
+                }
+            }
+        });
+
+        foreach (Type type in types)
+        {
+            Assert.IsTrue(found.Contains(type), $"GameScene에 {type.Name}가 없다");
+        }
+
+        Assert.IsEmpty(missing, string.Join("\n", missing));
+    }
+
     // 코드에서 조립하는 문구는 에셋 검사에 걸리지 않는다. 가운데점은 두 글꼴 모두에 없는데
     // 탐험 화면과 도감이 코드 문자열로 썼다가 빈칸으로 그려졌다.
     [Test]
