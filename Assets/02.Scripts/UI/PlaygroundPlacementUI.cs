@@ -289,8 +289,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
         if (_guideText == null) return;
 
-        if (_selectedIndex >= 0) _guideText.text = "옮기려면 끌고, 치우려면 버튼을 누르세요.";
-        else if (_hasSelectedType) _guideText.text = "놓을 자리를 누르세요.";
+        if (_selectedIndex >= 0) _guideText.text = "끌어서 옮기거나, 치우기 버튼을 눌러 보세요.";
+        else if (_hasSelectedType) _guideText.text = "놓을 자리를 눌러 보세요.";
         else _guideText.text = "놓을 것을 고르거나, 놓인 것을 눌러 보세요.";
     }
 

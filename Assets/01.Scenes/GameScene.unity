@@ -2305,7 +2305,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uAF43\uBC2D \uC0B0\uCC45 \xB7 \uD3B8\uC131 0/3"
+  m_text: "\uAF43\uBC2D \uC0B0\uCC45 | \uD3B8\uC131 0/3"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: -3477253883998594788, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
@@ -2397,6 +2397,7 @@ GameObject:
   - component: {fileID: 65347093}
   - component: {fileID: 65347092}
   - component: {fileID: 65347091}
+  - component: {fileID: 65347094}
   m_Layer: 5
   m_Name: ActionButton
   m_TagString: Untagged
@@ -2506,6 +2507,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 65347089}
   m_CullTransparentMesh: 1
+--- !u!114 &65347094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 65347089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &65391094
 GameObject:
   m_ObjectHideFlags: 0
@@ -4182,6 +4196,7 @@ GameObject:
   - component: {fileID: 114941625}
   - component: {fileID: 114941624}
   - component: {fileID: 114941623}
+  - component: {fileID: 114941626}
   m_Layer: 5
   m_Name: StoredSlime19
   m_TagString: Untagged
@@ -4292,6 +4307,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 114941621}
   m_CullTransparentMesh: 1
+--- !u!114 &114941626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114941621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &115063077
 GameObject:
   m_ObjectHideFlags: 0
@@ -5819,6 +5847,7 @@ GameObject:
   - component: {fileID: 168682973}
   - component: {fileID: 168682972}
   - component: {fileID: 168682971}
+  - component: {fileID: 168682974}
   m_Layer: 5
   m_Name: StoredSlime14
   m_TagString: Untagged
@@ -5929,6 +5958,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 168682969}
   m_CullTransparentMesh: 1
+--- !u!114 &168682974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168682969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &169375698
 GameObject:
   m_ObjectHideFlags: 0
@@ -11192,6 +11234,7 @@ GameObject:
   - component: {fileID: 360011584}
   - component: {fileID: 360011583}
   - component: {fileID: 360011582}
+  - component: {fileID: 360011585}
   m_Layer: 5
   m_Name: StoredSlime17
   m_TagString: Untagged
@@ -11302,6 +11345,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 360011580}
   m_CullTransparentMesh: 1
+--- !u!114 &360011585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360011580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &360699709
 GameObject:
   m_ObjectHideFlags: 0
@@ -13661,6 +13717,7 @@ GameObject:
   - component: {fileID: 449271974}
   - component: {fileID: 449271973}
   - component: {fileID: 449271972}
+  - component: {fileID: 449271975}
   m_Layer: 5
   m_Name: StoredSlime1
   m_TagString: Untagged
@@ -13771,6 +13828,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 449271970}
   m_CullTransparentMesh: 1
+--- !u!114 &449271975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 449271970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &453603081
 GameObject:
   m_ObjectHideFlags: 0
@@ -15890,6 +15960,7 @@ GameObject:
   - component: {fileID: 525190942}
   - component: {fileID: 525190941}
   - component: {fileID: 525190940}
+  - component: {fileID: 525190943}
   m_Layer: 5
   m_Name: Destination0
   m_TagString: Untagged
@@ -16002,6 +16073,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 525190938}
   m_CullTransparentMesh: 1
+--- !u!114 &525190943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 525190938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &525433652
 GameObject:
   m_ObjectHideFlags: 0
@@ -17417,6 +17501,7 @@ GameObject:
   - component: {fileID: 565661119}
   - component: {fileID: 565661118}
   - component: {fileID: 565661117}
+  - component: {fileID: 565661120}
   m_Layer: 5
   m_Name: StoredSlime11
   m_TagString: Untagged
@@ -17527,6 +17612,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 565661115}
   m_CullTransparentMesh: 1
+--- !u!114 &565661120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 565661115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &569055218
 GameObject:
   m_ObjectHideFlags: 0
@@ -19872,7 +19970,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC7A5\uC2DD\uC7A5 \uC2AC\uB77C\uC784 \xB7 \uC88C\uC6B0\uB85C \uBC00\uC5B4
+  m_text: "\uC7A5\uC2DD\uC7A5 \uC2AC\uB77C\uC784 | \uC88C\uC6B0\uB85C \uBC00\uC5B4
     \uACE8\uB77C\uC694"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
@@ -20869,6 +20967,7 @@ GameObject:
   - component: {fileID: 660050402}
   - component: {fileID: 660050401}
   - component: {fileID: 660050400}
+  - component: {fileID: 660050403}
   m_Layer: 5
   m_Name: StoredSlime7
   m_TagString: Untagged
@@ -20979,6 +21078,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 660050398}
   m_CullTransparentMesh: 1
+--- !u!114 &660050403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 660050398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &664024236
 GameObject:
   m_ObjectHideFlags: 0
@@ -23485,6 +23597,7 @@ GameObject:
   - component: {fileID: 751131914}
   - component: {fileID: 751131913}
   - component: {fileID: 751131912}
+  - component: {fileID: 751131915}
   m_Layer: 5
   m_Name: StoredSlime15
   m_TagString: Untagged
@@ -23595,6 +23708,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 751131910}
   m_CullTransparentMesh: 1
+--- !u!114 &751131915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 751131910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &754166646
 GameObject:
   m_ObjectHideFlags: 0
@@ -28970,6 +29096,7 @@ GameObject:
   - component: {fileID: 893335648}
   - component: {fileID: 893335647}
   - component: {fileID: 893335646}
+  - component: {fileID: 893335649}
   m_Layer: 5
   m_Name: StoredSlime8
   m_TagString: Untagged
@@ -29080,6 +29207,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 893335644}
   m_CullTransparentMesh: 1
+--- !u!114 &893335649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893335644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &894603058
 GameObject:
   m_ObjectHideFlags: 0
@@ -29242,6 +29382,7 @@ GameObject:
   - component: {fileID: 900024807}
   - component: {fileID: 900024806}
   - component: {fileID: 900024805}
+  - component: {fileID: 900024808}
   m_Layer: 5
   m_Name: StoredSlime16
   m_TagString: Untagged
@@ -29352,6 +29493,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 900024803}
   m_CullTransparentMesh: 1
+--- !u!114 &900024808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900024803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &900887478
 GameObject:
   m_ObjectHideFlags: 0
@@ -30122,6 +30276,7 @@ GameObject:
   - component: {fileID: 919847081}
   - component: {fileID: 919847080}
   - component: {fileID: 919847079}
+  - component: {fileID: 919847082}
   m_Layer: 5
   m_Name: StoredSlime5
   m_TagString: Untagged
@@ -30232,6 +30387,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919847077}
   m_CullTransparentMesh: 1
+--- !u!114 &919847082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919847077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &920019897
 GameObject:
   m_ObjectHideFlags: 0
@@ -31075,6 +31243,7 @@ GameObject:
   - component: {fileID: 929277222}
   - component: {fileID: 929277221}
   - component: {fileID: 929277220}
+  - component: {fileID: 929277223}
   m_Layer: 5
   m_Name: Destination1
   m_TagString: Untagged
@@ -31187,6 +31356,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 929277218}
   m_CullTransparentMesh: 1
+--- !u!114 &929277223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929277218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &931068596
 GameObject:
   m_ObjectHideFlags: 0
@@ -31424,6 +31606,7 @@ GameObject:
   - component: {fileID: 933280366}
   - component: {fileID: 933280365}
   - component: {fileID: 933280364}
+  - component: {fileID: 933280367}
   m_Layer: 5
   m_Name: StoredSlime9
   m_TagString: Untagged
@@ -31534,6 +31717,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 933280362}
   m_CullTransparentMesh: 1
+--- !u!114 &933280367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 933280362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &941951446
 GameObject:
   m_ObjectHideFlags: 0
@@ -44112,6 +44308,7 @@ GameObject:
   - component: {fileID: 1206524985}
   - component: {fileID: 1206524984}
   - component: {fileID: 1206524983}
+  - component: {fileID: 1206524986}
   m_Layer: 5
   m_Name: StoredSlime2
   m_TagString: Untagged
@@ -44222,6 +44419,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1206524981}
   m_CullTransparentMesh: 1
+--- !u!114 &1206524986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206524981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1211276214
 GameObject:
   m_ObjectHideFlags: 0
@@ -44783,6 +44993,7 @@ GameObject:
   - component: {fileID: 1216467463}
   - component: {fileID: 1216467462}
   - component: {fileID: 1216467461}
+  - component: {fileID: 1216467464}
   m_Layer: 5
   m_Name: Destination2
   m_TagString: Untagged
@@ -44895,6 +45106,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1216467459}
   m_CullTransparentMesh: 1
+--- !u!114 &1216467464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216467459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1218555848
 GameObject:
   m_ObjectHideFlags: 0
@@ -45364,6 +45588,7 @@ GameObject:
   - component: {fileID: 1231557537}
   - component: {fileID: 1231557536}
   - component: {fileID: 1231557535}
+  - component: {fileID: 1231557539}
   m_Layer: 0
   m_Name: OpenAllButton
   m_TagString: Untagged
@@ -45489,6 +45714,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231557533}
   m_CullTransparentMesh: 1
+--- !u!114 &1231557539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1231557533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1237220776
 GameObject:
   m_ObjectHideFlags: 0
@@ -46297,6 +46535,7 @@ GameObject:
   - component: {fileID: 1255530253}
   - component: {fileID: 1255530252}
   - component: {fileID: 1255530251}
+  - component: {fileID: 1255530254}
   m_Layer: 5
   m_Name: StoredSlime10
   m_TagString: Untagged
@@ -46407,6 +46646,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1255530249}
   m_CullTransparentMesh: 1
+--- !u!114 &1255530254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1255530249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1256015299
 GameObject:
   m_ObjectHideFlags: 0
@@ -46659,6 +46911,7 @@ GameObject:
   - component: {fileID: 1260527823}
   - component: {fileID: 1260527822}
   - component: {fileID: 1260527821}
+  - component: {fileID: 1260527824}
   m_Layer: 5
   m_Name: PartySlot1
   m_TagString: Untagged
@@ -46769,6 +47022,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1260527819}
   m_CullTransparentMesh: 1
+--- !u!114 &1260527824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1260527819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1260754937
 GameObject:
   m_ObjectHideFlags: 0
@@ -50042,6 +50308,7 @@ GameObject:
   - component: {fileID: 1381331581}
   - component: {fileID: 1381331580}
   - component: {fileID: 1381331579}
+  - component: {fileID: 1381331582}
   m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
@@ -50151,6 +50418,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1381331577}
   m_CullTransparentMesh: 1
+--- !u!114 &1381331582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381331577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1382974927
 GameObject:
   m_ObjectHideFlags: 0
@@ -51181,6 +51461,7 @@ GameObject:
   - component: {fileID: 1415969324}
   - component: {fileID: 1415969323}
   - component: {fileID: 1415969322}
+  - component: {fileID: 1415969325}
   m_Layer: 5
   m_Name: StoredSlime20
   m_TagString: Untagged
@@ -51291,6 +51572,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1415969320}
   m_CullTransparentMesh: 1
+--- !u!114 &1415969325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415969320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1422780169
 GameObject:
   m_ObjectHideFlags: 0
@@ -51982,6 +52276,7 @@ GameObject:
   - component: {fileID: 1455655704}
   - component: {fileID: 1455655703}
   - component: {fileID: 1455655702}
+  - component: {fileID: 1455655705}
   m_Layer: 5
   m_Name: StoredSlime12
   m_TagString: Untagged
@@ -52092,6 +52387,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1455655700}
   m_CullTransparentMesh: 1
+--- !u!114 &1455655705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455655700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1455985039
 GameObject:
   m_ObjectHideFlags: 0
@@ -53437,6 +53745,7 @@ GameObject:
   - component: {fileID: 1500832079}
   - component: {fileID: 1500832078}
   - component: {fileID: 1500832077}
+  - component: {fileID: 1500832080}
   m_Layer: 5
   m_Name: PartySlot2
   m_TagString: Untagged
@@ -53547,6 +53856,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1500832075}
   m_CullTransparentMesh: 1
+--- !u!114 &1500832080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500832075}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1503270880
 GameObject:
   m_ObjectHideFlags: 0
@@ -56800,7 +57122,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC2AC\uB77C\uC784 \uC720\uCE58\uC6D0\uACFC \uD568\uAED8\uD55C \uAE30\uB85D"
+  m_text: "\uBAAC\uC2A4\uD130 \uC720\uCE58\uC6D0\uACFC \uD568\uAED8\uD55C \uAE30\uB85D"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 07e055bfe405356418f005a6125e1c79, type: 2}
   m_sharedMaterial: {fileID: 9137035265859411347, guid: 07e055bfe405356418f005a6125e1c79, type: 2}
@@ -57812,7 +58134,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\uC608\uC0C1 \uD68D\uB4DD \uD3EC\uC778\uD2B8 0\n\uD68D\uB4DD \uBF51\uAE30\uAD8C
-    1\uC7A5 \xB7 \uCD94\uAC00 \uAE30\uB150\uD488 3%"
+    1\uC7A5 | \uCD94\uAC00 \uAE30\uB150\uD488 3%"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
   m_sharedMaterial: {fileID: -3477253883998594788, guid: 42fd5ea14b91dd04fa4023049bb5cf7f, type: 2}
@@ -58583,6 +58905,7 @@ GameObject:
   - component: {fileID: 1657930764}
   - component: {fileID: 1657930763}
   - component: {fileID: 1657930762}
+  - component: {fileID: 1657930765}
   m_Layer: 5
   m_Name: StoredSlime6
   m_TagString: Untagged
@@ -58693,6 +59016,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1657930760}
   m_CullTransparentMesh: 1
+--- !u!114 &1657930765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657930760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1659731750
 GameObject:
   m_ObjectHideFlags: 0
@@ -64082,6 +64418,7 @@ GameObject:
   - component: {fileID: 1838871417}
   - component: {fileID: 1838871416}
   - component: {fileID: 1838871415}
+  - component: {fileID: 1838871418}
   m_Layer: 5
   m_Name: StoredSlime18
   m_TagString: Untagged
@@ -64192,6 +64529,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1838871413}
   m_CullTransparentMesh: 1
+--- !u!114 &1838871418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838871413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1841066266
 GameObject:
   m_ObjectHideFlags: 0
@@ -64572,7 +64922,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uAC1C\uC778\uC815\uBCF4 \uBC29\uCE68"
+  m_text: "\uAC1C\uC778\uC815\uBCF4 \uCC98\uB9AC\uBC29\uCE68"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 07e055bfe405356418f005a6125e1c79, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: a437919a77d848ca84f348f7b3472d82, type: 2}
@@ -64664,6 +65014,7 @@ GameObject:
   - component: {fileID: 1855764576}
   - component: {fileID: 1855764575}
   - component: {fileID: 1855764574}
+  - component: {fileID: 1855764577}
   m_Layer: 5
   m_Name: StoredSlime13
   m_TagString: Untagged
@@ -64774,6 +65125,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1855764572}
   m_CullTransparentMesh: 1
+--- !u!114 &1855764577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1855764572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1856278886
 GameObject:
   m_ObjectHideFlags: 0
@@ -65722,6 +66086,7 @@ GameObject:
   - component: {fileID: 1883204548}
   - component: {fileID: 1883204547}
   - component: {fileID: 1883204546}
+  - component: {fileID: 1883204549}
   m_Layer: 5
   m_Name: StoredSlime4
   m_TagString: Untagged
@@ -65832,6 +66197,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1883204544}
   m_CullTransparentMesh: 1
+--- !u!114 &1883204549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883204544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &1883509722
 GameObject:
   m_ObjectHideFlags: 0
@@ -71543,6 +71921,7 @@ GameObject:
   - component: {fileID: 2022021649}
   - component: {fileID: 2022021648}
   - component: {fileID: 2022021647}
+  - component: {fileID: 2022021650}
   m_Layer: 5
   m_Name: PartySlot0
   m_TagString: Untagged
@@ -71653,6 +72032,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2022021645}
   m_CullTransparentMesh: 1
+--- !u!114 &2022021650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2022021645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &2022790345
 GameObject:
   m_ObjectHideFlags: 0
@@ -75120,6 +75512,7 @@ GameObject:
   - component: {fileID: 2117155327}
   - component: {fileID: 2117155326}
   - component: {fileID: 2117155325}
+  - component: {fileID: 2117155328}
   m_Layer: 5
   m_Name: StoredSlime3
   m_TagString: Untagged
@@ -75230,6 +75623,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2117155323}
   m_CullTransparentMesh: 1
+--- !u!114 &2117155328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2117155323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96c997379d9e5f340a6e12a57f4de0a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonSFX
+  _cue: 0
 --- !u!1 &2117402320
 GameObject:
   m_ObjectHideFlags: 0
