@@ -249,8 +249,9 @@ public sealed class ExpeditionUI : MonoBehaviour
                 _slimes.GetOwnedPlaygroundObjectCount(run.Reward.Decoration.Value) > 0;
             if (_service.TryClaim(run.RunId, out ExpeditionReward reward))
             {
-                _notice.text = $"돌아왔어요! 포인트 {reward.Points:N0} · 뽑기권 {reward.GachaTickets}장" +
-                    (reward.Decoration.HasValue ? $" · {DecorationName(reward.Decoration.Value)} 발견!" +
+                // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
+                _notice.text = $"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장" +
+                    (reward.Decoration.HasValue ? $" | {DecorationName(reward.Decoration.Value)} 발견!" +
                         (alreadyOwned ? " (이미 보유 중이에요)" : string.Empty) : string.Empty);
             }
             else _notice.text = "아직 도착 전이거나 지급 기록을 확인할 수 없어요.";
@@ -303,7 +304,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _destinationPresentation.Show(run, _slimes);
         List<SlimeInstance> selected = GetSelected();
         _memberHeading.text = _slimes.ActiveSlimes.Any(member => member.Location == ESlimeLocation.DisplayRoom)
-            ? "장식장 슬라임 · 좌우로 밀어 골라요" : "장식장에 슬라임을 먼저 보관해 주세요.";
+            ? "장식장 슬라임 | 좌우로 밀어 골라요" : "장식장에 슬라임을 먼저 보관해 주세요.";
         for (int i = 0; i < _memberButtons.Length; i++)
         {
             ESlimeGrade grade = (ESlimeGrade)(i + 1);
@@ -324,7 +325,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _nameText.text = view.Name;
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
-        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 · 추가 기념품 {view.DecorationChance:P0}";
+        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 추가 기념품 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
     }

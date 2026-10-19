@@ -490,7 +490,8 @@ public sealed class CollectionBookUI : MonoBehaviour
             0,
             NormalCollectionRules.MainEndingCount);
         _graduationProgressText.text =
-            $"도감 완성 · 장식장 {displayedCount} / {NormalCollectionRules.MainEndingCount}";
+            // 가운데점(·)은 글꼴에 없어 빈칸으로 그려진다.
+            $"도감 완성 | 장식장 {displayedCount} / {NormalCollectionRules.MainEndingCount}";
     }
 
     private void RefreshEndingReplayButton()
