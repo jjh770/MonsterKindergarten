@@ -2,6 +2,7 @@
 using Lean.Pool;
 using TMPro;
 using UnityEngine;
+using Utility;
 
 // 포인트 숫자는 화면 공간 UI로 그리고, 움직임만 월드 좌표로 계산해 매 프레임 옮긴다.
 //
@@ -36,7 +37,8 @@ public class PointFloater : MonoBehaviour
         _rectTransform = transform as RectTransform;
         _worldCamera = Camera.main;
 
-        _text.text = $"{CurrencyIcon.Point}+{clickInfo.Point}";
+        // 상단 재화 표시와 같은 규칙으로 쓴다. 그대로 찍으면 자릿수 구분이 없고, 아주 큰 값은 지수 표기로 나온다.
+        _text.text = $"{CurrencyIcon.Point}+{clickInfo.Point.ToFormattedString()}";
         _text.alpha = 1f;
 
         _startWorldPosition = new Vector3(
