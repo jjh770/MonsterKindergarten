@@ -67,6 +67,27 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _expeditionDecorationFound = "{0} 발견!";
     [Tooltip("탐험 보상 팝업에서 이미 가진 장식이 나왔을 때의 줄입니다. {0}에 장식 이름이 들어갑니다.")]
     [SerializeField] private string _expeditionDecorationOwned = "{0} 발견! (이미 가지고 있어요)";
+    [Tooltip("탐험 화면을 열 때 지급 기록을 맞추지 못했을 때의 안내입니다.")]
+    [SerializeField] private string _expeditionSettlementUnavailable = "탐험 지급 기록을 확인할 수 없어 출발과 수령을 잠시 멈췄어요.";
+    [Tooltip("이미 편성한 종류를 또 고르거나 자리가 없을 때의 안내입니다.")]
+    [SerializeField] private string _expeditionPickDifferentKinds = "서로 다른 3종을 골라 주세요. 위 아이콘을 누르면 편성을 취소해요.";
+    [SerializeField] private string _expeditionDeparted = "탐험을 떠났어요. 돌아오면 보상을 받을 수 있어요.";
+    [SerializeField] private string _expeditionCannotDepart = "지금은 출발할 수 없어요. 편성과 탐험 상태를 다시 확인해 주세요.";
+    [SerializeField] private string _expeditionCannotClaim = "아직 도착 전이거나 지급 기록을 확인할 수 없어요.";
+    [Tooltip("편성 목록 위의 제목입니다. 가운데점(·)은 글꼴에 없어 |를 씁니다.")]
+    [SerializeField] private string _expeditionMemberHeading = "장식장 슬라임 | 좌우로 밀어 골라요";
+    [Tooltip("장식장에 슬라임이 없을 때 편성 목록 제목 대신 쓰는 말입니다.")]
+    [SerializeField] private string _expeditionNoMembers = "장식장에 슬라임을 먼저 보관해 주세요.";
+    [Tooltip("편성 목록에서 이미 고른 슬라임 이름 아래에 붙는 말입니다.")]
+    [SerializeField] private string _expeditionMemberChosen = "편성됨";
+    [Tooltip("편성 목록에서 탐험을 떠난 슬라임 이름 아래에 붙는 말입니다.")]
+    [SerializeField] private string _expeditionMemberAway = "파견 중";
+    [Tooltip("편성 칸이 비어 있을 때의 이름입니다.")]
+    [SerializeField] private string _expeditionEmptySlot = "빈자리";
+    [Tooltip("고른 탐험지가 비어 있을 때 아래 버튼의 글자입니다.")]
+    [SerializeField] private string _expeditionSend = "탐험 보내기";
+    [Tooltip("탐험이 돌아왔을 때 아래 버튼의 글자입니다.")]
+    [SerializeField] private string _expeditionClaim = "보상 받기";
 
     [Header("광고")]
     [SerializeField] private string _adNotReady = "지금은 볼 수 있는 광고가 없어요.";
@@ -116,6 +137,18 @@ public sealed class UiMessagesSO : ScriptableObject
     public string ExpeditionHomecoming => _expeditionHomecoming;
     public string ExpeditionDecorationFound => _expeditionDecorationFound;
     public string ExpeditionDecorationOwned => _expeditionDecorationOwned;
+    public string ExpeditionSettlementUnavailable => _expeditionSettlementUnavailable;
+    public string ExpeditionPickDifferentKinds => _expeditionPickDifferentKinds;
+    public string ExpeditionDeparted => _expeditionDeparted;
+    public string ExpeditionCannotDepart => _expeditionCannotDepart;
+    public string ExpeditionCannotClaim => _expeditionCannotClaim;
+    public string ExpeditionMemberHeading => _expeditionMemberHeading;
+    public string ExpeditionNoMembers => _expeditionNoMembers;
+    public string ExpeditionMemberChosen => _expeditionMemberChosen;
+    public string ExpeditionMemberAway => _expeditionMemberAway;
+    public string ExpeditionEmptySlot => _expeditionEmptySlot;
+    public string ExpeditionSend => _expeditionSend;
+    public string ExpeditionClaim => _expeditionClaim;
     public string AdNotReady => _adNotReady;
     public string AdLimitReached => _adLimitReached;
     public string AdBoostFull => _adBoostFull;

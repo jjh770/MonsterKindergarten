@@ -109,4 +109,16 @@ public static class UiMessages
     public static string ExpeditionHomecoming => Source.ExpeditionHomecoming;
     public static string ExpeditionDecorationFound => Source.ExpeditionDecorationFound;
     public static string ExpeditionDecorationOwned => Source.ExpeditionDecorationOwned;
+    public static string ExpeditionSettlementUnavailable => Source.ExpeditionSettlementUnavailable;
+    public static string ExpeditionPickDifferentKinds => Source.ExpeditionPickDifferentKinds;
+    public static string ExpeditionDeparted => Source.ExpeditionDeparted;
+    public static string ExpeditionCannotDepart => Source.ExpeditionCannotDepart;
+    public static string ExpeditionCannotClaim => Source.ExpeditionCannotClaim;
+    public static string ExpeditionMemberHeading => Source.ExpeditionMemberHeading;
+    public static string ExpeditionNoMembers => Source.ExpeditionNoMembers;
+    public static string ExpeditionMemberChosen => Source.ExpeditionMemberChosen;
+    public static string ExpeditionMemberAway => Source.ExpeditionMemberAway;
+    public static string ExpeditionEmptySlot => Source.ExpeditionEmptySlot;
+    public static string ExpeditionSend => Source.ExpeditionSend;
+    public static string ExpeditionClaim => Source.ExpeditionClaim;
 }

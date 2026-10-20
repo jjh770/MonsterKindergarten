@@ -23,7 +23,11 @@ public sealed class ExpeditionUI : MonoBehaviour
         public TextMeshProUGUI LockLabel;
         [Tooltip("보상을 받을 수 있을 때 탭에 띄우는 느낌표입니다.")]
         public GameObject AlertRoot;
-        public ExpeditionDestination CreateRules() => new(Type, Array.Empty<ESlimeGrade>(), freeParty: true);
+
+        // 규칙은 Type으로만 정해지고 바뀌지 않으므로 한 번 만들어 둔다.
+        [NonSerialized] private ExpeditionDestination _rules;
+
+        public ExpeditionDestination Rules => _rules ??= new ExpeditionDestination(Type, Array.Empty<ESlimeGrade>(), freeParty: true);
     }
 
     [SerializeField] private SlimeManager _slimes;
@@ -78,6 +82,8 @@ public sealed class ExpeditionUI : MonoBehaviour
     // 안내 문구가 고른 탐험지의 상태를 따라가는 중이다. 보상, 출발, 오류처럼 일이 생겨 띄운 안내는
     // 따라가지 않고 그대로 둔다.
     private bool _noticeFollowsState;
+
+    private DestinationView SelectedView => _destinations[_destinationIndex];
 
     private void Start()
     {
@@ -157,9 +163,23 @@ public sealed class ExpeditionUI : MonoBehaviour
         Refresh();
     }
 
-    private void OnActivated() { _recoveryAttempted = false; Refresh(); }
-    private void OnTutorialStarted() { ForceClose(); Refresh(); }
-    private void OnSpaceChanged(EGameplaySpace space) { ForceClose(); Refresh(); }
+    private void OnActivated()
+    {
+        _recoveryAttempted = false;
+        Refresh();
+    }
+
+    private void OnTutorialStarted()
+    {
+        ForceClose();
+        Refresh();
+    }
+
+    private void OnSpaceChanged(EGameplaySpace space)
+    {
+        ForceClose();
+        Refresh();
+    }
 
     private bool CanOpen() => _slimes.IsInitialized && _slimes.IsGachaUnlocked &&
         !_spaces.IsMainFieldActive && !_spaces.IsTransitioning && GameplayGate.IsActive &&
@@ -179,7 +199,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             int ready = FindReadyDestination();
             if (ready >= 0) _destinationIndex = ready;
             if (_recoverySucceeded) ShowStateNotice();
-            else ShowEventNotice("탐험 지급 기록을 확인할 수 없어 출발과 수령을 잠시 멈췄어요.");
+            else ShowEventNotice(UiMessages.ExpeditionSettlementUnavailable);
             _isOpen = true;
             DisplayRoomCameraInputGate.Push(this);
             _session.Enter(ClickerInputMode.Blocked, ClickerInputPriority.Modal, TryClose, true);
@@ -189,11 +209,17 @@ public sealed class ExpeditionUI : MonoBehaviour
     }
 
     private void Close() => TryClose();
+
     private bool TryClose()
     {
         if (!_isOpen) return false;
         // 보상 팝업이 떠 있으면 뒤로 가기는 받기와 같다.
-        if (_rewardPopup.IsVisible) { _rewardPopup.Confirm(); return true; }
+        if (_rewardPopup.IsVisible)
+        {
+            _rewardPopup.Confirm();
+            return true;
+        }
+
         if (_departing) return true;
         CloseAnimated();
         return true;
@@ -229,12 +255,15 @@ public sealed class ExpeditionUI : MonoBehaviour
         _session?.Exit(animated: false);
     }
 
-    private void OnApplicationPause(bool paused) { if (paused) ForceClose(); }
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused) ForceClose();
+    }
 
     private void SelectDestination(int index)
     {
         if (!_isOpen || _departing || _party.IsAnimating || index == _destinationIndex ||
-            _slimes.NormalCollectionCount < _destinations[index].CreateRules().RequiredCollectionCount) return;
+            _slimes.NormalCollectionCount < _destinations[index].Rules.RequiredCollectionCount) return;
         _party.ReturnAll(() =>
         {
             _destinationIndex = index;
@@ -255,9 +284,9 @@ public sealed class ExpeditionUI : MonoBehaviour
     {
         if (!_isOpen || _departing || _party.IsAnimating) return;
         SlimeInstance member = _candidates[index];
-        if (!CanSelect(member) || FindRun(_destinations[_destinationIndex].CreateRules()) != null) return;
+        if (!CanSelect(member) || FindRun(SelectedView.Rules) != null) return;
         if (!_party.TrySelect(member, (RectTransform)_memberImages[index].transform, _slimes, Refresh))
-            ShowEventNotice("서로 다른 3종을 골라 주세요. 위 아이콘을 누르면 편성을 취소해요.");
+            ShowEventNotice(UiMessages.ExpeditionPickDifferentKinds);
         Refresh();
     }
 
@@ -294,13 +323,16 @@ public sealed class ExpeditionUI : MonoBehaviour
         if (matched != null || rules.Type != EExpeditionDestinationType.Short) return matched;
         // 기존 1팀 검증 저장의 목적지도 짧은 탐험 카드에서 수령할 수 있게 유지한다.
         return _slimes.ActiveExpeditions.FirstOrDefault(run =>
-            !_destinations.Any(view => view.CreateRules().DestinationId == run.DestinationId));
+            !_destinations.Any(view => view.Rules.DestinationId == run.DestinationId));
     }
+
+    private static bool IsReady(ExpeditionRun run) =>
+        run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow);
 
     private bool CanSelect(SlimeInstance member) => member != null &&
         member.Grade <= _slimes.HighestGrade && member.Location == ESlimeLocation.DisplayRoom &&
         !_slimes.IsOnExpedition(member.InstanceId) &&
-        _slimes.NormalCollectionCount >= _destinations[_destinationIndex].CreateRules().RequiredCollectionCount;
+        _slimes.NormalCollectionCount >= SelectedView.Rules.RequiredCollectionCount;
 
     private List<SlimeInstance> GetSelected()
     {
@@ -311,64 +343,82 @@ public sealed class ExpeditionUI : MonoBehaviour
     private void OnAction()
     {
         if (!_isOpen || _departing || _party.IsAnimating || !GameplayGate.IsActive || TutorialManager.IsRunning || !_recoverySucceeded) return;
-        DestinationView view = _destinations[_destinationIndex];
-        ExpeditionDestination rules = view.CreateRules();
-        ExpeditionRun run = FindRun(rules);
-        if (run != null)
-        {
-            bool alreadyOwned = run.Reward.Decoration.HasValue &&
-                _slimes.GetOwnedPlaygroundObjectCount(run.Reward.Decoration.Value) > 0;
-            // 수령하면 탐험이 목록에서 사라져 탐험지 화면이 비므로, 귀환 연출이 출발할 자리를 먼저 읽는다.
-            // 수령 중에 오는 ExpeditionChanged가 화면을 비우지 않도록 출발처럼 _departing을 먼저 세운다.
-            CaptureReturn(run);
-            _departing = true;
-            if (_service.TryClaim(run.RunId, out ExpeditionReward reward))
-            {
-                // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
-                ShowEventNotice($"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장" +
-                    (reward.Decoration.HasValue ? $" | {ExpeditionRewardPopupUI.DecorationName(reward.Decoration.Value)} 발견!" +
-                        (alreadyOwned ? " (이미 보유 중이에요)" : string.Empty) : string.Empty));
-                _group.interactable = false;
-                _actionAlert.SetActive(false);
-                _destinationPresentation.Show(null, _slimes);
-                string destinationName = view.Name;
-                // 돌아온 뒤 보상 팝업을 띄우고, 받으면 화면을 닫아 숨겨 둔 상단 바로 보상을 날린다.
-                // 팝업도 이 화면의 CanvasGroup 아래라, 막아 둔 입력을 팝업을 띄우기 전에 푼다. 뒤의 화면은
-                // 팝업의 블로커가 가리고, _departing이 그대로라 탭과 버튼도 반응하지 않는다.
-                _party.PlayReturn(_destinationArea, _returnSprites, _returnStarts, _returnSizes, _returnHomes, () =>
-                {
-                    _group.interactable = true;
-                    _rewardPopup.Show(destinationName, reward, alreadyOwned, (pointFrom, ticketFrom) =>
-                    {
-                        CloseAnimated();
-                        _rewardFlight.Play(pointFrom, ticketFrom, reward.GachaTickets);
-                    });
-                });
-            }
-            else
-            {
-                _departing = false;
-                ShowEventNotice("아직 도착 전이거나 지급 기록을 확인할 수 없어요.");
-            }
-        }
-        else
-        {
-            if (_slimes.NormalCollectionCount < rules.RequiredCollectionCount) return;
-            List<SlimeInstance> members = GetSelected();
-            if (!rules.HasRequiredGrades(members)) return;
-            ExpeditionReward reward = _rewards.Roll(members, rules.Duration, view.Tickets, view.DecorationChance);
-            _departing = true;
-            bool started = _service.TryStart(rules, members.Select(member => member.InstanceId).ToArray(), reward);
-            ShowEventNotice(started ? "탐험을 떠났어요. 돌아오면 보상을 받을 수 있어요." : "지금은 출발할 수 없어요. 편성과 탐험 상태를 다시 확인해 주세요.");
-            if (started)
-            {
-                _group.interactable = false;
-                // 출발 안내는 연출 동안만 두고, 끝나면 탐험지 상태(탐험 중, 도착)를 따라가게 한다.
-                _party.PlayDeparture(_destinationArea, () => { _departing = false; _group.interactable = true; ShowStateNotice(); Refresh(); });
-            }
-            else _departing = false;
-        }
+        DestinationView view = SelectedView;
+        ExpeditionRun run = FindRun(view.Rules);
+        if (run != null) Claim(view, run);
+        else Depart(view);
         Refresh();
+    }
+
+    private void Claim(DestinationView view, ExpeditionRun run)
+    {
+        bool alreadyOwned = run.Reward.Decoration.HasValue &&
+            _slimes.GetOwnedPlaygroundObjectCount(run.Reward.Decoration.Value) > 0;
+        // 수령하면 탐험이 목록에서 사라져 탐험지 화면이 비므로, 귀환 연출이 출발할 자리를 먼저 읽는다.
+        // 수령 중에 오는 ExpeditionChanged가 화면을 비우지 않도록 출발처럼 _departing을 먼저 세운다.
+        CaptureReturn(run);
+        _departing = true;
+        if (!_service.TryClaim(run.RunId, out ExpeditionReward reward))
+        {
+            _departing = false;
+            ShowEventNotice(UiMessages.ExpeditionCannotClaim);
+            return;
+        }
+
+        ShowEventNotice(BuildClaimNotice(reward, alreadyOwned));
+        _group.interactable = false;
+        _actionAlert.SetActive(false);
+        _destinationPresentation.Show(null, _slimes);
+        string destinationName = view.Name;
+        // 돌아온 뒤 보상 팝업을 띄우고, 받으면 화면을 닫아 숨겨 둔 상단 바로 보상을 날린다.
+        // 팝업도 이 화면의 CanvasGroup 아래라, 막아 둔 입력을 팝업을 띄우기 전에 푼다. 뒤의 화면은
+        // 팝업의 블로커가 가리고, _departing이 그대로라 탭과 버튼도 반응하지 않는다.
+        _party.PlayReturn(_destinationArea, _returnSprites, _returnStarts, _returnSizes, _returnHomes, () =>
+        {
+            _group.interactable = true;
+            _rewardPopup.Show(destinationName, reward, alreadyOwned, (pointFrom, ticketFrom) =>
+            {
+                CloseAnimated();
+                _rewardFlight.Play(pointFrom, ticketFrom, reward.GachaTickets);
+            });
+        });
+    }
+
+    // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
+    private static string BuildClaimNotice(ExpeditionReward reward, bool alreadyOwned)
+    {
+        string notice = $"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장";
+        if (!reward.Decoration.HasValue) return notice;
+
+        notice += $" | {ExpeditionRewardPopupUI.DecorationName(reward.Decoration.Value)} 발견!";
+        return alreadyOwned ? notice + " (이미 보유 중이에요)" : notice;
+    }
+
+    private void Depart(DestinationView view)
+    {
+        ExpeditionDestination rules = view.Rules;
+        if (_slimes.NormalCollectionCount < rules.RequiredCollectionCount) return;
+        List<SlimeInstance> members = GetSelected();
+        if (!rules.HasRequiredGrades(members)) return;
+        ExpeditionReward reward = _rewards.Roll(members, rules.Duration, view.Tickets, view.DecorationChance);
+        _departing = true;
+        if (!_service.TryStart(rules, members.Select(member => member.InstanceId).ToArray(), reward))
+        {
+            _departing = false;
+            ShowEventNotice(UiMessages.ExpeditionCannotDepart);
+            return;
+        }
+
+        ShowEventNotice(UiMessages.ExpeditionDeparted);
+        _group.interactable = false;
+        // 출발 안내는 연출 동안만 두고, 끝나면 탐험지 상태(탐험 중, 도착)를 따라가게 한다.
+        _party.PlayDeparture(_destinationArea, () =>
+        {
+            _departing = false;
+            _group.interactable = true;
+            ShowStateNotice();
+            Refresh();
+        });
     }
 
     private void Refresh()
@@ -379,33 +429,47 @@ public sealed class ExpeditionUI : MonoBehaviour
         if (!_isOpen || _departing) return;
         bool busy = _party.IsAnimating;
         _closeButton.interactable = true;
+        RefreshTabs(busy);
+
+        DestinationView view = SelectedView;
+        ExpeditionDestination rules = view.Rules;
+        ExpeditionRun run = FindRun(rules);
+        if (run != null && !busy && _party.MemberIds.Any()) _party.Clear();
+        _destinationImage.sprite = view.PreviewSprite;
+        _destinationPresentation.Show(run, _slimes);
+        RefreshMembers(run, busy);
+        bool unlocked = _slimes.NormalCollectionCount >= rules.RequiredCollectionCount;
+        _party.Refresh(run, _slimes, !busy && run == null && unlocked);
+        RefreshDetail(view, run, unlocked, busy);
+        if (_noticeFollowsState) _notice.text = GetStateNotice();
+    }
+
+    private void RefreshTabs(bool busy)
+    {
         for (int i = 0; i < _destinations.Length; i++)
         {
             DestinationView item = _destinations[i];
-            ExpeditionRun active = FindRun(item.CreateRules());
-            bool unlockedTab = _slimes.NormalCollectionCount >= item.CreateRules().RequiredCollectionCount || active != null;
+            ExpeditionRun active = FindRun(item.Rules);
+            bool unlockedTab = _slimes.NormalCollectionCount >= item.Rules.RequiredCollectionCount || active != null;
             item.Button.interactable = unlockedTab && !busy;
             item.Button.image.sprite = i == _destinationIndex ? _selectedDestinationTabSprite : _destinationTabSprite;
             item.Button.image.color = Color.white;
             item.Label.text = item.Name;
             // 비어 있으면 걸리는 시간, 떠나 있으면 남은 시간, 돌아왔으면 도착을 보여 준다.
-            bool returned = active != null && active.IsReadyToReturn(ServerClock.TrustedUtcNow);
+            bool returned = IsReady(active);
             item.TimeLabel.text = active == null
-                ? $"{(int)item.CreateRules().Duration.TotalHours}시간"
+                ? $"{(int)item.Rules.Duration.TotalHours}시간"
                 : returned ? UiMessages.ExpeditionArrived : Remaining(active);
             item.AlertRoot.SetActive(returned);
             item.LockRoot.SetActive(!unlockedTab);
-            item.LockLabel.text = $"도감 {item.CreateRules().RequiredCollectionCount}종\n해금 필요";
+            item.LockLabel.text = $"도감 {item.Rules.RequiredCollectionCount}종\n해금 필요";
         }
-        DestinationView view = _destinations[_destinationIndex];
-        ExpeditionDestination rules = view.CreateRules();
-        ExpeditionRun run = FindRun(rules);
-        if (run != null && !busy && _party.MemberIds.Any()) _party.Clear();
-        _destinationImage.sprite = view.PreviewSprite;
-        _destinationPresentation.Show(run, _slimes);
-        List<SlimeInstance> selected = GetSelected();
+    }
+
+    private void RefreshMembers(ExpeditionRun run, bool busy)
+    {
         _memberHeading.text = _slimes.ActiveSlimes.Any(member => member.Location == ESlimeLocation.DisplayRoom)
-            ? "장식장 슬라임 | 좌우로 밀어 골라요" : "장식장에 슬라임을 먼저 보관해 주세요.";
+            ? UiMessages.ExpeditionMemberHeading : UiMessages.ExpeditionNoMembers;
         for (int i = 0; i < _memberButtons.Length; i++)
         {
             ESlimeGrade grade = (ESlimeGrade)(i + 1);
@@ -416,28 +480,34 @@ public sealed class ExpeditionUI : MonoBehaviour
             _memberButtons[i].gameObject.SetActive(candidate != null);
             if (candidate == null) continue;
             bool chosen = _party.MemberIds.Contains(candidate.InstanceId);
+            bool away = _slimes.IsOnExpedition(candidate.InstanceId);
             // 편성됐거나 탐험을 떠난 슬라임은 위로 올라간 것이라 자리를 빈자리처럼 회색으로 둔다.
-            if (chosen || _slimes.IsOnExpedition(candidate.InstanceId)) _party.ApplyEmptyLook(_memberImages[i]);
+            if (chosen || away) _party.ApplyEmptyLook(_memberImages[i]);
             else
             {
                 _memberImages[i].sprite = _slimes.Get(grade).SpecData.Sprite;
                 _memberImages[i].material = null;
                 _memberImages[i].color = Color.white;
             }
+            string status = chosen ? UiMessages.ExpeditionMemberChosen : away ? UiMessages.ExpeditionMemberAway : null;
             _memberLabels[i].text = (candidate.IsSpecial ? "특별 " : "") + _slimes.GetName(grade) +
-                (chosen ? "\n편성됨" : _slimes.IsOnExpedition(candidate.InstanceId) ? "\n파견 중" : "");
+                (status == null ? "" : "\n" + status);
             _memberButtons[i].interactable = !busy && run == null && !chosen && CanSelect(candidate);
         }
-        bool unlocked = _slimes.NormalCollectionCount >= rules.RequiredCollectionCount;
-        _party.Refresh(run, _slimes, !busy && run == null && unlocked);
+    }
+
+    private void RefreshDetail(DestinationView view, ExpeditionRun run, bool unlocked, bool busy)
+    {
+        ExpeditionDestination rules = view.Rules;
+        List<SlimeInstance> selected = GetSelected();
+        bool ready = IsReady(run);
         _nameText.text = view.Name;
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
         _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 소품 1종 {view.DecorationChance:P0}";
-        _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
-        _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
-        _actionAlert.SetActive(run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow));
-        if (_noticeFollowsState) _notice.text = GetStateNotice();
+        _actionLabel.text = run == null ? UiMessages.ExpeditionSend : ready ? UiMessages.ExpeditionClaim : $"탐험 중이에요. {Remaining(run)}";
+        _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? ready : unlocked && rules.HasRequiredGrades(selected));
+        _actionAlert.SetActive(ready);
     }
 
     private void ShowStateNotice()
@@ -455,11 +525,11 @@ public sealed class ExpeditionUI : MonoBehaviour
     // 고른 탐험지가 비어 있으면 편성 안내, 떠나 있으면 탐험 중, 돌아왔으면 보상을 받으라는 안내다.
     private string GetStateNotice()
     {
-        DestinationView view = _destinations[_destinationIndex];
-        ExpeditionRun run = FindRun(view.CreateRules());
+        DestinationView view = SelectedView;
+        ExpeditionRun run = FindRun(view.Rules);
         if (run == null) return UiMessages.ExpeditionChooseParty;
 
-        return run.IsReadyToReturn(ServerClock.TrustedUtcNow)
+        return IsReady(run)
             ? UiMessages.ExpeditionReadyToClaim
             : string.Format(UiMessages.ExpeditionInProgress, view.Name);
     }
@@ -469,8 +539,7 @@ public sealed class ExpeditionUI : MonoBehaviour
     {
         for (int i = 0; i < _destinations.Length; i++)
         {
-            ExpeditionRun run = FindRun(_destinations[i].CreateRules());
-            if (run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow)) return i;
+            if (IsReady(FindRun(_destinations[i].Rules))) return i;
         }
 
         return -1;
@@ -484,7 +553,7 @@ public sealed class ExpeditionUI : MonoBehaviour
 
         foreach (DestinationView view in _destinations)
         {
-            if (view.CreateRules().DestinationId == destinationId) return view.Name;
+            if (view.Rules.DestinationId == destinationId) return view.Name;
         }
 
         return _destinations[0].Name;
@@ -497,4 +566,3 @@ public sealed class ExpeditionUI : MonoBehaviour
     }
 
 }
-

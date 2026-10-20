@@ -249,7 +249,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         _icons[slot].material = _silhouetteMaterial;
         _icons[slot].sprite = _emptySprite;
         _icons[slot].color = EmptyColor;
-        _labels[slot].text = "빈자리";
+        _labels[slot].text = UiMessages.ExpeditionEmptySlot;
     }
 
     private void SetFly(int slot, Sprite sprite, Vector3 position)
