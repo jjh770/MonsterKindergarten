@@ -118,8 +118,9 @@ public static class UiMessages
     public static string ExpeditionNoMembers => Source.ExpeditionNoMembers;
     public static string ExpeditionMemberChosen => Source.ExpeditionMemberChosen;
     public static string ExpeditionMemberAway => Source.ExpeditionMemberAway;
-    public static string ExpeditionEmptySlot => Source.ExpeditionEmptySlot;
     public static string ExpeditionSend => Source.ExpeditionSend;
     public static string ExpeditionClaim => Source.ExpeditionClaim;
     public static string ExpeditionSpecialName => Source.ExpeditionSpecialName;
+    public static string ExpeditionTitleInProgress => Source.ExpeditionTitleInProgress;
+    public static string ExpeditionTitleArrived => Source.ExpeditionTitleArrived;
 }

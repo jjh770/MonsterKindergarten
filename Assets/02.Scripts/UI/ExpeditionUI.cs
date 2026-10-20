@@ -281,7 +281,15 @@ public sealed class ExpeditionUI : MonoBehaviour
     {
         if (!_isOpen || _departing || _party.IsAnimating) return;
         SlimeInstance member = _candidates[index];
-        if (!CanSelect(member) || FindRun(SelectedView.Rules) != null) return;
+        if (member == null || FindRun(SelectedView.Rules) != null) return;
+        // 이미 탐험지에 들어간 슬라임을 다시 누르면 목록으로 돌아온다.
+        if (_party.TryReturnMember(member.InstanceId, Refresh))
+        {
+            Refresh();
+            return;
+        }
+
+        if (!CanSelect(member)) return;
         if (!_party.TrySelect(member, (RectTransform)_memberImages[index].transform, _slimes, Refresh))
             ShowEventNotice(UiMessages.ExpeditionPickDifferentKinds);
         Refresh();
@@ -325,10 +333,18 @@ public sealed class ExpeditionUI : MonoBehaviour
         !_slimes.IsOnExpedition(member.InstanceId) &&
         _slimes.NormalCollectionCount >= SelectedView.Rules.RequiredCollectionCount;
 
+    // 편성 칸 순서대로 돌려준다. 출발한 탐험이 이 순서로 저장돼야 탐험지 화면이 슬라임들을 서 있던
+    // 자리에서 이어받는다.
     private List<SlimeInstance> GetSelected()
     {
-        var ids = new HashSet<string>(_party.MemberIds);
-        return _slimes.ActiveSlimes.Where(slime => ids.Contains(slime.InstanceId)).ToList();
+        var selected = new List<SlimeInstance>(ExpeditionDestination.MaxMembers);
+        foreach (string id in _party.MemberIds)
+        {
+            SlimeInstance slime = _slimes.ActiveSlimes.FirstOrDefault(active => active.InstanceId == id);
+            if (slime != null) selected.Add(slime);
+        }
+
+        return selected;
     }
 
     private void OnAction()
@@ -430,7 +446,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _destinationPresentation.Show(run, _slimes);
         RefreshMembers(run, busy);
         bool unlocked = _slimes.NormalCollectionCount >= rules.RequiredCollectionCount;
-        _party.Refresh(run, _slimes, !busy && run == null && unlocked);
+        _party.Refresh(run, !busy && run == null && unlocked);
         RefreshDetail(view, run, unlocked, busy);
         if (_noticeFollowsState) _notice.text = GetStateNotice();
     }
@@ -483,7 +499,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             string status = chosen ? UiMessages.ExpeditionMemberChosen : away ? UiMessages.ExpeditionMemberAway : null;
             _memberLabels[i].text = ExpeditionPartyPresentation.MemberName(_slimes, grade, candidate.IsSpecial) +
                 (status == null ? "" : "\n" + status);
-            _memberButtons[i].interactable = !busy && run == null && !chosen && CanSelect(candidate);
+            _memberButtons[i].interactable = !busy && run == null && (chosen || CanSelect(candidate));
         }
     }
 
@@ -492,13 +508,23 @@ public sealed class ExpeditionUI : MonoBehaviour
         ExpeditionDestination rules = view.Rules;
         List<SlimeInstance> selected = GetSelected();
         bool ready = IsReady(run);
-        _nameText.text = view.Name;
+        _nameText.text = BuildTitle(view, run, selected.Count);
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
         _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 소품 1종 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? UiMessages.ExpeditionSend : ready ? UiMessages.ExpeditionClaim : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? ready : unlocked && rules.HasRequiredGrades(selected));
         _actionAlert.SetActive(ready);
+    }
+
+    // 탐험지 이름 아래 작은 줄에 상태를 적는다. 비어 있으면 편성한 수(편성 0/3), 떠나 있으면
+    // 탐험 중, 돌아왔으면 도착이다.
+    private static string BuildTitle(DestinationView view, ExpeditionRun run, int selectedCount)
+    {
+        if (run == null)
+            return $"{view.Name}\n<size=35>편성 {selectedCount}/{ExpeditionDestination.MaxMembers}</size>";
+
+        return string.Format(IsReady(run) ? UiMessages.ExpeditionTitleArrived : UiMessages.ExpeditionTitleInProgress, view.Name);
     }
 
     private void ShowStateNotice()
