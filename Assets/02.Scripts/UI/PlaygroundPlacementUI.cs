@@ -290,7 +290,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         // 선택을 먼저 해제한다. TryRemovePlacedObject가 성공하면 PlaygroundChanged로 Refresh가
         // 도는데, 그때 _selectedIndex가 이미 -1이라야 치우기 버튼과 안내가 정리된다.
         ClearSelection();
-        if (!_slimeManager.TryRemovePlacedObject(indexToRemove))
+        if (!_field.TryRemoveAnimated(indexToRemove, () => _slimeManager.TryRemovePlacedObject(indexToRemove)))
         {
             // 실패 시엔 이벤트가 오지 않으므로 직접 화면을 정리한다.
             Refresh();
@@ -470,6 +470,9 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
             _toast?.Show(UiMessages.CannotPlaceHere);
             return;
         }
+
+        // 저장 목록 끝에 붙으므로 마지막 자리가 방금 놓은 것이다.
+        _field.PlayPlaced(manager.PlacedPlaygroundObjects.Count - 1);
 
         // 하나를 놓으면 해당 종류는 더 배치할 수 없으므로 선택도 함께 해제한다.
         if (!CanPlace(_selectedType)) ClearSelection();
