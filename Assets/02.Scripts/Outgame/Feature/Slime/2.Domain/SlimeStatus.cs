@@ -280,7 +280,8 @@ public class SlimeStatus
 
     public bool TryStartExpedition(ExpeditionRun run)
     {
-        if (run == null || _activeExpeditions.Count >= 3 || run.Members.Count > ExpeditionDestination.MaxMembers ||
+        if (run == null || _activeExpeditions.Count >= ExpeditionDestination.MaxActiveExpeditions ||
+            run.Members.Count > ExpeditionDestination.MaxMembers ||
             ExpeditionSettlement.HasCompleted(run) ||
             _activeExpeditions.Exists(active => active.RunId == run.RunId ||
                 active.DestinationId == run.DestinationId || active.Sequence == run.Sequence))
@@ -366,8 +367,8 @@ public class SlimeStatus
         long nextLifetimeTickets = checked(GachaTicketsObtainedTotal + ticketDelta);
         ExpeditionSettlement = next;
         GachaTicketsObtainedTotal = nextLifetimeTickets;
-        for (EPlaygroundObjectType type = EPlaygroundObjectType.FlowerPatch;
-             type <= EPlaygroundObjectType.FireflyLantern; type++)
+        for (EPlaygroundObjectType type = PlaygroundRules.FirstDecoration;
+             type <= PlaygroundRules.LastDecoration; type++)
         {
             if ((next.DecorationMask & (1 << (int)type)) != 0 && GetOwnedPlaygroundObjectCount(type) == 0)
                 TryAddPlaygroundObject(type);

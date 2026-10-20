@@ -9,6 +9,24 @@ using UnityEngine.UI;
 // 선택 목록과 편성 슬롯 사이의 UI 이동을 맡는다. 실제 개체와 탐험 저장은 변경하지 않는다.
 public sealed class ExpeditionPartyPresentation : MonoBehaviour
 {
+    // 귀환 연출 한 마리의 그림, 탐험지 화면에서 보이던 자리와 크기, 돌아갈 장식장 목록 자리다.
+    // Home이 없으면 그 자리에서 작아지며 사라진다.
+    public readonly struct ReturningMember
+    {
+        public readonly Sprite Sprite;
+        public readonly Vector3 Start;
+        public readonly Vector2 Size;
+        public readonly Image Home;
+
+        public ReturningMember(Sprite sprite, Vector3 start, Vector2 size, Image home)
+        {
+            Sprite = sprite;
+            Start = start;
+            Size = size;
+            Home = home;
+        }
+    }
+
     [SerializeField] private Button[] _buttons;
     [SerializeField] private Image[] _icons;
     [SerializeField] private TextMeshProUGUI[] _labels;
@@ -55,7 +73,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         fly.rectTransform.sizeDelta = source.rect.size;
         _icons[slot].sprite = _sprites[slot];
         _icons[slot].color = EmptyColor;
-        _labels[slot].text = (target.IsSpecial ? "특별 " : "") + slimes.GetName(target.Grade);
+        _labels[slot].text = MemberName(slimes, target.Grade, target.IsSpecial);
         _animation = DOTween.Sequence().SetUpdate(true);
         _animation.Join(fly.rectTransform.DOMove(_icons[slot].transform.position, .35f).SetEase(Ease.OutCubic));
         _animation.Join(fly.rectTransform.DOSizeDelta(_icons[slot].rectTransform.rect.size, .35f));
@@ -117,17 +135,15 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
     }
 
     // 탐험지에서 돌아온 슬라임들이 그 자리에서 공중제비와 좌우 흔들기로 기뻐하는 동안 "다녀왔어요!"가
-    // 떴다 사라지고, 그다음 한 마리씩 통통 튀어 아래 장식장 목록의 제자리(homes)로 돌아간다. 닿으면
-    // 그 자리의 회색 그림을 원래 슬라임으로 되돌린다. starts와 sizes는 탐험지 화면에서 보이던 자리와
-    // 크기다. homes가 비어 있는 슬라임은 그 자리에서 작아지며 사라진다.
-    public void PlayReturn(RectTransform destinationArea, IReadOnlyList<Sprite> sprites,
-        IReadOnlyList<Vector3> starts, IReadOnlyList<Vector2> sizes, IReadOnlyList<Image> homes, Action completed)
+    // 떴다 사라지고, 그다음 한 마리씩 통통 튀어 아래 장식장 목록의 제자리(Home)로 돌아간다. 닿으면
+    // 그 자리의 회색 그림을 원래 슬라임으로 되돌린다.
+    public void PlayReturn(RectTransform destinationArea, IReadOnlyList<ReturningMember> members, Action completed)
     {
         _animation?.Kill();
         _animation = DOTween.Sequence().SetUpdate(true);
         float flipPower = _flightLayer.TransformVector(new Vector3(0f, 90f)).y;
         float homePower = _flightLayer.TransformVector(new Vector3(0f, 150f)).y;
-        int count = Mathf.Min(3, sprites.Count);
+        int count = Mathf.Min(3, members.Count);
         for (int i = 0; i < 3; i++)
         {
             _targets[i] = null;
@@ -138,20 +154,21 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         {
             int slot = i;
             Image fly = _flyingIcons[slot];
+            ReturningMember member = members[slot];
             RectTransform rect = fly.rectTransform;
-            SetFly(slot, sprites[slot], starts[slot]);
-            rect.sizeDelta = sizes[slot];
+            SetFly(slot, member.Sprite, member.Start);
+            rect.sizeDelta = member.Size;
             float offset = slot * .08f;
             float turn = slot % 2 == 0 ? 360f : -360f;
 
             // 축하: 공중제비, 좌우 흔들기, 반대 방향 공중제비.
-            AppendFlip(rect, starts[slot], flipPower, turn, offset, slot == 0);
+            AppendFlip(rect, member.Start, flipPower, turn, offset, slot == 0);
             _animation.Insert(offset + .6f, rect.DOPunchRotation(new Vector3(0f, 0f, 22f), .6f, 6, .5f));
-            AppendFlip(rect, starts[slot], flipPower, -turn, offset + 1.25f, slot == 0);
+            AppendFlip(rect, member.Start, flipPower, -turn, offset + 1.25f, slot == 0);
 
             // 귀환: 장식장 목록의 제자리로 튀어 간다.
             float leave = CelebrationSeconds + slot * .12f;
-            Image home = slot < homes.Count ? homes[slot] : null;
+            Image home = member.Home;
             if (home != null)
             {
                 _animation.Insert(leave, rect.DOJump(home.transform.position, homePower, 1, .6f).SetEase(Ease.Linear));
@@ -160,7 +177,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
                 {
                     AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.SlimeLand);
                     fly.gameObject.SetActive(false);
-                    home.sprite = sprites[slot];
+                    home.sprite = member.Sprite;
                     home.material = null;
                     home.color = Color.white;
                 });
@@ -190,6 +207,13 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         _animation.Insert(at, rect.DOLocalRotate(new Vector3(0f, 0f, turn), .55f, RotateMode.FastBeyond360)
             .SetEase(Ease.OutQuad).SetRelative());
         if (sound) _animation.InsertCallback(at, () => AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.SlimeBounce));
+    }
+
+    // 편성 칸과 장식장 목록이 함께 쓰는 슬라임 이름이다. 특별한 슬라임은 그렇다고 붙여 준다.
+    public static string MemberName(SlimeManager slimes, ESlimeGrade grade, bool isSpecial)
+    {
+        string name = slimes.GetName(grade);
+        return isSpecial ? string.Format(UiMessages.ExpeditionSpecialName, name) : name;
     }
 
     // 아래 장식장 목록에서 편성됐거나 떠나 있는 슬라임 자리를 빈자리와 같은 회색 그림으로 둔다.
@@ -222,7 +246,7 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
                 _icons[i].sprite = slimes.Get(member.Grade).SpecData.Sprite;
                 _icons[i].material = null;
                 _icons[i].color = Color.white;
-                _labels[i].text = (member.IsSpecial ? "특별 " : "") + slimes.GetName(member.Grade);
+                _labels[i].text = MemberName(slimes, member.Grade, member.IsSpecial);
             }
             else if (_targets[i] == null) ResetSlot(i);
         }

@@ -66,10 +66,7 @@ public sealed class ExpeditionUI : MonoBehaviour
     [Tooltip("탐험 화면 본체가 열릴 때 튀어 오르고 닫힐 때 움츠러드는 공용 팝업 연출입니다.")]
     [SerializeField] private PopupMotion _panelMotion;
     private readonly SlimeInstance[] _candidates = new SlimeInstance[20];
-    private readonly List<Sprite> _returnSprites = new(3);
-    private readonly List<Vector3> _returnStarts = new(3);
-    private readonly List<Vector2> _returnSizes = new(3);
-    private readonly List<Image> _returnHomes = new(3);
+    private readonly List<ExpeditionPartyPresentation.ReturningMember> _returning = new(3);
     private bool _departing;
     private ExpeditionService _service;
     private ExpeditionRewardCalculator _rewards;
@@ -293,27 +290,21 @@ public sealed class ExpeditionUI : MonoBehaviour
     // 탐험지 화면에서 보이던 슬라임의 그림, 자리, 크기다. 보이지 않는 자리는 탐험지 가운데에서 출발한다.
     private void CaptureReturn(ExpeditionRun run)
     {
-        _returnSprites.Clear();
-        _returnStarts.Clear();
-        _returnSizes.Clear();
-        _returnHomes.Clear();
-        for (int i = 0; i < run.Members.Count && i < 3; i++)
+        _returning.Clear();
+        for (int i = 0; i < run.Members.Count && i < ExpeditionDestination.MaxMembers; i++)
         {
-            _returnSprites.Add(_slimes.Get(run.Members[i].Grade).SpecData.Sprite);
+            Sprite sprite = _slimes.Get(run.Members[i].Grade).SpecData.Sprite;
             // 돌아갈 곳은 아래 장식장 목록의 같은 단계 자리다. 목록에 없으면 그 자리에서 사라진다.
             int home = (int)run.Members[i].Grade - 1;
-            _returnHomes.Add(home >= 0 && home < _memberImages.Length && _memberButtons[home].gameObject.activeSelf
-                ? _memberImages[home] : null);
-            if (_destinationPresentation.TryGetVisitor(i, out Vector3 position, out Vector2 size))
+            Image homeImage = home >= 0 && home < _memberImages.Length && _memberButtons[home].gameObject.activeSelf
+                ? _memberImages[home] : null;
+            if (!_destinationPresentation.TryGetVisitor(i, out Vector3 position, out Vector2 size))
             {
-                _returnStarts.Add(position);
-                _returnSizes.Add(size);
+                position = _destinationArea.TransformPoint(Vector3.zero);
+                size = new Vector2(120f, 120f);
             }
-            else
-            {
-                _returnStarts.Add(_destinationArea.TransformPoint(Vector3.zero));
-                _returnSizes.Add(new Vector2(120f, 120f));
-            }
+
+            _returning.Add(new ExpeditionPartyPresentation.ReturningMember(sprite, position, size, homeImage));
         }
     }
 
@@ -373,7 +364,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         // 돌아온 뒤 보상 팝업을 띄우고, 받으면 화면을 닫아 숨겨 둔 상단 바로 보상을 날린다.
         // 팝업도 이 화면의 CanvasGroup 아래라, 막아 둔 입력을 팝업을 띄우기 전에 푼다. 뒤의 화면은
         // 팝업의 블로커가 가리고, _departing이 그대로라 탭과 버튼도 반응하지 않는다.
-        _party.PlayReturn(_destinationArea, _returnSprites, _returnStarts, _returnSizes, _returnHomes, () =>
+        _party.PlayReturn(_destinationArea, _returning, () =>
         {
             _group.interactable = true;
             _rewardPopup.Show(destinationName, reward, alreadyOwned, (pointFrom, ticketFrom) =>
@@ -490,7 +481,7 @@ public sealed class ExpeditionUI : MonoBehaviour
                 _memberImages[i].color = Color.white;
             }
             string status = chosen ? UiMessages.ExpeditionMemberChosen : away ? UiMessages.ExpeditionMemberAway : null;
-            _memberLabels[i].text = (candidate.IsSpecial ? "특별 " : "") + _slimes.GetName(grade) +
+            _memberLabels[i].text = ExpeditionPartyPresentation.MemberName(_slimes, grade, candidate.IsSpecial) +
                 (status == null ? "" : "\n" + status);
             _memberButtons[i].interactable = !busy && run == null && !chosen && CanSelect(candidate);
         }

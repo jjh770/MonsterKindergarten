@@ -18,10 +18,9 @@ public sealed class ExpeditionSettlement
     public ExpeditionSettlement(long sequence, double points, long tickets, int decorationMask,
         IDictionary<string, long> completedDepartures = null, long legacyCompletedSequence = 0)
     {
-        const int AllowedDecorationMask = (1 << (int)EPlaygroundObjectType.FlowerPatch) |
-                                          (1 << (int)EPlaygroundObjectType.FlowerCushion) |
-                                          (1 << (int)EPlaygroundObjectType.FlowerBasket) |
-                                          (1 << (int)EPlaygroundObjectType.FireflyLantern);
+        // FirstDecoration부터 LastDecoration까지의 비트만 켠 값이다.
+        const int AllowedDecorationMask = ((1 << ((int)PlaygroundRules.LastDecoration + 1)) - 1) &
+                                          ~((1 << (int)PlaygroundRules.FirstDecoration) - 1);
         if (sequence < 0 || tickets < 0 || points < 0d ||
             double.IsNaN(points) || double.IsInfinity(points) || points != Math.Floor(points) ||
             (decorationMask & ~AllowedDecorationMask) != 0 ||

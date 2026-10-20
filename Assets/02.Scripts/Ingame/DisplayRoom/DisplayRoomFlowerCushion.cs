@@ -72,8 +72,7 @@ public sealed class DisplayRoomFlowerCushion : PlaygroundDecoration
         sequence.Append(body.DOScale(new Vector3(scale.x * .9f, scale.y * 1.18f, scale.z), .22f).SetEase(Ease.OutQuad));
         sequence.Append(body.DOScale(scale, .18f).SetEase(Ease.InQuad));
         sequence.AppendCallback(() => PlaySound(EAudioSfx.SlimeBounce));
-        Vector3 side = new(UnityEngine.Random.value < .5f ? -1f : 1f, UnityEngine.Random.Range(-.4f, .2f), 0f);
-        Vector3 landing = ClampToPlayground(transform.position + side.normalized * _hopOffDistance, transform.parent);
+        Vector3 landing = PickLandingBeside(transform.position, _hopOffDistance, new Vector2(-.4f, .2f));
         sequence.Append(body.DOJump(landing, _jumpPower, 1, .45f));
     }
 

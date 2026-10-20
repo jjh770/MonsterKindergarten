@@ -38,8 +38,8 @@ public static class DecorationPreviewGrant
 
         SlimeManager manager = SlimeManager.Instance;
         int granted = 0;
-        for (EPlaygroundObjectType type = EPlaygroundObjectType.FlowerPatch;
-             type <= EPlaygroundObjectType.FireflyLantern;
+        for (EPlaygroundObjectType type = PlaygroundRules.FirstDecoration;
+             type <= PlaygroundRules.LastDecoration;
              type++)
         {
             if (manager.TryGrantDecoration(type)) granted++;

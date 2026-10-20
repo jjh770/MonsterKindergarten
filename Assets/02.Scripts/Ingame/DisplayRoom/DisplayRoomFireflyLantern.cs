@@ -93,8 +93,7 @@ public sealed class DisplayRoomFireflyLantern : PlaygroundDecoration
         sequence.AppendInterval(_insideDuration);
 
         // 나오기: 빛을 두른 채 작게 튀어나와 원래 크기로 돌아가며 내려앉는다.
-        Vector3 side = new(UnityEngine.Random.value < .5f ? -1f : 1f, UnityEngine.Random.Range(-.5f, .1f), 0f);
-        Vector3 landing = ClampToPlayground(center + side.normalized * _hopOutDistance, transform.parent);
+        Vector3 landing = PickLandingBeside(center, _hopOutDistance, new Vector2(-.5f, .1f));
         sequence.AppendCallback(() =>
         {
             body.position = center;

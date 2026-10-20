@@ -34,8 +34,8 @@ public sealed class ExpeditionRewardCalculator
             throw new ArgumentOutOfRangeException(nameof(decorationChance));
         EPlaygroundObjectType? decoration = null;
         if (UnityEngine.Random.value < decorationChance)
-            decoration = (EPlaygroundObjectType)UnityEngine.Random.Range((int)EPlaygroundObjectType.FlowerPatch,
-                (int)EPlaygroundObjectType.FireflyLantern + 1);
+            decoration = (EPlaygroundObjectType)UnityEngine.Random.Range((int)PlaygroundRules.FirstDecoration,
+                (int)PlaygroundRules.LastDecoration + 1);
         return new ExpeditionReward(CalculatePoints(members, duration), tickets, decoration);
     }
 }

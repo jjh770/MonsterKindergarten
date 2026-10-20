@@ -12,6 +12,8 @@ public enum EExpeditionDestinationType
 public sealed class ExpeditionDestination
 {
     public const int MaxMembers = 3;
+    // 탐험지마다 한 팀씩 떠나므로 동시에 나가 있을 수 있는 팀 수는 탐험지 수와 같다.
+    public const int MaxActiveExpeditions = 3;
 
     public EExpeditionDestinationType Type { get; }
     public string DestinationId { get; }

@@ -39,7 +39,7 @@ public sealed class ExpeditionService
         _isBusy = true;
         try
         {
-            if (!RecoverCore() || _slimes.ActiveExpeditions.Count >= 3 ||
+            if (!RecoverCore() || _slimes.ActiveExpeditions.Count >= ExpeditionDestination.MaxActiveExpeditions ||
                 _slimes.ExpeditionSettlement.Sequence == long.MaxValue) return false;
 
             var members = new List<SlimeInstance>(memberIds.Count);

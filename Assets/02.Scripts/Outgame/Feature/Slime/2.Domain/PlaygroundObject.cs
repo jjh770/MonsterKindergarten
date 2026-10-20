@@ -83,10 +83,13 @@ public static class PlaygroundRules
                type < EPlaygroundObjectType.Count;
     }
 
+    // 탐험에서 발견하는 소품의 범위다. 상점에서 사는 범퍼와 대포는 들지 않는다.
+    public const EPlaygroundObjectType FirstDecoration = EPlaygroundObjectType.FlowerPatch;
+    public const EPlaygroundObjectType LastDecoration = EPlaygroundObjectType.FireflyLantern;
+
     public static bool IsDecoration(EPlaygroundObjectType type)
     {
-        return type >= EPlaygroundObjectType.FlowerPatch &&
-               type <= EPlaygroundObjectType.FireflyLantern;
+        return type >= FirstDecoration && type <= LastDecoration;
     }
 
     public static float ClampX(float x)

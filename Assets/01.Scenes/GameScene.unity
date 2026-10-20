@@ -2070,6 +2070,10 @@ MonoBehaviour:
     _prefab: {fileID: 690093826963905005, guid: 4d8060cec6f87a94b849ffcaeafc932f, type: 3}
   _root: {fileID: 1060314851}
   _slimeManager: {fileID: 376498428}
+  _dustPrefab: {fileID: 1753168684727382020, guid: f95ddde761112f84b86f4ae96db18574, type: 3}
+  _dropHeight: 1.2
+  _dropDuration: 0.32
+  _removeDuration: 0.25
 --- !u!1 &61324477
 GameObject:
   m_ObjectHideFlags: 0
@@ -73609,7 +73613,15 @@ MonoBehaviour:
       - 0.41666666
       - 0.5
       Duration: 0.5833333
-  _moveSpeed: 42
+  _speedRange: {x: 70, y: 110}
+  _minTravel: 160
+  _idleRange: {x: 0.8, y: 2.6}
+  _visitFriendChance: 0.25
+  _hopChance: 0.35
+  _hopHeight: 34
+  _hopDuration: 0.42
+  _personalSpace: 120
+  _animationSpeed: 0.5
 --- !u!1 &2001899592
 GameObject:
   m_ObjectHideFlags: 0

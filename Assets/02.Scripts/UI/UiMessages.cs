@@ -121,4 +121,5 @@ public static class UiMessages
     public static string ExpeditionEmptySlot => Source.ExpeditionEmptySlot;
     public static string ExpeditionSend => Source.ExpeditionSend;
     public static string ExpeditionClaim => Source.ExpeditionClaim;
+    public static string ExpeditionSpecialName => Source.ExpeditionSpecialName;
 }

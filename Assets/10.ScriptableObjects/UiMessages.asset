@@ -89,6 +89,7 @@ MonoBehaviour:
   _expeditionEmptySlot: "\uBE48\uC790\uB9AC"
   _expeditionSend: "\uD0D0\uD5D8 \uBCF4\uB0B4\uAE30"
   _expeditionClaim: "\uBCF4\uC0C1 \uBC1B\uAE30"
+  _expeditionSpecialName: "\uD2B9\uBCC4 {0}"
   _adNotReady: "\uC9C0\uAE08\uC740 \uBCFC \uC218 \uC788\uB294 \uAD11\uACE0\uAC00
     \uC5C6\uC5B4\uC694."
   _adLimitReached: "\uC624\uB298\uC740 \uBAA8\uB450 \uBD24\uC5B4\uC694."

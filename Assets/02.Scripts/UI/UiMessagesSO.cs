@@ -88,6 +88,8 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _expeditionSend = "탐험 보내기";
     [Tooltip("탐험이 돌아왔을 때 아래 버튼의 글자입니다.")]
     [SerializeField] private string _expeditionClaim = "보상 받기";
+    [Tooltip("편성 칸과 목록에서 특별한 슬라임의 이름입니다. {0}에 슬라임 이름이 들어갑니다.")]
+    [SerializeField] private string _expeditionSpecialName = "특별 {0}";
 
     [Header("광고")]
     [SerializeField] private string _adNotReady = "지금은 볼 수 있는 광고가 없어요.";
@@ -149,6 +151,7 @@ public sealed class UiMessagesSO : ScriptableObject
     public string ExpeditionEmptySlot => _expeditionEmptySlot;
     public string ExpeditionSend => _expeditionSend;
     public string ExpeditionClaim => _expeditionClaim;
+    public string ExpeditionSpecialName => _expeditionSpecialName;
     public string AdNotReady => _adNotReady;
     public string AdLimitReached => _adLimitReached;
     public string AdBoostFull => _adBoostFull;

@@ -104,8 +104,16 @@ public abstract class PlaygroundDecoration : MonoBehaviour, IPlaygroundObject
     // 소품 쪽 모양(흔들림, 크기, 빛)을 처음 상태로 되돌린다.
     protected abstract void ResetVisuals();
 
+    // from에서 왼쪽이나 오른쪽으로 distance만큼 튀어 내려앉을 자리다. 위아래 기울기는
+    // verticalRange 안에서 고르고, 놀이터 밖으로 나가지 않게 당긴다.
+    protected Vector3 PickLandingBeside(Vector3 from, float distance, Vector2 verticalRange)
+    {
+        Vector3 side = new(Random.value < .5f ? -1f : 1f, Random.Range(verticalRange.x, verticalRange.y), 0f);
+        return ClampToPlayground(from + side.normalized * distance, transform.parent);
+    }
+
     // 월드 위치를 놀이터 안쪽으로 당긴다. room은 놓인 소품들의 부모(놀이터 좌표계)다.
-    protected static Vector3 ClampToPlayground(Vector3 world, Transform room)
+    private static Vector3 ClampToPlayground(Vector3 world, Transform room)
     {
         if (room == null) return world;
 

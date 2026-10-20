@@ -54,8 +54,7 @@ public sealed class DisplayRoomFlowerBasket : PlaygroundDecoration
         sequence.AppendInterval(_rummageDuration);
 
         // 꽃을 얹고 튀어나온다.
-        Vector3 side = new(UnityEngine.Random.value < .5f ? -1f : 1f, UnityEngine.Random.Range(-.5f, .1f), 0f);
-        Vector3 landing = ClampToPlayground(transform.position + side.normalized * _hopOutDistance, transform.parent);
+        Vector3 landing = PickLandingBeside(transform.position, _hopOutDistance, new Vector2(-.5f, .1f));
         sequence.AppendCallback(() =>
         {
             PlaySound(EAudioSfx.ShopPurchase);
