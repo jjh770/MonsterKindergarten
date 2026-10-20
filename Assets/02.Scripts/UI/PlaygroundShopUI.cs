@@ -61,6 +61,9 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private readonly List<PlaygroundShopItemView> _items = new();
     private readonly List<AffordabilityBinding> _affordabilityBindings = new();
+    // 사고 나면 목록이 통째로 다시 만들어진다. 막 산 물건의 새 카드를 찾아 연출을 붙이려고 둔다.
+    private readonly Dictionary<EPlaygroundObjectType, PlaygroundShopItemView> _objectViews = new();
+    private readonly Dictionary<EBackgroundTheme, PlaygroundShopItemView> _themeViews = new();
     private PlaygroundShopPurchaseService _purchaseService;
 
     private sealed class AffordabilityBinding
@@ -258,8 +261,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Description,
                 isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isOwned && canAfford,
+                isOwned,
                 () => BuyObject(entry));
             TrackAffordability(view, entry.Price, !isOwned);
+            _objectViews[entry.Type] = view;
             shown++;
         }
 
@@ -289,8 +294,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Description,
                 isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isOwned && canAfford,
+                isOwned,
                 () => BuyTheme(entry));
             TrackAffordability(view, entry.Price, !isOwned);
+            _themeViews[entry.Theme] = view;
             shown++;
         }
 
@@ -304,7 +311,8 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [소품 놓기] 버튼으로 놓아 보세요.");
+            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [소품 놓기] 버튼으로 놓아 보세요.",
+            _objectViews.GetValueOrDefault(entry.Type));
     }
 
     private void BuyTheme(PlaygroundShopTableSO.ThemeEntry entry)
@@ -314,17 +322,22 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{entry.DisplayName} 배경을 샀어요!\n[배경 바꾸기] 버튼에서 바꿀 수 있어요.");
+            $"{entry.DisplayName} 배경을 샀어요!\n[배경 바꾸기] 버튼에서 바꿀 수 있어요.",
+            _themeViews.GetValueOrDefault(entry.Theme));
     }
 
+    // purchasedView는 구매 뒤 다시 만들어진 그 물건의 카드다. 구매가 끝나면 목록이 바로 다시
+    // 만들어지므로, 부르는 쪽은 구매를 마친 다음에 카드를 찾아 넘긴다.
     private void PresentPurchaseResult(
         EPlaygroundShopPurchaseResult result,
-        string successMessage)
+        string successMessage,
+        PlaygroundShopItemView purchasedView)
     {
         switch (result)
         {
             case EPlaygroundShopPurchaseResult.Success:
                 PlayPurchaseSound();
+                if (purchasedView != null) purchasedView.PlayPurchased();
                 _toast?.Show(successMessage, _purchaseToastDuration);
                 break;
 
@@ -387,6 +400,8 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     {
         _items.Clear();
         _affordabilityBindings.Clear();
+        _objectViews.Clear();
+        _themeViews.Clear();
 
         for (int i = _itemRoot.childCount - 1; i >= 0; --i)
         {
