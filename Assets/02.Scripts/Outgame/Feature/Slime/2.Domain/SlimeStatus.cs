@@ -50,8 +50,6 @@ public class SlimeStatus
     public AdRewardProgress AdRewards { get; private set; }
     private readonly List<ExpeditionRun> _activeExpeditions = new();
     public IReadOnlyList<ExpeditionRun> ActiveExpeditions => _activeExpeditions.AsReadOnly();
-    // 기존 단일 탐험 호출부의 호환용이다. 새 호출부는 목록과 RunId를 사용한다.
-    public ExpeditionRun ActiveExpedition => _activeExpeditions.Count == 0 ? null : _activeExpeditions[0];
     public ExpeditionSettlement ExpeditionSettlement { get; private set; }
 
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
@@ -88,7 +86,6 @@ public class SlimeStatus
         long gachaTicketsObtainedTotal = 0,
         long autoMergeUseCount = 0,
         AdRewardProgress adRewards = default,
-        ExpeditionRun activeExpedition = null,
         ExpeditionSettlement expeditionSettlement = null,
         IEnumerable<ExpeditionRun> activeExpeditions = null)
     {
@@ -184,8 +181,6 @@ public class SlimeStatus
             _activeSlimes.Add(instance);
         }
 
-        if (activeExpedition != null && !TryStartExpedition(activeExpedition))
-            throw new ArgumentException("이전 진행 중 탐험을 복원할 수 없어요.");
         if (activeExpeditions != null)
             foreach (ExpeditionRun run in activeExpeditions)
                 if (!TryStartExpedition(run))

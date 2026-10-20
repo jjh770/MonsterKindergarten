@@ -68,9 +68,6 @@ public sealed class ExpeditionService
         finally { _isBusy = false; }
     }
 
-    public bool TryClaim(out ExpeditionReward reward)
-        => TryClaim(_slimes.ActiveExpedition?.RunId, out reward);
-
     public bool TryClaim(string runId, out ExpeditionReward reward)
     {
         reward = null;

@@ -117,7 +117,6 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public bool IsInitialized { get; private set; }
     public IReadOnlyList<ExpeditionRun> ActiveExpeditions => _status?.ActiveExpeditions ?? Array.Empty<ExpeditionRun>();
     public bool IsOnExpedition(string instanceId) => _status != null && _status.IsOnExpedition(instanceId);
-    public ExpeditionRun ActiveExpedition => _status?.ActiveExpedition;
     public ExpeditionSettlement ExpeditionSettlement => _status?.ExpeditionSettlement ?? global::ExpeditionSettlement.Empty;
     public event Action ExpeditionChanged;
 

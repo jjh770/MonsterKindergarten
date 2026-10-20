@@ -162,7 +162,6 @@ public static class SlimeStatusSaveMapper
                 saveData.GachaTicketsObtainedTotal,
                 saveData.AutoMergeUseCount,
                 adRewards,
-                null,
                 saveData.ExpeditionSettlement?.ToDomain() ??
                     throw new ArgumentException("탐험 보상 기록이 없습니다."),
                 RestoreExpeditions(saveData.ActiveExpeditions));
