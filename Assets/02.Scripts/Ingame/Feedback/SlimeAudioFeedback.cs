@@ -7,10 +7,10 @@ public sealed class SlimeAudioFeedback : MonoBehaviour
 
     [Header("Bump")]
     [Tooltip("장식장에서 슬라임끼리 부딪힐 때 나는 소리입니다.")]
-    [SerializeField, Min(0f)] private float _bumpSoundCooldown = 0.08f;
+    [SerializeField, Min(0f)] private float _bumpSoundCooldown = 0.3f;
 
     [Tooltip("이보다 느리게 스치면 소리를 내지 않습니다.")]
-    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 2f;
+    [SerializeField, Min(0f)] private float _bumpMinimumSpeed = 3.5f;
 
     private SlimeController _slimeController;
 
