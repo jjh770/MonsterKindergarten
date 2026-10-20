@@ -22,6 +22,10 @@ public sealed class UiMessagesSO : ScriptableObject
 
     [Header("소품 배치")]
     [SerializeField] private string _placementUnavailable = "지금은 배치할 수 없어요.";
+    [Tooltip("소품 놓기에서 아직 없는 상점 소품을 눌렀을 때의 안내입니다.")]
+    [SerializeField] private string _placementFromShop = "상점의 소품 탭에서 살 수 있어요.";
+    [Tooltip("소품 놓기에서 아직 없는 탐험 소품을 눌렀을 때의 안내입니다.")]
+    [SerializeField] private string _placementFromExpedition = "탐험을 보내면 발견할 수 있어요.";
     [SerializeField] private string _tooCloseToOther = "다른 것과 너무 가까워요.";
     [SerializeField] private string _cannotMoveHere = "여기에는 옮길 수 없어요.";
     [SerializeField] private string _cannotPlaceHere = "여기에는 놓을 수 없어요.";
@@ -83,6 +87,8 @@ public sealed class UiMessagesSO : ScriptableObject
     public string SameKindInDisplayRoom => _sameKindInDisplayRoom;
     public string CannotSendToDisplayRoom => _cannotSendToDisplayRoom;
     public string PlacementUnavailable => _placementUnavailable;
+    public string PlacementFromShop => _placementFromShop;
+    public string PlacementFromExpedition => _placementFromExpedition;
     public string TooCloseToOther => _tooCloseToOther;
     public string CannotMoveHere => _cannotMoveHere;
     public string CannotPlaceHere => _cannotPlaceHere;

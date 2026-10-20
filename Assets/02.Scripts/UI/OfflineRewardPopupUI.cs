@@ -369,6 +369,10 @@ public class OfflineRewardPopupUI : MonoBehaviour
             flyingSequence.Insert(
                 _scatterDuration + flyDuration * 0.9f,
                 flyingCanvasGroup.DOFade(0f, flyDuration * 0.1f));
+            // 아이콘이 상단 바에 닿을 때마다 탐험 보상과 같은 짧은 소리를 낸다. 겹치지 않게 쿨다운을 둔다.
+            flyingSequence.InsertCallback(
+                _scatterDuration + flyDuration,
+                () => AudioManager.Instance?.PlaySFXRandomPitchWithCooldown(EAudioSfx.TicketCollect, 0.06f));
 
             _currentSequence.Insert(startDelay, flyingSequence);
         }

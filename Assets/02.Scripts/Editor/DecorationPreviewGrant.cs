@@ -6,6 +6,30 @@ using UnityEngine;
 public static class DecorationPreviewGrant
 {
     private const string MenuPath = "Tools/Decorations/Grant Test Decorations (Editor Local Save)";
+    private const string UnlockAllPath = "Tools/Decorations/Unlock All Objects";
+    private const string LockAllPath = "Tools/Decorations/Lock All Objects";
+
+    // 범퍼와 대포를 포함한 소품 6종을 모두 하나씩 가진 상태로 만든다. 이미 가진 것은 그대로 둔다.
+    [MenuItem(UnlockAllPath)]
+    private static void UnlockAll()
+    {
+        if (!CanGrant()) return;
+        int changed = SlimeManager.Instance.EditorSetAllPlaygroundObjects(true);
+        Debug.Log(changed > 0
+            ? $"소품 {changed}종을 새로 열었어요. 이제 소품 6종을 모두 가지고 있어요."
+            : "이미 소품을 모두 가지고 있거나 지금은 바꿀 수 없어요.");
+    }
+
+    // 소품을 하나도 없는 상태로 되돌린다. 장식장에 놓인 소품도 함께 치운다.
+    [MenuItem(LockAllPath)]
+    private static void LockAll()
+    {
+        if (!CanGrant()) return;
+        int changed = SlimeManager.Instance.EditorSetAllPlaygroundObjects(false);
+        Debug.Log(changed > 0
+            ? $"소품 {changed}종을 잠갔어요. 놓여 있던 소품도 모두 치웠어요."
+            : "이미 가진 소품이 없거나 지금은 바꿀 수 없어요.");
+    }
 
     [MenuItem(MenuPath)]
     private static void Grant()
@@ -25,6 +49,8 @@ public static class DecorationPreviewGrant
     }
 
     [MenuItem(MenuPath, true)]
+    [MenuItem(UnlockAllPath, true)]
+    [MenuItem(LockAllPath, true)]
     private static bool CanGrant()
     {
         return EditorApplication.isPlaying &&

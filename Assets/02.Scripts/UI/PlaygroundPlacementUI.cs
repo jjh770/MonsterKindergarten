@@ -20,9 +20,15 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         [SerializeField] private EPlaygroundObjectType _type;
         [SerializeField] private Button _button;
+        [SerializeField] private Image _icon;
+        [SerializeField] private TextMeshProUGUI _label;
 
         public EPlaygroundObjectType Type => _type;
         public Button Button => _button;
+        public Image Icon => _icon;
+        public TextMeshProUGUI Label => _label;
+        // 씬에 적힌 이름이다. 가지지 않은 동안은 ???로 바꿔 두었다가 되돌린다.
+        public string Name { get; set; }
     }
 
     [SerializeField] private PlaygroundObjectField _field;
@@ -48,6 +54,10 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _cannonText;
     [SerializeField] private TextMeshProUGUI _guideText;
     [SerializeField] private DecorationButton[] _decorationButtons = Array.Empty<DecorationButton>();
+    [Tooltip("아직 가지지 않은 소품의 그림에 씌우는 실루엣 재질입니다.")]
+    [SerializeField] private Material _silhouetteMaterial;
+    [SerializeField] private Image _bumperIcon;
+    [SerializeField] private Image _cannonIcon;
 
     [Header("Input")]
     [Tooltip("이만큼 끌어야 옮기는 것으로 본다. 그 아래는 고르기로 본다.")]
@@ -109,6 +119,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
         foreach (DecorationButton binding in _decorationButtons)
         {
+            if (binding.Label != null) binding.Name = binding.Label.text;
             if (binding.Button == null) continue;
             EPlaygroundObjectType type = binding.Type;
             binding.Button.onClick.AddListener(() => SelectType(type));
@@ -212,6 +223,13 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void SelectType(EPlaygroundObjectType type)
     {
+        // 아직 없는 소품은 무엇인지 감춰 두고, 어디서 얻는지만 알려 준다.
+        if (!IsOwned(type))
+        {
+            _toast?.Show(IsShopObject(type) ? UiMessages.PlacementFromShop : UiMessages.PlacementFromExpedition);
+            return;
+        }
+
         if (!CanPlace(type))
         {
             _toast?.Show(UiMessages.PlacementUnavailable);
@@ -229,6 +247,31 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         _hasSelectedType = false;
         _selectedIndex = -1;
     }
+
+    private bool IsOwned(EPlaygroundObjectType type) =>
+        _slimeManager != null && _slimeManager.GetOwnedPlaygroundObjectCount(type) > 0;
+
+    // 범퍼와 대포는 상점에서 사고, 나머지는 탐험에서 발견한다.
+    private static bool IsShopObject(EPlaygroundObjectType type) =>
+        type == EPlaygroundObjectType.Bumper || type == EPlaygroundObjectType.Cannon;
+
+    // 가진 소품은 원래 그림과 이름을, 없는 소품은 실루엣과 ???를 보여 준다. 없는 소품도 눌러서
+    // 얻는 곳을 볼 수 있게 버튼은 켜 두고, 이미 놓은 소품만 끈다.
+    private void ApplyEntry(EPlaygroundObjectType type, Button button, Image icon, TextMeshProUGUI label, string name)
+    {
+        bool owned = IsOwned(type);
+        if (button != null) button.interactable = !owned || CanPlace(type);
+        if (icon != null)
+        {
+            icon.material = owned ? null : _silhouetteMaterial;
+            icon.color = owned ? Color.white : SilhouetteColor;
+        }
+
+        if (label != null) label.text = owned ? name : UnknownName;
+    }
+
+    private const string UnknownName = "???";
+    private static readonly Color SilhouetteColor = new(.48f, .48f, .48f, 1f);
 
     private bool CanPlace(EPlaygroundObjectType type)
     {
@@ -256,30 +299,12 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void Refresh()
     {
-        if (_bumperText != null)
-        {
-            _bumperText.text = "범퍼";
-        }
-
-        if (_cannonText != null)
-        {
-            _cannonText.text = "대포";
-        }
-
-        if (_bumperButton != null)
-        {
-            _bumperButton.interactable = CanPlace(EPlaygroundObjectType.Bumper);
-        }
-
-        if (_cannonButton != null)
-        {
-            _cannonButton.interactable = CanPlace(EPlaygroundObjectType.Cannon);
-        }
+        ApplyEntry(EPlaygroundObjectType.Bumper, _bumperButton, _bumperIcon, _bumperText, "범퍼");
+        ApplyEntry(EPlaygroundObjectType.Cannon, _cannonButton, _cannonIcon, _cannonText, "대포");
 
         foreach (DecorationButton binding in _decorationButtons)
         {
-            if (binding.Button != null)
-                binding.Button.interactable = CanPlace(binding.Type);
+            ApplyEntry(binding.Type, binding.Button, binding.Icon, binding.Label, binding.Name);
         }
 
         if (_removeButton != null)

@@ -66,6 +66,8 @@ public static class UiMessages
 
     // 소품 배치
     public static string PlacementUnavailable => Source.PlacementUnavailable;
+    public static string PlacementFromShop => Source.PlacementFromShop;
+    public static string PlacementFromExpedition => Source.PlacementFromExpedition;
     public static string TooCloseToOther => Source.TooCloseToOther;
     public static string CannotMoveHere => Source.CannotMoveHere;
     public static string CannotPlaceHere => Source.CannotPlaceHere;

@@ -316,10 +316,11 @@ public class AudioManager : MonoBehaviour
     public void PlaySFXRandomPitch(
         EAudioSfx cue,
         float minPitch = 0.9f,
-        float maxPitch = 1.1f)
+        float maxPitch = 1.1f,
+        float volumeScale = 1f)
     {
         AudioClip clip = GetSfx(cue);
-        PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip));
+        PlaySFXRandomPitch(clip, minPitch, maxPitch, GetClipVolume(clip) * volumeScale);
     }
 
     public void PlaySFXRandomPitchWithCooldown(

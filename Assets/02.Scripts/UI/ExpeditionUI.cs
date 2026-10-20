@@ -433,7 +433,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _nameText.text = view.Name;
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
-        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 추가 기념품 {view.DecorationChance:P0}";
+        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 소품 1종 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? "탐험 보내기" : run.IsReadyToReturn(ServerClock.TrustedUtcNow) ? "보상 받기" : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? run.IsReadyToReturn(ServerClock.TrustedUtcNow) : unlocked && rules.HasRequiredGrades(selected));
         _actionAlert.SetActive(run != null && run.IsReadyToReturn(ServerClock.TrustedUtcNow));

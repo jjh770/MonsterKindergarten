@@ -323,6 +323,24 @@ public class SlimeStatus
 
         return finished;
     }
+
+    // 에디터 확인 메뉴 전용이다. 모든 소품을 하나씩 가진 상태로 만들거나(unlock), 하나도 없는 상태로
+    // 되돌린다. 되돌릴 때는 놓인 소품도 함께 치운다. 가진 개수가 바뀐 소품 종류 수를 돌려준다.
+    public int EditorSetAllPlaygroundObjects(bool unlock)
+    {
+        int changed = 0;
+        if (!unlock) _placedObjects.Clear();
+        for (int i = 0; i < _ownedPlaygroundObjects.Length; i++)
+        {
+            int next = unlock ? Math.Max(1, _ownedPlaygroundObjects[i]) : 0;
+            if (_ownedPlaygroundObjects[i] == next) continue;
+
+            _ownedPlaygroundObjects[i] = next;
+            changed++;
+        }
+
+        return changed;
+    }
 #endif
 
     public bool IsOnExpedition(string instanceId)

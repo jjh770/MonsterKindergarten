@@ -153,6 +153,19 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         ExpeditionChanged?.Invoke();
         return finished;
     }
+
+    // 에디터 확인 메뉴 전용이다. 소품을 모두 가진 상태로 만들거나 모두 없앤 뒤 저장한다.
+    public int EditorSetAllPlaygroundObjects(bool unlock)
+    {
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure) return 0;
+
+        int changed = _status.EditorSetAllPlaygroundObjects(unlock);
+        if (changed == 0) return 0;
+
+        Save();
+        PlaygroundChanged?.Invoke();
+        return changed;
+    }
 #endif
 
     public bool TryAdvanceExpeditionSettlement(ExpeditionSettlement next)

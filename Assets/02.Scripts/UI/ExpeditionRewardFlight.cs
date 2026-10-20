@@ -76,7 +76,7 @@ public sealed class ExpeditionRewardFlight : MonoBehaviour
             Vector3 scatter = from + _layer.TransformVector(new Vector3(
                 Random.Range(-_scatterDistance.x, _scatterDistance.x),
                 Random.Range(-_scatterDistance.y, _scatterDistance.y)));
-            Vector3 control = GetControlPoint(scatter, target.position);
+            float bend = GetBend();
             float duration = _flyDuration * Random.Range(.85f, 1.15f);
             float start = i * _spawnInterval;
             bool first = i == 0;
@@ -86,8 +86,11 @@ public sealed class ExpeditionRewardFlight : MonoBehaviour
             flight.Append(DOVirtual.Float(0f, 1f, duration, t =>
             {
                 float u = 1f - t;
-                // 날아가는 동안 상단 바가 움직여도 지금 자리로 간다.
-                rect.position = u * u * scatter + 2f * u * t * control + t * t * target.position;
+                // 탐험 화면이 닫히는 동안 상단 바가 위에서 내려온다. 휘는 점을 출발할 때 한 번만 정하면
+                // 화면 밖의 목표를 기준으로 휘어 곡선이 과하게 꺾이므로, 매 프레임 지금 목표로 다시 잡는다.
+                Vector3 end = target.position;
+                Vector3 control = GetControlPoint(scatter, end, bend);
+                rect.position = u * u * scatter + 2f * u * t * control + t * t * end;
             }).SetEase(Ease.InQuad));
             flight.Join(rect.DOScale(.55f, duration).SetEase(Ease.InQuad));
             flight.AppendCallback(() =>
@@ -102,13 +105,18 @@ public sealed class ExpeditionRewardFlight : MonoBehaviour
         }
     }
 
-    // 시작점과 목표 사이 가운데에서 옆으로 비켜선 점이다. 아이콘마다 좌우가 달라 한 줄로 쏠리지 않는다.
-    private Vector3 GetControlPoint(Vector3 from, Vector3 to)
+    // 아이콘마다 휘는 정도와 좌우를 정한다. 좌우가 달라 한 줄로 쏠리지 않는다.
+    private float GetBend()
+    {
+        float side = Random.value < .5f ? -1f : 1f;
+        return _flyArc * Random.Range(.6f, 1.2f) * side;
+    }
+
+    // 시작점과 목표 사이 가운데에서 옆으로 비켜선 점이다. 오프라인 보상의 곡선과 같은 식이다.
+    private static Vector3 GetControlPoint(Vector3 from, Vector3 to, float bend)
     {
         Vector3 delta = to - from;
-        Vector3 perpendicular = new(-delta.y, delta.x, 0f);
-        float side = Random.value < .5f ? -1f : 1f;
-        return (from + to) * .5f + perpendicular * (_flyArc * Random.Range(.6f, 1.2f) * side);
+        return (from + to) * .5f + new Vector3(-delta.y, delta.x, 0f) * bend;
     }
 
     private void Clear()
