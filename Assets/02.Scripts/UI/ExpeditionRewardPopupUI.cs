@@ -34,6 +34,10 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
     [SerializeField] private Button _confirmButton;
     [Tooltip("탐험에서 나오는 장식마다 팝업에 그릴 그림입니다.")]
     [SerializeField] private DecorationIcon[] _decorationIcons = Array.Empty<DecorationIcon>();
+    [Tooltip("팝업이 열릴 때 제목 둘레에서, 처음 얻은 장식이 나올 때 그 그림에서 터지는 반짝이입니다. 비워 두면 터지지 않습니다.")]
+    [SerializeField] private UiSparkleBurst _burst;
+    [Tooltip("포인트가 0부터 받은 값까지 올라가는 시간입니다(초).")]
+    [SerializeField, Min(0.05f)] private float _pointCountDuration = 0.6f;
 
     [Header("Reveal")]
     [SerializeField, Min(0f)] private float _revealStartDelay = 0.2f;
@@ -43,6 +47,7 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
     private Sequence _sequence;
     private Action<Vector3, Vector3> _confirmed;
     private bool _isReady;
+    private string _pointFinalText;
 
     // 열려 있으면 탐험 화면이 닫히지 않게 막고, 뒤로 가기는 받기와 같게 처리한다.
     public bool IsVisible => _panel != null && _panel.activeSelf;
@@ -85,7 +90,8 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
         _sequence?.Kill();
         _confirmed = confirmed;
         _titleText.text = string.Format(UiMessages.ExpeditionReturned, destinationName);
-        _pointText.text = $"+{new Currency(reward.Points)}";
+        _pointFinalText = $"+{new Currency(reward.Points)}";
+        _pointText.text = "+0";
         _ticketText.text = $"+{reward.GachaTickets}장";
         _ticketRow.gameObject.SetActive(reward.GachaTickets > 0);
 
@@ -109,6 +115,7 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
         // 줄마다 작은 크기에서 튀어 나온다. 처음 얻은 장식은 마지막에 한 번 더 들썩이며 효과음을 낸다.
         _sequence = DOTween.Sequence().SetUpdate(true);
         _sequence.Join(_motion.PlayOpen());
+        _sequence.InsertCallback(.1f, () => PlayBurst(_titleText.transform.position));
         float time = _revealStartDelay;
         foreach (RectTransform row in new[] { _pointRow, _ticketRow, _decorationRow })
         {
@@ -117,16 +124,32 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
             row.localScale = Vector3.zero;
             _sequence.Insert(time, row.DOScale(Vector3.one, _revealDuration).SetEase(Ease.OutBack));
             _sequence.InsertCallback(time, () => PlaySound(EAudioSfx.SlimeBounce));
+            if (row == _pointRow) AppendPointCount(time, reward.Points);
             time += _revealInterval;
         }
 
         if (hasDecoration && !alreadyOwned)
         {
             _sequence.InsertCallback(time, () => PlaySound(EAudioSfx.ShopPurchase));
+            _sequence.InsertCallback(time, () => PlayBurst(_decorationImage.transform.position));
             _sequence.Insert(time, _decorationImage.rectTransform.DOPunchScale(Vector3.one * .3f, .45f, 6, .5f));
         }
 
         _sequence.OnComplete(() => _sequence = null);
+    }
+
+    // 포인트 줄이 튀어나오면서 숫자가 0부터 받은 값까지 빠르게 올라간다. 끝에는 정확한 값을 적는다.
+    private void AppendPointCount(float at, double points)
+    {
+        _sequence.Insert(at, DOVirtual.Float(0f, 1f, _pointCountDuration,
+                progress => _pointText.text = $"+{new Currency(Math.Floor(points * progress))}")
+            .SetEase(Ease.OutCubic));
+        _sequence.InsertCallback(at + _pointCountDuration, () => _pointText.text = _pointFinalText);
+    }
+
+    private void PlayBurst(Vector3 position)
+    {
+        if (_burst != null) _burst.Play(position);
     }
 
     public void Confirm()
@@ -139,6 +162,7 @@ public sealed class ExpeditionRewardPopupUI : MonoBehaviour
 
         // 줄이 아직 튀어 나오는 중이면 다 보이게 한다. 출발점은 닫히기 전의 아이콘 자리다.
         foreach (RectTransform row in new[] { _pointRow, _ticketRow, _decorationRow }) row.localScale = Vector3.one;
+        _pointText.text = _pointFinalText;
         Vector3 pointFrom = _pointIcon.position;
         Vector3 ticketFrom = _ticketIcon.position;
 

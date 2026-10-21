@@ -39,6 +39,11 @@ public sealed class PlaygroundSlimeAttachment : MonoBehaviour
     private SpriteRenderer _targetRenderer;
     private float _remaining;
     private float _elapsed;
+    // 다른 슬라임에게 건너가는 중이다. 시작 자리에서 새 머리 위까지 포물선을 그린다.
+    private Vector3 _passFrom;
+    private float _passElapsed;
+    private float _passSeconds;
+    private float _passHeight;
     private bool _isInitialized;
 
     public bool IsFollowing => _target != null;
@@ -72,7 +77,22 @@ public sealed class PlaygroundSlimeAttachment : MonoBehaviour
         _targetRenderer = slime.GetComponent<SpriteRenderer>();
         _remaining = Mathf.Max(_fadeDuration * 2f, duration);
         _elapsed = 0f;
+        _passSeconds = 0f;
         LateUpdate();
+    }
+
+    // 따라가던 표시를 다른 슬라임에게 넘긴다. 남은 시간은 그대로 두고, arcSeconds 동안 지금 자리에서
+    // 새 슬라임 머리 위로 포물선을 그리며 건너간다. 따라가던 것이 없으면 아무 일도 하지 않는다.
+    public void PassTo(SlimeController slime, float arcSeconds, float arcHeight)
+    {
+        if (slime == null || _target == null) return;
+
+        _passFrom = transform.position;
+        _passElapsed = 0f;
+        _passSeconds = Mathf.Max(.01f, arcSeconds);
+        _passHeight = arcHeight;
+        _target = slime;
+        _targetRenderer = slime.GetComponent<SpriteRenderer>();
     }
 
     public void Stop()
@@ -120,7 +140,15 @@ public sealed class PlaygroundSlimeAttachment : MonoBehaviour
         Vector3 center = _targetRenderer != null ? _targetRenderer.bounds.center : _target.transform.position;
         float halfHeight = _targetRenderer != null ? _targetRenderer.bounds.extents.y : 0.5f;
         float bob = _bobHeight > 0f ? Mathf.Sin(_elapsed * _bobSpeed) * _bobHeight : 0f;
-        transform.position = center + new Vector3(_offset.x, halfHeight * _headHeight + _offset.y + bob, 0f);
+        Vector3 position = center + new Vector3(_offset.x, halfHeight * _headHeight + _offset.y + bob, 0f);
+        if (_passElapsed < _passSeconds)
+        {
+            _passElapsed += delta;
+            float t = Mathf.Clamp01(_passElapsed / _passSeconds);
+            position = Vector3.Lerp(_passFrom, position, t) + Vector3.up * (4f * _passHeight * t * (1f - t));
+        }
+
+        transform.position = position;
         transform.localScale = _popIn ? _baseScale * Mathf.Lerp(.4f, 1f, Mathf.Sqrt(fadeIn)) : _baseScale;
 
         for (int i = 0; i < _orbiters.Length; i++)

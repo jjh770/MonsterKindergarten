@@ -27,6 +27,7 @@ public sealed class UiSparkleBurst : MonoBehaviour
     private readonly List<Image> _sparkles = new();
     private Sequence _sequence;
     private Color _flashColor;
+    private Color _sparkleColor;
 
     private void Awake()
     {
@@ -37,6 +38,8 @@ public sealed class UiSparkleBurst : MonoBehaviour
             return;
         }
 
+        // 조각 색은 원본의 색을 따른다. 밝은 바탕 위에서는 원본을 금색으로 칠해 두면 잘 보인다.
+        _sparkleColor = _sparkleTemplate.color;
         _sparkleTemplate.gameObject.SetActive(false);
         for (int i = 0; i < _sparkleCount; i++)
         {
@@ -90,7 +93,7 @@ public sealed class UiSparkleBurst : MonoBehaviour
             rect.localPosition = center;
             rect.localScale = Vector3.zero;
             rect.localRotation = Quaternion.identity;
-            sparkle.color = Color.white;
+            sparkle.color = _sparkleColor;
             sparkle.gameObject.SetActive(true);
             _sequence.Insert(delay, rect.DOLocalMove(target, _duration).SetEase(Ease.OutCubic));
             _sequence.Insert(delay, rect.DOScale(Vector3.one * size, _duration * .3f).SetEase(Ease.OutBack));

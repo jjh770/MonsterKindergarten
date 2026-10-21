@@ -39,6 +39,8 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
     [SerializeField] private Sprite _emptySprite;
     [SerializeField] private Material _silhouetteMaterial;
     [SerializeField] private RectTransform _flightLayer;
+    [Tooltip("돌아온 슬라임들 위로 \"다녀왔어요!\"가 뜰 때 탐험지 가운데서 번지는 빛과 반짝이입니다. 비워 두면 터지지 않습니다.")]
+    [SerializeField] private UiSparkleBurst _celebrationBurst;
 
     [Header("Waiting")]
     [Tooltip("탐험지에서 기다리는 슬라임이 한 번씩 통통 뛰는 간격 범위입니다(초).")]
@@ -276,7 +278,11 @@ public sealed class ExpeditionPartyPresentation : MonoBehaviour
         }
 
         Vector3 center = destinationArea.TransformPoint(Vector3.zero);
-        _animation.InsertCallback(.3f, () => AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock));
+        _animation.InsertCallback(.3f, () =>
+        {
+            AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
+            if (_celebrationBurst != null) _celebrationBurst.Play(center);
+        });
         ShowDepartureLabel(UiMessages.ExpeditionHomecoming, center + _flightLayer.TransformVector(new Vector3(0f, 145f)),
             .3f, CelebrationSeconds - .25f);
         _animation.AppendInterval(.15f);
