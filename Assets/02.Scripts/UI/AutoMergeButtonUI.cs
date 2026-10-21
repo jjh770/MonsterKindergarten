@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,9 +13,15 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
     [SerializeField] private AutoMergeManager _autoMergeManager;
     [SerializeField] private SlimeManager _slimeManager;
 
+    [Header("Ready")]
+    [Tooltip("쿨다운이 끝나 다시 누를 수 있게 될 때 버튼이 출렁이는 크기입니다.")]
+    [SerializeField, Min(0f)] private float _readyPunch = 0.18f;
+
     private static string NoPairMessage => UiMessages.NoMergePair;
 
     private bool? _lastInteractable;
+    private bool? _wasReady;
+    private Tween _readyTween;
 
     public RectTransform ButtonTarget => _button != null
         ? _button.transform as RectTransform
@@ -62,11 +69,14 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
             _slimeManager.DataInitialized -= Refresh;
             _slimeManager.NormalCollectionCountChanged -= OnCollectionCountChanged;
         }
+
+        _readyTween?.Kill(complete: true);
     }
 
     private void Update()
     {
         _progressView.SetProgress(_autoMergeManager.Progress01);
+        CheckReady();
         Refresh();
     }
 
@@ -86,6 +96,22 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
     private void OnCollectionCountChanged(int _)
     {
         Refresh();
+    }
+
+    // 쿨다운이 끝나 다시 누를 수 있게 된 순간 버튼이 통통 튀고 짧은 알림음이 난다. 튜토리얼이나
+    // 공간 전환으로 잠겼다 풀리는 것은 쿨다운과 상관없으므로, 준비 상태가 바뀐 때만 본다.
+    // 처음 읽는 값은 기준으로만 쓴다. 게임에 들어오자마자 소리가 나지 않게 한다.
+    private void CheckReady()
+    {
+        bool isReady = _autoMergeManager.IsReady;
+        bool becameReady = _wasReady == false && isReady;
+        _wasReady = isReady;
+        if (!becameReady || !_autoMergeManager.IsAvailable() || !_button.gameObject.activeInHierarchy) return;
+
+        _readyTween?.Kill(complete: true);
+        _readyTween = _button.transform.DOPunchScale(Vector3.one * _readyPunch, .35f, 6, .5f)
+            .OnKill(() => _readyTween = null);
+        AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.TicketCollect, 1.15f, 1.25f, .6f);
     }
 
     // 매 프레임 도니 상태가 바뀔 때만 손댄다.

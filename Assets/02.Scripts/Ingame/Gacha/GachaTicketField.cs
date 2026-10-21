@@ -54,6 +54,11 @@ public class GachaTicketField : MonoBehaviour
     [FormerlySerializedAs("_maxObjectsPerStage")]
     [SerializeField, Min(1)] private int _maxObjects = 30;
 
+    [Header("Drop Presentation")]
+    [Tooltip("떨어진 뽑기권이 슬라임 머리에서 튀어 오르는 높이입니다(월드 단위).")]
+    [SerializeField, Min(0f)] private float _dropJumpPower = 0.6f;
+    [SerializeField, Min(0.05f)] private float _dropDuration = 0.45f;
+
     [Header("Collect Presentation")]
     [SerializeField, Min(0.05f)] private float _collectFlyDuration = 0.65f;
     [Tooltip("화면의 짧은 축을 기준으로 위로 띄우는 높이 비율입니다.")]
@@ -190,7 +195,8 @@ public class GachaTicketField : MonoBehaviour
         _slimeManager.AddPendingTicket();
 
         Vector2 scatter = UnityEngine.Random.insideUnitCircle * _dropScatterRadius;
-        Create((Vector2)source.transform.position + scatter);
+        GameObject ticket = Create((Vector2)source.transform.position + scatter);
+        if (ticket != null) PlayDrop(ticket, source);
         ApplyVisibility();
         CollectionStateChanged?.Invoke();
     }
@@ -211,9 +217,9 @@ public class GachaTicketField : MonoBehaviour
     // 저장된 장수는 상한 없이 늘지만 화면에 놓는 오브젝트는 여기서 끊는다. 며칠을
     // 방치하면 수백 장이 쌓이는데 그만큼 오브젝트를 만들 이유가 없다. 상한을 넘은
     // 몫도 저장에는 남아 있으므로 장수를 잃지는 않는다.
-    private void Create(Vector2 position)
+    private GameObject Create(Vector2 position)
     {
-        if (_tickets.Count >= _maxObjects) return;
+        if (_tickets.Count >= _maxObjects) return null;
 
         GameObject ticket = Instantiate(_ticketPrefab, _ticketRoot);
         ticket.transform.position = position;
@@ -229,6 +235,29 @@ public class GachaTicketField : MonoBehaviour
         }
 
         _tickets.Add(ticket);
+        return ticket;
+    }
+
+    // 슬라임 머리 위에서 톡 튀어나와 옆 바닥의 제자리로 떨어진다. 자리와 저장은 이미 정해졌고
+    // 모양만 움직이므로, 도중에 주워도 줍는 연출이 먼저 이 움직임을 끝내고 시작한다.
+    private void PlayDrop(GameObject ticket, SlimeController source)
+    {
+        Transform body = ticket.transform;
+        Vector3 landing = body.position;
+        Vector3 scale = body.localScale;
+        // 슬라임 그림은 둘레가 넉넉한 사각형이라 그림 끝이 머리보다 한참 위다. 몸통 콜라이더의 위쪽 끝을 머리로 본다.
+        Collider2D slimeCollider = source.GetComponent<Collider2D>();
+        float headY = slimeCollider != null && slimeCollider.enabled
+            ? slimeCollider.bounds.max.y
+            : source.transform.position.y + .3f;
+        body.position = new Vector3(source.transform.position.x, headY, landing.z);
+        body.localScale = scale * .3f;
+
+        AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.SlimeBounce, 1.35f, 1.55f, .7f);
+        Sequence sequence = DOTween.Sequence().SetTarget(body).SetLink(ticket);
+        sequence.Join(body.DOScale(scale, .2f).SetEase(Ease.OutBack));
+        sequence.Join(body.DOJump(landing, _dropJumpPower, 1, _dropDuration).SetEase(Ease.Linear));
+        sequence.Append(body.DOPunchScale(new Vector3(scale.x * .2f, -scale.y * .2f, 0f), .2f, 5, .5f));
     }
 
     public bool TryCollectAll()
@@ -375,6 +404,9 @@ public class GachaTicketField : MonoBehaviour
 
     private void PlayCollectPresentation(GameObject ticket, Action onArrived)
     {
+        // 떨어지던 중이면 제자리에 내려놓고 줍는 연출을 시작한다.
+        if (ticket != null) ticket.transform.DOKill(complete: true);
+
         // 어느 경로로 빠지든 보상은 준다. 연출을 못 보여 준 것이 티켓을 잃을
         // 이유는 되지 않는다.
         if (ticket == null)
