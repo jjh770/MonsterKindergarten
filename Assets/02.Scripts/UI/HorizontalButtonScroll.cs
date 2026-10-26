@@ -1,165 +1,77 @@
 using System;
-using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-// Button을 ScrollRect 아래에 두지 않고 가로 메뉴를 드래그한다.
-// ScrollRect가 드래그 임계값을 지워 자식 Button의 터치 클릭을 취소하는 문제를 피한다.
-public sealed class HorizontalButtonScroll : MonoBehaviour
+// 하단 메뉴 줄의 스크롤은 같은 오브젝트의 ScrollRect가 맡는다. 끌기, 관성, 끝에서 늘어났다
+// 돌아오는 탄성, 끌기로 바뀐 터치의 클릭 취소, 위를 덮은 UI에 입력을 양보하는 것까지 모두
+// EventSystem을 따르는 기본 동작이다. Content의 HorizontalLayoutGroup과 ContentSizeFitter가 폭을
+// 정하므로, 버튼은 Content 아래에 두기만 하면 줄에 들어간다.
+//
+// 이 컴포넌트는 튜토리얼이 줄 끝쪽 버튼을 가리킬 때 그 버튼이 보이도록 줄을 미는 일만 한다.
+[RequireComponent(typeof(ScrollRect))]
+public sealed class HorizontalButtonScroll : MonoBehaviour, IBeginDragHandler
 {
-    [SerializeField] private RectTransform _viewport;
-    [SerializeField] private HorizontalLayoutGroup _layout;
-    [SerializeField] private RectTransform[] _items;
-    [SerializeField] private Button[] _buttons;
-    [SerializeField, Min(0f)] private float _horizontalPadding = 40f;
-    [SerializeField, Min(0f)] private float _dragThreshold = 12f;
+    [SerializeField] private ScrollRect _scrollRect;
+    [Tooltip("ScrollToVisible이 항목을 보이는 칸의 가장자리에서 띄우는 거리입니다.")]
+    [SerializeField, Min(0f)] private float _visiblePadding = 40f;
 
-    private static readonly List<RaycastResult> _raycastResults = new();
-    private Vector2[] _basePositions;
-    private CanvasGroup _viewportCanvasGroup;
     private readonly Vector3[] _worldCorners = new Vector3[4];
-    private Vector2 _pressScreenPosition;
-    private Vector2 _previousLocalPosition;
-    private float _scrollOffset;
-    private float _minOffset;
-    private float _maxOffset;
-    private int _activeSignature;
-    private int _restoreButtonsAfterFrame = -1;
-    private bool _isPointerDown;
-    private bool _isDragging;
     private Tween _scrollTween;
 
     private void Awake()
     {
-        if (_viewport == null || _layout == null ||
-            _items == null || _items.Length == 0 ||
-            _buttons == null || _buttons.Length == 0)
+        if (_scrollRect == null || _scrollRect.content == null)
         {
-            Debug.LogError("하단 메뉴 스크롤의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("하단 메뉴 스크롤의 ScrollRect 참조가 비어 있습니다.", this);
             enabled = false;
-            return;
-        }
-
-        _basePositions = new Vector2[_items.Length];
-
-        _viewportCanvasGroup = _viewport.GetComponent<CanvasGroup>();
-        if (_viewportCanvasGroup == null)
-        {
-            _viewportCanvasGroup = _viewport.gameObject.AddComponent<CanvasGroup>();
-        }
-    }
-
-    private void OnEnable()
-    {
-        if (_basePositions != null)
-        {
-            RefreshLayout();
         }
     }
 
     private void OnDisable()
     {
-        _scrollTween?.Kill();
-        RestoreButtonInput();
-        _isPointerDown = false;
-        _isDragging = false;
+        FinishScrollTween();
     }
 
-    private void OnRectTransformDimensionsChange()
+    // 튜토리얼이 미는 도중에 손가락이 줄을 잡으면 목적지로 바로 옮기고 끝낸다. 그냥 끊으면
+    // onCompleted가 불리지 않아 그것을 기다리는 튜토리얼이 멈춘다.
+    public void OnBeginDrag(PointerEventData eventData)
     {
-        if (isActiveAndEnabled && _basePositions != null)
-        {
-            RefreshLayout();
-        }
-    }
-
-    private void Update()
-    {
-        if (_restoreButtonsAfterFrame >= 0 &&
-            Time.frameCount > _restoreButtonsAfterFrame)
-        {
-            RestoreButtonInput();
-        }
-
-        int activeSignature = GetActiveSignature();
-        if (activeSignature != _activeSignature)
-        {
-            RefreshLayout();
-        }
-
-        Pointer pointer = Pointer.current;
-        if (pointer == null) return;
-
-        Vector2 screenPosition = pointer.position.ReadValue();
-        if (_maxOffset > _minOffset &&
-            pointer.press.wasPressedThisFrame &&
-            RectTransformUtility.RectangleContainsScreenPoint(
-                _viewport,
-                screenPosition,
-                GetEventCamera()) &&
-            IsTopMostAtPointer(screenPosition))
-        {
-            _isPointerDown = TryGetLocalPosition(screenPosition, out _previousLocalPosition);
-            _pressScreenPosition = screenPosition;
-            _isDragging = false;
-        }
-
-        if (!_isPointerDown) return;
-
-        if (pointer.press.isPressed && TryGetLocalPosition(screenPosition, out Vector2 localPosition))
-        {
-            if (!_isDragging &&
-                Mathf.Abs(screenPosition.x - _pressScreenPosition.x) >= _dragThreshold)
-            {
-                _isDragging = true;
-                _scrollTween?.Kill();
-                SuspendButtonInput();
-            }
-
-            if (_isDragging)
-            {
-                _scrollOffset = Mathf.Clamp(
-                    _scrollOffset + localPosition.x - _previousLocalPosition.x,
-                    _minOffset,
-                    _maxOffset);
-                ApplyOffset();
-            }
-
-            _previousLocalPosition = localPosition;
-        }
-
-        if (pointer.press.wasReleasedThisFrame)
-        {
-            _isPointerDown = false;
-            if (_isDragging)
-            {
-                _restoreButtonsAfterFrame = Time.frameCount;
-            }
-
-            _isDragging = false;
-        }
+        FinishScrollTween();
     }
 
     // 항목이 보이는 칸 안에 들어오도록 줄을 옮긴다. 이미 보이면 곧바로 onCompleted를 부른다.
     // 튜토리얼이 줄 끝쪽 버튼을 가리킬 때, 그 버튼이 화면 밖이면 구멍만 화면 밖에 남기 때문에 쓴다.
     public void ScrollToVisible(RectTransform item, Action onCompleted, float duration = 0.3f)
     {
-        if (!isActiveAndEnabled || item == null || _basePositions == null)
+        if (!isActiveAndEnabled || item == null)
         {
             onCompleted?.Invoke();
             return;
         }
 
-        // 항목이 방금 켜졌거나 패널이 방금 열렸을 수 있다. 위치를 읽기 전에 범위부터 다시 잡는다.
-        RefreshLayout();
+        RectTransform content = _scrollRect.content;
+        RectTransform viewport = _scrollRect.viewport != null
+            ? _scrollRect.viewport
+            : (RectTransform)_scrollRect.transform;
+
+        // 항목이 방금 켜졌거나 패널이 방금 열렸을 수 있다. 위치를 읽기 전에 배치부터 다시 잡는다.
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+
+        float scrollableWidth = content.rect.width - viewport.rect.width;
+        if (scrollableWidth <= 0f)
+        {
+            onCompleted?.Invoke();
+            return;
+        }
+
         item.GetWorldCorners(_worldCorners);
-        float itemMin = _viewport.InverseTransformPoint(_worldCorners[0]).x;
-        float itemMax = _viewport.InverseTransformPoint(_worldCorners[2]).x;
-        float viewportMin = _viewport.rect.xMin + _horizontalPadding;
-        float viewportMax = _viewport.rect.xMax - _horizontalPadding;
+        float itemMin = viewport.InverseTransformPoint(_worldCorners[0]).x;
+        float itemMax = viewport.InverseTransformPoint(_worldCorners[2]).x;
+        float viewportMin = viewport.rect.xMin + _visiblePadding;
+        float viewportMax = viewport.rect.xMax - _visiblePadding;
 
         float shift = 0f;
         if (itemMax > viewportMax)
@@ -171,9 +83,12 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
             shift = viewportMin - itemMin;
         }
 
-        float target = Mathf.Clamp(_scrollOffset + shift, _minOffset, _maxOffset);
-        _scrollTween?.Kill();
-        if (Mathf.Approximately(target, _scrollOffset))
+        // 줄이 왼쪽으로 shift만큼 가면 정규화 위치는 그 비율만큼 오른쪽으로 간다.
+        float current = _scrollRect.horizontalNormalizedPosition;
+        float target = Mathf.Clamp01(current - shift / scrollableWidth);
+        FinishScrollTween();
+        _scrollRect.StopMovement();
+        if (Mathf.Approximately(target, current))
         {
             onCompleted?.Invoke();
             return;
@@ -181,12 +96,8 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
 
         _scrollTween = DOTween
             .To(
-                () => _scrollOffset,
-                value =>
-                {
-                    _scrollOffset = value;
-                    ApplyOffset();
-                },
+                () => _scrollRect.horizontalNormalizedPosition,
+                value => _scrollRect.horizontalNormalizedPosition = value,
                 target,
                 duration)
             .SetEase(Ease.OutCubic)
@@ -198,144 +109,10 @@ public sealed class HorizontalButtonScroll : MonoBehaviour
             });
     }
 
-    private void RefreshLayout()
+    private void FinishScrollTween()
     {
-        _layout.enabled = true;
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(_viewport);
-
-        float contentMin = float.PositiveInfinity;
-        float contentMax = float.NegativeInfinity;
-        bool hasActiveItem = false;
-
-        for (int i = 0; i < _items.Length; i++)
-        {
-            RectTransform item = _items[i];
-            if (item == null) continue;
-
-            _basePositions[i] = item.anchoredPosition;
-            if (!item.gameObject.activeSelf) continue;
-
-            hasActiveItem = true;
-            item.GetWorldCorners(_worldCorners);
-            float itemMin = _viewport.InverseTransformPoint(_worldCorners[0]).x;
-            float itemMax = _viewport.InverseTransformPoint(_worldCorners[2]).x;
-            contentMin = Mathf.Min(contentMin, itemMin);
-            contentMax = Mathf.Max(contentMax, itemMax);
-        }
-
-        _layout.enabled = false;
-        _activeSignature = GetActiveSignature();
-
-        if (!hasActiveItem)
-        {
-            _minOffset = 0f;
-            _maxOffset = 0f;
-        }
-        else
-        {
-            float viewportMin = _viewport.rect.xMin + _horizontalPadding;
-            float viewportMax = _viewport.rect.xMax - _horizontalPadding;
-            float contentWidth = contentMax - contentMin;
-            float viewportWidth = Mathf.Max(0f, viewportMax - viewportMin);
-
-            if (contentWidth <= viewportWidth)
-            {
-                _minOffset = 0f;
-                _maxOffset = 0f;
-            }
-            else
-            {
-                _minOffset = viewportMax - contentMax;
-                _maxOffset = viewportMin - contentMin;
-            }
-        }
-
-        _scrollOffset = Mathf.Clamp(_scrollOffset, _minOffset, _maxOffset);
-        ApplyOffset();
-    }
-
-    private void ApplyOffset()
-    {
-        for (int i = 0; i < _items.Length; i++)
-        {
-            RectTransform item = _items[i];
-            if (item == null) continue;
-
-            Vector2 position = _basePositions[i];
-            position.x += _scrollOffset;
-            item.anchoredPosition = position;
-        }
-    }
-
-    private int GetActiveSignature()
-    {
-        int signature = 17;
-        foreach (RectTransform item in _items)
-        {
-            signature = signature * 31 +
-                        (item != null && item.gameObject.activeSelf ? 1 : 0);
-        }
-
-        return signature;
-    }
-
-    // 이 메뉴는 화면 입력을 직접 읽으므로, 위에 다른 UI가 덮여 있어도 알지 못한다.
-    // 상점 서랍이 열린 채로 그 위를 끌면 뒤에서 메뉴가 같이 움직인다.
-    //
-    // 그래서 누른 자리의 맨 위에 걸린 것이 이 메뉴인지 확인한다. 판정은 캔버스
-    // 순서를 따르므로, 서랍(PopupCanvas)이 덮고 있으면 그쪽이 먼저 잡힌다.
-    private bool IsTopMostAtPointer(Vector2 screenPosition)
-    {
-        EventSystem eventSystem = EventSystem.current;
-        // 판정할 수단이 없으면 막지 않는다. 덮인 경우보다 안 덮인 경우가 흔하다.
-        if (eventSystem == null) return true;
-
-        var pointerData = new PointerEventData(eventSystem) { position = screenPosition };
-        _raycastResults.Clear();
-        eventSystem.RaycastAll(pointerData, _raycastResults);
-        if (_raycastResults.Count == 0) return false;
-
-        // IsChildOf는 자기 자신도 참으로 본다. 빈자리를 눌렀을 때 패널이 잡히는 경우다.
-        return _raycastResults[0].gameObject.transform.IsChildOf(_viewport);
-    }
-
-    private bool TryGetLocalPosition(Vector2 screenPosition, out Vector2 localPosition)
-    {
-        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            _viewport,
-            screenPosition,
-            GetEventCamera(),
-            out localPosition);
-    }
-
-    private Camera GetEventCamera()
-    {
-        Canvas canvas = _viewport.GetComponentInParent<Canvas>();
-        return canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
-            ? canvas.worldCamera
-            : null;
-    }
-
-    private void SuspendButtonInput()
-    {
-        // interactable(다른 소유자의 상태)은 건드리지 않는다. 이 드래그 시퀀스 동안
-        // 자식 버튼의 클릭 raycast만 막아 드래그가 유발한 클릭을 취소한다.
-        if (_viewportCanvasGroup != null)
-        {
-            _viewportCanvasGroup.blocksRaycasts = false;
-        }
-    }
-
-    private void RestoreButtonInput()
-    {
-        if (_restoreButtonsAfterFrame < 0 && !_isDragging) return;
-
-        if (_viewportCanvasGroup != null)
-        {
-            _viewportCanvasGroup.blocksRaycasts = true;
-        }
-
-        _restoreButtonsAfterFrame = -1;
+        Tween tween = _scrollTween;
+        _scrollTween = null;
+        tween?.Kill(complete: true);
     }
 }

@@ -88,9 +88,10 @@ public sealed class ExpeditionUI : MonoBehaviour
         _destinations != null && _destinations.Length > 0 && _destinations[0].Button != null
             ? _destinations[0].Button.transform.parent as RectTransform
             : null;
+    // 버튼의 부모는 줄 전체 길이의 Content라서, 보이는 칸인 ScrollRect 쪽을 가리킨다.
     public RectTransform MemberListTarget =>
         _memberButtons != null && _memberButtons.Length > 0 && _memberButtons[0] != null
-            ? _memberButtons[0].transform.parent as RectTransform
+            ? _memberButtons[0].GetComponentInParent<ScrollRect>(true)?.transform as RectTransform
             : null;
     public RectTransform ActionButtonTarget => _actionButton != null ? (RectTransform)_actionButton.transform : null;
     public bool IsOpen => _isOpen;
