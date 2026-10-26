@@ -8422,6 +8422,8 @@ MonoBehaviour:
   - {fileID: 1415969322}
   _horizontalPadding: 20
   _dragThreshold: 12
+  _elasticity: 0.35
+  _elasticReturnSeconds: 0.3
 --- !u!114 &232514686
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15796,6 +15798,8 @@ MonoBehaviour:
   - {fileID: 990874330}
   _horizontalPadding: 40
   _dragThreshold: 12
+  _elasticity: 0.35
+  _elasticReturnSeconds: 0.3
 --- !u!114 &489053585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -46296,6 +46300,7 @@ GameObject:
   - component: {fileID: 997100005}
   - component: {fileID: 1215316400}
   - component: {fileID: 1215316401}
+  - component: {fileID: 1215316402}
   m_Layer: 0
   m_Name: TutorialManager
   m_TagString: Untagged
@@ -46377,6 +46382,28 @@ MonoBehaviour:
   _autoClicker: {fileID: 2033355240}
   _spawnManager: {fileID: 1271333080}
   _gameplaySpaceManager: {fileID: 954826973}
+--- !u!114 &1215316402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1215316397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a4fdc3b5aa1f5746ad82d141c42cbd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ExpeditionTutorialSequence
+  _expedition: {fileID: 1999555670}
+  _menuScroll: {fileID: 2301000002}
+  _unlockPopupUI: {fileID: 1432576204}
+  _clicker: {fileID: 115063078}
+  _autoClicker: {fileID: 2033355240}
+  _gameManager: {fileID: 1237951049}
+  _spawnManager: {fileID: 1271333080}
+  _slimeManager: {fileID: 376498428}
+  _gameplaySpaceManager: {fileID: 954826973}
+  _openSettleSeconds: 0.35
 --- !u!1 &1216467459
 GameObject:
   m_ObjectHideFlags: 0
@@ -83289,6 +83316,8 @@ MonoBehaviour:
   - {fileID: 1543874678}
   _horizontalPadding: 40
   _dragThreshold: 12
+  _elasticity: 0.35
+  _elasticReturnSeconds: 0.3
 --- !u!114 &2301000003
 MonoBehaviour:
   m_ObjectHideFlags: 0

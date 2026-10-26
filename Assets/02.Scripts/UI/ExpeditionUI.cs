@@ -82,6 +82,26 @@ public sealed class ExpeditionUI : MonoBehaviour
 
     private DestinationView SelectedView => _destinations[_destinationIndex];
 
+    // 탐험 튜토리얼이 가리키는 자리들이다.
+    public RectTransform EnterButtonTarget => _enterButton != null ? (RectTransform)_enterButton.transform : null;
+    public RectTransform DestinationTabsTarget =>
+        _destinations != null && _destinations.Length > 0 && _destinations[0].Button != null
+            ? _destinations[0].Button.transform.parent as RectTransform
+            : null;
+    public RectTransform MemberListTarget =>
+        _memberButtons != null && _memberButtons.Length > 0 && _memberButtons[0] != null
+            ? _memberButtons[0].transform.parent as RectTransform
+            : null;
+    public RectTransform ActionButtonTarget => _actionButton != null ? (RectTransform)_actionButton.transform : null;
+    public bool IsOpen => _isOpen;
+    // 화면이 열리고 본체가 튀어 오르기 시작한 순간이다.
+    public event Action Opened;
+
+    // 다른 튜토리얼이 도는 동안은 화면을 열지 않고, 열려 있으면 닫는다. 탐험 튜토리얼만은 이 화면을
+    // 직접 열어 보여 주므로 예외다.
+    private static bool IsBlockedByTutorial =>
+        TutorialManager.IsRunning && !TutorialManager.IsActive(TutorialIds.Expedition);
+
     private void Start()
     {
         if (_slimes == null || _currency == null || _spaces == null || _game == null ||
@@ -148,7 +168,7 @@ public sealed class ExpeditionUI : MonoBehaviour
     private void Update()
     {
         if (_service == null) return;
-        if (_isOpen && (!GameplayGate.IsActive || TutorialManager.IsRunning || _spaces.IsTransitioning))
+        if (_isOpen && (!GameplayGate.IsActive || IsBlockedByTutorial || _spaces.IsTransitioning))
             ForceClose();
         if (Time.unscaledTime < _nextRefresh) return;
         _nextRefresh = Time.unscaledTime + 1f;
@@ -168,6 +188,7 @@ public sealed class ExpeditionUI : MonoBehaviour
 
     private void OnTutorialStarted()
     {
+        if (!IsBlockedByTutorial) return;
         ForceClose();
         Refresh();
     }
@@ -180,7 +201,7 @@ public sealed class ExpeditionUI : MonoBehaviour
 
     private bool CanOpen() => _slimes.IsInitialized && _slimes.IsGachaUnlocked &&
         !_spaces.IsMainFieldActive && !_spaces.IsTransitioning && GameplayGate.IsActive &&
-        !TutorialManager.IsRunning && !_info.IsVisible;
+        !IsBlockedByTutorial && !_info.IsVisible;
 
     private void Open()
     {
@@ -202,6 +223,7 @@ public sealed class ExpeditionUI : MonoBehaviour
             _session.Enter(ClickerInputMode.Blocked, ClickerInputPriority.Modal, TryClose, true);
             _panelMotion.PlayOpen();
             Refresh();
+            Opened?.Invoke();
         });
     }
 
