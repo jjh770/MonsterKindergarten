@@ -61,6 +61,25 @@ public class ButtonPressFeedback : MonoBehaviour, IPointerDownHandler, IPointerU
             .SetUpdate(true);
     }
 
+    // 버튼을 알림처럼 한 번 출렁인다. 다른 코드가 버튼 크기를 따로 흔들면, 그 도중에 눌렀을 때
+    // 커진 크기를 기준으로 읽어 버튼이 커진 채 남고 누를 때마다 더 커진다. 버튼 크기를 바꾸는
+    // 연출은 모두 이 컴포넌트를 거쳐 기준 크기를 한 곳에서만 다룬다. 누르는 중에는 건너뛴다.
+    public void Punch(float strength, float duration)
+    {
+        if (_isPressed) return;
+
+        if (_tween == null || !_tween.IsActive())
+        {
+            _baseScale = transform.localScale;
+        }
+
+        _tween?.Kill();
+        transform.localScale = _baseScale;
+        _tween = transform
+            .DOPunchScale(_baseScale * strength, duration, 6, 0.5f)
+            .SetUpdate(true);
+    }
+
     public void OnPointerUp(PointerEventData eventData)
     {
         Release();

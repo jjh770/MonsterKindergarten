@@ -109,7 +109,10 @@ public sealed class ExpeditionReturnNotifier : MonoBehaviour
         Transform button = alert.transform.parent;
         _arrivalTween?.Kill(complete: true);
         Sequence sequence = DOTween.Sequence().SetUpdate(true).SetLink(button.gameObject);
-        sequence.Join(button.DOPunchScale(Vector3.one * .2f, .45f, 6, .5f));
+        // 버튼 크기는 누름 연출과 함께 ButtonPressFeedback 한 곳에서만 바꾼다. 따로 흔들면
+        // 출렁이는 도중에 누른 크기가 기준이 되어 버튼이 커진 채 남는다.
+        if (button.TryGetComponent(out ButtonPressFeedback feedback)) feedback.Punch(.2f, .45f);
+        else sequence.Join(button.DOPunchScale(Vector3.one * .2f, .45f, 6, .5f));
         alert.transform.localScale = Vector3.zero;
         sequence.Join(alert.transform.DOScale(Vector3.one, .35f).SetEase(Ease.OutBack));
         _arrivalTween = sequence.OnKill(() => _arrivalTween = null);

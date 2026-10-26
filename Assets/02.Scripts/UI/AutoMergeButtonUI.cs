@@ -22,6 +22,7 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
     private bool? _lastInteractable;
     private bool? _wasReady;
     private Tween _readyTween;
+    private ButtonPressFeedback _pressFeedback;
 
     public RectTransform ButtonTarget => _button != null
         ? _button.transform as RectTransform
@@ -44,7 +45,10 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
         {
             Debug.LogError("자동 합성 버튼의 필수 참조가 비어 있습니다.", this);
             enabled = false;
+            return;
         }
+
+        _pressFeedback = _button.GetComponent<ButtonPressFeedback>();
     }
 
     private void Start()
@@ -108,9 +112,18 @@ public sealed class AutoMergeButtonUI : MonoBehaviour
         _wasReady = isReady;
         if (!becameReady || !_autoMergeManager.IsAvailable() || !_button.gameObject.activeInHierarchy) return;
 
-        _readyTween?.Kill(complete: true);
-        _readyTween = _button.transform.DOPunchScale(Vector3.one * _readyPunch, .35f, 6, .5f)
-            .OnKill(() => _readyTween = null);
+        // 버튼 크기는 누름 연출과 함께 ButtonPressFeedback 한 곳에서만 바꾼다. 여기서 따로 흔들면
+        // 출렁이는 도중에 누른 크기가 기준이 되어 버튼이 점점 커진다.
+        if (_pressFeedback != null)
+        {
+            _pressFeedback.Punch(_readyPunch, .35f);
+        }
+        else
+        {
+            _readyTween?.Kill(complete: true);
+            _readyTween = _button.transform.DOPunchScale(Vector3.one * _readyPunch, .35f, 6, .5f)
+                .OnKill(() => _readyTween = null);
+        }
         AudioManager.Instance?.PlaySFXRandomPitch(EAudioSfx.TicketCollect, 1.15f, 1.25f, .6f);
     }
 
