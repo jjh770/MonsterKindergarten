@@ -116,7 +116,7 @@ public sealed class LoginSlimeParade : MonoBehaviour
     private void InsertSideHops(Member member, float start)
     {
         RectTransform body = member.Body;
-        float side = IsLeftHalf(body) ? -1f : 1f;
+        float side = EntrySide(body);
         Vector2 home = Vector2.zero;
         Vector2 from = new Vector2(side * _enterDistance, 0f);
 
@@ -158,7 +158,7 @@ public sealed class LoginSlimeParade : MonoBehaviour
         shadow.color = color;
         if (_members[index].FromSide)
         {
-            float side = IsLeftHalf(_members[index].Body) ? -1f : 1f;
+            float side = EntrySide(_members[index].Body);
             rect.anchoredPosition = home + new Vector2(side * _enterDistance, 0f);
             _entrance.Insert(start, rect.DOAnchorPos(home, duration * 0.8f).SetEase(Ease.Linear));
         }
@@ -207,10 +207,16 @@ public sealed class LoginSlimeParade : MonoBehaviour
         }
     }
 
-    // 자리를 잡는 부모의 앵커 가운데가 배경 왼쪽 절반이면 왼쪽에서 온다.
-    private static bool IsLeftHalf(RectTransform body)
+    // 출발할 쪽을 몸의 부모(자리 틀) 좌표의 x 부호로 돌려준다. 틀의 앵커 가운데가 배경 왼쪽 절반이면
+    // 화면 왼쪽에서 온다. 틀을 Y로 180도 돌려 슬라임이 반대쪽을 보게 하면 틀 안의 x가 화면과 거꾸로라,
+    // 화면 기준 방향을 틀 안의 방향으로 바꿔야 가까운 쪽 화면 끝에서 들어온다.
+    private static float EntrySide(RectTransform body)
     {
         var slot = body.parent as RectTransform;
-        return slot == null || (slot.anchorMin.x + slot.anchorMax.x) * 0.5f < 0.5f;
+        if (slot == null) return -1f;
+
+        float screenSide = (slot.anchorMin.x + slot.anchorMax.x) * 0.5f < 0.5f ? -1f : 1f;
+        float facing = slot.TransformDirection(Vector3.right).x < 0f ? -1f : 1f;
+        return screenSide * facing;
     }
 }
