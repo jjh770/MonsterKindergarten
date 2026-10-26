@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public enum DialogueId
 {
@@ -30,6 +29,10 @@ public enum DialogueId
     ShopFinal = 25,
     AdBonus = 26,
     AdBonusPopup = 27,
+    ExpeditionIntro = 28,
+    ExpeditionDestinations = 29,
+    ExpeditionParty = 30,
+    ExpeditionFinal = 31,
 }
 
 [Serializable]
@@ -87,15 +90,10 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _shopButtonMessage;
     [SerializeField] private string _shopObjectsTabMessage;
     [SerializeField] private string _adBonusButtonMessage;
+    [SerializeField] private string _expeditionButtonMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
-
-    [Header("Background Theme")]
-    [FormerlySerializedAs("_stageMenuButtonMessage")]
-    [SerializeField] private string _backgroundMenuButtonMessage;
-    [FormerlySerializedAs("_stageButtonMessage")]
-    [SerializeField] private string _backgroundButtonMessage;
 
     public string ClickMessage => _clickMessage;
     public string PointMessage => _pointMessage;
@@ -119,8 +117,7 @@ public sealed class TutorialContent : ScriptableObject
     public string ShopButtonMessage => _shopButtonMessage;
     public string ShopObjectsTabMessage => _shopObjectsTabMessage;
     public string AdBonusButtonMessage => _adBonusButtonMessage;
-    public string BackgroundMenuButtonMessage => _backgroundMenuButtonMessage;
-    public string BackgroundButtonMessage => _backgroundButtonMessage;
+    public string ExpeditionButtonMessage => _expeditionButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)
     {

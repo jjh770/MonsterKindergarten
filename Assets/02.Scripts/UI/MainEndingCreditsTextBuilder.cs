@@ -11,7 +11,7 @@ public static class MainEndingCreditsTextBuilder
             return "졸업 기록을 준비하고 있어요.";
 
         GraduationStatistics snapshot = manager.GraduationSnapshot.Value;
-        return Build(manager, snapshot, "함께 만든 몬스터 유치원");
+        return Build(manager, snapshot, "함께 만든 슬라임 유치원");
     }
 
     public static void BuildGraduationColumns(
