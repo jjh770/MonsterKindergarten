@@ -21,9 +21,9 @@ MonoBehaviour:
     CostMultiplier: 1.18
     CostTierSize: 10
     CostTierMultiplier: 1.5
-    LateCostStartLevel: 0
-    LateBaseCost: 0
-    LateCostMultiplier: 1
+    LateCostStartLevel: 40
+    LateBaseCost: 5000000
+    LateCostMultiplier: 1.28
     PointMultiplier: 0.1
     PointFormula: 0
     PointBreakpoints: []
@@ -31,14 +31,14 @@ MonoBehaviour:
   - Type: 5
     SlimeGrade: 0
     MaxLevel: 40
-    BaseCost: 1000
+    BaseCost: 50000000
     BasePoint: 0
-    CostMultiplier: 1.5
-    CostTierSize: 5
-    CostTierMultiplier: 1.05
-    LateCostStartLevel: 20
-    LateBaseCost: 4500000
-    LateCostMultiplier: 1.7
+    CostMultiplier: 1.22
+    CostTierSize: 0
+    CostTierMultiplier: 1
+    LateCostStartLevel: 0
+    LateBaseCost: 0
+    LateCostMultiplier: 1
     PointMultiplier: 1
     PointFormula: 0
     PointBreakpoints: []
@@ -51,9 +51,9 @@ MonoBehaviour:
     CostMultiplier: 1.25
     CostTierSize: 10
     CostTierMultiplier: 2
-    LateCostStartLevel: 0
-    LateBaseCost: 0
-    LateCostMultiplier: 1
+    LateCostStartLevel: 40
+    LateBaseCost: 3000000000
+    LateCostMultiplier: 1.4
     PointMultiplier: 1
     PointFormula: 0
     PointBreakpoints: []
