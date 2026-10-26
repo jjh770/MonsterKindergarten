@@ -64,6 +64,16 @@ public sealed class PlacedObjectSaveData
 [FirestoreData]
 public sealed class SlimeStatusSaveData : ISaveData
 {
+    [FirestoreProperty]
+    public List<ExpeditionRunSaveData> ActiveExpeditions { get; set; }
+
+    // v18 읽기 전용. 현재 저장은 항상 null을 기록한다.
+    [FirestoreProperty]
+    public ExpeditionRunSaveData ActiveExpedition { get; set; }
+
+    [FirestoreProperty]
+    public ExpeditionSettlementSaveData ExpeditionSettlement { get; set; }
+
     public const int NormalCollectionSize =
         (int)ESlimeGrade.Count - (int)ESlimeGrade.Grade1;
 
@@ -190,7 +200,7 @@ public sealed class SlimeStatusSaveData : ISaveData
     [FirestoreProperty]
     public List<PlacedObjectSaveData> PlacedObjects { get; set; } = new();
 
-    // v10. 종류별로 사 둔 개수다. 놓은 것도 포함한 총량이라, 아직 안 놓은 수는
+    // v10. 종류별로 입수한 개수다. 놓은 것도 포함한 총량이라, 아직 안 놓은 수는
     // 이 값에서 놓은 수를 뺀 값이 된다. 두 수를 따로 저장하면 서로 어긋날 수 있다.
     [FirestoreProperty]
     public List<int> OwnedPlaygroundObjects { get; set; } = new();
@@ -260,6 +270,8 @@ public sealed class SlimeStatusSaveData : ISaveData
 
     public static SlimeStatusSaveData Default => new SlimeStatusSaveData
     {
+        ExpeditionSettlement = ExpeditionSettlementSaveData.FromDomain(global::ExpeditionSettlement.Empty),
+        ActiveExpeditions = new List<ExpeditionRunSaveData>(),
         SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
         HighestGrade = (int)ESlimeGrade.Grade1,
         ActiveSlimes = new List<SlimeInstanceSaveData>(),
@@ -427,6 +439,8 @@ public static class SlimeStatusSaveMigration
 
         return new SlimeStatusSaveData
         {
+            ExpeditionSettlement = ExpeditionSettlementSaveData.FromDomain(global::ExpeditionSettlement.Empty),
+            ActiveExpeditions = new List<ExpeditionRunSaveData>(),
             SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion,
             HighestGrade = legacyData.HighestGrade,
             ActiveSlimes = activeSlimes,
@@ -474,6 +488,15 @@ public static class SlimeStatusSaveMigration
         }
 
         saveData.SchemaVersion = GameDataDomains.SlimeStatus.CurrentSchemaVersion;
+        if (sourceSchemaVersion < 18)
+            saveData.ExpeditionSettlement ??= ExpeditionSettlementSaveData.FromDomain(global::ExpeditionSettlement.Empty);
+        if (sourceSchemaVersion < 19)
+        {
+            saveData.ExpeditionSettlement?.UpgradeLegacy();
+            saveData.ActiveExpeditions = new List<ExpeditionRunSaveData>();
+            if (saveData.ActiveExpedition != null) saveData.ActiveExpeditions.Add(saveData.ActiveExpedition);
+            saveData.ActiveExpedition = null;
+        }
         saveData.ActiveSlimes ??= new List<SlimeInstanceSaveData>();
         saveData.CompletedTutorials ??= new List<string>();
         saveData.SpecialCollectionRegistered ??= new List<bool>();

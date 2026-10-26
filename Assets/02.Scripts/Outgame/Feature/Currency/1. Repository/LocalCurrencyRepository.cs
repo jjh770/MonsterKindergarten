@@ -15,12 +15,15 @@
 using Cysharp.Threading.Tasks;
 using System;
 using System.Globalization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 {
     private const string LAST_SAVE_TIME_KEY = "Currency_LastSaveTime";
     private const string SCHEMA_VERSION_KEY = "Currency_SchemaVersion";
+    private const string DocumentKey = "Currency_Document";
     private readonly string _userId;
     public LocalCurrencyRepository(string userId)
     {
@@ -29,17 +32,11 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
     public UniTask Save(CurrencySaveData saveData)
     {
-        PlayerPrefs.SetInt($"{_userId}_{SCHEMA_VERSION_KEY}", saveData.SchemaVersion);
-
-        for (int i = 0; i < (int)ECurrencyType.Count; i++)
-        {
-            var type = (ECurrencyType)i;
-
-            // 소수점 17자리까지 저장
-            PlayerPrefs.SetString($"{_userId}_{type.ToString()}", saveData.Currencies[i].ToString("G17", CultureInfo.InvariantCulture));
-        }
-
-        PlayerPrefs.SetString($"{_userId}_{LAST_SAVE_TIME_KEY}", saveData.LastSaveTime ?? string.Empty);
+        // v3 잔액과 탐험 지급 기록은 한 문서로 쓴다. 이전 키는 읽기 호환용으로 남긴다.
+        string json = JsonConvert.SerializeObject(saveData);
+        PlayerPrefs.SetString($"{_userId}_{DocumentKey}", json);
+        // 구버전 앱도 새 저장을 덮어쓰지 못하게 기존 버전 표식을 올린다.
+        PlayerPrefs.SetInt($"{_userId}_{SCHEMA_VERSION_KEY}", Math.Max(GameDataDomains.Currency.CurrentSchemaVersion, saveData.SchemaVersion));
         PlayerPrefs.Save();
 
         return UniTask.CompletedTask;
@@ -47,6 +44,7 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
 
     public void Delete()
     {
+        PlayerPrefs.DeleteKey($"{_userId}_{DocumentKey}");
         for (int i = 0; i < (int)ECurrencyType.Count; i++)
         {
             PlayerPrefs.DeleteKey($"{_userId}_{(ECurrencyType)i}");
@@ -64,8 +62,31 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
     {
         try
         {
+            int markedVersion = PlayerPrefs.GetInt($"{_userId}_{SCHEMA_VERSION_KEY}", SaveSchema.LegacyVersion);
+            if (markedVersion > GameDataDomains.Currency.CurrentSchemaVersion)
+                return UniTask.FromResult(SaveLoadResult<CurrencySaveData>.Failed(
+                    ESaveLoadFailure.UnsupportedVersion,
+                    UnsupportedSaveVersionException.BuildMessage("Currency", markedVersion, GameDataDomains.Currency.CurrentSchemaVersion)));
+
+            string documentKey = $"{_userId}_{DocumentKey}";
+            if (PlayerPrefs.HasKey(documentKey))
+            {
+                string json = PlayerPrefs.GetString(documentKey);
+                JObject root = JObject.Parse(json);
+                int version = root.Value<int?>(nameof(ISaveData.SchemaVersion)) ?? SaveSchema.LegacyVersion;
+                if (version > GameDataDomains.Currency.CurrentSchemaVersion)
+                    return UniTask.FromResult(SaveLoadResult<CurrencySaveData>.Failed(
+                        ESaveLoadFailure.UnsupportedVersion,
+                        UnsupportedSaveVersionException.BuildMessage("Currency", version, GameDataDomains.Currency.CurrentSchemaVersion)));
+                CurrencySaveData document = JsonConvert.DeserializeObject<CurrencySaveData>(json);
+                return UniTask.FromResult(document == null
+                    ? SaveLoadResult<CurrencySaveData>.Failed(ESaveLoadFailure.Unreadable, "재화 문서를 해석하지 못했습니다.")
+                    : SaveLoadResult<CurrencySaveData>.Loaded(document));
+            }
+
             CurrencySaveData data = CurrencySaveData.Default;
-            bool hasExistingData = PlayerPrefs.HasKey($"{_userId}_{LAST_SAVE_TIME_KEY}");
+            bool hasExistingData = PlayerPrefs.HasKey($"{_userId}_{LAST_SAVE_TIME_KEY}") ||
+                                   PlayerPrefs.HasKey($"{_userId}_{SCHEMA_VERSION_KEY}");
 
             for (int i = 0; i < (int)ECurrencyType.Count; i++)
             {
@@ -97,6 +118,10 @@ public class LocalCurrencyRepository : IRepository<CurrencySaveData>
             data.SchemaVersion = PlayerPrefs.HasKey(schemaVersionKey)
                 ? PlayerPrefs.GetInt(schemaVersionKey)
                 : SaveSchema.LegacyVersion;
+
+            if (data.SchemaVersion >= 3)
+                return UniTask.FromResult(SaveLoadResult<CurrencySaveData>.Failed(
+                    ESaveLoadFailure.Unreadable, "새 재화 저장 문서가 없습니다."));
 
             // 상위 버전은 현재 앱이 해석할 수 없다. 그대로 로드하면 다음 저장이
             // 최신 데이터를 낮은 버전으로 덮어쓴다.

@@ -18,6 +18,8 @@ public class SlimeController : MonoBehaviour, IClickable
     private Rigidbody2D _rigidbody;
     private RigidbodyInterpolation2D _defaultInterpolation;
     private bool _hasLanded = false;
+    // 첫 착지를 소리 없이 넘긴다. 착지 여부(HasLanded)는 그대로 따라가고 알림만 거른다.
+    private bool _isLandingSilent = false;
 
     [Tooltip("드래그 중에 정렬 순서를 얼마나 올릴지입니다. 합성 후보 이펙트보다 커야 합니다.")]
     [SerializeField] private int _dragSortingOrderOffset = 10;
@@ -30,6 +32,7 @@ public class SlimeController : MonoBehaviour, IClickable
     private bool _isPresentationLocked;
     // 현재 공간에서 이 슬라임(Location)이 보여야 하는지. SetLocationPresentationActive가 소유.
     private bool _isSpaceVisible;
+    public bool IsLocationPresentationActive => _isSpaceVisible;
 
     public ESlimeGrade Grade => _slime.SpecData.Grade;
     public string InstanceId => Instance?.InstanceId;
@@ -107,6 +110,7 @@ public class SlimeController : MonoBehaviour, IClickable
     {
         SetDragging(false);
         _hasLanded = false;
+        _isLandingSilent = false;
         // 풀에서 재사용된 오브젝트가 이전 연출 잠금이나 보간 설정을 물려받지 않게 한다.
         // 스폰된 슬라임은 기본적으로 메인 필드에 보이는 상태다. 장식장 복원은 직후
         // SetLocationPresentationActive(false)가 명시적으로 끈다. 합성으로 살아남는
@@ -175,6 +179,7 @@ public class SlimeController : MonoBehaviour, IClickable
     // 범퍼는 미는 순간에, 대포는 붙잡기 전에 같은 조건을 봐야 한다. 두 곳에
     // 따로 쓰면 한쪽만 고쳐졌을 때 조용히 어긋난다.
     public bool IsPlaygroundTarget =>
+        _isSpaceVisible &&
         !_isDragging &&
         !_isPresentationLocked &&
         _slimeMove != null &&
@@ -254,6 +259,13 @@ public class SlimeController : MonoBehaviour, IClickable
                 ? RigidbodyInterpolation2D.Interpolate
                 : _defaultInterpolation;
         }
+    }
+
+    // 저장에서 복원된 슬라임처럼 새로 등장한 것이 아닌 개체는 떨어져도 착지음을 내지 않는다.
+    // 게임을 켜면 필드의 슬라임이 한꺼번에 복원되어 떨어지므로, 그대로 두면 착지음이 마릿수만큼 몰린다.
+    public void SilenceFirstLanding()
+    {
+        _isLandingSilent = true;
     }
 
     public void SetLocationPresentationActive(bool isActive)
@@ -344,7 +356,8 @@ public class SlimeController : MonoBehaviour, IClickable
         if (!_hasLanded)
         {
             _hasLanded = true;
-            OnLanded?.Invoke();
+            if (!_isLandingSilent) OnLanded?.Invoke();
+            _isLandingSilent = false;
         }
 
         // Collision2D.collider는 상대 쪽 콜라이더다. 벽에 닿은 것과 구분하려면

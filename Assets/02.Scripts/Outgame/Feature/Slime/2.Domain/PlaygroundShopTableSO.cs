@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 장식장 상점의 판매 목록과 가격.
+// 소품 상점의 판매 목록과 가격.
 //
 // 코드가 아니라 에셋에 두는 것은 이 저장소 관행이다. 밸런스를 다시 컴파일하지
 // 않고 만질 수 있고, 가격이 바뀌어도 저장 데이터는 영향을 받지 않는다.

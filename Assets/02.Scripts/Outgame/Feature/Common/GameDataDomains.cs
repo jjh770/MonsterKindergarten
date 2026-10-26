@@ -32,10 +32,12 @@ public sealed class GameDataDomainDefinition
 public static class GameDataDomains
 {
     // v2: ECurrencyType에 뽑기권을 추가해 재화 배열 길이가 늘었다.
+    // v4: 탐험지별 완료 출발 순번을 누적 기록에 추가한다.
+    // v3: 탐험 보상의 누적 지급 기록을 잔액과 함께 저장한다. 로컬은 단일 JSON 문서를 쓴다.
     public static readonly GameDataDomainDefinition Currency = new(
         displayName: "재화",
         cloudCollectionName: "Currency",
-        currentSchemaVersion: 2,
+        currentSchemaVersion: 4,
         localDataDeleter: userId => new LocalCurrencyRepository(userId).Delete());
 
     // v11: 엔딩 크레딧용 게임 시작일과 메인 엔딩 도달일을 추가했다.
@@ -46,10 +48,14 @@ public static class GameDataDomains
     //      아직 배포 전이라 같은 버전에 뽑기권 누적 획득 수와 자동 합성 사용 횟수를 함께 넣었다.
     //      이전 문서에는 필드가 없어 0으로 읽힌다.
     // v16: 보상형 광고의 포인트 부스트 남은 시간과 하루 횟수를 추가했다. 이전 문서에는 필드가 없어 0으로 읽힌다.
+    // v17: 탐험 보상 장식 4종을 보유·배치 목록에 추가했다. 기존 종류 번호와 필드는 유지한다.
+    //      짧은 보유 목록의 새 종류는 미보유로 읽는다. 구버전 앱의 잘라내기 저장을 버전 검사로 막는다.
+    // v19: 복수 탐험 목록과 탐험지별 완료 기록이다. v18 단일 탐험은 그대로 목록에 옮긴다.
+    // v18: 진행 중 탐험과 보상 누적 기록이다. 기존 문서는 탐험 없음·누적 0으로 승격한다.
     public static readonly GameDataDomainDefinition SlimeStatus = new(
         displayName: "슬라임",
         cloudCollectionName: "SlimeStatus",
-        currentSchemaVersion: 16,
+        currentSchemaVersion: 19,
         localDataDeleter: userId =>
             new PlayerPrefsSlimeStatusRepository(userId).Delete());
 

@@ -47,6 +47,7 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
     public event Action<ECurrencyType, Currency> DataChanged;
     public event Action DataInitialized;
     public bool IsInitialized { get; private set; }
+    public ExpeditionSettlement ExpeditionSettlement { get; private set; } = global::ExpeditionSettlement.Empty;
 
 
     private async void Awake()
@@ -120,6 +121,10 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
                 }
             }
 
+            ExpeditionSettlement = saveData.ExpeditionSettlement?.ToDomain(legacy: saveData.SchemaVersion < 4) ??
+                (saveData.SchemaVersion < 3
+                    ? global::ExpeditionSettlement.Empty
+                    : throw new ArgumentException("탐험 재화 지급 기록이 없습니다."));
             LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
             for (int i = 0; i < _currencies.Length; i++)
             {
@@ -245,6 +250,29 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
     }
 
     // 재화 저장
+    // 잔액과 누적 지급 기록을 함께 바꾼다. 같은 순번을 다시 받으면 아무 재화도 더하지 않는다.
+    public bool TryApplyExpeditionSettlement(ExpeditionSettlement next)
+    {
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure ||
+            !ExpeditionSettlement.CanAdvanceTo(next)) return false;
+        if (next.Sequence == ExpeditionSettlement.Sequence) return true;
+
+        double pointDelta = next.Points - ExpeditionSettlement.Points;
+        long ticketDelta = next.Tickets - ExpeditionSettlement.Tickets;
+        double points = (double)Point + pointDelta;
+        double tickets = (double)Get(ECurrencyType.GachaTicket) + ticketDelta;
+        if (double.IsInfinity(points) || double.IsInfinity(tickets)) return false;
+
+        _currencies[(int)ECurrencyType.Point] = points;
+        _currencies[(int)ECurrencyType.GachaTicket] = tickets;
+        ExpeditionSettlement = next;
+        Save();
+        DataChanged?.Invoke(ECurrencyType.Point, Point);
+        DataChanged?.Invoke(ECurrencyType.GachaTicket, Get(ECurrencyType.GachaTicket));
+        return true;
+    }
+
+    // 재화 저장
     private void Save()
     {
         SaveCurrentAsync().Forget();
@@ -273,6 +301,7 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
         {
             SchemaVersion = GameDataDomains.Currency.CurrentSchemaVersion,
             Currencies = ToSaveData(),
+            ExpeditionSettlement = ExpeditionSettlementSaveData.FromDomain(ExpeditionSettlement),
             LastSaveTime = LastSaveTime.ToString("O")
         });
     }

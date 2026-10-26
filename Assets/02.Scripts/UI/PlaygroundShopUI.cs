@@ -7,10 +7,10 @@ using Utility;
 
 // 왼쪽 서랍의 상점. 탭 두 개로 장식장 오브젝트와 배경 테마를 나눠 판다.
 //
-//  - 장식장 탭 : 장식장에 놓을 오브젝트
+//  - 소품 탭 : 장식장에 놓을 소품
 //  - 배경 탭 : 배경 테마
 //
-// 처음 열 때의 탭은 지금 있는 공간을 따른다(장식장이면 장식장 탭, 메인 필드면 배경 탭).
+// 처음 열 때의 탭은 지금 있는 공간을 따른다(장식장이면 소품 탭, 메인 필드면 배경 탭).
 // 어느 공간에서든 두 탭을 오갈 수 있다. 공간으로만 갈랐을 때는 메인 필드에서 서랍을 여는
 // 플레이어가 장식장 물건을 볼 길이 없었다.
 //
@@ -61,6 +61,9 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
     private readonly List<PlaygroundShopItemView> _items = new();
     private readonly List<AffordabilityBinding> _affordabilityBindings = new();
+    // 사고 나면 목록이 통째로 다시 만들어진다. 막 산 물건의 새 카드를 찾아 연출을 붙이려고 둔다.
+    private readonly Dictionary<EPlaygroundObjectType, PlaygroundShopItemView> _objectViews = new();
+    private readonly Dictionary<EBackgroundTheme, PlaygroundShopItemView> _themeViews = new();
     private PlaygroundShopPurchaseService _purchaseService;
 
     private sealed class AffordabilityBinding
@@ -88,7 +91,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             _objectsTabButton == null || _themesTabButton == null ||
             _tabsRoot == null)
         {
-            Debug.LogError("장식장 상점의 필수 참조가 비어 있습니다.", this);
+            Debug.LogError("소품 상점의 필수 참조가 비어 있습니다.", this);
             enabled = false;
             return;
         }
@@ -220,7 +223,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
 
         if (_titleText != null)
         {
-            _titleText.text = isObjectsTab ? "장식장 상점" : "배경 상점";
+            _titleText.text = isObjectsTab ? "소품 상점" : "배경 상점";
         }
 
         ClearItems();
@@ -258,8 +261,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Description,
                 isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isOwned && canAfford,
+                isOwned,
                 () => BuyObject(entry));
             TrackAffordability(view, entry.Price, !isOwned);
+            _objectViews[entry.Type] = view;
             shown++;
         }
 
@@ -289,8 +294,10 @@ public sealed class PlaygroundShopUI : MonoBehaviour
                 entry.Description,
                 isOwned ? SoldOutLabel : entry.Price.ToFormattedString(),
                 !isOwned && canAfford,
+                isOwned,
                 () => BuyTheme(entry));
             TrackAffordability(view, entry.Price, !isOwned);
+            _themeViews[entry.Theme] = view;
             shown++;
         }
 
@@ -304,7 +311,8 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요! 장식장의 배치 버튼으로 놓아 보세요.");
+            $"{KoreanParticle.Object(entry.DisplayName)} 샀어요!\n장식장에서 [소품 놓기] 버튼으로 놓아 보세요.",
+            _objectViews.GetValueOrDefault(entry.Type));
     }
 
     private void BuyTheme(PlaygroundShopTableSO.ThemeEntry entry)
@@ -314,17 +322,22 @@ public sealed class PlaygroundShopUI : MonoBehaviour
             entry.Price);
         PresentPurchaseResult(
             result,
-            $"{entry.DisplayName} 배경을 샀어요! 이동 메뉴의 배경 버튼에서 바꿀 수 있어요.");
+            $"{entry.DisplayName} 배경을 샀어요!\n[배경 바꾸기] 버튼에서 바꿀 수 있어요.",
+            _themeViews.GetValueOrDefault(entry.Theme));
     }
 
+    // purchasedView는 구매 뒤 다시 만들어진 그 물건의 카드다. 구매가 끝나면 목록이 바로 다시
+    // 만들어지므로, 부르는 쪽은 구매를 마친 다음에 카드를 찾아 넘긴다.
     private void PresentPurchaseResult(
         EPlaygroundShopPurchaseResult result,
-        string successMessage)
+        string successMessage,
+        PlaygroundShopItemView purchasedView)
     {
         switch (result)
         {
             case EPlaygroundShopPurchaseResult.Success:
                 PlayPurchaseSound();
+                if (purchasedView != null) purchasedView.PlayPurchased();
                 _toast?.Show(successMessage, _purchaseToastDuration);
                 break;
 
@@ -387,6 +400,8 @@ public sealed class PlaygroundShopUI : MonoBehaviour
     {
         _items.Clear();
         _affordabilityBindings.Clear();
+        _objectViews.Clear();
+        _themeViews.Clear();
 
         for (int i = _itemRoot.childCount - 1; i >= 0; --i)
         {

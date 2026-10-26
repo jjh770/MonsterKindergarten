@@ -198,8 +198,10 @@ public sealed class SystemUpgradePanel : MonoBehaviour
         bool upgraded = _upgradeManager.TryLevelUp(
             type,
             ESlimeGrade.None);
+        // 구매음은 산 순간에만 낸다. 버튼에 달아 두면 포인트가 모자랄 때도 울려 부족 안내음과 겹친다.
         if (upgraded)
         {
+            AudioManager.Instance?.PlaySFX(EAudioSfx.UpgradeBuy);
             _touchBurst.Play(GetBurstOrigin());
         }
         else if (!upgrade.IsMaxLevel)

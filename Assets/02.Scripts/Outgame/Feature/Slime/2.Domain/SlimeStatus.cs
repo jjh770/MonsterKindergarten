@@ -48,6 +48,9 @@ public class SlimeStatus
 
     // 보상형 광고의 하루 횟수와 포인트 부스트 남은 시간. 바꿀 때는 새 값을 통째로 넣는다.
     public AdRewardProgress AdRewards { get; private set; }
+    private readonly List<ExpeditionRun> _activeExpeditions = new();
+    public IReadOnlyList<ExpeditionRun> ActiveExpeditions => _activeExpeditions.AsReadOnly();
+    public ExpeditionSettlement ExpeditionSettlement { get; private set; }
 
     // 이 계정이 마친 튜토리얼. 기기 로컬 표시는 앱 데이터를 지우면 사라지므로
     // 계정 문서에도 남긴다. 값은 튜토리얼 쪽이 정하는 식별자이고 여기서는 해석하지 않는다.
@@ -82,7 +85,9 @@ public class SlimeStatus
         IEnumerable<ESlimeGrade> legacySpecialCollection = null,
         long gachaTicketsObtainedTotal = 0,
         long autoMergeUseCount = 0,
-        AdRewardProgress adRewards = default)
+        AdRewardProgress adRewards = default,
+        ExpeditionSettlement expeditionSettlement = null,
+        IEnumerable<ExpeditionRun> activeExpeditions = null)
     {
         ValidateGrade(highestGrade);
         HighestGrade = highestGrade;
@@ -136,6 +141,9 @@ public class SlimeStatus
         GachaTicketsObtainedTotal = gachaTicketsObtainedTotal;
         AutoMergeUseCount = autoMergeUseCount;
         AdRewards = adRewards;
+        ExpeditionSettlement = expeditionSettlement ?? global::ExpeditionSettlement.Empty;
+        if (gachaTicketsObtainedTotal < ExpeditionSettlement.Tickets)
+            throw new ArgumentException("탐험 뽑기권 기록이 전체 획득 기록보다 큽니다.");
 
         if (completedTutorials != null)
         {
@@ -172,6 +180,11 @@ public class SlimeStatus
 
             _activeSlimes.Add(instance);
         }
+
+        if (activeExpeditions != null)
+            foreach (ExpeditionRun run in activeExpeditions)
+                if (!TryStartExpedition(run))
+                    throw new ArgumentException("진행 중 탐험 목록을 복원할 수 없어요.");
 
         if (registeredNormalCollection == null)
         {
@@ -263,6 +276,107 @@ public class SlimeStatus
         }
     }
 
+    // --- 탐험 ---
+
+    public bool TryStartExpedition(ExpeditionRun run)
+    {
+        if (run == null || _activeExpeditions.Count >= ExpeditionDestination.MaxActiveExpeditions ||
+            run.Members.Count > ExpeditionDestination.MaxMembers ||
+            ExpeditionSettlement.HasCompleted(run) ||
+            _activeExpeditions.Exists(active => active.RunId == run.RunId ||
+                active.DestinationId == run.DestinationId || active.Sequence == run.Sequence))
+            return false;
+
+        foreach (ExpeditionMember member in run.Members)
+        {
+            SlimeInstance owned = _activeSlimes.Find(slime => slime.InstanceId == member.InstanceId);
+            if (owned == null || owned.Location != ESlimeLocation.DisplayRoom ||
+                owned.Grade != member.Grade || owned.IsSpecial != member.IsSpecial || IsOnExpedition(member.InstanceId))
+                return false;
+        }
+
+        _activeExpeditions.Add(run);
+        return true;
+    }
+
+#if UNITY_EDITOR
+    // 에디터 확인 메뉴 전용이다. 아직 도착하지 않은 탐험을 지금 도착한 것으로 바꾼다. 보상, 편성, 정산
+    // 순번은 그대로라 받는 과정은 실제와 같다. 바꾼 탐험 수를 돌려준다.
+    public int EditorFinishExpeditions(DateTime trustedUtcNow)
+    {
+        int finished = 0;
+        for (int i = 0; i < _activeExpeditions.Count; i++)
+        {
+            ExpeditionRun run = _activeExpeditions[i];
+            if (run.IsReadyToReturn(trustedUtcNow)) continue;
+
+            // 도착 시각은 출발 시각보다 늦어야 하므로, 시계가 출발 시각보다 앞서 있으면 출발을 1초 당긴다.
+            DateTime started = run.StartedAtUtc < trustedUtcNow ? run.StartedAtUtc : trustedUtcNow.AddSeconds(-1);
+            _activeExpeditions[i] = new ExpeditionRun(
+                run.RunId, run.DestinationId, run.Members, started, trustedUtcNow, run.Reward, run.Sequence);
+            finished++;
+        }
+
+        return finished;
+    }
+
+    // 에디터 확인 메뉴 전용이다. 모든 소품을 하나씩 가진 상태로 만들거나(unlock), 하나도 없는 상태로
+    // 되돌린다. 되돌릴 때는 놓인 소품도 함께 치운다. 가진 개수가 바뀐 소품 종류 수를 돌려준다.
+    public int EditorSetAllPlaygroundObjects(bool unlock)
+    {
+        int changed = 0;
+        if (!unlock) _placedObjects.Clear();
+        for (int i = 0; i < _ownedPlaygroundObjects.Length; i++)
+        {
+            int next = unlock ? Math.Max(1, _ownedPlaygroundObjects[i]) : 0;
+            if (_ownedPlaygroundObjects[i] == next) continue;
+
+            _ownedPlaygroundObjects[i] = next;
+            changed++;
+        }
+
+        return changed;
+    }
+#endif
+
+    public bool IsOnExpedition(string instanceId)
+    {
+        foreach (ExpeditionRun run in _activeExpeditions)
+            foreach (ExpeditionMember member in run.Members)
+                if (member.InstanceId == instanceId) return true;
+        return false;
+    }
+
+    public bool TryCompleteExpedition(string runId, DateTime trustedUtcNow)
+    {
+        ExpeditionRun run = _activeExpeditions.Find(active => active.RunId == runId);
+        if (run == null || run.RunId != runId || !run.IsReadyToReturn(trustedUtcNow)) return false;
+        if (ExpeditionSettlement.Sequence == long.MaxValue ||
+            run.Reward.GachaTickets > long.MaxValue - ExpeditionSettlement.Tickets ||
+            run.Reward.GachaTickets > long.MaxValue - GachaTicketsObtainedTotal ||
+            double.IsInfinity(ExpeditionSettlement.Points + run.Reward.Points)) return false;
+        return TryAdvanceExpeditionSettlement(ExpeditionSettlement.WithReward(run));
+    }
+
+    // 재접속 시 재화 문서가 앞서 있으면 이미 받은 탐험을 다시 실행하지 않는다.
+    public bool TryAdvanceExpeditionSettlement(ExpeditionSettlement next)
+    {
+        if (!ExpeditionSettlement.CanAdvanceTo(next)) return false;
+        long ticketDelta = next.Tickets - ExpeditionSettlement.Tickets;
+        if (ticketDelta > long.MaxValue - GachaTicketsObtainedTotal) return false;
+        long nextLifetimeTickets = checked(GachaTicketsObtainedTotal + ticketDelta);
+        ExpeditionSettlement = next;
+        GachaTicketsObtainedTotal = nextLifetimeTickets;
+        for (EPlaygroundObjectType type = PlaygroundRules.FirstDecoration;
+             type <= PlaygroundRules.LastDecoration; type++)
+        {
+            if ((next.DecorationMask & (1 << (int)type)) != 0 && GetOwnedPlaygroundObjectCount(type) == 0)
+                TryAddPlaygroundObject(type);
+        }
+        _activeExpeditions.RemoveAll(next.HasCompleted);
+        return true;
+    }
+
     // --- 놀이터 오브젝트 ---
 
     public int GetOwnedPlaygroundObjectCount(EPlaygroundObjectType type)
@@ -282,6 +396,12 @@ public class SlimeStatus
     }
 
     public bool TryBuyPlaygroundObject(EPlaygroundObjectType type)
+    {
+        return TryAddPlaygroundObject(type);
+    }
+
+    // 입수 경로와 관계없이 보유 상한을 같은 곳에서 판정한다. 비용은 구매 서비스가 맡는다.
+    public bool TryAddPlaygroundObject(EPlaygroundObjectType type)
     {
         if (!PlaygroundRules.IsValid(type)) return false;
         if (_ownedPlaygroundObjects[(int)type] >= PlaygroundRules.MaxPerType) return false;
@@ -632,6 +752,8 @@ public class SlimeStatus
                 "장식장에는 같은 종류의 슬라임을 한 마리만 보관할 수 있습니다.");
         }
 
+        if (IsOnExpedition(instanceId))
+            throw new InvalidOperationException("탐험 중인 슬라임은 이동할 수 없어요.");
         instance.MoveTo(location);
         if (location == ESlimeLocation.DisplayRoom &&
             _registeredNormalCollection.Add(instance.Grade))
@@ -694,6 +816,9 @@ public class SlimeStatus
             {
                 throw new InvalidOperationException("저장 상태에 없는 슬라임은 합성할 수 없습니다.");
             }
+
+            if (IsOnExpedition(request.KeeperId) || IsOnExpedition(request.RemovedId))
+                throw new InvalidOperationException("탐험 중인 슬라임은 합성할 수 없어요.");
 
             if (keeper.Grade != removed.Grade ||
                 keeper.Location != removed.Location ||

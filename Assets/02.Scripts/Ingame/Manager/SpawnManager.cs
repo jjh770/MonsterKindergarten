@@ -181,6 +181,8 @@ public class SpawnManager : MonoBehaviour
             SlimeController target = _slimeSpawner.Restore(
                 instance,
                 GetRandomSpawnPosition());
+            // 복원은 새로 등장하는 것이 아니다. 한꺼번에 떨어지며 착지음이 몰리지 않게 한다.
+            target?.SilenceFirstLanding();
             if (target != null && instance.Location == ESlimeLocation.DisplayRoom)
             {
                 target.SetLocationPresentationActive(false);

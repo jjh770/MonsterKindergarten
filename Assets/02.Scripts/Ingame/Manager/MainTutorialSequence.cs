@@ -17,6 +17,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         WaitingForUnlock,
         FocusingSlimeUpgrade,
         SlimeUpgrade,
+        SpawnUpgrade,
         Complete,
     }
 
@@ -39,6 +40,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     private SlimeController _mergeTutorialSlime;
     private SlimeController _promotedTutorialSlime;
     private Step _step;
+    private EUpgradeType _focusedUpgradeType;
 
     private void Start()
     {
@@ -180,7 +182,10 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
                     ShowDragStep);
                 break;
             case Step.SlimeUpgrade:
-                ShowSpawnGaugeStep();
+                ShowFinalDialogue();
+                break;
+            case Step.SpawnUpgrade:
+                FocusSlimeUpgrade();
                 break;
         }
     }
@@ -279,7 +284,7 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
         Spotlight.ShowFocus(_promotedTutorialSlime.transform);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.MergeResult),
-            ShowSlimeUpgradeIntro,
+            ShowSpawnGaugeStep,
             keepGuideVisible: true);
     }
 
@@ -289,43 +294,49 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
                                        _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null)
         {
-            Debug.LogWarning("강조할 시스템 업그레이드 캐러셀이 없어 게이지 설명으로 이동합니다.");
-            ShowSpawnGaugeStep();
+            Debug.LogWarning("강조할 시스템 업그레이드 캐러셀이 없어 마무리 대화로 이동합니다.");
+            ShowFinalDialogue();
             return;
         }
 
         Spotlight.ShowUiFocus(carouselTarget);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.SpawnUpgrade),
-            FocusSlimeUpgrade,
+            () => FocusUpgrade(EUpgradeType.SpawnTimeSub),
             keepGuideVisible: true,
             placement: DialoguePlacement.NearSpotlight);
     }
 
     private void FocusSlimeUpgrade()
     {
+        FocusUpgrade(EUpgradeType.AllSlimePointPercentAdd);
+    }
+
+    private void FocusUpgrade(EUpgradeType type)
+    {
         RectTransform carouselTarget = _systemUpgradePanel?.TutorialTarget;
         if (carouselTarget == null)
         {
-            ShowSpawnGaugeStep();
+            ShowFinalDialogue();
             return;
         }
 
+        _focusedUpgradeType = type;
         _step = Step.FocusingSlimeUpgrade;
         _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
         _systemUpgradePanel.RotationCompleted += OnSlimeUpgradeFocusAdvanced;
 
-        if (_systemUpgradePanel.IsSelected(EUpgradeType.AllSlimePointPercentAdd))
+        if (_systemUpgradePanel.IsSelected(_focusedUpgradeType))
         {
             ShowSlimeUpgradeGuide();
             return;
         }
 
-        if (!_systemUpgradePanel.TryFocus(EUpgradeType.AllSlimePointPercentAdd))
+        if (!_systemUpgradePanel.TryFocus(_focusedUpgradeType))
         {
             _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
-            Debug.LogWarning("슬라임 업그레이드 항목으로 이동할 수 없어 게이지 설명으로 이동합니다.");
-            ShowSpawnGaugeStep();
+            Debug.LogWarning("슬라임 업그레이드 항목으로 이동할 수 없어 마무리 대화로 이동합니다.");
+            ShowFinalDialogue();
         }
     }
 
@@ -333,16 +344,16 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     {
         if (_step != Step.FocusingSlimeUpgrade) return;
 
-        if (_systemUpgradePanel.IsSelected(EUpgradeType.AllSlimePointPercentAdd))
+        if (_systemUpgradePanel.IsSelected(_focusedUpgradeType))
         {
             ShowSlimeUpgradeGuide();
             return;
         }
 
-        if (!_systemUpgradePanel.TryFocus(EUpgradeType.AllSlimePointPercentAdd))
+        if (!_systemUpgradePanel.TryFocus(_focusedUpgradeType))
         {
             _systemUpgradePanel.RotationCompleted -= OnSlimeUpgradeFocusAdvanced;
-            ShowSpawnGaugeStep();
+            ShowFinalDialogue();
         }
     }
 
@@ -352,10 +363,11 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
 
         RectTransform target = _systemUpgradePanel.SelectedItemTarget ??
                                _systemUpgradePanel.TutorialTarget;
-        _step = Step.SlimeUpgrade;
+        bool isSpawnUpgrade = _focusedUpgradeType == EUpgradeType.SpawnTimeSub;
+        _step = isSpawnUpgrade ? Step.SpawnUpgrade : Step.SlimeUpgrade;
         _clicker.PushMode(this, ClickerInputMode.Blocked, ClickerInputPriority.Tutorial);
         Spotlight.ShowUiTarget(
-            Content.SystemUpgradeCarouselMessage,
+            isSpawnUpgrade ? Content.SpawnUpgradeMessage : Content.SystemUpgradeCarouselMessage,
             target,
             SpotlightInteractionMode.AdvanceOnPrimaryTap);
     }
@@ -364,15 +376,15 @@ public sealed class MainTutorialSequence : TutorialSequenceBase
     {
         if (_spawnGaugeTarget == null)
         {
-            Debug.LogWarning("강조할 슬라임 스폰 게이지가 없어 마무리 대화로 이동합니다.");
-            ShowFinalDialogue();
+            Debug.LogWarning("강조할 슬라임 스폰 게이지가 없어 업그레이드 설명으로 이동합니다.");
+            ShowSlimeUpgradeIntro();
             return;
         }
 
         Spotlight.ShowUiFocus(_spawnGaugeTarget);
         ShowStepDialogue(
             Content.GetDialogue(DialogueId.SpawnGauge),
-            ShowFinalDialogue,
+            ShowSlimeUpgradeIntro,
             keepGuideVisible: true);
     }
 

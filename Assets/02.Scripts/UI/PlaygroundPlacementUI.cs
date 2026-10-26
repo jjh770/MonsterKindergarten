@@ -15,6 +15,22 @@ using UnityEngine.UI;
 // 알고 있어서, 빈 자리를 집는 규칙을 그쪽에 넣으면 두 가지 일이 섞인다.
 public sealed class PlaygroundPlacementUI : MonoBehaviour
 {
+    [Serializable]
+    private sealed class DecorationButton
+    {
+        [SerializeField] private EPlaygroundObjectType _type;
+        [SerializeField] private Button _button;
+        [SerializeField] private Image _icon;
+        [SerializeField] private TextMeshProUGUI _label;
+
+        public EPlaygroundObjectType Type => _type;
+        public Button Button => _button;
+        public Image Icon => _icon;
+        public TextMeshProUGUI Label => _label;
+        // 씬에 적힌 이름이다. 가지지 않은 동안은 ???로 바꿔 두었다가 되돌린다.
+        public string Name { get; set; }
+    }
+
     [SerializeField] private PlaygroundObjectField _field;
     [SerializeField] private Clicker _clicker;
     [FormerlySerializedAs("_upgradeUI")]
@@ -37,6 +53,11 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _bumperText;
     [SerializeField] private TextMeshProUGUI _cannonText;
     [SerializeField] private TextMeshProUGUI _guideText;
+    [SerializeField] private DecorationButton[] _decorationButtons = Array.Empty<DecorationButton>();
+    [Tooltip("아직 가지지 않은 소품의 그림에 씌우는 실루엣 재질입니다.")]
+    [SerializeField] private Material _silhouetteMaterial;
+    [SerializeField] private Image _bumperIcon;
+    [SerializeField] private Image _cannonIcon;
 
     [Header("Input")]
     [Tooltip("이만큼 끌어야 옮기는 것으로 본다. 그 아래는 고르기로 본다.")]
@@ -96,6 +117,14 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         if (_cannonButton != null)
             _cannonButton.onClick.AddListener(() => SelectType(EPlaygroundObjectType.Cannon));
 
+        foreach (DecorationButton binding in _decorationButtons)
+        {
+            if (binding.Label != null) binding.Name = binding.Label.text;
+            if (binding.Button == null) continue;
+            EPlaygroundObjectType type = binding.Type;
+            binding.Button.onClick.AddListener(() => SelectType(type));
+        }
+
         _slimeManager.PlaygroundChanged += Refresh;
 
         _spaceManager.SpaceChanged += OnSpaceChanged;
@@ -107,7 +136,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
     {
         DisplayRoomCameraInputGate.Release(this);
         _modeSession?.Dispose();
-        _slimeManager.PlaygroundChanged -= Refresh;
+        if (_slimeManager != null) _slimeManager.PlaygroundChanged -= Refresh;
 
         // 종료 순서는 보장되지 않아 매니저가 먼저 사라질 수 있다.
         if (_spaceManager != null) _spaceManager.SpaceChanged -= OnSpaceChanged;
@@ -194,6 +223,13 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void SelectType(EPlaygroundObjectType type)
     {
+        // 아직 없는 소품은 무엇인지 감춰 두고, 어디서 얻는지만 알려 준다.
+        if (!IsOwned(type))
+        {
+            _toast?.Show(IsShopObject(type) ? UiMessages.PlacementFromShop : UiMessages.PlacementFromExpedition);
+            return;
+        }
+
         if (!CanPlace(type))
         {
             _toast?.Show(UiMessages.PlacementUnavailable);
@@ -212,6 +248,31 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         _selectedIndex = -1;
     }
 
+    private bool IsOwned(EPlaygroundObjectType type) =>
+        _slimeManager != null && _slimeManager.GetOwnedPlaygroundObjectCount(type) > 0;
+
+    // 범퍼와 대포는 상점에서 사고, 나머지는 탐험에서 발견한다.
+    private static bool IsShopObject(EPlaygroundObjectType type) =>
+        type == EPlaygroundObjectType.Bumper || type == EPlaygroundObjectType.Cannon;
+
+    // 가진 소품은 원래 그림과 이름을, 없는 소품은 실루엣과 ???를 보여 준다. 없는 소품도 눌러서
+    // 얻는 곳을 볼 수 있게 버튼은 켜 두고, 이미 놓은 소품만 끈다.
+    private void ApplyEntry(EPlaygroundObjectType type, Button button, Image icon, TextMeshProUGUI label, string name)
+    {
+        bool owned = IsOwned(type);
+        if (button != null) button.interactable = !owned || CanPlace(type);
+        if (icon != null)
+        {
+            icon.material = owned ? null : _silhouetteMaterial;
+            icon.color = owned ? Color.white : SilhouetteColor;
+        }
+
+        if (label != null) label.text = owned ? name : UnknownName;
+    }
+
+    private const string UnknownName = "???";
+    private static readonly Color SilhouetteColor = new(.48f, .48f, .48f, 1f);
+
     private bool CanPlace(EPlaygroundObjectType type)
     {
         SlimeManager manager = _slimeManager;
@@ -229,7 +290,7 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
         // 선택을 먼저 해제한다. TryRemovePlacedObject가 성공하면 PlaygroundChanged로 Refresh가
         // 도는데, 그때 _selectedIndex가 이미 -1이라야 치우기 버튼과 안내가 정리된다.
         ClearSelection();
-        if (!_slimeManager.TryRemovePlacedObject(indexToRemove))
+        if (!_field.TryRemoveAnimated(indexToRemove, () => _slimeManager.TryRemovePlacedObject(indexToRemove)))
         {
             // 실패 시엔 이벤트가 오지 않으므로 직접 화면을 정리한다.
             Refresh();
@@ -238,24 +299,12 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
     private void Refresh()
     {
-        if (_bumperText != null)
-        {
-            _bumperText.text = "범퍼";
-        }
+        ApplyEntry(EPlaygroundObjectType.Bumper, _bumperButton, _bumperIcon, _bumperText, "범퍼");
+        ApplyEntry(EPlaygroundObjectType.Cannon, _cannonButton, _cannonIcon, _cannonText, "대포");
 
-        if (_cannonText != null)
+        foreach (DecorationButton binding in _decorationButtons)
         {
-            _cannonText.text = "대포";
-        }
-
-        if (_bumperButton != null)
-        {
-            _bumperButton.interactable = CanPlace(EPlaygroundObjectType.Bumper);
-        }
-
-        if (_cannonButton != null)
-        {
-            _cannonButton.interactable = CanPlace(EPlaygroundObjectType.Cannon);
+            ApplyEntry(binding.Type, binding.Button, binding.Icon, binding.Label, binding.Name);
         }
 
         if (_removeButton != null)
@@ -265,8 +314,8 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
 
         if (_guideText == null) return;
 
-        if (_selectedIndex >= 0) _guideText.text = "옮기려면 끌고, 치우려면 버튼을 누르세요.";
-        else if (_hasSelectedType) _guideText.text = "놓을 자리를 누르세요.";
+        if (_selectedIndex >= 0) _guideText.text = "끌어서 옮기거나, 치우기 버튼을 눌러 보세요.";
+        else if (_hasSelectedType) _guideText.text = "놓을 자리를 눌러 보세요.";
         else _guideText.text = "놓을 것을 고르거나, 놓인 것을 눌러 보세요.";
     }
 
@@ -421,6 +470,9 @@ public sealed class PlaygroundPlacementUI : MonoBehaviour
             _toast?.Show(UiMessages.CannotPlaceHere);
             return;
         }
+
+        // 저장 목록 끝에 붙으므로 마지막 자리가 방금 놓은 것이다.
+        _field.PlayPlaced(manager.PlacedPlaygroundObjects.Count - 1);
 
         // 하나를 놓으면 해당 종류는 더 배치할 수 없으므로 선택도 함께 해제한다.
         if (!CanPlace(_selectedType)) ClearSelection();

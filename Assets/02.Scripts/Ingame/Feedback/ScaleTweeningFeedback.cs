@@ -55,6 +55,10 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     [SerializeField, Min(0.01f)] private float _dragSmoothTime = 0.08f;
     [Tooltip("드래그를 놓았을 때 원래 모양으로 돌아오는 시간입니다. 출렁임 없이 부드럽게 돌아옵니다.")]
     [SerializeField, Min(0.01f)] private float _dragReleaseDuration = 0.15f;
+    [Tooltip("잡고만 있을 때 눌린 모양이 출렁이는 정도입니다. 가로가 늘면 세로가 줄어 부피가 비슷하게 유지됩니다. 움직일수록 사라집니다.")]
+    [SerializeField, Range(0f, 0.2f)] private float _holdWobbleAmount = 0.04f;
+    [Tooltip("잡고만 있을 때 1초에 출렁이는 횟수입니다.")]
+    [SerializeField, Min(0.1f)] private float _holdWobbleFrequency = 2.5f;
 
     [Header("Common")]
     [SerializeField, Min(1)] private int _vibrato = 10;
@@ -69,6 +73,7 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     private Vector3 _lastPosition;
     private Vector2 _stretch = Vector2.one;
     private Vector2 _stretchVelocity;
+    private float _holdWobbleTime;
 
     private void Awake()
     {
@@ -102,6 +107,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
     {
         // 손으로 누른 클릭은 누름과 뗌 이벤트가 이미 모양을 움직였다. 자동 생산만 펀치로 알린다.
         if (clickInfo.ClickType == EClickType.Manual)
+        {
+            return;
+        }
+
+        // 끄는 동안은 LateUpdate가 크기를 매 프레임 정한다. 펀치를 겹치면 두 쪽이 크기를 다툰다.
+        if (_isDragStretching)
         {
             return;
         }
@@ -182,6 +193,8 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
         _isDragStretching = true;
         _lastPosition = _owner.transform.position;
         _stretchVelocity = Vector2.zero;
+        // 사인이 0에서 시작하므로 출렁임이 눌린 모양에서 끊김 없이 이어진다.
+        _holdWobbleTime = 0f;
         // 눌려 있던 모양에서 이어서 시작해 드래그로 넘어가는 순간 튀지 않게 한다.
         Vector3 ratio = _owner.transform.localScale;
         _stretch = new Vector2(
@@ -227,8 +240,12 @@ public class ScaleTweeningFeedback : MonoBehaviour, IFeedback
             1f + _dragStretch * (horizontal - 0.6f * vertical),
             1f + _dragStretch * (vertical - 0.6f * horizontal));
         // 잡고만 있을 때는 눌린 모양을 유지하고, 움직이는 만큼만 늘어난 모양으로 옮겨 간다.
-        var pressed = new Vector2(_pressWidthScale, _pressHeightScale);
+        // 그대로 굳어 있으면 멈춘 것처럼 보이므로, 눌린 모양은 가로세로를 엇갈려 살짝 출렁인다.
         float movement = Mathf.Max(horizontal, vertical);
+        _holdWobbleTime += deltaTime;
+        float wobble = Mathf.Sin(_holdWobbleTime * _holdWobbleFrequency * 2f * Mathf.PI) *
+                       _holdWobbleAmount * (1f - movement);
+        var pressed = new Vector2(_pressWidthScale + wobble, _pressHeightScale - wobble);
         Vector2 target = Vector2.Lerp(pressed, stretched, movement);
         _stretch = Vector2.SmoothDamp(_stretch, target, ref _stretchVelocity, _dragSmoothTime);
         _owner.transform.localScale = Scaled(_stretch.x, _stretch.y);

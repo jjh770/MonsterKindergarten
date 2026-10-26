@@ -64,8 +64,10 @@ public static class UiMessages
     public static string SameKindInDisplayRoom => Source.SameKindInDisplayRoom;
     public static string CannotSendToDisplayRoom => Source.CannotSendToDisplayRoom;
 
-    // 놀이기구 배치
+    // 소품 배치
     public static string PlacementUnavailable => Source.PlacementUnavailable;
+    public static string PlacementFromShop => Source.PlacementFromShop;
+    public static string PlacementFromExpedition => Source.PlacementFromExpedition;
     public static string TooCloseToOther => Source.TooCloseToOther;
     public static string CannotMoveHere => Source.CannotMoveHere;
     public static string CannotPlaceHere => Source.CannotPlaceHere;
@@ -99,4 +101,26 @@ public static class UiMessages
     public static string AdClosedEarly => Source.AdClosedEarly;
     public static string AdBoostRewarded => Source.AdBoostRewarded;
     public static string AdTicketRewarded => Source.AdTicketRewarded;
+    public static string ExpeditionReturned => Source.ExpeditionReturned;
+    public static string ExpeditionChooseParty => Source.ExpeditionChooseParty;
+    public static string ExpeditionInProgress => Source.ExpeditionInProgress;
+    public static string ExpeditionReadyToClaim => Source.ExpeditionReadyToClaim;
+    public static string ExpeditionArrived => Source.ExpeditionArrived;
+    public static string ExpeditionHomecoming => Source.ExpeditionHomecoming;
+    public static string ExpeditionDecorationFound => Source.ExpeditionDecorationFound;
+    public static string ExpeditionDecorationOwned => Source.ExpeditionDecorationOwned;
+    public static string ExpeditionSettlementUnavailable => Source.ExpeditionSettlementUnavailable;
+    public static string ExpeditionPickDifferentKinds => Source.ExpeditionPickDifferentKinds;
+    public static string ExpeditionDeparted => Source.ExpeditionDeparted;
+    public static string ExpeditionCannotDepart => Source.ExpeditionCannotDepart;
+    public static string ExpeditionCannotClaim => Source.ExpeditionCannotClaim;
+    public static string ExpeditionMemberHeading => Source.ExpeditionMemberHeading;
+    public static string ExpeditionNoMembers => Source.ExpeditionNoMembers;
+    public static string ExpeditionMemberChosen => Source.ExpeditionMemberChosen;
+    public static string ExpeditionMemberAway => Source.ExpeditionMemberAway;
+    public static string ExpeditionSend => Source.ExpeditionSend;
+    public static string ExpeditionClaim => Source.ExpeditionClaim;
+    public static string ExpeditionSpecialName => Source.ExpeditionSpecialName;
+    public static string ExpeditionTitleInProgress => Source.ExpeditionTitleInProgress;
+    public static string ExpeditionTitleArrived => Source.ExpeditionTitleArrived;
 }

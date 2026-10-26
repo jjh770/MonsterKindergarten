@@ -34,8 +34,9 @@ public class AutoClicker : MonoBehaviour
         for (int i = 0; i < targets.Count; i++)
         {
             SlimeController target = targets[i];
+            // 들고 있는 슬라임도 생산한다. 합성하려면 끌어야 하므로, 여기서 빼면
+            // 핵심 조작을 하는 동안 생산이 통째로 사라진다.
             if (target == null ||
-                target.IsDragging ||
                 target.Location != ESlimeLocation.MainField)
             {
                 continue;
