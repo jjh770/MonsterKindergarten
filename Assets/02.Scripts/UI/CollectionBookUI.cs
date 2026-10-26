@@ -552,10 +552,20 @@ public sealed class CollectionBookUI : MonoBehaviour
     private void RefreshLayout()
     {
         RectTransform root = transform as RectTransform;
-        if (root == null || _safeAreaRoot == null) return;
+        if (root == null || _safeAreaRoot == null || _bookRoot == null) return;
+
+        // 넓은 화면에서는 표지도 세로 영역(PortraitColumn) 안으로 줄인다. 화면 폭으로 늘어나면 영역 밖
+        // 빈 곳까지 표지가 번진다. 안쪽 여백은 기준이 화면 전체라, 표지를 줄인 만큼 좌우에서 덜어 낸다.
+        // 표지 밖으로 걸친 왼쪽 페이지는 표지의 RectMask2D가 가로로만 자른다.
+        float columnInset = Screen.width > 0
+            ? PortraitColumn.GetPixelRect().xMin / Screen.width * root.rect.width
+            : 0f;
+        var bookRect = (RectTransform)_bookRoot.transform;
+        bookRect.offsetMin = new Vector2(columnInset, bookRect.offsetMin.y);
+        bookRect.offsetMax = new Vector2(-columnInset, bookRect.offsetMax.y);
 
         SafeAreaInsets insets = SafeAreaUtility.GetInsets(root);
-        _safeAreaRoot.offsetMin = new Vector2(insets.Left, insets.Bottom);
-        _safeAreaRoot.offsetMax = new Vector2(-insets.Right, -insets.Top);
+        _safeAreaRoot.offsetMin = new Vector2(Mathf.Max(0f, insets.Left - columnInset), insets.Bottom);
+        _safeAreaRoot.offsetMax = new Vector2(-Mathf.Max(0f, insets.Right - columnInset), -insets.Top);
     }
 }
