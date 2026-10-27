@@ -21,6 +21,9 @@ public class LoginScene : MonoBehaviour
     [Tooltip("저장 데이터를 읽지 못해 게임에 들어갈 수 없을 때만 여는 확인 패널입니다.")]
     [SerializeField] private SaveRecoveryUI _recoveryUI;
 
+    [Tooltip("저장된 진행도가 앱보다 새 버전일 때 스토어로 보내는 업데이트 안내입니다. 비워 두면 공용 안내로 대신합니다.")]
+    [SerializeField] private AppUpdatePopupUI _updatePopup;
+
     [Tooltip("처음 시작할 때 이용약관과 개인정보 수집·이용, 만 14세 이상 확인을 받는 화면입니다. 동의 전에는 로그인하지 않습니다.")]
     [SerializeField] private ConsentUI _consentUI;
 
@@ -83,8 +86,8 @@ public class LoginScene : MonoBehaviour
         PendingLoadFailure = ESaveLoadFailure.None;
         if (loadFailure != ESaveLoadFailure.None)
         {
-            // 복구 패널이 더 자세히 안내하므로 그때는 토스트를 겹치지 않는다.
-            if (!TryOfferRecovery(loadFailure))
+            // 복구 패널과 업데이트 안내가 더 자세히 안내하므로 그때는 토스트를 겹치지 않는다.
+            if (!TryOfferRecovery(loadFailure) && !TryOfferUpdate(loadFailure))
             {
                 _popupText = BuildLoadFailureMessage(loadFailure);
                 ShowLobbyPopup();
@@ -303,6 +306,17 @@ public class LoginScene : MonoBehaviour
         _popupText = "서버 시각을 확인하지 못했어요.\n인터넷 연결을 확인하고\n다시 시도해 주세요.";
         ShowLobbyPopup();
         return false;
+    }
+
+    // 공용 안내는 잠깐 뒤 사라져 스토어로 갈 틈이 없다. 버전 문제만 닫을 때까지 남는 팝업으로 안내한다.
+    private bool TryOfferUpdate(ESaveLoadFailure failure)
+    {
+        if (failure != ESaveLoadFailure.UnsupportedVersion || _updatePopup == null || !_updatePopup.IsReady)
+            return false;
+
+        _updatePopup.Show(
+            "저장된 진행도가\n지금 앱보다 새 버전이에요.\n\n업데이트 버튼을 눌러\n스토어에서 업데이트한 뒤\n다시 로그인해 주세요.");
+        return true;
     }
 
     private void SetRecoveryInteractable(bool isInteractable)
