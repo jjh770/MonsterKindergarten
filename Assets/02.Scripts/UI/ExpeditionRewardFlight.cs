@@ -1,19 +1,19 @@
-﻿using System.Collections.Generic;
-using DG.Tweening;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine;
 
 // 탐험 보상의 포인트와 뽑기권 아이콘이 상단 바로 날아가는 연출이다. 보상은 이미 지급돼 있고,
 // 숫자와 저장은 건드리지 않는다.
 //
-// 상단 바는 탐험 화면이 열린 동안 숨겨지므로 화면을 닫은 뒤에 부른다. 그래서 탐험 화면의 캔버스가
-// 아니라 상단 바보다 위인 공용 팝업 캔버스(10)에 둔다. 두 캔버스 모두 Screen Space Overlay라
-// 팝업에서 읽은 화면 위치를 그대로 출발점으로 쓴다.
+// 무엇을 몇 장, 어느 아이콘으로 보내고 닿을 때 어떤 소리를 낼지만 정한다. 흩어졌다가 날아가 앉는
+// 움직임은 다른 보상과 같은 UiIconFlight가 맡는다. 같은 아이콘을 튕기는 연출이 한곳을 거쳐야
+// 아이콘 크기가 어긋나지 않는다.
+//
+// 상단 바는 탐험 화면이 열린 동안 숨겨지므로 화면을 닫은 뒤에 부른다. 상단 바가 내려오는 동안
+// 날아가도 UiIconFlight가 매 프레임 아이콘의 위치를 다시 읽어 내려앉는다. 출발점은 탐험 화면의
+// 보상 팝업이 준 위치이고, 두 캔버스 모두 Screen Space Overlay라 그 위치를 그대로 쓴다.
 public sealed class ExpeditionRewardFlight : MonoBehaviour
 {
-    [Tooltip("복제해 쓰는 비활성 Image 원본입니다.")]
-    [SerializeField] private Image _template;
-    [SerializeField] private RectTransform _layer;
+    [Tooltip("상단 바로 날려 보내는 공용 비행 연출입니다.")]
+    [SerializeField] private UiIconFlight _iconFlight;
     [SerializeField] private RectTransform _pointTarget;
     [SerializeField] private RectTransform _ticketTarget;
     [SerializeField] private Sprite _pointSprite;
@@ -21,109 +21,56 @@ public sealed class ExpeditionRewardFlight : MonoBehaviour
     [SerializeField, Min(1)] private int _pointCount = 12;
     [SerializeField, Min(1)] private int _maxTicketCount = 8;
     [SerializeField, Min(1f)] private float _iconSize = 90f;
-    [SerializeField] private Vector2 _scatterDistance = new(160f, 110f);
-    [SerializeField, Min(0.01f)] private float _scatterDuration = 0.2f;
-    [SerializeField, Min(0.05f)] private float _flyDuration = 0.6f;
-    [SerializeField, Min(0f)] private float _spawnInterval = 0.04f;
-    [SerializeField, Range(0f, 0.6f)] private float _flyArc = 0.3f;
 
-    private readonly List<Image> _flying = new();
-    private UiImagePool _pool;
-    private Sequence _sequence;
+    private const float ArrivalSoundCooldown = .06f;
 
     private void Awake()
     {
-        if (_template == null || _layer == null || _pointTarget == null || _ticketTarget == null ||
+        if (_iconFlight == null || _pointTarget == null || _ticketTarget == null ||
             _pointSprite == null || _ticketSprite == null)
         {
             Debug.LogError("탐험 보상 날아가기의 필수 참조가 비어 있어요.", this);
             enabled = false;
-            return;
         }
-
-        _pool = new UiImagePool(_template, _layer, _pointCount + _maxTicketCount);
     }
-
-    private void OnDestroy() => _sequence?.Kill();
 
     public void Play(Vector3 pointFrom, Vector3 ticketFrom, int tickets)
     {
-        if (!enabled || _pool == null) return;
+        if (!enabled) return;
 
-        Clear();
-        _sequence = DOTween.Sequence().SetUpdate(true);
-        Add(_pointCount, _pointSprite, pointFrom, _pointTarget, EAudioSfx.OfflineRewardArrival);
+        var size = new Vector2(_iconSize, _iconSize);
+        _iconFlight.PlayBundle(
+            pointFrom,
+            _pointSprite,
+            size,
+            _pointTarget,
+            _pointCount,
+            index => PlayArrivalSound(index, EAudioSfx.OfflineRewardArrival),
+            null);
         if (tickets > 0)
-            Add(Mathf.Min(tickets, _maxTicketCount), _ticketSprite, ticketFrom, _ticketTarget, EAudioSfx.TicketCollect);
-        _sequence.OnComplete(() => { _sequence = null; Clear(); });
-    }
-
-    private void Add(int count, Sprite sprite, Vector3 from, RectTransform target, EAudioSfx arrivalSound)
-    {
-        for (int i = 0; i < count; i++)
         {
-            Image image = _pool.Rent();
-            _flying.Add(image);
-            image.sprite = sprite;
-            image.preserveAspect = true;
-            image.raycastTarget = false;
-            image.color = Color.white;
-            RectTransform rect = image.rectTransform;
-            rect.sizeDelta = new Vector2(_iconSize, _iconSize);
-            rect.localScale = Vector3.one;
-            rect.position = from;
-
-            Vector3 scatter = from + _layer.TransformVector(new Vector3(
-                Random.Range(-_scatterDistance.x, _scatterDistance.x),
-                Random.Range(-_scatterDistance.y, _scatterDistance.y)));
-            float bend = GetBend();
-            float duration = _flyDuration * Random.Range(.85f, 1.15f);
-            float start = i * _spawnInterval;
-            bool first = i == 0;
-
-            Sequence flight = DOTween.Sequence();
-            flight.Append(rect.DOMove(scatter, _scatterDuration).SetEase(Ease.OutQuad));
-            flight.Append(DOVirtual.Float(0f, 1f, duration, t =>
-            {
-                float u = 1f - t;
-                // 탐험 화면이 닫히는 동안 상단 바가 위에서 내려온다. 휘는 점을 출발할 때 한 번만 정하면
-                // 화면 밖의 목표를 기준으로 휘어 곡선이 과하게 꺾이므로, 매 프레임 지금 목표로 다시 잡는다.
-                Vector3 end = target.position;
-                Vector3 control = GetControlPoint(scatter, end, bend);
-                rect.position = u * u * scatter + 2f * u * t * control + t * t * end;
-            }).SetEase(Ease.InQuad));
-            flight.Join(rect.DOScale(.55f, duration).SetEase(Ease.InQuad));
-            flight.AppendCallback(() =>
-            {
-                image.gameObject.SetActive(false);
-                target.DOKill(complete: true);
-                target.DOPunchScale(Vector3.one * .12f, .3f, 6, .5f).SetUpdate(true);
-                if (first) AudioManager.Instance?.PlaySFX(arrivalSound);
-                else AudioManager.Instance?.PlaySFXRandomPitchWithCooldown(EAudioSfx.TicketCollect, .06f);
-            });
-            _sequence.Insert(start, flight);
+            _iconFlight.PlayBundle(
+                ticketFrom,
+                _ticketSprite,
+                size,
+                _ticketTarget,
+                Mathf.Min(tickets, _maxTicketCount),
+                index => PlayArrivalSound(index, EAudioSfx.TicketCollect),
+                null);
         }
     }
 
-    // 아이콘마다 휘는 정도와 좌우를 정한다. 좌우가 달라 한 줄로 쏠리지 않는다.
-    private float GetBend()
+    // 첫 장은 보상의 소리를 내고, 뒤따르는 장은 짧은 소리를 겹치지 않게 흩뿌린다.
+    private static void PlayArrivalSound(int index, EAudioSfx firstSound)
     {
-        float side = Random.value < .5f ? -1f : 1f;
-        return _flyArc * Random.Range(.6f, 1.2f) * side;
-    }
+        if (AudioManager.Instance == null) return;
 
-    // 시작점과 목표 사이 가운데에서 옆으로 비켜선 점이다. 오프라인 보상의 곡선과 같은 식이다.
-    private static Vector3 GetControlPoint(Vector3 from, Vector3 to, float bend)
-    {
-        Vector3 delta = to - from;
-        return (from + to) * .5f + new Vector3(-delta.y, delta.x, 0f) * bend;
-    }
+        if (index == 0)
+        {
+            AudioManager.Instance.PlaySFX(firstSound);
+            return;
+        }
 
-    private void Clear()
-    {
-        _sequence?.Kill();
-        _sequence = null;
-        foreach (Image image in _flying) _pool.Return(image);
-        _flying.Clear();
+        AudioManager.Instance.PlaySFXRandomPitchWithCooldown(EAudioSfx.TicketCollect, ArrivalSoundCooldown);
     }
 }

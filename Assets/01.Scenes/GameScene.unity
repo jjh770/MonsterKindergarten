@@ -12447,6 +12447,7 @@ GameObject:
   m_Component:
   - component: {fileID: 366112235}
   - component: {fileID: 366112236}
+  - component: {fileID: 366112237}
   m_Layer: 0
   m_Name: TicketCollectOverlay
   m_TagString: Untagged
@@ -12497,6 +12498,32 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 3
   m_TargetDisplay: 0
+--- !u!114 &366112237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366112234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfe37a803053eb149a46d9850d413b21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UiIconFlight
+  _pieceTemplate: {fileID: 1089583509}
+  _flyDuration: 1
+  _arcScreenRatio: 0.4
+  _arcRandomness: 0.4
+  _sideSpreadRatio: 0.25
+  _burstParticleCount: 12
+  _burstDuration: 0.38
+  _burstLeadTime: 0.15
+  _burstDistanceScale: 1.25
+  _scatterDistance: {x: 160, y: 110}
+  _scatterDuration: 0.2
+  _bundleInterval: 0.04
+  _targetPunchScale: 0.5
+  _arrivalSoundCooldown: 0.06
 --- !u!1 &369537027
 GameObject:
   m_ObjectHideFlags: 0
@@ -38971,7 +38998,8 @@ MonoBehaviour:
   _autoSpawnToggle: {fileID: 1163591913}
   _gachaButton: {fileID: 1977863041}
   _unlockPopupUI: {fileID: 1432576204}
-  _ticketField: {fileID: 1701297961}
+  _iconFlight: {fileID: 366112237}
+  _ticketIcon: {fileID: 1291526711}
   _clicker: {fileID: 115063078}
   _autoClicker: {fileID: 2033355240}
   _mergeManager: {fileID: 1919398862}
@@ -53631,6 +53659,8 @@ MonoBehaviour:
   _slimeManager: {fileID: 376498428}
   _ticketSprite: {fileID: 21300000, guid: 723c00b0b4195814f99e5bf4e7985bfb, type: 3}
   _ticketField: {fileID: 1701297961}
+  _iconFlight: {fileID: 366112237}
+  _ticketIcon: {fileID: 1291526711}
   _rewardCountText: {fileID: 1116198188}
 --- !u!1 &1438317013
 GameObject:
@@ -54358,8 +54388,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2128571400}
+  m_Children: []
   m_Father: {fileID: 1045520513}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -54379,8 +54408,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6881851d4eb98e429838d9d386129eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExpeditionRewardFlight
-  _template: {fileID: 2128571401}
-  _layer: {fileID: 1457189912}
+  _iconFlight: {fileID: 366112237}
   _pointTarget: {fileID: 734613838}
   _ticketTarget: {fileID: 1291526711}
   _pointSprite: {fileID: 21300000, guid: 11685467b0d45124e8f27d7bbace5964, type: 3}
@@ -54388,11 +54416,6 @@ MonoBehaviour:
   _pointCount: 12
   _maxTicketCount: 8
   _iconSize: 90
-  _scatterDistance: {x: 160, y: 110}
-  _scatterDuration: 0.2
-  _flyDuration: 0.6
-  _spawnInterval: 0.04
-  _flyArc: 0.3
 --- !u!1 &1463191027
 GameObject:
   m_ObjectHideFlags: 0
@@ -62119,23 +62142,13 @@ MonoBehaviour:
   _dropper: {fileID: 1701297959}
   _ticketPrefab: {fileID: 8841647161610654949, guid: 1ed4364af03f67b4a9c942712a322199, type: 3}
   _collectTarget: {fileID: 1291526711}
-  _collectOverlayRoot: {fileID: 366112235}
-  _burstPieceTemplate: {fileID: 1089583509}
+  _iconFlight: {fileID: 366112237}
   _ticketRoot: {fileID: 1121084209}
   _dropScatterRadius: 0.4
   _maxObjects: 30
   _dropJumpPower: 0.6
   _dropDuration: 0.45
-  _collectFlyDuration: 1
-  _collectArcScreenRatio: 0.4
-  _collectArcRandomness: 0.4
-  _collectSideSpreadRatio: 0.25
   _collectEndScale: 0.3
-  _targetPunchScale: 0.5
-  _collectBurstParticleCount: 12
-  _collectBurstDuration: 0.38
-  _collectBurstLeadTime: 0.15
-  _collectBurstDistanceScale: 1.25
   _collectSoundCooldown: 0.06
 --- !u!1 &1702005560
 GameObject:
@@ -78943,81 +78956,6 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2126858723}
-  m_CullTransparentMesh: 1
---- !u!1 &2128571399
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2128571400}
-  - component: {fileID: 2128571402}
-  - component: {fileID: 2128571401}
-  m_Layer: 5
-  m_Name: FlightIcon
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &2128571400
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2128571399}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1457189912}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 90, y: 90}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &2128571401
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2128571399}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 11685467b0d45124e8f27d7bbace5964, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 1
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &2128571402
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2128571399}
   m_CullTransparentMesh: 1
 --- !u!114 &2130228844
 MonoBehaviour:

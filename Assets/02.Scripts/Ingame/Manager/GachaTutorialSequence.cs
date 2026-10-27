@@ -25,7 +25,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
     [SerializeField] private AutoSpawnToggleUI _autoSpawnToggle;
     [SerializeField] private GachaButtonUI _gachaButton;
     [SerializeField] private UnlockPopupUI _unlockPopupUI;
-    [SerializeField] private GachaTicketField _ticketField;
+    [Tooltip("무료 티켓을 상단 바로 날려 보내는 공용 비행 연출입니다.")]
+    [SerializeField] private UiIconFlight _iconFlight;
+    [Tooltip("무료 티켓이 날아가 앉을 상단 바의 티켓 아이콘입니다.")]
+    [SerializeField] private RectTransform _ticketIcon;
     [SerializeField] private Clicker _clicker;
     [SerializeField] private AutoClicker _autoClicker;
     [SerializeField] private MergeManager _mergeManager;
@@ -191,7 +194,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             ShowMakeRoomStep();
         }
 
-        if (_ticketField == null)
+        if (_iconFlight == null || _ticketIcon == null)
         {
             _unlockPopupUI.ReleaseHold();
             Arrived();
@@ -199,9 +202,10 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
         }
 
         // 출발 자리를 먼저 읽어야 한다. 연출을 닫으면 그림이 사라지기 시작한다.
-        _ticketField.PlayGrantFlight(
+        _iconFlight.Play(
             _unlockPopupUI.TicketAnchor,
             _unlockPopupUI.TicketSprite,
+            _ticketIcon,
             Arrived);
         _unlockPopupUI.ReleaseHold();
     }

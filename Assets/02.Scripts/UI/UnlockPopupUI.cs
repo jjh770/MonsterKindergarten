@@ -16,8 +16,12 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private Sprite _ticketSprite;
-    [Tooltip("후반 등급 해금 보상의 티켓이 날아가고 지갑에 들어가는 곳입니다.")]
+    [Tooltip("후반 등급 해금 보상의 티켓을 지갑에 넣는 곳입니다.")]
     [SerializeField] private GachaTicketField _ticketField;
+    [Tooltip("해금 보상의 티켓을 상단 바로 날려 보내는 공용 비행 연출입니다.")]
+    [SerializeField] private UiIconFlight _iconFlight;
+    [Tooltip("해금 보상의 티켓이 날아가 앉을 상단 바의 티켓 아이콘입니다.")]
+    [SerializeField] private RectTransform _ticketIcon;
     [Tooltip("해금 보상이 2장 이상일 때 티켓 그림 옆에 띄우는 X2, X3 표시입니다.")]
     [SerializeField] private TextMeshProUGUI _rewardCountText;
 
@@ -139,7 +143,17 @@ public class UnlockPopupUI : MonoBehaviour
         _sequence.AppendCallback(() =>
         {
             _shownGradeRewardCount = 0;
-            _ticketField.PlayGradeRewardFlight(TicketAnchor, _ticketSprite, count);
+            if (_iconFlight == null)
+            {
+                _ticketField.ClaimGradeReward(count);
+                return;
+            }
+
+            _iconFlight.Play(
+                TicketAnchor,
+                _ticketSprite,
+                _ticketIcon,
+                () => _ticketField.ClaimGradeReward(count));
         });
         _sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
         _sequence.OnComplete(() =>
