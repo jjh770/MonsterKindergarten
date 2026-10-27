@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
@@ -20,16 +19,14 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [Tooltip("광고를 보고 포인트를 두 배로 받는 버튼입니다. 광고를 볼 수 있을 때만 켭니다.")]
     [SerializeField] private Button _adDoubleButton;
     [Header("Reward Fly Effect")]
+    [Tooltip("보상 그림이 날아가기 시작하는 자리와 크기입니다. 팝업 안의 보상 그림입니다.")]
     [SerializeField] private RectTransform _rewardFlyVisual;
     [Tooltip("ECurrencyType 순서대로 포인트, 티켓 이미지를 연결합니다.")]
     [SerializeField] private Sprite[] _rewardFlySprites;
     [SerializeField] private RectTransform _pointTarget;
     [SerializeField] private RectTransform _ticketTarget;
-    [SerializeField] private float _flySpawnInterval = 0.04f;
-    [SerializeField] private float _scatterDuration = 0.18f;
-    [SerializeField] private Vector2 _scatterDistance = new Vector2(140f, 90f);
-    [SerializeField] private float _flyDuration = 0.65f;
-    [SerializeField] private float _targetPunchScale = 0.12f;
+    [Tooltip("상단 바로 날려 보내는 공용 비행 연출입니다.")]
+    [SerializeField] private UiIconFlight _iconFlight;
     [SerializeField] private float _fadeDuration = 0.2f;
     [SerializeField] private float _punchDuration = 0.35f;
     [SerializeField] private CanvasGroup _canvasGroup;
@@ -37,7 +34,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [Header("Open Motion")]
     [Tooltip("팝업 본체가 열리고 닫힐 때의 크기 연출입니다. 비우면 예전처럼 살짝 부풀기만 합니다.")]
     [SerializeField] private PopupMotion _popupMotion;
-    [Tooltip("코인이 다 도착한 뒤 본체가 움츠러들어 사라지는 데 걸리는 시간입니다. PopupMotion의 Close Duration과 맞춥니다.")]
+    [Tooltip("받기를 누른 뒤 본체가 움츠러들어 사라지는 데 걸리는 시간입니다. PopupMotion의 Close Duration과 맞춥니다.")]
     [SerializeField, Min(0.05f)] private float _popupMotionCloseSeconds = 0.25f;
     [Tooltip("위에서부터 차례로 나타날 내용입니다(제목, 시간, 보상, 버튼). 각 항목에 CanvasGroup이 있어야 투명도가 움직입니다.")]
     [SerializeField] private RectTransform[] _revealItems;
@@ -46,12 +43,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [SerializeField, Min(0.05f)] private float _revealDuration = 0.35f;
     [SerializeField, Range(0.3f, 1f)] private float _revealStartScale = 0.6f;
 
-    [Header("Fly Path")]
-    [Tooltip("코인이 목표로 날아갈 때 옆으로 휘는 정도입니다. 이동 거리에 대한 비율이고 0이면 직선입니다.")]
-    [SerializeField, Range(0f, 0.6f)] private float _flyArc = 0.3f;
-
     private Sequence _currentSequence;
-    private readonly List<RectTransform> _flyingVisuals = new();
     private Vector3[] _revealBaseScales;
 
     private void Awake()
@@ -78,7 +70,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
         _confirmButton?.onClick.RemoveListener(OnConfirmClicked);
         _adDoubleButton?.onClick.RemoveListener(OnAdDoubleClicked);
         _currentSequence?.Kill();
-        ClearFlyingVisuals();
     }
 
     public void Show(TimeSpan elapsedTime, Currency reward, int ticketReward)
@@ -99,7 +90,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
         }
 
         _currentSequence?.Kill();
-        ClearFlyingVisuals();
 
         _doNotTouchPanel?.SetActive(true);
         _popupPanel.SetActive(true);
@@ -248,6 +238,9 @@ public class OfflineRewardPopupUI : MonoBehaviour
         ConfirmRequested?.Invoke();
     }
 
+    // 받기를 누르면 보상 그림을 상단 바로 날려 보내고, 그와 동시에 팝업을 닫는다. 날아가는 동안
+    // 팝업이 화면을 막을 이유가 없고, 보상은 이미 지급돼 있다. 돌려주는 값은 마지막 코인이 포인트
+    // 아이콘에 닿을 때까지의 시간이라, 포인트 숫자가 그 시간에 맞춰 올라간다.
     public float PlayCollect(TimeSpan elapsedTime, int ticketReward)
     {
         if (_popupPanel == null || !_popupPanel.activeSelf)
@@ -266,126 +259,49 @@ public class OfflineRewardPopupUI : MonoBehaviour
             _confirmButton.interactable = false;
         }
 
-        if (!HasRewardFlyReferences())
+        if (!HasRewardFlyReferences() ||
+            !_iconFlight.TryGetLayerSize(_rewardFlyVisual, null, out Vector2 iconSize))
         {
-            return FadeOutAndClose();
+            return FadeOutAndClose(playArrivalSound: true);
         }
 
-        return PlayRewardFlyEffect(elapsedTime, Mathf.Max(0, ticketReward));
+        int pointCount = GetFlyVisualCount(elapsedTime);
+        _iconFlight.PlayBundle(
+            _rewardFlyVisual.position,
+            _rewardFlySprites[(int)ECurrencyType.Point],
+            iconSize,
+            _pointTarget,
+            pointCount,
+            index => PlayArrivalSound(index, EAudioSfx.OfflineRewardArrival),
+            null);
+        if (ticketReward > 0)
+        {
+            _iconFlight.PlayBundle(
+                _rewardFlyVisual.position,
+                _rewardFlySprites[(int)ECurrencyType.GachaTicket],
+                iconSize,
+                _ticketTarget,
+                ticketReward,
+                index => PlayArrivalSound(index, EAudioSfx.TicketCollect),
+                null);
+        }
+
+        FadeOutAndClose(playArrivalSound: false);
+        return _iconFlight.GetBundleDuration(pointCount);
     }
 
-    private float PlayRewardFlyEffect(TimeSpan elapsedTime, int ticketReward)
+    // 첫 장은 보상의 소리를 내고, 뒤따르는 장은 짧은 소리를 겹치지 않게 흩뿌린다.
+    private static void PlayArrivalSound(int index, EAudioSfx firstSound)
     {
-        ClearFlyingVisuals();
-        _currentSequence = DOTween.Sequence();
-        AddRewardFlyVisuals(
-            GetFlyVisualCount(elapsedTime),
-            ECurrencyType.Point,
-            _pointTarget);
-        AddRewardFlyVisuals(
-            ticketReward,
-            ECurrencyType.GachaTicket,
-            _ticketTarget);
+        if (AudioManager.Instance == null) return;
 
-        // 모든 보상 이미지가 도착한 뒤에 팝업을 닫는다. 코인이 날아가는 동안에는 본체가 그대로 있어
-        // 코인이 어디서 나와 어디로 가는지 보이고, 다 도착하면 움츠러들며 사라진다.
-        if (_popupMotion != null)
+        if (index == 0)
         {
-            _currentSequence.AppendCallback(() => _popupMotion.PlayClose());
-            _currentSequence.AppendInterval(_popupMotionCloseSeconds);
-        }
-        else
-        {
-            _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+            AudioManager.Instance.PlaySFX(firstSound);
+            return;
         }
 
-        float duration = _currentSequence.Duration();
-        _currentSequence.OnComplete(() =>
-        {
-            _currentSequence = null;
-            ClearFlyingVisuals();
-            ClosePopup();
-            PunchTarget(_pointTarget);
-            if (ticketReward > 0)
-            {
-                PunchTarget(_ticketTarget);
-            }
-        });
-
-        return duration;
-    }
-
-    private void AddRewardFlyVisuals(
-        int visualCount,
-        ECurrencyType currencyType,
-        RectTransform target)
-    {
-        for (int i = 0; i < visualCount; i++)
-        {
-            RectTransform flyingVisual = Instantiate(_rewardFlyVisual, transform, true);
-            flyingVisual.name = $"OfflineReward{currencyType}Visual_{i + 1}";
-            _flyingVisuals.Add(flyingVisual);
-
-            ApplyRewardSprite(flyingVisual, currencyType);
-
-            CanvasGroup flyingCanvasGroup = flyingVisual.GetComponent<CanvasGroup>();
-            if (flyingCanvasGroup == null)
-            {
-                flyingCanvasGroup = flyingVisual.gameObject.AddComponent<CanvasGroup>();
-            }
-
-            flyingCanvasGroup.alpha = 1f;
-            flyingCanvasGroup.interactable = false;
-            flyingCanvasGroup.blocksRaycasts = false;
-
-            Vector2 randomDirection = UnityEngine.Random.insideUnitCircle;
-            // _scatterDistance는 비행 이미지 부모(this.transform)의 로컬 단위다.
-            // 복제본 자신의 lossyScale에는 원본 이미지의 로컬 스케일(0.5)이 섞여 폭이 절반이 되므로,
-            // 부모의 TransformVector로 부모 체인의 회전·스케일(CanvasScaler 포함)만 반영해 world 벡터로 바꾼다.
-            Vector3 scatterOffset = transform.TransformVector(new Vector3(
-                randomDirection.x * _scatterDistance.x,
-                randomDirection.y * _scatterDistance.y,
-                0f));
-            Vector3 scatterPosition = flyingVisual.position + scatterOffset;
-            Vector3 flyControl = GetFlyControlPoint(scatterPosition, target.position);
-
-            float flyDuration = _flyDuration * UnityEngine.Random.Range(0.85f, 1.15f);
-            float startDelay = i * Mathf.Max(0f, _flySpawnInterval);
-
-            Sequence flyingSequence = DOTween.Sequence();
-            flyingSequence.Append(
-                flyingVisual.DOMove(scatterPosition, _scatterDuration)
-                    .SetEase(Ease.OutQuad));
-            // 직선이 아니라 옆으로 휘어 날아가 도착하는 모습이 살아 있다.
-            Vector3 flyStart = scatterPosition;
-            Vector3 flyEnd = target.position;
-            flyingSequence.Append(
-                DOVirtual.Float(0f, 1f, flyDuration, t =>
-                {
-                    float u = 1f - t;
-                    flyingVisual.position =
-                        u * u * flyStart + 2f * u * t * flyControl + t * t * flyEnd;
-                }).SetEase(Ease.InQuad));
-            flyingSequence.Insert(
-                _scatterDuration + flyDuration * 0.9f,
-                flyingCanvasGroup.DOFade(0f, flyDuration * 0.1f));
-            // 아이콘이 상단 바에 닿을 때마다 탐험 보상과 같은 짧은 소리를 낸다. 겹치지 않게 쿨다운을 둔다.
-            flyingSequence.InsertCallback(
-                _scatterDuration + flyDuration,
-                () => AudioManager.Instance?.PlaySFXRandomPitchWithCooldown(EAudioSfx.TicketCollect, 0.06f));
-
-            _currentSequence.Insert(startDelay, flyingSequence);
-        }
-    }
-
-    // 시작점과 목표 사이의 가운데에서 수직 방향으로 비켜선 점. 코인마다 좌우가 달라 한 줄로 쏠리지 않는다.
-    private Vector3 GetFlyControlPoint(Vector3 from, Vector3 to)
-    {
-        Vector3 delta = to - from;
-        Vector3 perpendicular = new Vector3(-delta.y, delta.x, 0f);
-        float side = UnityEngine.Random.value < 0.5f ? -1f : 1f;
-        float bend = _flyArc * UnityEngine.Random.Range(0.6f, 1.2f);
-        return (from + to) * 0.5f + perpendicular * (bend * side);
+        AudioManager.Instance.PlaySFXRandomPitchWithCooldown(EAudioSfx.TicketCollect, 0.06f);
     }
 
     private static int GetFlyVisualCount(TimeSpan elapsedTime)
@@ -395,21 +311,6 @@ public class OfflineRewardPopupUI : MonoBehaviour
         if (offlineHours <= 1d) return 10;
         if (offlineHours <= 4d) return 30;
         return 50;
-    }
-
-    private void ApplyRewardSprite(
-        RectTransform flyingVisual,
-        ECurrencyType currencyType)
-    {
-        Image flyingImage = flyingVisual.GetComponent<Image>();
-        if (flyingImage == null) return;
-
-        Sprite rewardSprite = _rewardFlySprites[(int)currencyType];
-        if (rewardSprite != null)
-        {
-            flyingImage.sprite = rewardSprite;
-            flyingImage.preserveAspect = true;
-        }
     }
 
     private bool HasRewardFlySprite(ECurrencyType currencyType)
@@ -424,52 +325,45 @@ public class OfflineRewardPopupUI : MonoBehaviour
     private bool HasRewardFlyReferences()
     {
         return _rewardFlyVisual != null &&
+               _iconFlight != null &&
                _pointTarget != null &&
                _ticketTarget != null &&
                HasRewardFlySprite(ECurrencyType.Point) &&
                HasRewardFlySprite(ECurrencyType.GachaTicket);
     }
 
-    private void PunchTarget(RectTransform target)
-    {
-        target.DOPunchScale(
-            Vector3.one * _targetPunchScale,
-            _punchDuration,
-            6,
-            0.5f);
-    }
-
-    private void ClearFlyingVisuals()
-    {
-        foreach (RectTransform flyingVisual in _flyingVisuals)
-        {
-            if (flyingVisual == null) continue;
-
-            flyingVisual.DOKill();
-            Destroy(flyingVisual.gameObject);
-        }
-
-        _flyingVisuals.Clear();
-    }
-
-    private float FadeOutAndClose()
+    // 날려 보낼 그림이 없을 때는 닫히는 순간에 도착 소리를 대신 낸다. 날려 보낼 때는 첫 코인이
+    // 닿는 순간에 그 소리가 난다.
+    private float FadeOutAndClose(bool playArrivalSound)
     {
         _currentSequence = DOTween.Sequence();
-        _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
-        _popupMotion?.PlayClose();
+        if (_popupMotion != null)
+        {
+            _currentSequence.AppendCallback(() => _popupMotion.PlayClose());
+            _currentSequence.AppendInterval(_popupMotionCloseSeconds);
+        }
+        else
+        {
+            _currentSequence.Append(_canvasGroup.DOFade(0f, _fadeDuration));
+        }
+
         float duration = _currentSequence.Duration();
         _currentSequence.OnComplete(() =>
         {
             _currentSequence = null;
-            ClosePopup();
+            ClosePopup(playArrivalSound);
         });
 
         return duration;
     }
 
-    private void ClosePopup()
+    private void ClosePopup(bool playArrivalSound)
     {
-        PlaySound(EAudioSfx.OfflineRewardArrival);
+        if (playArrivalSound)
+        {
+            PlaySound(EAudioSfx.OfflineRewardArrival);
+        }
+
         SetBusy(false);
         _popupPanel.SetActive(false);
         _doNotTouchPanel?.SetActive(false);

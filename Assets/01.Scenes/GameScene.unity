@@ -17994,11 +17994,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 723c00b0b4195814f99e5bf4e7985bfb, type: 3}
   _pointTarget: {fileID: 734613838}
   _ticketTarget: {fileID: 1291526711}
-  _flySpawnInterval: 0.016
-  _scatterDuration: 0.18
-  _scatterDistance: {x: 150, y: 100}
-  _flyDuration: 0.65
-  _targetPunchScale: 0.12
+  _iconFlight: {fileID: 366112237}
   _fadeDuration: 0.5
   _punchDuration: 0.35
   _canvasGroup: {fileID: 2099600002}
@@ -18013,7 +18009,6 @@ MonoBehaviour:
   _revealInterval: 0.1
   _revealDuration: 0.35
   _revealStartScale: 0.6
-  _flyArc: 0.3
 --- !u!1 &551388352
 GameObject:
   m_ObjectHideFlags: 0

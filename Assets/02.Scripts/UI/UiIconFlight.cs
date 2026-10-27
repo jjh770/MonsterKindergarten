@@ -232,6 +232,13 @@ public sealed class UiIconFlight : MonoBehaviour
         }
     }
 
+    // PlayBundle로 count장을 날렸을 때 마지막 장이 닿기까지의 시간. 숫자를 그 시간에 맞춰 올리려는
+    // 쪽이 쓴다. 출발할 때 터지는 연출의 대기는 묶음 비행에 없으므로 더하지 않는다.
+    public float GetBundleDuration(int count)
+    {
+        return Mathf.Max(0, count - 1) * _bundleInterval + _scatterDuration + _flyDuration;
+    }
+
     // 이미 Layer 위에 놓인 flying을 target까지 날린다. 크기는 size에서 endScale배로 줄고,
     // 출발에서 size * startBurstScale 크기로, 도착에서 arrivalBurstIntensity 세기로 burstSprite
     // 조각이 터진다(0이면 그 폭발은 없다). 도착하면 target을 튕기고 onArrived를 부른다.
