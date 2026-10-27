@@ -56,6 +56,35 @@ public sealed class FirebaseAnalyticsService : IAnalyticsService
         }
     }
 
+    public void LogProgressEvent(
+        string eventName,
+        System.Collections.Generic.IReadOnlyDictionary<string, string> texts,
+        System.Collections.Generic.IReadOnlyDictionary<string, long> numbers)
+    {
+        try
+        {
+            AndroidJavaObject instance = GetInstance();
+            if (instance == null) return;
+
+            using var bundle = new AndroidJavaObject("android.os.Bundle");
+            if (texts != null)
+            {
+                foreach (var pair in texts) bundle.Call("putString", pair.Key, pair.Value);
+            }
+
+            if (numbers != null)
+            {
+                foreach (var pair in numbers) bundle.Call("putLong", pair.Key, pair.Value);
+            }
+
+            instance.Call("logEvent", eventName, bundle);
+        }
+        catch (AndroidJavaException exception)
+        {
+            Debug.LogWarning($"분석 이벤트를 보내지 못했습니다. : {eventName}, {exception.Message}");
+        }
+    }
+
     // 처음 쓸 때 한 번만 얻는다. 얻지 못하면 이후에도 다시 시도하지 않는다.
     private AndroidJavaObject GetInstance()
     {

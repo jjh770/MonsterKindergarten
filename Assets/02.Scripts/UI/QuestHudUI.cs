@@ -10,6 +10,10 @@ using UnityEngine.UI;
 // 길이 여러 갈래라 신호를 하나라도 놓치면 지난 퀘스트가 남는다. 그래서 부스트 표시처럼 짧은 간격으로
 // 확인하고, 바뀐 때만 글자를 고친다.
 //
+// 목표를 끝낸 순간은 분석 이벤트로 남긴다(QuestAnalytics). 카드는 장식장에서 숨지만 진행 판정은 그와
+// 상관없이 계속한다. 도감 목표는 대개 장식장 안에서 끝나므로, 보일 때만 판정하면 그 순간을 놓친다.
+// 접속했을 때 이미 끝나 있던 목표는 기준으로만 삼고 보내지 않는다.
+//
 // 메인 튜토리얼을 마친 뒤 메인 필드에서만 보이고, 졸업식을 본 뒤에는 숨는다. 상단 HUD 안에 있어서
 // 보내기·관찰 모드가 상단 바를 숨길 때 함께 숨는다. 자리는 고정이다. 광고 부스트 표시는 왼쪽 포인트
 // 아래에 있어 겹치지 않는다.
@@ -25,7 +29,11 @@ public sealed class QuestHudUI : MonoBehaviour
     [SerializeField] private TMP_Text _titleText;
     [SerializeField, Min(0.05f)] private float _refreshInterval = 0.25f;
 
+    // 이 세션에서 처음 판정한 번호를 기준으로 삼기 전의 값.
+    private const int NotTracked = int.MinValue;
+
     private float _timer;
+    private int _trackedIndex = NotTracked;
     private int _shownIndex = -1;
     private string _shownTitle;
     private Tween _punchTween;
@@ -61,17 +69,23 @@ public sealed class QuestHudUI : MonoBehaviour
 
     private void Refresh()
     {
-        int index = CanShow()
-            ? QuestProgress.FindCurrent(_table.Quests, QuestState.From(_slimeManager))
-            : -1;
-        if (index < 0)
+        if (!IsTracking())
+        {
+            _card.gameObject.SetActive(false);
+            return;
+        }
+
+        QuestState state = QuestState.From(_slimeManager);
+        int index = QuestProgress.FindCurrent(_table.Quests, state);
+        TrackCompletions(index, state);
+        if (index < 0 || !_spaceManager.IsMainFieldActive)
         {
             _card.gameObject.SetActive(false);
             return;
         }
 
         QuestEntry quest = _table.Quests[index];
-        string title = QuestPopupUI.FormatTitle(quest, QuestState.From(_slimeManager));
+        string title = QuestPopupUI.FormatTitle(quest, state);
         bool wasShown = _card.gameObject.activeSelf;
         _card.gameObject.SetActive(true);
         if (index == _shownIndex && title == _shownTitle) return;
@@ -85,12 +99,35 @@ public sealed class QuestHudUI : MonoBehaviour
         if (advanced) PlayAdvance();
     }
 
-    private bool CanShow()
+    private bool IsTracking()
     {
         return _slimeManager.IsInitialized &&
                !_slimeManager.IsMainEndingSeen &&
-               TutorialProgress.IsCompleted(TutorialIds.Main) &&
-               _spaceManager.IsMainFieldActive;
+               TutorialProgress.IsCompleted(TutorialIds.Main);
+    }
+
+    // 지난번 판정 이후 끝난 목표마다 이벤트를 하나씩 보낸다. 한꺼번에 여러 목표를 넘어도 각각 남는다.
+    // 장식장 슬라임을 꺼내 졸업 목표가 다시 열려도 이미 보낸 번호는 다시 보내지 않는다.
+    private void TrackCompletions(int index, QuestState state)
+    {
+        int reached = index < 0 ? _table.Quests.Count : index;
+        if (_trackedIndex == NotTracked)
+        {
+            _trackedIndex = reached;
+            return;
+        }
+
+        for (int i = _trackedIndex; i < reached; i++)
+        {
+            QuestAnalytics.LogGoalComplete(
+                i,
+                _table.Quests[i],
+                state.HighestGrade,
+                _slimeManager.GameStartedAtUtc,
+                reached - _trackedIndex);
+        }
+
+        _trackedIndex = Mathf.Max(_trackedIndex, reached);
     }
 
     private void PlayAdvance()

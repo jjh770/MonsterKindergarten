@@ -42,5 +42,16 @@ public static class Analytics
             string extra = string.IsNullOrEmpty(extraKey) ? string.Empty : $" {extraKey}={(extraText ?? extraNumber.ToString())}";
             Debug.Log($"[Analytics] {eventName} placement={placement}{extra}");
         }
+
+        public void LogProgressEvent(
+            string eventName,
+            System.Collections.Generic.IReadOnlyDictionary<string, string> texts,
+            System.Collections.Generic.IReadOnlyDictionary<string, long> numbers)
+        {
+            var builder = new System.Text.StringBuilder("[Analytics] ").Append(eventName);
+            if (texts != null) foreach (var pair in texts) builder.Append(' ').Append(pair.Key).Append('=').Append(pair.Value);
+            if (numbers != null) foreach (var pair in numbers) builder.Append(' ').Append(pair.Key).Append('=').Append(pair.Value);
+            Debug.Log(builder.ToString());
+        }
     }
 }
