@@ -24,6 +24,8 @@ public enum EAudioSfx
     AreaTransition,
     GachaWait,
     GachaResult,
+    // 저장되지 않는 값이지만 씬과 에셋이 번호로 가리키므로 뒤에 붙인다.
+    GachaShake,
 }
 
 [CreateAssetMenu(
@@ -85,6 +87,8 @@ public sealed class GameAudioCatalogSO : ScriptableObject
     [Header("Gacha SFX")]
     [SerializeField] private AudioClip _gachaWait;
     [SerializeField] private AudioClip _gachaResult;
+    [Tooltip("뽑기 통을 잡고 흔드는 동안 반복하는 캡슐 섞이는 소리입니다. 끊김 없이 이어지게 자른 클립을 씁니다.")]
+    [SerializeField] private AudioClip _gachaShake;
 
     [Header("Slime SFX")]
     [SerializeField] private AudioClip[] _slimeReactions = Array.Empty<AudioClip>();
@@ -163,6 +167,7 @@ public sealed class GameAudioCatalogSO : ScriptableObject
             EAudioSfx.AreaTransition => _areaTransition,
             EAudioSfx.GachaWait => _gachaWait,
             EAudioSfx.GachaResult => _gachaResult,
+            EAudioSfx.GachaShake => _gachaShake,
             _ => null,
         };
     }

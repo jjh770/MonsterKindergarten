@@ -25,7 +25,7 @@ public static class UnlockGrades
     // 최대 개체 수 업그레이드의 후반 31~50 구간은 기존처럼 Lv.11에서 열린다.
     public const ESlimeGrade MaxCountExpansion = ESlimeGrade.Grade11;
 
-    // 상위 슬라임 등장(Lv.5)은 여기 두지 않는다.
+    // 상위 슬라임 등장(Lv.4, 2026-10-27 전에는 Lv.5)은 여기 두지 않는다.
     // SpawnWeightTable의 _spawnCaps에서 파생되는 값이므로 상수로 복제하면
     // 에셋을 조정할 때 조용히 어긋난다. SlimeManager.IsHigherGradeSpawnUnlocked를 쓴다.
 }

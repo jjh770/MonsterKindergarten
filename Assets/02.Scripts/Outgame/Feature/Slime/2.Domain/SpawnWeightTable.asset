@@ -15,7 +15,7 @@ MonoBehaviour:
   _spawnCaps:
   - FromHighestGrade: 1
     SpawnCap: 1
-  - FromHighestGrade: 5
+  - FromHighestGrade: 4
     SpawnCap: 2
   - FromHighestGrade: 8
     SpawnCap: 3

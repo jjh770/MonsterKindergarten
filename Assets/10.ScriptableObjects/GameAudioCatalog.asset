@@ -44,6 +44,7 @@ MonoBehaviour:
   _offlineRewardArrival: {fileID: 8300000, guid: e385980467655fe4d99784a9d879dd2c, type: 3}
   _gachaWait: {fileID: 8300000, guid: 0565bbe1222ea02428bf455eddb7de77, type: 3}
   _gachaResult: {fileID: 8300000, guid: c4868772a736de24e816e8f4488b2c74, type: 3}
+  _gachaShake: {fileID: 8300000, guid: d4083b30420e7994e9d599bdf1bab54f, type: 3}
   _slimeReactions:
   - {fileID: 8300000, guid: 0da099de0872d144988249193f77737d, type: 3}
   - {fileID: 8300000, guid: bc05b904e8297614d94a3fc07888072c, type: 3}

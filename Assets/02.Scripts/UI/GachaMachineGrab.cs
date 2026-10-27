@@ -15,6 +15,10 @@ using UnityEngine.UI;
 // 탭을 취소하는 문제가 생기지 않는다. 결과 캡슐 버튼은 형제인 캡슐 층에 있다. 기계의 CanvasGroup은
 // 평소 터치를 막지 않게 되어 있어서, 잡을 수 있는 동안에만 터치를 받게 켠다.
 //
+// 통이 세게 흔들리는 동안에는 캡슐 섞이는 소리(GachaShake)를 반복하고, 흔들림이 잠깐 멎으면 줄여 끈다.
+// 반복 효과음 자리는 배출 때의 대기음과 같이 쓰므로, 이 컴포넌트가 켠 소리만 끈다. 잡기는 배출 전에
+// 끝나므로 두 소리가 겹치지 않는다.
+//
 // 직접 끌어 흔드는 동안에는 몸체 그림을 어지러워하는 얼굴(_dizzySprite)로 바꾸고, 그 흔들림이 멎으면
 // 원래 그림으로 돌린다. 누르기만 하거나 혼자 떠는 안내 떨림에는 바꾸지 않는다.
 //
@@ -64,6 +68,10 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     // 통이 받은 충격이 이보다 크면 캡슐을 튀겨 올린다. 너무 자주 튀기지 않게 간격을 둔다.
     private const float RattleThreshold = 2500f;
     private const float RattleInterval = 0.05f;
+    // 흔들림이 이만큼 멎어 있으면 섞이는 소리를 줄여 끈다. 좌우로 흔들 때 방향이 바뀌는 순간마다
+    // 끊기지 않게 조금 기다린다.
+    private const float ShakeSoundHoldSeconds = 0.25f;
+    private const float ShakeSoundFadeSeconds = 0.2f;
     private const float HintSeconds = 0.55f;
     private const float HintFrequency = 7f;
 
@@ -81,6 +89,8 @@ public sealed class GachaMachineGrab : MonoBehaviour,
     private float _acceleration;
     private float _clock;
     private float _rattleClock;
+    private bool _isShakeSoundPlaying;
+    private float _shakeQuietTime;
     private float _idleTime;
     private float _hintElapsed = -1f;
     private Vector2 _rest;
@@ -176,6 +186,12 @@ public sealed class GachaMachineGrab : MonoBehaviour,
         _machineGroup.blocksRaycasts = false;
         _pile.SetFrameAcceleration(Vector2.zero);
         SetDizzy(false);
+        StopShakeSound(0f);
+    }
+
+    private void OnDisable()
+    {
+        StopShakeSound(0f);
     }
 
     public void OnInitializePotentialDrag(PointerEventData eventData)
@@ -280,11 +296,41 @@ public sealed class GachaMachineGrab : MonoBehaviour,
         // 세게 흔들면 캡슐이 위로 튀어 오른다. 옆으로 미는 힘만으로는 바닥을 따라 미끄러지기만 한다.
         float jolt = Mathf.Abs(_acceleration) * _inertia;
         _rattleClock += delta;
-        if (!_returning && jolt > RattleThreshold && _rattleClock >= RattleInterval)
+        bool isRattling = !_returning && jolt > RattleThreshold;
+        if (isRattling && _rattleClock >= RattleInterval)
         {
             _rattleClock = 0f;
             _pile.Kick(jolt * _rattle);
         }
+
+        UpdateShakeSound(isRattling, delta);
+    }
+
+    private void UpdateShakeSound(bool isRattling, float delta)
+    {
+        if (isRattling)
+        {
+            _shakeQuietTime = 0f;
+            if (_isShakeSoundPlaying) return;
+
+            _isShakeSoundPlaying = true;
+            AudioManager.Instance?.PlayLoopingSFX(EAudioSfx.GachaShake);
+            return;
+        }
+
+        if (!_isShakeSoundPlaying) return;
+
+        _shakeQuietTime += delta;
+        if (_shakeQuietTime >= ShakeSoundHoldSeconds) StopShakeSound(ShakeSoundFadeSeconds);
+    }
+
+    private void StopShakeSound(float fadeSeconds)
+    {
+        if (!_isShakeSoundPlaying) return;
+
+        _isShakeSoundPlaying = false;
+        _shakeQuietTime = 0f;
+        AudioManager.Instance?.StopLoopingSFX(fadeSeconds);
     }
 
     private bool IsAtRest()
