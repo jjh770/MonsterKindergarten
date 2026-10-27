@@ -5,13 +5,10 @@ public enum EBackgroundTheme
     Sky = 1,
     Space = 2,
 }
+// 배경 테마가 열렸는지는 상점과 같은 규칙이라 SlimeStatus.IsShopUnlocked가 답한다. 등급만 보면
+// 해금 등급을 올리기 전에 테마를 산 계정이 다음 접속에서 고른 배경을 잃는다.
 public static class BackgroundThemeRules
 {
-    public static bool IsUnlocked(ESlimeGrade highestGrade)
-    {
-        return highestGrade >= UnlockGrades.Shop;
-    }
-
     public static bool IsValid(EBackgroundTheme theme)
     {
         return System.Enum.IsDefined(typeof(EBackgroundTheme), theme);

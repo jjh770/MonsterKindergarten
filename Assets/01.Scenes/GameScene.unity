@@ -46633,7 +46633,6 @@ MonoBehaviour:
   _slimeManager: {fileID: 376498428}
   _gameplaySpaceManager: {fileID: 954826973}
   _mainEnding: {fileID: 153068206}
-  _requiredGrade: 8
   _requiredDisplayRoomSlimes: 3
   _openSettleSeconds: 0.35
 --- !u!1 &1216001850

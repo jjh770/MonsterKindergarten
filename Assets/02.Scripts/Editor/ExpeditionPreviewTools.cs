@@ -34,7 +34,7 @@ public static class ExpeditionPreviewTools
             new ExpeditionReward(100d, 1, EPlaygroundObjectType.FireflyLantern));
         Debug.Log(started
             ? $"Editor 로컬 테스트 탐험 {destinationId}를 1마리로 출발했어요. {seconds}초 뒤 수령하세요. 보상은 포인트 100·뽑기권 1·랜턴이에요."
-            : "출발하지 못했어요. Lv.7 해금, 대기 중인 장식장 슬라임, 같은 탐험지 점유와 정산 상태를 확인하세요.");
+            : "출발하지 못했어요. 탐험 해금(Lv.12), 대기 중인 장식장 슬라임, 같은 탐험지 점유와 정산 상태를 확인하세요.");
     }
 
     // 진행 중인 탐험을 모두 지금 도착한 것으로 바꾼다. 실제 화면에서 보낸 탐험도 기다리지 않고 받을 수 있다.

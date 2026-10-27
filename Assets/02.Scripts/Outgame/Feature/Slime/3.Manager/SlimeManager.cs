@@ -27,26 +27,38 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         _status.SelectedBackgroundTheme;
     public bool IsBackgroundThemeUnlocked =>
         _status != null &&
-        BackgroundThemeRules.IsUnlocked(_status.HighestGrade);
+        _status.IsShopUnlocked;
     public bool IsMaxCountExpansionUnlocked =>
         _status != null &&
         _status.HighestGrade >= UnlockGrades.MaxCountExpansion;
     public bool HasExistingProgress =>
         _status != null &&
         (_status.HighestGrade > ESlimeGrade.Grade1 || _status.ActiveSlimes.Count > 0);
+    // 해금 등급을 Lv.3에서 Lv.6으로 올리기 전에 장식장을 쓴 계정은 계속 열어 둔다. 도감 등록은
+    // 장식장에 들어올 때만 생기고 꺼내도 남으므로, 등록이 하나라도 있으면 이미 써 본 계정이다.
+    // 장식장 튜토리얼도 슬라임 한 마리를 들여보내야 끝나므로 그 계정은 모두 여기에 든다.
     public bool IsDisplayRoomUnlocked =>
         _status != null &&
-        _status.HighestGrade >= UnlockGrades.DisplayRoom;
+        (_status.HighestGrade >= UnlockGrades.DisplayRoom ||
+         _status.NormalCollectionCount > 0);
     // 저장을 읽기 전에는 기본값인 켜짐으로 답한다.
     public bool IsAutoSpawnEnabled => _status == null || _status.IsAutoSpawnEnabled;
     public bool IsAutoMergeUnlocked =>
         NormalCollectionCount >= NormalCollectionRules.AutoMergeCount;
     public bool IsShopUnlocked =>
         _status != null &&
-        _status.HighestGrade >= UnlockGrades.Shop;
+        _status.IsShopUnlocked;
     public bool IsGachaUnlocked =>
         _status != null &&
-        _status.HighestGrade >= UnlockGrades.Gacha;
+        (_status.HighestGrade >= UnlockGrades.Gacha || HasUsedGacha());
+    // 해금 등급을 Lv.8에서 Lv.12로 올리기 전에 탐험을 보낸 계정은 계속 열어 둔다. 진행 중인 탐험이
+    // 있거나 정산 기록이 하나라도 있으면 보낸 적이 있는 계정이다. 돌아온 탐험을 받는 길은 해금과
+    // 상관없이 열려 있으므로, 여기서 닫혀도 이미 보낸 보상을 잃지는 않는다.
+    public bool IsExpeditionUnlocked =>
+        _status != null &&
+        (_status.HighestGrade >= UnlockGrades.Expedition ||
+         _status.ActiveExpeditions.Count > 0 ||
+         _status.ExpeditionSettlement.Sequence > 0);
     public bool IsHigherGradeSpawnUnlocked =>
         _spawnWeightTable != null &&
         _status != null &&
@@ -123,7 +135,7 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
     public bool TryStartExpedition(ExpeditionRun run)
     {
         if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure ||
-            _status.HighestGrade < UnlockGrades.Gacha || !_status.TryStartExpedition(run)) return false;
+            !IsExpeditionUnlocked || !_status.TryStartExpedition(run)) return false;
         Save();
         ExpeditionChanged?.Invoke();
         return true;
@@ -580,6 +592,30 @@ public class SlimeManager : MonoBehaviour, IGameDataDomainManager
         if (_status == null || !_status.RecordSpecialGachaResult(wasSpecial)) return;
 
         Save();
+    }
+
+    // 해금 등급을 Lv.7에서 Lv.8로 올리기 전에 뽑기나 탐험을 쓴 계정은 계속 열어 둔다. 뽑기권이
+    // 지갑에 들어간 적이 있거나(튜토리얼의 무료 한 장 포함), 주울 뽑기권이 남았거나, 뽑기로 얻은
+    // 슬라임 기록이 있거나, 탐험을 보낸 적이 있으면 이미 쓴 계정이다. 지갑의 장수는 다른 문서라
+    // 여기서 보지 않는다. 지갑에 들어온 장수는 모두 누적 획득 수에 함께 세어진다.
+    private bool HasUsedGacha()
+    {
+        if (_status.GachaTicketsObtainedTotal > 0 ||
+            _status.PendingTickets > 0 ||
+            _status.ActiveExpeditions.Count > 0 ||
+            _status.ExpeditionSettlement.Sequence > 0)
+        {
+            return true;
+        }
+
+        if (_collectionStats == null) return false;
+
+        for (ESlimeGrade grade = ESlimeGrade.Grade1; grade < ESlimeGrade.Count; grade++)
+        {
+            if (_collectionStats.Get(grade).GachaObtainedCount > 0) return true;
+        }
+
+        return false;
     }
 
     public NormalSlimeCollectionStatsSnapshot GetNormalCollectionStats(

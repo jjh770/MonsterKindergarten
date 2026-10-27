@@ -14,7 +14,7 @@ using Utility;
 // 어느 공간에서든 두 탭을 오갈 수 있다. 공간으로만 갈랐을 때는 메인 필드에서 서랍을 여는
 // 플레이어가 장식장 물건을 볼 길이 없었다.
 //
-// 서랍은 최고 Lv.9를 넘기 전까지 손잡이를 치워 둔다(UnlockGrades.Shop).
+// 서랍은 상점이 열리기 전까지 손잡이를 치워 둔다(UnlockGrades.Shop, SlimeManager.IsShopUnlocked).
 
 // 서랍 자체의 여닫기와 위치는 UpgradeUI가 소유한다. 여기서는 안에 무엇을
 // 보여 줄지만 정한다.
@@ -144,7 +144,7 @@ public sealed class PlaygroundShopUI : MonoBehaviour
         Refresh();
     }
 
-    // 손잡이는 최고 Lv.9를 넘기는 순간 나타난다. 그 순간 뜨는 해금 팝업이 끝난 뒤
+    // 손잡이는 상점 해금 등급을 넘기는 순간 나타난다. 그 순간 뜨는 해금 팝업이 끝난 뒤
     // 튜토리얼이 서랍을 안내한다.
     private void OnHighestGradeChanged(ESlimeGrade grade)
     {

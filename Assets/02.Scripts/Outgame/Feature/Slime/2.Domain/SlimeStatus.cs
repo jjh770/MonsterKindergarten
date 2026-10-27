@@ -29,6 +29,24 @@ public class SlimeStatus
 
     public bool IsGraduationDisplayComplete =>
         DisplayRoomSlimeCount >= NormalCollectionRules.MainEndingCount;
+
+    // 상점과 배경 테마가 열렸는가. 해금 등급을 Lv.9에서 Lv.10으로 올리기 전에 상점을 쓴 계정은
+    // 계속 열어 둔다. 산 배경이 있거나 상점에서 파는 소품(범퍼, 대포)을 가졌으면 이미 쓴 계정이다.
+    // 탐험 장식은 상점이 아니라 탐험에서 얻으므로 세지 않는다.
+    public bool IsShopUnlocked
+    {
+        get
+        {
+            if (HighestGrade >= UnlockGrades.Shop || _ownedBackgroundThemes.Count > 0) return true;
+
+            for (var type = (EPlaygroundObjectType)0; type < EPlaygroundObjectType.Count; type++)
+            {
+                if (!PlaygroundRules.IsDecoration(type) && GetOwnedPlaygroundObjectCount(type) > 0) return true;
+            }
+
+            return false;
+        }
+    }
     public EBackgroundTheme SelectedBackgroundTheme { get; private set; }
 
     // 아직 줍지 않은 뽑기권 수. 모든 티켓이 한 필드에 있으므로 위치를 나누지 않는다.
@@ -97,8 +115,7 @@ public class SlimeStatus
 
         // 가지지 않은 테마가 선택되어 있으면 기본 테마로 돌린다. 상점에서 산 것을
         // 잃는 개편이 있어도 화면이 빈 배경으로 남지 않는다.
-        bool isBackgroundUnlocked = BackgroundThemeRules.IsUnlocked(highestGrade);
-        SelectedBackgroundTheme = isBackgroundUnlocked &&
+        SelectedBackgroundTheme = IsShopUnlocked &&
                                   BackgroundThemeRules.IsValid(selectedBackgroundTheme) &&
                                   IsBackgroundThemeOwned(selectedBackgroundTheme)
             ? selectedBackgroundTheme
@@ -554,7 +571,7 @@ public class SlimeStatus
         }
 
         if (selectedBackgroundTheme != EBackgroundTheme.Ground &&
-            !BackgroundThemeRules.IsUnlocked(HighestGrade))
+            !IsShopUnlocked)
         {
             throw new InvalidOperationException("배경 테마가 아직 해금되지 않았습니다.");
         }

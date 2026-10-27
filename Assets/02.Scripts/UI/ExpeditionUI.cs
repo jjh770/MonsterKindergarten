@@ -200,7 +200,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         Refresh();
     }
 
-    private bool CanOpen() => _slimes.IsInitialized && _slimes.IsGachaUnlocked &&
+    private bool CanOpen() => _slimes.IsInitialized && _slimes.IsExpeditionUnlocked &&
         !_spaces.IsMainFieldActive && !_spaces.IsTransitioning && GameplayGate.IsActive &&
         !IsBlockedByTutorial && !_info.IsVisible;
 
@@ -454,7 +454,7 @@ public sealed class ExpeditionUI : MonoBehaviour
     private void Refresh()
     {
         if (_service == null) return;
-        _enterButton.gameObject.SetActive(_slimes.IsInitialized && _slimes.IsGachaUnlocked && !_spaces.IsMainFieldActive);
+        _enterButton.gameObject.SetActive(_slimes.IsInitialized && _slimes.IsExpeditionUnlocked && !_spaces.IsMainFieldActive);
         _enterButton.interactable = CanOpen();
         if (!_isOpen || _departing) return;
         bool busy = _party.IsAnimating;

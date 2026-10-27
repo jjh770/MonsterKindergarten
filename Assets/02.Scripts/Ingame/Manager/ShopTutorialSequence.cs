@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// 상점 해금(최고 Lv.9) 안내. 서랍 손잡이를 짚어 열게 하고, 열린 상점의 탭과 물건을 놓는 방법을 알려 준다.
-// 손잡이는 Lv.9를 넘기는 순간 나타나고(PlaygroundShopUI), 이 안내는 그 해금 팝업이 끝난 뒤에 시작한다.
+// 상점 해금(최고 Lv.10) 안내. 서랍 손잡이를 짚어 열게 하고, 열린 상점의 탭과 물건을 놓는 방법을 알려 준다.
+// 손잡이는 Lv.10을 넘기는 순간 나타나고(PlaygroundShopUI), 이 안내는 그 해금 팝업이 끝난 뒤에 시작한다.
 // 구매는 시키지 않는다. 무엇을 살지는 플레이어가 정한다.
 public sealed class ShopTutorialSequence : TutorialSequenceBase
 {

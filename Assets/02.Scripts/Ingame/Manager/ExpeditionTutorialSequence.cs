@@ -3,9 +3,9 @@ using UnityEngine;
 
 // 슬라임 탐험을 알려 준다. 탐험 버튼은 장식장 메뉴 줄의 끝에 있어 있는 줄도 모르는 일이 많았다.
 //
-// 시작 조건은 레벨(_requiredGrade)과 장식장 슬라임 수(_requiredDisplayRoomSlimes)를 함께 채운 뒤 장식장에
-// 들어온 순간이다. 탐험 버튼은 장식장에서만 보이고, 한 팀을 꽉 채울 만큼 슬라임이 있어야 설명이 맞는다.
-// 레벨은 Lv.8이 기본이다. Lv.7에는 뽑기 해금과 그 안내가, Lv.9에는 상점 안내가 있어 그 사이만 비어 있다.
+// 시작 조건은 탐험 해금(UnlockGrades.Expedition, Lv.12)과 장식장 슬라임 수(_requiredDisplayRoomSlimes)를
+// 함께 채운 뒤 장식장에 들어온 순간이다. 탐험 버튼은 장식장에서만 보이고, 한 팀을 꽉 채울 만큼 슬라임이
+// 있어야 설명이 맞는다. 해금 등급을 바로 쓰므로 버튼이 보이기 시작하는 레벨과 안내가 어긋나지 않는다.
 // 장식장에 들어오지 않는 플레이어 때문에 다른 안내가 막히면 안 되므로 순서 줄 밖에 두고(isQueued: false),
 // 뽑기·장식장 안내를 마쳤는지는 여기서 직접 본다.
 //
@@ -47,8 +47,6 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
     [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
     [SerializeField] private MainEndingUI _mainEnding;
 
-    [Tooltip("이 레벨(최고 등급)에 닿아야 시작합니다.")]
-    [SerializeField] private ESlimeGrade _requiredGrade = ESlimeGrade.Grade8;
     [Tooltip("장식장에 이만큼 슬라임이 있어야 시작합니다. 탐험대 한 팀은 최대 3마리입니다.")]
     [SerializeField, Min(1)] private int _requiredDisplayRoomSlimes = 3;
 
@@ -129,7 +127,7 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        if (!_slimeManager.IsGachaUnlocked || _slimeManager.HighestGrade < _requiredGrade) return;
+        if (!_slimeManager.IsExpeditionUnlocked) return;
         if (_slimeManager.DisplayRoomSlimeCount < _requiredDisplayRoomSlimes) return;
         if (!GameplayGate.IsActive || !_spawnManager.IsInitialized) return;
         if (_gameplaySpaceManager.IsMainFieldActive || _gameplaySpaceManager.IsTransitioning) return;

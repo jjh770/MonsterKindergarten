@@ -3,16 +3,24 @@
 // SlimeManager의 IsXxxUnlocked 질의를 통해 사용한다.
 public static class UnlockGrades
 {
-    // 기획서 §7.1 - 장식장 + 도감
-    public const ESlimeGrade DisplayRoom = ESlimeGrade.Grade3;
+    // 기획서 §7.1 - 장식장 + 도감. Lv.3이었는데 메인 튜토리얼이 끝나고 1분도 안 돼 열려서,
+    // 합성 루프를 익힌 뒤에 오도록 Lv.6으로 옮겼다(2026-10-27). 그 전에 이미 장식장을 쓴
+    // 계정은 SlimeManager.IsDisplayRoomUnlocked가 열린 채로 둔다.
+    public const ESlimeGrade DisplayRoom = ESlimeGrade.Grade6;
 
-    // 기획서 §11.1 - 뽑기권 드랍 + 뽑기 시스템 (Phase 4에서 사용 예정)
-    public const ESlimeGrade Gacha = ESlimeGrade.Grade7;
+    // 기획서 §11.1 - 뽑기권 드랍 + 뽑기 시스템, 그리고 같은 등급에서 열리는 탐험. Lv.7이었는데
+    // 상위 등장·장식장 안내와 몇 분 간격으로 붙어서 Lv.8로 옮겼다(2026-10-27). 그 전에 이미 뽑기나
+    // 탐험을 쓴 계정은 SlimeManager.IsGachaUnlocked가 열린 채로 둔다.
+    public const ESlimeGrade Gacha = ESlimeGrade.Grade8;
 
-    // 9레벨 달성 시 왼쪽 서랍(상점)의 손잡이가 나타난다. 상점의 물건(놀이터 오브젝트와 배경)은
-    // 장식장과 배경 테마가 열린 뒤에 쓸 수 있고, 가장 싼 물건도 모으는 데 한참 걸려서
-    // 포인트가 모일 즈음에 알려 주려고 이 등급에 둔다.
-    public const ESlimeGrade Shop = ESlimeGrade.Grade9;
+    // 이 등급에서 왼쪽 서랍(상점)의 손잡이가 나타나고 배경 테마도 함께 열린다. Lv.9였는데 뽑기·탐험
+    // 안내와 몇 분 간격으로 붙어서 Lv.10으로 옮겼다(2026-10-27). 그 전에 이미 상점에서 물건이나
+    // 배경을 산 계정은 SlimeStatus.IsShopUnlocked가 열린 채로 둔다.
+    public const ESlimeGrade Shop = ESlimeGrade.Grade10;
+
+    // 탐험. 뽑기와 함께 Lv.8에서 열렸는데, 첫 30분에 안내가 몰려서 Lv.12로 따로 옮겼다(2026-10-27).
+    // 그 전에 탐험을 보낸 계정은 SlimeManager.IsExpeditionUnlocked가 열린 채로 둔다.
+    public const ESlimeGrade Expedition = ESlimeGrade.Grade12;
 
     // 최대 개체 수 업그레이드의 후반 31~50 구간은 기존처럼 Lv.11에서 열린다.
     public const ESlimeGrade MaxCountExpansion = ESlimeGrade.Grade11;

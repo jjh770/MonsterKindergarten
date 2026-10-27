@@ -51,6 +51,122 @@ public class GameRulesTests
         Assert.AreEqual(expected, GradeReachTicketRewards.GetTicketCount(grade));
     }
 
+    // 장식장은 Lv.6부터 열리지만, Lv.3에서 열리던 때 이미 장식장을 쓴 계정은 닫지 않는다.
+    // 등록이 하나라도 있으면 그 계정이다.
+    [TestCase(ESlimeGrade.Grade5, false, false)]
+    [TestCase(ESlimeGrade.Grade6, false, true)]
+    [TestCase(ESlimeGrade.Grade3, true, true)]
+    [TestCase(ESlimeGrade.Grade5, true, true)]
+    public void 장식장은_Lv6부터_열리고_이미_등록한_계정은_열린_채로_둔다(
+        ESlimeGrade highest, bool hasRegistration, bool expected)
+    {
+        SlimeStatusSaveData data = SlimeStatusSaveData.Default;
+        data.HighestGrade = (int)highest;
+        if (hasRegistration) data.NormalCollectionRegistered[0] = true;
+        Assert.IsTrue(SlimeStatusSaveMapper.TryRestore(
+            data, DateTime.UtcNow, out SlimeStatus status, out _, out _, out string failure), failure);
+
+        var owner = new UnityEngine.GameObject("SlimeManagerTest");
+        try
+        {
+            SlimeManager manager = owner.AddComponent<SlimeManager>();
+            typeof(SlimeManager)
+                .GetField("_status", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(manager, status);
+            Assert.AreEqual(expected, manager.IsDisplayRoomUnlocked);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(owner);
+        }
+    }
+
+    // 뽑기는 Lv.8부터 열리지만, Lv.7에서 열리던 때 이미 뽑기권을 받은 계정은 닫지 않는다.
+    [TestCase(ESlimeGrade.Grade7, 0L, 0, false)]
+    [TestCase(ESlimeGrade.Grade8, 0L, 0, true)]
+    [TestCase(ESlimeGrade.Grade7, 1L, 0, true)]
+    [TestCase(ESlimeGrade.Grade7, 0L, 2, true)]
+    public void 뽑기는_Lv8부터_열리고_이미_뽑기권을_받은_계정은_열린_채로_둔다(
+        ESlimeGrade highest, long ticketsObtained, int pendingTickets, bool expected)
+    {
+        SlimeStatusSaveData data = SlimeStatusSaveData.Default;
+        data.HighestGrade = (int)highest;
+        data.GachaTicketsObtainedTotal = ticketsObtained;
+        data.PendingTickets = pendingTickets;
+        Assert.AreEqual(expected, CreateManager(data, out UnityEngine.GameObject owner).IsGachaUnlocked);
+        UnityEngine.Object.DestroyImmediate(owner);
+    }
+
+    // 상점과 배경은 Lv.10부터 열리지만, Lv.9에서 열리던 때 이미 상점에서 산 계정은 닫지 않는다.
+    // 탐험 장식(꽃밭, 인덱스 2)만 가진 계정은 상점을 쓴 적이 없다.
+    [TestCase(ESlimeGrade.Grade9, -1, -1, false)]
+    [TestCase(ESlimeGrade.Grade10, -1, -1, true)]
+    [TestCase(ESlimeGrade.Grade9, (int)EBackgroundTheme.Sky, -1, true)]
+    [TestCase(ESlimeGrade.Grade9, -1, (int)EPlaygroundObjectType.Bumper, true)]
+    [TestCase(ESlimeGrade.Grade9, -1, (int)EPlaygroundObjectType.FlowerPatch, false)]
+    public void 상점은_Lv10부터_열리고_이미_상점에서_산_계정은_열린_채로_둔다(
+        ESlimeGrade highest, int ownedTheme, int ownedObject, bool expected)
+    {
+        SlimeStatusSaveData data = SlimeStatusSaveData.Default;
+        data.HighestGrade = (int)highest;
+        if (ownedTheme >= 0)
+        {
+            data.OwnedBackgroundThemes = new List<int> { ownedTheme };
+            data.SelectedBackgroundTheme = ownedTheme;
+        }
+
+        if (ownedObject >= 0)
+        {
+            data.OwnedPlaygroundObjects = new List<int>(new int[(int)EPlaygroundObjectType.Count]);
+            data.OwnedPlaygroundObjects[ownedObject] = 1;
+        }
+
+        SlimeManager manager = CreateManager(data, out UnityEngine.GameObject owner);
+        Assert.AreEqual(expected, manager.IsShopUnlocked);
+        Assert.AreEqual(expected, manager.IsBackgroundThemeUnlocked);
+        // 산 배경을 고른 채로 저장한 계정은 다음 접속에서도 그 배경이 남아야 한다.
+        if (ownedTheme >= 0) Assert.AreEqual((EBackgroundTheme)ownedTheme, manager.SelectedBackgroundTheme);
+        UnityEngine.Object.DestroyImmediate(owner);
+    }
+
+    // 탐험은 Lv.12부터 열리지만, 그 전에 한 번이라도 보낸 계정은 닫지 않는다.
+    [TestCase(ESlimeGrade.Grade11, false, false)]
+    [TestCase(ESlimeGrade.Grade12, false, true)]
+    [TestCase(ESlimeGrade.Grade8, true, true)]
+    public void 탐험은_Lv12부터_열리고_이미_보낸_계정은_열린_채로_둔다(
+        ESlimeGrade highest, bool hasSettlement, bool expected)
+    {
+        SlimeStatusSaveData data = SlimeStatusSaveData.Default;
+        data.HighestGrade = (int)highest;
+        if (hasSettlement)
+        {
+            data.ExpeditionSettlement = new ExpeditionSettlementSaveData
+            {
+                Sequence = 1,
+                Points = 100d,
+                Tickets = 1,
+                CompletedDepartures = new Dictionary<string, long> { ["expedition-short"] = 1 },
+            };
+            // 탐험으로 받은 뽑기권은 누적 획득 수에도 들어가 있어야 저장이 맞는다.
+            data.GachaTicketsObtainedTotal = 1;
+        }
+
+        Assert.AreEqual(expected, CreateManager(data, out UnityEngine.GameObject owner).IsExpeditionUnlocked);
+        UnityEngine.Object.DestroyImmediate(owner);
+    }
+
+    private static SlimeManager CreateManager(SlimeStatusSaveData data, out UnityEngine.GameObject owner)
+    {
+        Assert.IsTrue(SlimeStatusSaveMapper.TryRestore(
+            data, DateTime.UtcNow, out SlimeStatus status, out NormalSlimeCollectionStats stats, out _, out string failure), failure);
+        owner = new UnityEngine.GameObject("SlimeManagerTest");
+        SlimeManager manager = owner.AddComponent<SlimeManager>();
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        typeof(SlimeManager).GetField("_status", flags).SetValue(manager, status);
+        typeof(SlimeManager).GetField("_collectionStats", flags).SetValue(manager, stats);
+        return manager;
+    }
+
     [Test]
     public void 최고_등급이_오르면_같은_상태에_뽑기권이_쌓인다()
     {

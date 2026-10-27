@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-// 뽑기 해금(최고 Lv.7) 안내와 첫 1회 체험. 기획서 §11.1.
+// 뽑기 해금(최고 Lv.8) 안내와 첫 1회 체험. 기획서 §11.1.
 //
 // 자리가 가득 찼으면 합성으로 한 칸을 만든 뒤, 지급한 티켓으로 뽑기 기계에서 직접 1회를 뽑아
 // 결과 슬라임까지 확인한다. 일반 티켓 드랍은 이 흐름이 끝난 뒤 GachaTicketDropper에서 시작한다.
@@ -225,7 +225,7 @@ public sealed class GachaTutorialSequence : TutorialSequenceBase
             // 완료 표시가 서지 않아 티켓 드랍까지 함께 멎으므로, 뽑기 없이 버튼
             // 위치만 알리고 끝낸다.
             //
-            // 해금 직후에는 닿지 않는 경로다. Lv.7이면 등급이 일곱뿐이고 최대 개체
+            // 해금 직후에는 닿지 않는 경로다. Lv.8이면 등급이 여덟뿐이고 최대 개체
             // 수는 그보다 많아 자리가 찼다는 것이 곧 같은 등급이 있다는 뜻이다.
             // 등급이 넓게 벌어진 뒤에 처음 이 안내를 받는 기존 계정에서만 닿는다.
             ShowGachaButtonInfoStep();
