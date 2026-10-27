@@ -1,0 +1,206 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef2d418214cd028449aefd70a60dc908, type: 3}
+  m_Name: QuestTable
+  m_EditorClassIdentifier: Assembly-CSharp::QuestTableSO
+  _headerFormat: "\uB2E4\uC74C \uBAA9\uD45C"
+  _quests:
+  - _goal: 0
+    _target: 4
+    _title: "\uBBF8\uB77C \uC2AC\uB77C\uC784 (Lv.4) \uB9CC\uB4E4\uAE30"
+    _description: "\uAC19\uC740 \uC2AC\uB77C\uC784 \uB450 \uB9C8\uB9AC\uB97C \uD569\uCCD0
+      \uD55C \uB2E8\uACC4\uC529 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uC0C1\uC704 \uC2AC\uB77C\uC784 \uC790\uC5F0 \uB4F1\uC7A5"
+  - _goal: 0
+    _target: 6
+    _title: "\uD669\uAE08 \uC2AC\uB77C\uC784 (Lv.6) \uB9CC\uB4E4\uAE30"
+    _description: "\uB354 \uB192\uC740 \uC2AC\uB77C\uC784\uC744 \uB9CC\uB4E4\uBA74
+      \uC2AC\uB77C\uC784\uC744 \uBAA8\uC544 \uB458 \uACF5\uAC04\uC774 \uC0DD\uACA8\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uC7A5\uC2DD\uC7A5, \uC2AC\uB77C\uC784 \uB3C4\uAC10"
+  - _goal: 1
+    _target: 3
+    _title: "\uB3C4\uAC10 3\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uC7A5\uC2DD\uC7A5\uC5D0 \uC2AC\uB77C\uC784\uC744 \uB123\uC73C\uBA74
+      \uB3C4\uAC10\uC5D0 \uB4F1\uB85D\uB3FC\uC694.\n\uAEBC\uB0B4\uB3C4 \uAE30\uB85D\uC740
+      \uB0A8\uC544\uC694."
+    _rewards:
+    - _kind: 1
+      _detail: +10%
+  - _goal: 0
+    _target: 8
+    _title: "\uCC9C\uC0AC \uC2AC\uB77C\uC784 (Lv.8) \uB9CC\uB4E4\uAE30"
+    _description: "\uCC9C\uC0AC \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694.\n\uC0C1\uC704
+      \uB4F1\uC7A5 \uD655\uB960 \uC5C5\uADF8\uB808\uC774\uB4DC\uB97C \uC62C\uB9AC\uBA74
+      \uB354 \uB192\uC740 \uC2AC\uB77C\uC784\uC774 \uC790\uC5F0 \uB4F1\uC7A5\uD574\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uBF51\uAE30, \uC790\uB3D9 \uB4F1\uC7A5 ON/OFF, \uC790\uC5F0 \uB4F1\uC7A5
+        Lv.3\uAE4C\uC9C0"
+  - _goal: 1
+    _target: 6
+    _title: "\uB3C4\uAC10 6\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uC7A5\uC2DD\uC7A5\uC5D0 \uB2E4\uB978 \uC885\uB958 \uC2AC\uB77C\uC784\uC744
+      \uB354 \uB123\uC5B4 \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 1
+      _detail: +20%
+  - _goal: 0
+    _target: 10
+    _title: "\uBE14\uB799 \uC2AC\uB77C\uC784 (Lv.10) \uB9CC\uB4E4\uAE30"
+    _description: "\uBE14\uB799 \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uC0C1\uC810, \uBC30\uACBD \uBC14\uAFB8\uAE30"
+  - _goal: 1
+    _target: 9
+    _title: "\uB3C4\uAC10 9\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uC7A5\uC2DD\uC7A5\uC5D0 \uB2E4\uB978 \uC885\uB958 \uC2AC\uB77C\uC784\uC744
+      \uB354 \uB123\uC5B4 \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 1
+      _detail: +30%
+  - _goal: 0
+    _target: 11
+    _title: "\uD654\uC5FC \uC2AC\uB77C\uC784 (Lv.11) \uB9CC\uB4E4\uAE30"
+    _description: "\uD654\uC5FC \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694.\n\uC0C1\uC704
+      \uB4F1\uC7A5 \uD655\uB960 \uC5C5\uADF8\uB808\uC774\uB4DC\uB97C \uC62C\uB9AC\uBA74
+      \uB354 \uB192\uC740 \uC2AC\uB77C\uC784\uC774 \uC790\uC5F0 \uB4F1\uC7A5\uD574\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uCD5C\uB300 \uAC1C\uCCB4 \uC218 \uD655\uC7A5, \uC790\uC5F0 \uB4F1\uC7A5
+        Lv.4\uAE4C\uC9C0"
+  - _goal: 1
+    _target: 10
+    _title: "\uB3C4\uAC10 10\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uB3C4\uAC10\uC744 10\uC885\uAE4C\uC9C0 \uCC44\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uC790\uB3D9 \uD569\uC131(\uC30D \uC5C5\uADF8\uB808\uC774\uB4DC \uD3EC\uD568),
+        \uD0D0\uD5D8\uC9C0 '\uC232\uC18D \uC18C\uD48D'"
+  - _goal: 0
+    _target: 12
+    _title: "\uBC84\uC12F \uC2AC\uB77C\uC784 (Lv.12) \uB9CC\uB4E4\uAE30"
+    _description: "\uBC84\uC12F \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uD0D0\uD5D8(\uAF43\uBC2D \uC0B0\uCC45)"
+  - _goal: 2
+    _target: 1
+    _title: "\uD0D0\uD5D8 \uD55C \uBC88 \uBCF4\uB0B4\uAE30"
+    _description: "\uC7A5\uC2DD\uC7A5 \uC2AC\uB77C\uC784\uC744 \uD0D0\uD5D8\uC5D0
+      \uBCF4\uB0B4 \uBCF4\uC138\uC694.\n\uB3CC\uC544\uC62C \uB54C \uC120\uBB3C\uC744
+      \uAC00\uC838\uC640\uC694."
+    _rewards:
+    - _kind: 3
+      _detail: "\uD3EC\uC778\uD2B8, \uBF51\uAE30\uAD8C"
+  - _goal: 0
+    _target: 13
+    _title: "\uBAA8\uB798 \uC2AC\uB77C\uC784 (Lv.13) \uB9CC\uB4E4\uAE30"
+    _description: "\uC9C0\uAE08\uBD80\uD130\uB294 \uC0C8 \uB808\uBCA8\uC744 \uCC98\uC74C
+      \uB9CC\uB4E4 \uB54C\uB9C8\uB2E4 \uBF51\uAE30\uAD8C\uC744 \uBC1B\uC544\uC694.\n\uC0C1\uC704
+      \uB4F1\uC7A5 \uD655\uB960 \uC5C5\uADF8\uB808\uC774\uB4DC\uB97C \uC62C\uB9AC\uBA74
+      \uB354 \uB192\uC740 \uC2AC\uB77C\uC784\uC774 \uC790\uC5F0 \uB4F1\uC7A5\uD574\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "1\uC7A5"
+    - _kind: 0
+      _detail: "\uC790\uC5F0 \uB4F1\uC7A5 Lv.5\uAE4C\uC9C0"
+  - _goal: 1
+    _target: 12
+    _title: "\uB3C4\uAC10 12\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uB3C4\uAC10\uC744 12\uC885\uAE4C\uC9C0 \uCC44\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uBF51\uAE30\uAD8C \uD55C \uBC88\uC5D0 \uC90D\uAE30"
+    - _kind: 1
+      _detail: +40%
+  - _goal: 0
+    _target: 14
+    _title: "\uB098\uBB34 \uC2AC\uB77C\uC784 (Lv.14) \uB9CC\uB4E4\uAE30"
+    _description: "\uB098\uBB34 \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "1\uC7A5"
+  - _goal: 1
+    _target: 13
+    _title: "\uB3C4\uAC10 13\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uB3C4\uAC10\uC744 13\uC885\uAE4C\uC9C0 \uCC44\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uD0D0\uD5D8\uC9C0 '\uBCC4\uBE5B \uC5EC\uD589'"
+  - _goal: 0
+    _target: 15
+    _title: "\uC6A9\uC0AC \uC2AC\uB77C\uC784 (Lv.15) \uB9CC\uB4E4\uAE30"
+    _description: "\uC6A9\uC0AC \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "1\uC7A5"
+  - _goal: 0
+    _target: 16
+    _title: "\uB0A0\uAC1C \uC2AC\uB77C\uC784 (Lv.16) \uB9CC\uB4E4\uAE30"
+    _description: "\uB0A0\uAC1C \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694.\n\uC0C1\uC704
+      \uB4F1\uC7A5 \uD655\uB960 \uC5C5\uADF8\uB808\uC774\uB4DC\uB97C \uC62C\uB9AC\uBA74
+      \uB354 \uB192\uC740 \uC2AC\uB77C\uC784\uC774 \uC790\uC5F0 \uB4F1\uC7A5\uD574\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "2\uC7A5"
+    - _kind: 0
+      _detail: "\uC790\uC5F0 \uB4F1\uC7A5 Lv.6\uAE4C\uC9C0"
+  - _goal: 1
+    _target: 15
+    _title: "\uB3C4\uAC10 15\uC885 \uCC44\uC6B0\uAE30"
+    _description: "\uB3C4\uAC10\uC744 15\uC885\uAE4C\uC9C0 \uCC44\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 0
+      _detail: "\uC26C\uB294 \uB3D9\uC548 \uBF51\uAE30\uAD8C"
+    - _kind: 1
+      _detail: +50%
+  - _goal: 0
+    _target: 17
+    _title: "\uD574\uACE8 \uC2AC\uB77C\uC784 (Lv.17) \uB9CC\uB4E4\uAE30"
+    _description: "\uD574\uACE8 \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "2\uC7A5"
+  - _goal: 0
+    _target: 18
+    _title: "\uC545\uB9C8 \uC2AC\uB77C\uC784 (Lv.18) \uB9CC\uB4E4\uAE30"
+    _description: "\uC545\uB9C8 \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "2\uC7A5"
+  - _goal: 0
+    _target: 19
+    _title: "\uACF5\uD5C8 \uC2AC\uB77C\uC784 (Lv.19) \uB9CC\uB4E4\uAE30"
+    _description: "\uACF5\uD5C8 \uC2AC\uB77C\uC784\uAE4C\uC9C0 \uD0A4\uC6CC \uBCF4\uC138\uC694."
+    _rewards:
+    - _kind: 2
+      _detail: "3\uC7A5"
+  - _goal: 0
+    _target: 20
+    _title: "\uAE30\uACC4 \uC2AC\uB77C\uC784 (Lv.20) \uB9CC\uB4E4\uAE30"
+    _description: "\uB9C8\uC9C0\uB9C9 \uC2AC\uB77C\uC784\uC774\uC5D0\uC694!"
+    _rewards:
+    - _kind: 2
+      _detail: "3\uC7A5"
+  - _goal: 3
+    _target: 20
+    _title: "\uC7A5\uC2DD\uC7A5\uC5D0 20\uC885 \uBAA8\uC73C\uAE30"
+    _description: "Lv.1\uBD80\uD130 Lv.20\uAE4C\uC9C0 \uD55C \uB9C8\uB9AC\uC529 \uC7A5\uC2DD\uC7A5\uC5D0
+      \uBAA8\uB450 \uBAA8\uC73C\uBA74 \uC878\uC5C5\uC2DD\uC774 \uC5F4\uB824\uC694."
+    _rewards:
+    - _kind: 4
+      _detail: 
