@@ -42,7 +42,7 @@ public class SaveMigrationTests
     }
 
     [Test]
-    public void 재화_v2를_다시_저장하면_v4_문서가_되고_같은_잔액으로_읽힌다()
+    public void 재화_v2를_다시_저장하면_최신_문서가_되고_같은_잔액으로_읽힌다()
     {
         WriteLegacyCurrency(80943735d, 12d);
         CurrencySaveData legacy = LoadCurrency().Data;
@@ -58,10 +58,32 @@ public class SaveMigrationTests
         SaveLoadResult<CurrencySaveData> result = LoadCurrency();
 
         Assert.IsTrue(result.IsLoaded, result.FailureMessage);
-        Assert.AreEqual(4, result.Data.SchemaVersion);
-        Assert.AreEqual(4, PlayerPrefs.GetInt($"{TestUserId}_Currency_SchemaVersion"));
+        Assert.AreEqual(GameDataDomains.Currency.CurrentSchemaVersion, result.Data.SchemaVersion);
+        Assert.AreEqual(GameDataDomains.Currency.CurrentSchemaVersion, PlayerPrefs.GetInt($"{TestUserId}_Currency_SchemaVersion"));
         CollectionAssert.AreEqual(new[] { 80943735d, 12d }, result.Data.Currencies);
         Assert.AreEqual(0, result.Data.ExpeditionSettlement.ToDomain().Sequence);
+    }
+
+    [Test]
+    public void 재화_v4_문서는_포인트_뽑기권_구매_기록이_없는_것으로_읽힌다()
+    {
+        // 0.1.19가 쓴 모양이다. 하루 구매 횟수 필드가 없다.
+        var document = new JObject
+        {
+            ["SchemaVersion"] = 4,
+            ["Currencies"] = new JArray(5000d, 3d),
+            ["ExpeditionSettlement"] = JObject.FromObject(ExpeditionSettlementSaveData.FromDomain(ExpeditionSettlement.Empty)),
+            ["LastSaveTime"] = "2026-10-26T00:00:00.0000000Z",
+        };
+        PlayerPrefs.SetString($"{TestUserId}_Currency_Document", document.ToString(Formatting.None));
+        PlayerPrefs.SetInt($"{TestUserId}_Currency_SchemaVersion", 4);
+
+        SaveLoadResult<CurrencySaveData> result = LoadCurrency();
+
+        Assert.IsTrue(result.IsLoaded, result.FailureMessage);
+        Assert.AreEqual(0, result.Data.PointTicketPurchaseCount);
+        Assert.AreEqual(0, result.Data.PointTicketPurchaseDayIndex);
+        CollectionAssert.AreEqual(new[] { 5000d, 3d }, result.Data.Currencies);
     }
 
     [Test]

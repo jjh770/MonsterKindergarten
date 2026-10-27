@@ -34,10 +34,11 @@ public static class GameDataDomains
     // v2: ECurrencyType에 뽑기권을 추가해 재화 배열 길이가 늘었다.
     // v4: 탐험지별 완료 출발 순번을 누적 기록에 추가한다.
     // v3: 탐험 보상의 누적 지급 기록을 잔액과 함께 저장한다. 로컬은 단일 JSON 문서를 쓴다.
+    // v5: 졸업식 뒤 포인트로 산 뽑기권의 하루 횟수를 추가했다. 이전 문서에는 필드가 없어 0으로 읽힌다.
     public static readonly GameDataDomainDefinition Currency = new(
         displayName: "재화",
         cloudCollectionName: "Currency",
-        currentSchemaVersion: 4,
+        currentSchemaVersion: 5,
         localDataDeleter: userId => new LocalCurrencyRepository(userId).Delete());
 
     // v11: 엔딩 크레딧용 게임 시작일과 메인 엔딩 도달일을 추가했다.

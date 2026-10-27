@@ -20,9 +20,11 @@ public class QuestTests
         Assert.AreEqual(5, QuestProgress.FindCurrent(quests, new QuestState(9, 6, 6, false)));
         // 탐험을 보내기 전에는 Lv.13을 넘겨도 탐험 퀘스트에 머문다.
         Assert.AreEqual(10, QuestProgress.FindCurrent(quests, new QuestState(14, 12, 12, false)));
-        // 모든 레벨과 도감을 채웠어도 장식장에 20종이 함께 있어야 끝난다.
-        Assert.AreEqual(quests.Count - 1, QuestProgress.FindCurrent(quests, new QuestState(20, 20, 19, true)));
-        Assert.AreEqual(-1, QuestProgress.FindCurrent(quests, new QuestState(20, 20, 20, true)));
+        // 모든 레벨과 도감을 채웠어도 장식장에 20종이 함께 있어야 한다.
+        Assert.AreEqual(quests.Count - 2, QuestProgress.FindCurrent(quests, new QuestState(20, 20, 19, true)));
+        // 20종을 모아도 장식장에 들어가 졸업식을 봐야 끝난다.
+        Assert.AreEqual(quests.Count - 1, QuestProgress.FindCurrent(quests, new QuestState(20, 20, 20, true)));
+        Assert.AreEqual(-1, QuestProgress.FindCurrent(quests, new QuestState(20, 20, 20, true, true)));
     }
 
     [Test]
@@ -54,9 +56,13 @@ public class QuestTests
             }
         }
 
+        QuestEntry gather = quests[quests.Count - 2];
+        Assert.AreEqual(EQuestGoal.DisplayRoomSlimes, gather.Goal);
+        Assert.AreEqual(NormalCollectionRules.MainEndingCount, gather.Target);
+
         QuestEntry last = quests[quests.Count - 1];
-        Assert.AreEqual(EQuestGoal.DisplayRoomSlimes, last.Goal);
-        Assert.AreEqual(NormalCollectionRules.MainEndingCount, last.Target);
+        Assert.AreEqual(EQuestGoal.MainEndingSeen, last.Goal);
+        Assert.AreEqual(1, last.Target);
         Assert.AreEqual(EQuestRewardKind.Graduation, last.Rewards[0].Kind);
     }
 

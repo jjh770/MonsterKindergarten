@@ -107,6 +107,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _openAllButton.onClick.AddListener(OnOpenAllClicked);
         _pullPanel.PullRequested += OnPullRequested;
         _pullPanel.CloseRequested += OnCloseRequested;
+        _pullPanel.BuyRequested += OnBuyRequested;
         _root.SetActive(false);
     }
 
@@ -118,6 +119,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         {
             _pullPanel.PullRequested -= OnPullRequested;
             _pullPanel.CloseRequested -= OnCloseRequested;
+            _pullPanel.BuyRequested -= OnBuyRequested;
         }
 
         AudioManager.Instance?.StopLoopingSFX();
@@ -188,6 +190,7 @@ public sealed class GachaResultDirector : MonoBehaviour
         _state = SessionState.Choosing;
         int tickets = GetTicketCount();
         _pullPanel.Show(tickets, isTutorial);
+        if (!isTutorial) RefreshBuyOffer();
         ShowPrompt(GetChoosePrompt(tickets, isTutorial));
         // 튜토리얼은 스포트라이트가 1회 버튼만 열어 두므로 통을 잡을 수 없다. 잡으라는 떨림도 띄우지 않는다.
         _machineGrab.SetGrabbable(!isTutorial);
@@ -451,6 +454,7 @@ public sealed class GachaResultDirector : MonoBehaviour
 
             elapsed += Time.unscaledDeltaTime;
             if (isTutorial) _pullPanel.PulseSingle(elapsed);
+            else if (!HasEverBoughtTicket()) _pullPanel.PulseBuy(elapsed);
             _tapPrompt.alpha = 0.68f + Mathf.Sin(elapsed * 3f) * 0.22f;
         }
 
@@ -508,6 +512,53 @@ public sealed class GachaResultDirector : MonoBehaviour
         if (_state != SessionState.Choosing || _pendingRequest != RequestNone) return;
 
         _pendingRequest = RequestClose;
+    }
+
+    // 졸업식 뒤 포인트로 한 장 산다. 고르는 중에만 받고, 산 뒤에는 버튼과 안내의 장수를 고친다.
+    // 구매는 뽑기 요청과 따로 바로 처리한다. 뽑기권만 늘 뿐 화면 흐름은 그대로 고르는 중이다.
+    private void OnBuyRequested()
+    {
+        if (_state != SessionState.Choosing || _pendingRequest != RequestNone || IsTutorialPull()) return;
+
+        EPointTicketPurchaseFailure failure = PointTicketShop.TryBuy(_slimeManager, _currencyManager);
+        switch (failure)
+        {
+            case EPointTicketPurchaseFailure.None:
+                int tickets = GetTicketCount();
+                _pullPanel.SetTickets(tickets);
+                ShowPrompt(GetChoosePrompt(tickets, false));
+                _pullPanel.ShowToast(UiMessages.PointTicketBought);
+                AudioManager.Instance?.PlaySFX(EAudioSfx.ShopPurchase);
+                break;
+            case EPointTicketPurchaseFailure.DailyLimit:
+                _pullPanel.ShowToast(UiMessages.PointTicketDailyLimit);
+                break;
+            case EPointTicketPurchaseFailure.NotEnoughPoints:
+                _pullPanel.ShowToast(UiMessages.NotEnoughPoints);
+                break;
+            default:
+                _pullPanel.ShowToast(UiMessages.PullFailed);
+                break;
+        }
+
+        RefreshBuyOffer();
+    }
+
+    // 하루 기록은 처음 산 날에 0이 아닌 날짜를 갖는다. 그 뒤로는 날이 바뀌어도 0으로 돌아가지 않는다.
+    private bool HasEverBoughtTicket() => _currencyManager.PointTicketPurchase.DayIndex > 0;
+
+    private void RefreshBuyOffer()
+    {
+        if (!PointTicketShop.IsOpen(_slimeManager)) return;
+
+        int remaining = PointTicketShop.GetRemainingToday(_currencyManager);
+        Currency price = PointTicketPurchase.PricePerTicket * PointTicketShop.AmountPerPurchase;
+        string label = string.Format(
+            UiMessages.PointTicketBuyLabel,
+            price,
+            remaining,
+            PointTicketPurchase.DailyLimit);
+        _pullPanel.ShowBuyOffer(label, remaining > 0 && _currencyManager.CanAfford(ECurrencyType.Point, price));
     }
 
     // 뒤로 가기: 버튼을 고르는 중에만 닫는다. 연출 중에는 다른 곳으로 새지 않게 삼키기만 한다.

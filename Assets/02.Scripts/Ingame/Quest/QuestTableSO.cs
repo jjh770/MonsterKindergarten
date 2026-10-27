@@ -25,6 +25,8 @@ public enum EQuestGoal
     NormalCollection,
     ExpeditionSent,
     DisplayRoomSlimes,
+    // 졸업식을 봤는지. 장식장 20종을 채운 뒤 장식장으로 들어가야 졸업식이 열린다.
+    MainEndingSeen,
 }
 
 public enum EQuestRewardKind

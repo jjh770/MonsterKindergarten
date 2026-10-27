@@ -342,6 +342,14 @@ public class GameManager : MonoBehaviour
             completeByDefault: false,
             completeStoredIncomplete: false,
             isQueued: false);
+        // 포인트 뽑기권 구매 안내는 졸업식이 시작을 정한다. 다른 안내를 막지 않도록 순서 줄 밖에 두고,
+        // 이 기능보다 먼저 졸업한 플레이어도 한 번은 보게 한다.
+        TutorialProgress.Register(
+            TutorialIds.PointTicketShop,
+            order: 0,
+            completeByDefault: false,
+            completeStoredIncomplete: false,
+            isQueued: false);
         GameplaySaveGate.SetSavingEnabled(
             TutorialProgress.IsCompleted(TutorialIds.Main));
 

@@ -7,20 +7,28 @@ public readonly struct QuestState
     public readonly int NormalCollection;
     public readonly int DisplayRoomSlimes;
     public readonly bool HasSentExpedition;
+    public readonly bool HasSeenMainEnding;
 
-    public QuestState(int highestGrade, int normalCollection, int displayRoomSlimes, bool hasSentExpedition)
+    public QuestState(
+        int highestGrade,
+        int normalCollection,
+        int displayRoomSlimes,
+        bool hasSentExpedition,
+        bool hasSeenMainEnding = false)
     {
         HighestGrade = highestGrade;
         NormalCollection = normalCollection;
         DisplayRoomSlimes = displayRoomSlimes;
         HasSentExpedition = hasSentExpedition;
+        HasSeenMainEnding = hasSeenMainEnding;
     }
 
     public static QuestState From(SlimeManager slimes) => new(
         (int)slimes.HighestGrade,
         slimes.NormalCollectionCount,
         slimes.DisplayRoomSlimeCount,
-        slimes.ActiveExpeditions.Count > 0 || slimes.ExpeditionSettlement.Sequence > 0);
+        slimes.ActiveExpeditions.Count > 0 || slimes.ExpeditionSettlement.Sequence > 0,
+        slimes.IsMainEndingSeen);
 }
 
 // 지금 보여 줄 퀘스트를 고른다. 표의 순서대로 아직 끝나지 않은 첫 퀘스트이고, 뒤 퀘스트를 먼저
@@ -52,6 +60,7 @@ public static class QuestProgress
         EQuestGoal.NormalCollection => state.NormalCollection,
         EQuestGoal.DisplayRoomSlimes => state.DisplayRoomSlimes,
         EQuestGoal.ExpeditionSent => state.HasSentExpedition ? 1 : 0,
+        EQuestGoal.MainEndingSeen => state.HasSeenMainEnding ? 1 : 0,
         _ => 0,
     };
 }

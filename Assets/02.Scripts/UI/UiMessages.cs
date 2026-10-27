@@ -90,6 +90,9 @@ public static class UiMessages
     public static string MachineAllOpened => Source.MachineAllOpened;
     public static string SpecialSlimeShort => Source.SpecialSlimeShort;
     public static string PullFailed => Source.PullFailed;
+    public static string PointTicketBuyLabel => Source.PointTicketBuyLabel;
+    public static string PointTicketDailyLimit => Source.PointTicketDailyLimit;
+    public static string PointTicketBought => Source.PointTicketBought;
     public static string MachineCapsuleTap => Source.MachineCapsuleTap;
     public static string SpecialSlimeSubtitle => Source.SpecialSlimeSubtitle;
     public static string TicketObtained => Source.TicketObtained;

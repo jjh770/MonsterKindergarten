@@ -48,6 +48,7 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
     public event Action DataInitialized;
     public bool IsInitialized { get; private set; }
     public ExpeditionSettlement ExpeditionSettlement { get; private set; } = global::ExpeditionSettlement.Empty;
+    public PointTicketPurchase PointTicketPurchase { get; private set; }
 
 
     private async void Awake()
@@ -125,6 +126,10 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
                 (saveData.SchemaVersion < 3
                     ? global::ExpeditionSettlement.Empty
                     : throw new ArgumentException("탐험 재화 지급 기록이 없습니다."));
+            // 음수는 쓰는 쪽에서 나올 수 없어 생성자가 던지고, 위 구간이라 저장 문제로 신고된다.
+            PointTicketPurchase = new PointTicketPurchase(
+                saveData.PointTicketPurchaseCount,
+                saveData.PointTicketPurchaseDayIndex);
             LastSaveTime = ParseSaveTime(saveData.LastSaveTime);
             for (int i = 0; i < _currencies.Length; i++)
             {
@@ -272,6 +277,27 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
         return true;
     }
 
+    // 포인트로 뽑기권을 산다. 포인트 차감, 뽑기권 지급, 오늘 횟수를 한 번에 바꾸고 한 번만 저장한다.
+    // 언제 살 수 있는지(졸업 여부)는 부르는 쪽이 정하고, 여기서는 하루 한도와 잔액만 본다.
+    public EPointTicketPurchaseFailure TryBuyTicketsWithPoints(int amount, int dayIndex)
+    {
+        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), amount, "살 장수는 1 이상이어야 합니다.");
+        if (!IsInitialized || !GameplaySaveGate.IsSavingEnabled || SaveDataLoadGuard.HasFailure)
+            return EPointTicketPurchaseFailure.Unavailable;
+        if (PointTicketPurchase.GetRemaining(dayIndex) < amount) return EPointTicketPurchaseFailure.DailyLimit;
+
+        Currency price = PointTicketPurchase.PricePerTicket * amount;
+        if (Point < price) return EPointTicketPurchaseFailure.NotEnoughPoints;
+
+        _currencies[(int)ECurrencyType.Point] -= price;
+        _currencies[(int)ECurrencyType.GachaTicket] += amount;
+        PointTicketPurchase = PointTicketPurchase.WithPurchased(dayIndex, amount);
+        Save();
+        DataChanged?.Invoke(ECurrencyType.Point, Point);
+        DataChanged?.Invoke(ECurrencyType.GachaTicket, Get(ECurrencyType.GachaTicket));
+        return EPointTicketPurchaseFailure.None;
+    }
+
     // 재화 저장
     private void Save()
     {
@@ -302,7 +328,9 @@ public class CurrencyManager : MonoBehaviour, IGameDataDomainManager
             SchemaVersion = GameDataDomains.Currency.CurrentSchemaVersion,
             Currencies = ToSaveData(),
             ExpeditionSettlement = ExpeditionSettlementSaveData.FromDomain(ExpeditionSettlement),
-            LastSaveTime = LastSaveTime.ToString("O")
+            LastSaveTime = LastSaveTime.ToString("O"),
+            PointTicketPurchaseCount = PointTicketPurchase.Count,
+            PointTicketPurchaseDayIndex = PointTicketPurchase.DayIndex
         });
     }
 

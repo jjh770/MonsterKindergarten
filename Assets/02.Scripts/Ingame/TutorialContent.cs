@@ -33,6 +33,7 @@ public enum DialogueId
     ExpeditionDestinations = 29,
     ExpeditionParty = 30,
     ExpeditionFinal = 31,
+    PointTicketShop = 32,
 }
 
 [Serializable]
@@ -91,6 +92,7 @@ public sealed class TutorialContent : ScriptableObject
     [SerializeField] private string _shopObjectsTabMessage;
     [SerializeField] private string _adBonusButtonMessage;
     [SerializeField] private string _expeditionButtonMessage;
+    [SerializeField] private string _pointTicketShopButtonMessage;
 
     [Header("Dialogue")]
     [SerializeField] private DialogueSequence[] _dialogues;
@@ -118,6 +120,7 @@ public sealed class TutorialContent : ScriptableObject
     public string ShopObjectsTabMessage => _shopObjectsTabMessage;
     public string AdBonusButtonMessage => _adBonusButtonMessage;
     public string ExpeditionButtonMessage => _expeditionButtonMessage;
+    public string PointTicketShopButtonMessage => _pointTicketShopButtonMessage;
 
     public IReadOnlyList<DialogueLine> GetDialogue(DialogueId id)
     {

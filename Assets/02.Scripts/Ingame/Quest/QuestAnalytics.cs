@@ -43,6 +43,7 @@ public static class QuestAnalytics
         EQuestGoal.NormalCollection => "collection",
         EQuestGoal.ExpeditionSent => "expedition",
         EQuestGoal.DisplayRoomSlimes => "display_room",
+        EQuestGoal.MainEndingSeen => "main_ending",
         _ => "unknown",
     };
 }

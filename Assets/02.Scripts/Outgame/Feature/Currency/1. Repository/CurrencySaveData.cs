@@ -16,6 +16,11 @@ public class CurrencySaveData : ISaveData
     public double[] Currencies { get; set; }
     [FirestoreProperty]
     public string LastSaveTime { get; set; }
+    // v5: 졸업식 뒤 포인트로 산 뽑기권의 하루 횟수와 그 날짜. 이전 문서에는 없어 0(기록 없음)으로 읽힌다.
+    [FirestoreProperty]
+    public int PointTicketPurchaseCount { get; set; }
+    [FirestoreProperty]
+    public int PointTicketPurchaseDayIndex { get; set; }
     // 재화 기본값
     public static CurrencySaveData Default => new CurrencySaveData()
     {

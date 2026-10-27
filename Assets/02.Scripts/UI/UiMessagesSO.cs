@@ -52,6 +52,10 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _specialSlimeSubtitle = "뭔가 특별해 보여요...!";
     [SerializeField] private string _ticketObtained = "뽑기권 획득!";
     [SerializeField] private string _gradeReachReward = "해금 보상!";
+    // {0} 한 장 값, {1} 오늘 남은 장수, {2} 하루 한도
+    [TextArea] [SerializeField] private string _pointTicketBuyLabel = "{0} 포인트로 1장 사기\n<size=70%>오늘 {1}/{2}장 남음</size>";
+    [TextArea] [SerializeField] private string _pointTicketDailyLimit = "오늘은 더 살 수 없어요.\n내일 다시 살 수 있어요.";
+    [SerializeField] private string _pointTicketBought = "뽑기권 1장을 샀어요!";
 
     [Header("탐험")]
     [Tooltip("탐험이 끝났을 때 띄우는 토스트입니다. {0}에 탐험지 이름이 들어갑니다.")]
@@ -133,6 +137,9 @@ public sealed class UiMessagesSO : ScriptableObject
     public string PullFailed => _pullFailed;
     public string MachineCapsuleTap => _machineCapsuleTap;
     public string SpecialSlimeSubtitle => _specialSlimeSubtitle;
+    public string PointTicketBuyLabel => _pointTicketBuyLabel;
+    public string PointTicketDailyLimit => _pointTicketDailyLimit;
+    public string PointTicketBought => _pointTicketBought;
     public string TicketObtained => _ticketObtained;
     public string GradeReachReward => _gradeReachReward;
     public string ExpeditionReturned => _expeditionReturned;
