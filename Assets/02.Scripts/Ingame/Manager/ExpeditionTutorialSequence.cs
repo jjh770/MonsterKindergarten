@@ -3,9 +3,16 @@ using UnityEngine;
 
 // 슬라임 탐험을 알려 준다. 탐험 버튼은 장식장 메뉴 줄의 끝에 있어 있는 줄도 모르는 일이 많았다.
 //
-// 시작은 해금 레벨이 아니라 장식장에 들어온 순간이다. 탐험 버튼은 장식장에서만 보이고, 장식장에 슬라임이
-// 있어야 보낼 친구가 있다. 장식장에 들어오지 않는 플레이어 때문에 다른 안내가 막히면 안 되므로 순서 줄
-// 밖에 두고(isQueued: false), 뽑기·장식장 안내를 마쳤는지는 여기서 직접 본다.
+// 시작 조건은 레벨(_requiredGrade)과 장식장 슬라임 수(_requiredDisplayRoomSlimes)를 함께 채운 뒤 장식장에
+// 들어온 순간이다. 탐험 버튼은 장식장에서만 보이고, 한 팀을 꽉 채울 만큼 슬라임이 있어야 설명이 맞는다.
+// 레벨은 Lv.8이 기본이다. Lv.7에는 뽑기 해금과 그 안내가, Lv.9에는 상점 안내가 있어 그 사이만 비어 있다.
+// 장식장에 들어오지 않는 플레이어 때문에 다른 안내가 막히면 안 되므로 순서 줄 밖에 두고(isQueued: false),
+// 뽑기·장식장 안내를 마쳤는지는 여기서 직접 본다.
+//
+// 다른 안내와 잇달아 뜨지 않게 한다. 다른 튜토리얼은 모두 메인 필드에서 시작하므로 함께 뜰 일은 없지만,
+// 장식장 안내가 끝난 바로 그 자리에서 이어 붙거나 졸업 엔딩과 같은 입장에 겹칠 수는 있다. 그래서 다른
+// 튜토리얼이 끝나는 순간(TutorialManager.Finished)에는 시작하지 않고, 입장 처리는 한 프레임 미뤄 같은
+// 입장에 시작하는 엔딩이 먼저 자리를 잡게 한 뒤 엔딩이 떠 있으면 다음 입장으로 넘긴다.
 //
 // 흐름: 학자 슬라임 대화 -> 메뉴 줄을 탐험 버튼까지 밀고 그 버튼을 누르게 함 -> 탐험 화면에서 탐험지,
 // 편성, 보내기 버튼을 차례로 짚으며 설명하고 끝낸다.
@@ -38,12 +45,19 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
     [SerializeField] private SpawnManager _spawnManager;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private GameplaySpaceManager _gameplaySpaceManager;
+    [SerializeField] private MainEndingUI _mainEnding;
+
+    [Tooltip("이 레벨(최고 등급)에 닿아야 시작합니다.")]
+    [SerializeField] private ESlimeGrade _requiredGrade = ESlimeGrade.Grade8;
+    [Tooltip("장식장에 이만큼 슬라임이 있어야 시작합니다. 탐험대 한 팀은 최대 3마리입니다.")]
+    [SerializeField, Min(1)] private int _requiredDisplayRoomSlimes = 3;
 
     [Tooltip("탐험 화면이 튀어 오른 뒤 설명을 시작하기까지 기다리는 시간입니다.")]
     [SerializeField, Min(0f)] private float _openSettleSeconds = 0.35f;
 
     private Step _step;
     private Tween _settleTween;
+    private bool _tryOnNextFrame;
 
     private void Start()
     {
@@ -56,12 +70,19 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
         }
 
         _expedition.Opened += OnExpeditionOpened;
-        _gameplaySpaceManager.SpaceTransitionCompleted += TryStart;
-        SubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
+        _gameplaySpaceManager.SpaceTransitionCompleted += OnSpaceTransitionCompleted;
+        _gameManager.OnGameplayActivated += TryStart;
+        _spawnManager.Initialized += TryStart;
     }
 
     private void Update()
     {
+        if (_tryOnNextFrame)
+        {
+            _tryOnNextFrame = false;
+            TryStart();
+        }
+
         // 설명 도중에 플레이어가 뒤로 가기로 탐험 화면을 닫으면 짚을 것이 없다. 볼 것은 이미 봤으니 끝낸다.
         if (_step >= Step.Destinations && _step < Step.Complete && !_expedition.IsOpen)
         {
@@ -80,8 +101,9 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
     {
         _settleTween?.Kill();
         if (_expedition != null) _expedition.Opened -= OnExpeditionOpened;
-        if (_gameplaySpaceManager != null) _gameplaySpaceManager.SpaceTransitionCompleted -= TryStart;
-        UnsubscribeStandardStartTriggers(_gameManager, _spawnManager, TryStart);
+        if (_gameplaySpaceManager != null) _gameplaySpaceManager.SpaceTransitionCompleted -= OnSpaceTransitionCompleted;
+        if (_gameManager != null) _gameManager.OnGameplayActivated -= TryStart;
+        if (_spawnManager != null) _spawnManager.Initialized -= TryStart;
 
         _clicker?.ReleaseMode(this);
         if (_step != Step.None && _step != Step.Complete)
@@ -89,6 +111,12 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
             _spawnManager?.ReleaseSpawnPause(this);
             _autoClicker?.ReleasePause(this);
         }
+    }
+
+    // 같은 입장에 시작하는 졸업 엔딩이 먼저 자리를 잡도록 한 프레임 미룬다.
+    private void OnSpaceTransitionCompleted()
+    {
+        _tryOnNextFrame = true;
     }
 
     private void TryStart()
@@ -101,10 +129,12 @@ public sealed class ExpeditionTutorialSequence : TutorialSequenceBase
             return;
         }
 
-        if (!_slimeManager.IsGachaUnlocked || _slimeManager.DisplayRoomSlimeCount <= 0) return;
+        if (!_slimeManager.IsGachaUnlocked || _slimeManager.HighestGrade < _requiredGrade) return;
+        if (_slimeManager.DisplayRoomSlimeCount < _requiredDisplayRoomSlimes) return;
         if (!GameplayGate.IsActive || !_spawnManager.IsInitialized) return;
         if (_gameplaySpaceManager.IsMainFieldActive || _gameplaySpaceManager.IsTransitioning) return;
         if (_unlockPopupUI != null && _unlockPopupUI.IsPresenting) return;
+        if (_mainEnding != null && _mainEnding.IsPresenting) return;
 
         RectTransform button = _expedition.EnterButtonTarget;
         if (button == null || !button.gameObject.activeInHierarchy || _expedition.IsOpen) return;

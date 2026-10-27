@@ -51,6 +51,7 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _machineCapsuleTap = "캡슐을 톡 눌러 열어 보세요";
     [SerializeField] private string _specialSlimeSubtitle = "뭔가 특별해 보여요...!";
     [SerializeField] private string _ticketObtained = "뽑기권 획득!";
+    [SerializeField] private string _gradeReachReward = "해금 보상!";
 
     [Header("탐험")]
     [Tooltip("탐험이 끝났을 때 띄우는 토스트입니다. {0}에 탐험지 이름이 들어갑니다.")]
@@ -133,6 +134,7 @@ public sealed class UiMessagesSO : ScriptableObject
     public string MachineCapsuleTap => _machineCapsuleTap;
     public string SpecialSlimeSubtitle => _specialSlimeSubtitle;
     public string TicketObtained => _ticketObtained;
+    public string GradeReachReward => _gradeReachReward;
     public string ExpeditionReturned => _expeditionReturned;
     public string ExpeditionChooseParty => _expeditionChooseParty;
     public string ExpeditionInProgress => _expeditionInProgress;

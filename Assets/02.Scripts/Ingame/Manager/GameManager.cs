@@ -334,7 +334,7 @@ public class GameManager : MonoBehaviour
             completeByDefault: false,
             completeStoredIncomplete: false,
             isQueued: false);
-        // 탐험 안내도 장식장에 들어온 순간이 시작을 정한다. 장식장에 들어오지 않는 플레이어 때문에 다른
+        // 탐험 안내는 레벨과 장식장 슬라임 수를 채운 뒤 장식장에 들어온 순간 시작한다. 장식장에 들어오지 않는 플레이어 때문에 다른
         // 안내가 막히지 않도록 순서 줄 밖에 두고, 이미 탐험을 쓰는 플레이어도 한 번은 보게 한다.
         TutorialProgress.Register(
             TutorialIds.Expedition,

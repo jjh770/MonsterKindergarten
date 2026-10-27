@@ -93,6 +93,7 @@ public static class UiMessages
     public static string MachineCapsuleTap => Source.MachineCapsuleTap;
     public static string SpecialSlimeSubtitle => Source.SpecialSlimeSubtitle;
     public static string TicketObtained => Source.TicketObtained;
+    public static string GradeReachReward => Source.GradeReachReward;
     public static string AdNotReady => Source.AdNotReady;
     public static string AdLimitReached => Source.AdLimitReached;
     public static string AdBoostFull => Source.AdBoostFull;

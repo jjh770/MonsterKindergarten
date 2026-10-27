@@ -701,6 +701,8 @@ public class SlimeStatus
                 $"새 등급은 현재 최고 등급보다 높아야 합니다. : {newGrade} <= {HighestGrade}");
         }
 
+        // 후반 등급의 첫 도달 보상. 최고 등급과 같은 저장에 들어가야 하므로 여기서 함께 올린다.
+        PendingTickets += GradeReachTicketRewards.GetTicketCount(HighestGrade, newGrade);
         HighestGrade = newGrade;
     }
 

@@ -89,6 +89,7 @@ public class GachaTicketField : MonoBehaviour
     private Vector3 _collectTargetBaseScale;
     private bool _isBulkCollecting;
     private bool _isBulkCollectScheduled;
+    private int _reservedGradeRewardTickets;
 
     public event Action CollectionStateChanged;
 
@@ -98,7 +99,8 @@ public class GachaTicketField : MonoBehaviour
         {
             if (_slimeManager == null) return 0;
 
-            return _slimeManager.GetPendingTicketCount();
+            // 해금 보상 팝업이 잡아 둔 몫은 필드의 장수가 아니다.
+            return Mathf.Max(0, _slimeManager.GetPendingTicketCount() - _reservedGradeRewardTickets);
         }
     }
 
@@ -149,6 +151,7 @@ public class GachaTicketField : MonoBehaviour
 
         _gameManager.AllDataInitialized += OnAllDataInitialized;
         _gameplaySpaceManager.SpaceChanged += OnSpaceChanged;
+        _slimeManager.HighestGradeChanged += OnHighestGradeChanged;
 
         // 이미 발화한 뒤에 붙었으면 이벤트를 다시 기다릴 수 없다.
         if (_gameManager.IsAllDataInitialized)
@@ -171,6 +174,10 @@ public class GachaTicketField : MonoBehaviour
         if (_gameplaySpaceManager != null)
         {
             _gameplaySpaceManager.SpaceChanged -= OnSpaceChanged;
+        }
+        if (_slimeManager != null)
+        {
+            _slimeManager.HighestGradeChanged -= OnHighestGradeChanged;
         }
 
         _targetPunchTween?.Kill(complete: false);
@@ -201,11 +208,59 @@ public class GachaTicketField : MonoBehaviour
         CollectionStateChanged?.Invoke();
     }
 
+    // 후반 등급의 첫 도달 보상은 SlimeStatus가 최고 등급과 함께 PendingTickets에 이미 더했다
+    // (GradeReachTicketRewards). 그 몫은 필드에 놓지 않고 해금 보상 팝업이 지갑으로 옮길 때까지
+    // 따로 잡아 둔다. 필드가 그 몫까지 오브젝트로 만들면 팝업이 넣을 장수를 플레이어가 먼저 줍는다.
+    //
+    // 잡아 둔 장수는 저장하지 않는다. 팝업이 옮기기 전에 앱이 꺼지면 다음 접속에서는 잡아 둔
+    // 것이 없으므로 그 몫이 필드 뽑기권으로 나타난다. 보상을 잃지 않는 쪽으로 무너진다.
+    private void OnHighestGradeChanged(ESlimeGrade grade)
+    {
+        _reservedGradeRewardTickets += GradeReachTicketRewards.GetTicketCount(grade);
+    }
+
+    // 해금 보상 팝업이 부른다. 팝업의 티켓을 상단 바로 날려 보내고, 닿는 순간 잡아 둔 장수를
+    // 지갑에 넣는다. 필드에서 줍는 것과 같은 거래(저장에서 빼고 재화를 올림)를 장수만큼 한다.
+    public void PlayGradeRewardFlight(RectTransform source, Sprite sprite, int count)
+    {
+        PlayGrantFlight(source, sprite, () => ClaimGradeReward(count));
+    }
+
+    // 연출 없이 바로 넣는다. 팝업이 보상을 보여 주다 다른 해금에 밀려 끊길 때 쓴다.
+    // 장수는 팝업이 보여 준 만큼만 옮긴다. 다음 등급의 몫이 이미 잡혀 있을 수 있어서다.
+    public void ClaimGradeReward(int count)
+    {
+        count = Mathf.Clamp(count, 0, _reservedGradeRewardTickets);
+        _reservedGradeRewardTickets -= count;
+        if (_slimeManager == null || _currencyManager == null) return;
+
+        int granted = 0;
+        for (int i = 0; i < count; i++)
+        {
+            if (!EconomyTransactionService.TryGrantAfterConsume(
+                    _currencyManager,
+                    ECurrencyType.GachaTicket,
+                    1d,
+                    _slimeManager.TryConsumePendingTicket,
+                    _slimeManager.AddPendingTicket))
+            {
+                break;
+            }
+
+            granted++;
+        }
+
+        if (granted > 0)
+        {
+            _slimeManager.RecordGachaTicketsObtained(granted);
+        }
+
+        CollectionStateChanged?.Invoke();
+    }
+
     private void Restore()
     {
-        int stored = _slimeManager != null
-            ? _slimeManager.GetPendingTicketCount()
-            : 0;
+        int stored = PendingTicketCount;
         int target = Mathf.Min(stored, _maxObjects);
 
         for (int i = _tickets.Count; i < target; i++)
@@ -272,7 +327,7 @@ public class GachaTicketField : MonoBehaviour
     private void BeginBulkCollect()
     {
         if (_slimeManager == null ||
-            _slimeManager.GetPendingTicketCount() <= 0)
+            PendingTicketCount <= 0)
         {
             return;
         }
@@ -286,7 +341,7 @@ public class GachaTicketField : MonoBehaviour
         if (!_isBulkCollecting) return;
 
         if (_slimeManager == null ||
-            _slimeManager.GetPendingTicketCount() <= 0)
+            PendingTicketCount <= 0)
         {
             _isBulkCollecting = false;
             CollectionStateChanged?.Invoke();
@@ -332,7 +387,7 @@ public class GachaTicketField : MonoBehaviour
     private void Collect(GameObject ticket)
     {
         if (_slimeManager == null || _currencyManager == null) return;
-        if (_slimeManager.GetPendingTicketCount() <= 0) return;
+        if (PendingTicketCount <= 0) return;
 
         PlayCollectPresentation(ticket, () => CompleteCollect(ticket));
         CollectionStateChanged?.Invoke();
@@ -341,7 +396,7 @@ public class GachaTicketField : MonoBehaviour
     private void CollectBulk(GameObject ticket)
     {
         if (_slimeManager == null || _currencyManager == null) return;
-        if (_slimeManager.GetPendingTicketCount() <= 0) return;
+        if (PendingTicketCount <= 0) return;
 
         ticket.SetActive(true);
         PlayCollectPresentation(
@@ -390,7 +445,7 @@ public class GachaTicketField : MonoBehaviour
         Restore();
         ApplyVisibility();
 
-        if (_slimeManager.GetPendingTicketCount() <= 0)
+        if (PendingTicketCount <= 0)
         {
             _isBulkCollecting = false;
         }

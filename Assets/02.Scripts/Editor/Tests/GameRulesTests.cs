@@ -39,6 +39,35 @@ public class GameRulesTests
         Assert.AreEqual(expected, NormalCollectionRules.GetPointBonusPercent(registered));
     }
 
+    [TestCase(ESlimeGrade.Grade12, 0)]
+    [TestCase(ESlimeGrade.Grade13, 1)]
+    [TestCase(ESlimeGrade.Grade15, 1)]
+    [TestCase(ESlimeGrade.Grade16, 2)]
+    [TestCase(ESlimeGrade.Grade18, 2)]
+    [TestCase(ESlimeGrade.Grade19, 3)]
+    [TestCase(ESlimeGrade.Grade20, 3)]
+    public void 후반_등급의_첫_도달은_뽑기권을_준다(ESlimeGrade grade, int expected)
+    {
+        Assert.AreEqual(expected, GradeReachTicketRewards.GetTicketCount(grade));
+    }
+
+    [Test]
+    public void 최고_등급이_오르면_같은_상태에_뽑기권이_쌓인다()
+    {
+        SlimeStatusSaveData data = SlimeStatusSaveData.Default;
+        data.HighestGrade = (int)ESlimeGrade.Grade12;
+        Assert.IsTrue(SlimeStatusSaveMapper.TryRestore(
+            data, DateTime.UtcNow, out SlimeStatus status, out _, out _, out string failure), failure);
+        int before = status.PendingTickets;
+
+        status.UpdateHighestGrade(ESlimeGrade.Grade13);
+        Assert.AreEqual(before + 1, status.PendingTickets);
+
+        // 한 번에 여러 등급을 건너도 지나친 등급의 몫을 모두 더한다: 14(1) + 15(1) + 16(2)
+        status.UpdateHighestGrade(ESlimeGrade.Grade16);
+        Assert.AreEqual(before + 5, status.PendingTickets);
+    }
+
     [TestCase(0, 0.03f)]
     [TestCase(1, 0.035f)]
     [TestCase(14, 0.10f)]

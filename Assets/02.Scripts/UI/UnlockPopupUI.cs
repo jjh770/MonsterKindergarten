@@ -16,11 +16,16 @@ public class UnlockPopupUI : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
     [SerializeField] private SlimeManager _slimeManager;
     [SerializeField] private Sprite _ticketSprite;
+    [Tooltip("후반 등급 해금 보상의 티켓이 날아가고 지갑에 들어가는 곳입니다.")]
+    [SerializeField] private GachaTicketField _ticketField;
+    [Tooltip("해금 보상이 2장 이상일 때 티켓 그림 옆에 띄우는 X2, X3 표시입니다.")]
+    [SerializeField] private TextMeshProUGUI _rewardCountText;
 
     private Sequence _sequence;
     private Tween _glowScaleTween;
     private Tween _glowRotateTween;
     private bool _isHolding;
+    private int _shownGradeRewardCount;
 
     public event System.Action<ESlimeGrade> PresentationCompleted;
 
@@ -61,7 +66,9 @@ public class UnlockPopupUI : MonoBehaviour
 
     private void ShowPopup(ESlimeGrade grade)
     {
+        ClaimInterruptedGradeReward();
         CleanupTweens();
+        SetRewardCount(0);
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
 
@@ -90,12 +97,85 @@ public class UnlockPopupUI : MonoBehaviour
         _sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
         _sequence.OnComplete(() =>
         {
-            _sequence = null;
-            CleanupGlowTweens();
-            _popupPanel.SetActive(false);
-            _whiteGlowImage?.SetScaleToZero();
-            PresentationCompleted?.Invoke(grade);
+            int rewardCount = GradeReachTicketRewards.GetTicketCount(grade);
+            if (rewardCount > 0 && _ticketField != null)
+            {
+                ShowGradeReward(grade, rewardCount);
+                return;
+            }
+
+            FinishPopup(grade);
         });
+    }
+
+    // 후반 등급을 처음 만들면 슬라임 해금 뒤에 같은 팝업으로 보상 티켓을 보여 준다. 장수는
+    // 이미 저장에 들어가 있고(GradeReachTicketRewards), 여기서는 보여 준 뒤 티켓을 상단 바로
+    // 날려 보내 지갑에 넣는다. PresentationCompleted는 보상까지 끝난 뒤에 보내서, 해금 팝업을
+    // 기다리는 튜토리얼이 보상과 겹쳐 뜨지 않게 한다.
+    private void ShowGradeReward(ESlimeGrade grade, int count)
+    {
+        _shownGradeRewardCount = count;
+        _canvasGroup.alpha = 0f;
+
+        AudioManager.Instance?.PlaySFX(EAudioSfx.FeatureUnlock);
+
+        if (_gradeText != null)
+        {
+            _gradeText.text = UiMessages.GradeReachReward;
+        }
+
+        if (_gradeImage != null)
+        {
+            _gradeImage.sprite = _ticketSprite;
+        }
+
+        SetRewardCount(count);
+        StartGlow();
+
+        _sequence = DOTween.Sequence();
+        _sequence.Append(_canvasGroup.DOFade(1f, _fadeInDuration));
+        _sequence.AppendInterval(_displayDuration);
+        // 출발 자리를 먼저 읽어야 하므로 날려 보낸 뒤에 팝업을 닫는다.
+        _sequence.AppendCallback(() =>
+        {
+            _shownGradeRewardCount = 0;
+            _ticketField.PlayGradeRewardFlight(TicketAnchor, _ticketSprite, count);
+        });
+        _sequence.Append(_canvasGroup.DOFade(0f, _fadeOutDuration));
+        _sequence.OnComplete(() =>
+        {
+            SetRewardCount(0);
+            FinishPopup(grade);
+        });
+    }
+
+    private void FinishPopup(ESlimeGrade grade)
+    {
+        _sequence = null;
+        CleanupGlowTweens();
+        _popupPanel.SetActive(false);
+        _whiteGlowImage?.SetScaleToZero();
+        PresentationCompleted?.Invoke(grade);
+    }
+
+    // 보상을 보여 주던 중에 다음 해금이나 튜토리얼 티켓이 팝업을 가져가면 날리는 연출 없이
+    // 바로 넣는다. 그냥 끊으면 그 몫은 이번 세션에서 잡힌 채로 남는다.
+    private void ClaimInterruptedGradeReward()
+    {
+        if (_shownGradeRewardCount <= 0) return;
+
+        int count = _shownGradeRewardCount;
+        _shownGradeRewardCount = 0;
+        _ticketField?.ClaimGradeReward(count);
+    }
+
+    // 1장이면 티켓 그림만, 2장 이상이면 그림 옆에 X2처럼 붙인다. 0은 표시를 끈다.
+    private void SetRewardCount(int count)
+    {
+        if (_rewardCountText == null) return;
+
+        _rewardCountText.gameObject.SetActive(count > 1);
+        _rewardCountText.text = $"X{count}";
     }
 
     // 뽑기 튜토리얼이 티켓 한 장을 줄 때 쓴다. 슬라임 해금과 같은 연출이지만 스스로 사라지지
@@ -103,7 +183,9 @@ public class UnlockPopupUI : MonoBehaviour
     // PresentationCompleted는 슬라임 등급을 싣고 오므로 이 경로에서는 보내지 않는다.
     public void ShowTicketHold(string title)
     {
+        ClaimInterruptedGradeReward();
         CleanupTweens();
+        SetRewardCount(0);
         _isHolding = true;
         _popupPanel.SetActive(true);
         _canvasGroup.alpha = 0f;
