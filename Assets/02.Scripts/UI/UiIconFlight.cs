@@ -344,66 +344,31 @@ public sealed class UiIconFlight : MonoBehaviour
 
     // 별도 텍스처를 늘리지 않고 날아가는 그림을 작은 반짝이 조각으로 재사용한다.
     // 출발점에서는 터치 반응, 도착점에서는 아이콘으로 흡수됐다는 반응을 만든다.
+    // 움직임은 축하 반짝이와 같은 UiBurst가 맡는다.
     private void PlayBurst(Sprite sprite, Vector2 position, Vector2 iconSize, float intensity)
     {
         if (_pool == null || sprite == null) return;
 
-        int count = Mathf.Max(1, _burstParticleCount);
         float baseSize = Mathf.Max(20f, Mathf.Min(iconSize.x, iconSize.y) * 0.38f);
-        float distance = Mathf.Max(iconSize.x, iconSize.y) * _burstDistanceScale * intensity;
-
-        var pieces = new Image[count + 1];
-        Sequence burst = DOTween.Sequence();
-
-        // 중심에서 한 번 크게 번지는 잔상을 먼저 보여 줘 작은 조각만 흩어질 때보다
-        // 터치와 도착 순간을 또렷하게 읽을 수 있게 한다.
-        Image flashImage = _pool.Rent();
-        pieces[0] = flashImage;
-        RectTransform flash = flashImage.rectTransform;
-        flash.anchoredPosition = position;
-        flash.sizeDelta = iconSize * (1.35f * Mathf.Max(0.8f, intensity));
-        flash.localScale = Vector3.one * 0.55f;
-        flashImage.sprite = sprite;
-        flashImage.preserveAspect = false;
-        flashImage.color = new Color(1f, 0.84f, 0.2f, 0.85f);
-
-        float flashDuration = _burstDuration * 0.75f;
-        burst.Join(flash.DOScale(1.7f, flashDuration).SetEase(Ease.OutCubic));
-        burst.Join(flashImage.DOFade(0f, flashDuration).SetEase(Ease.InQuad));
-
-        for (int i = 0; i < count; ++i)
+        // UiBurst는 반지름의 0.55~1배 사이로 흩는다. 예전의 가장 먼 거리(1.15배)를 반지름으로 둔다.
+        float radius = Mathf.Max(iconSize.x, iconSize.y) * _burstDistanceScale * intensity * 1.15f;
+        UiBurst.Play(_pool, position, new UiBurstStyle
         {
-            float angle = 360f * i / count + UnityEngine.Random.Range(-12f, 12f);
-            Vector2 direction = Quaternion.Euler(0f, 0f, angle) * Vector2.up;
-
-            Image image = _pool.Rent();
-            pieces[i + 1] = image;
-            RectTransform particle = image.rectTransform;
-            particle.anchoredPosition = position;
-            particle.sizeDelta = Vector2.one * baseSize;
-            particle.localScale = Vector3.one * 0.65f;
-            image.sprite = sprite;
-            image.preserveAspect = false;
-            image.color = new Color(1f, 0.88f, 0.25f, 1f);
-
-            float particleDistance = distance * UnityEngine.Random.Range(0.75f, 1.15f);
-            burst.Join(
-                particle.DOAnchorPos(position + direction * particleDistance, _burstDuration)
-                    .SetEase(Ease.OutCubic));
-            burst.Join(
-                particle.DOScale(UnityEngine.Random.Range(1.15f, 1.55f), _burstDuration)
-                    .SetEase(Ease.OutBack));
-            burst.Join(image.DOFade(0f, _burstDuration));
-        }
-
-        burst.SetLink(gameObject, LinkBehaviour.KillOnDestroy);
-        burst.OnComplete(() =>
-        {
-            foreach (Image piece in pieces)
-            {
-                _pool.Return(piece);
-            }
-        });
+            PieceSprite = sprite,
+            PieceColor = new Color(1f, 0.88f, 0.25f, 1f),
+            PieceSize = Vector2.one * baseSize,
+            Count = _burstParticleCount,
+            Radius = radius,
+            Duration = _burstDuration,
+            ScaleRange = new Vector2(1.15f, 1.55f),
+            Rotate = false,
+            // 중심에서 한 번 크게 번지는 잔상을 먼저 보여 줘 작은 조각만 흩어질 때보다
+            // 터치와 도착 순간을 또렷하게 읽을 수 있게 한다.
+            FlashSprite = sprite,
+            FlashColor = new Color(1f, 0.84f, 0.2f, 0.85f),
+            FlashSize = iconSize * (1.35f * Mathf.Max(0.8f, intensity)),
+            FlashScale = 1.7f,
+        }, gameObject);
     }
 
     // 이미 커졌다 작아지는 중이면 그 연출에 얹는다. 스무 장이 한꺼번에 닿아도 아이콘은
