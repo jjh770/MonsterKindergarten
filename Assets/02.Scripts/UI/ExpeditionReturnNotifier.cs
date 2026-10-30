@@ -49,7 +49,20 @@ public sealed class ExpeditionReturnNotifier : MonoBehaviour
         }
 
         SetAlerts(false);
+        _spaces.SpaceChanged += OnSpaceChanged;
         _isReady = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (_spaces != null) _spaces.SpaceChanged -= OnSpaceChanged;
+    }
+
+    // 장식장 가기 버튼의 글자는 공간이 바뀌는 순간 바뀐다. 느낌표는 1초마다만 다시 보므로, 그 사이에
+    // "유치원 가기"가 된 버튼에 느낌표가 잠깐 남았다. 공간이 바뀌면 바로 다시 붙이거나 뗀다.
+    private void OnSpaceChanged(EGameplaySpace space)
+    {
+        if (_isReady) SetAlerts(_alertsShown);
     }
 
     private void Update()
