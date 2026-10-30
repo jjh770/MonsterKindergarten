@@ -57,8 +57,6 @@ MonoBehaviour:
   _adBonusButtonMessage: "\uAD11\uACE0 \uBCF4\uB108\uC2A4 \uBC84\uD2BC\uC744 \uB20C\uB7EC
     \uBCF4\uC138\uC694!"
   _expeditionButtonMessage: "\uD0D0\uD5D8 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uBCF4\uC138\uC694!"
-  _pointTicketShopButtonMessage: "\uBF51\uAE30 \uBC84\uD2BC\uC744 \uB20C\uB7EC\n\uBF51\uAE30\uAD8C\uC744
-    \uAD6C\uB9E4\uD574\uBCF4\uC138\uC694!"
   _dialogues:
   - _id: 0
     _lines:

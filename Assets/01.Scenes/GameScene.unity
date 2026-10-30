@@ -40620,10 +40620,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: CollectionBookUI
       objectReference: {fileID: 0}
-    - target: {fileID: 1000, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1001, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -40713,10 +40709,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 115063078}
     - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: _upgradeUI
-      value: 
-      objectReference: {fileID: 1526959884}
-    - target: {fileID: 1002, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
       propertyPath: _openButton
       value: 
       objectReference: {fileID: 767234363}
@@ -40744,126 +40736,6 @@ PrefabInstance:
       propertyPath: _gameExitManager
       value: 
       objectReference: {fileID: 286711904}
-    - target: {fileID: 1200, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1223, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontSize
-      value: 54.15
-      objectReference: {fileID: 0}
-    - target: {fileID: 1223, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4278190080
-      objectReference: {fileID: 0}
-    - target: {fileID: 1238, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4280232243
-      objectReference: {fileID: 0}
-    - target: {fileID: 1241, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1301, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1413, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontSize
-      value: 41.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 1423, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontSize
-      value: 43.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 1423, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4278190080
-      objectReference: {fileID: 0}
-    - target: {fileID: 1503, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.w
-      value: -23
-      objectReference: {fileID: 0}
-    - target: {fileID: 1503, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1503, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.y
-      value: -23
-      objectReference: {fileID: 0}
-    - target: {fileID: 1503, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1513, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4280232243
-      objectReference: {fileID: 0}
-    - target: {fileID: 1533, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.w
-      value: -23
-      objectReference: {fileID: 0}
-    - target: {fileID: 1533, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1533, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.y
-      value: -23
-      objectReference: {fileID: 0}
-    - target: {fileID: 1533, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_RaycastPadding.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1543, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4280232243
-      objectReference: {fileID: 0}
-    - target: {fileID: 1341828577207791943, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontSize
-      value: 32.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 1341828577207791943, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 3506438144
-      objectReference: {fileID: 0}
-    - target: {fileID: 7347983149451818852, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AdditionalShaderChannelsFlag
-      value: 25
-      objectReference: {fileID: 0}
-    - target: {fileID: 7536892084047387388, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7536892084047387388, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7536892084047387388, guid: a1b2c3d4e5f6478899aabbccddeeff03, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
