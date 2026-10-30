@@ -167,6 +167,8 @@ public sealed class AdRewardService : MonoBehaviour
         if (availability != EAdAvailability.Available) return EAdShowResult.NotAllowed;
 
         _isRequesting = true;
+        // 광고가 앱을 일시정지시키지 않는 기기에서도 게임 소리가 광고와 겹치지 않게 직접 멈춘다.
+        AudioManager.Instance?.SetPausedForAd(true);
         try
         {
             AdAnalytics.LogStart(placement);
@@ -188,6 +190,7 @@ public sealed class AdRewardService : MonoBehaviour
         }
         finally
         {
+            AudioManager.Instance?.SetPausedForAd(false);
             _isRequesting = false;
             _lastShowEndedAt = Time.realtimeSinceStartup;
         }

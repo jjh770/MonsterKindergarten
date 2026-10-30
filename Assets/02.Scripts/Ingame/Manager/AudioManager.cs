@@ -98,6 +98,14 @@ public class AudioManager : MonoBehaviour
     }
 
 
+    // 보상형 광고가 떠 있는 동안 모든 게임 소리를 그 자리에서 멈췄다가, 닫히면 멈춘 곳부터 다시 낸다.
+    // Android에서는 광고가 떠도 앱이 일시정지되지 않는 기기가 있어 OnApplicationPause만으로는 소리가 계속 났다.
+    // 볼륨을 0으로 내리는 일시정지 처리와 달리 재생 위치까지 멈추므로, 광고 동안 노래가 흘러가 버리지 않는다.
+    public void SetPausedForAd(bool paused)
+    {
+        AudioListener.pause = paused;
+    }
+
     private void HandlePause(bool pause)
     {
         if (pause == _isPaused) return;
