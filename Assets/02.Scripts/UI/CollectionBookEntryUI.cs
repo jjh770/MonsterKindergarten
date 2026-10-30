@@ -104,6 +104,9 @@ public sealed class CollectionBookEntryUI : MonoBehaviour, IPointerClickHandler
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
+            // 책갈피는 Button이 아니라 ButtonSFX를 붙일 수 없다. 같은 클릭음을 여기서 낸다.
+            // 줄을 끌어 넘긴 손가락은 EventSystem이 클릭으로 치지 않으므로 소리도 나지 않는다.
+            AudioManager.Instance?.PlaySFX(EAudioSfx.UIClick);
             _clicked?.Invoke();
         }
     }
