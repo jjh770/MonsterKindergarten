@@ -417,7 +417,7 @@ public sealed class ExpeditionUI : MonoBehaviour
     // 가운데점(·)은 두 글꼴 모두에 없어 빈칸으로 그려진다. 글꼴에 있는 |를 쓴다.
     private static string BuildClaimNotice(ExpeditionReward reward, bool alreadyOwned)
     {
-        string notice = $"돌아왔어요! 포인트 {reward.Points:N0} | 뽑기권 {reward.GachaTickets}장";
+        string notice = $"돌아왔어요! 포인트 {new Currency(reward.Points)} | 뽑기권 {reward.GachaTickets}장";
         if (!reward.Decoration.HasValue) return notice;
 
         notice += $" | {ExpeditionRewardPopupUI.DecorationName(reward.Decoration.Value)} 발견!";
@@ -534,7 +534,7 @@ public sealed class ExpeditionUI : MonoBehaviour
         _nameText.text = BuildTitle(view, run, selected.Count);
         double points = run?.Reward.Points ?? _rewards.CalculatePoints(selected, rules.Duration);
         int tickets = run?.Reward.GachaTickets ?? view.Tickets;
-        _detail.text = $"예상 획득 포인트 {points:N0}\n획득 뽑기권 {tickets}장 | 소품 1종 {view.DecorationChance:P0}";
+        _detail.text = $"예상 획득 포인트 {new Currency(points)}\n획득 뽑기권 {tickets}장 | 소품 1종 {view.DecorationChance:P0}";
         _actionLabel.text = run == null ? UiMessages.ExpeditionSend : ready ? UiMessages.ExpeditionClaim : $"탐험 중이에요. {Remaining(run)}";
         _actionButton.interactable = !busy && _recoverySucceeded && (run != null ? ready : unlocked && rules.HasRequiredGrades(selected));
         _actionAlert.SetActive(ready);
