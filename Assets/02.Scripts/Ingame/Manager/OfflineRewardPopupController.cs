@@ -95,11 +95,12 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
         PlayClaim(_displayedReward.Value);
     }
 
-    private void PlayClaim(OfflineRewardResult result)
+    private void PlayClaim(OfflineRewardResult result, bool fromAdDouble = false)
     {
         float duration = _view.PlayCollect(
             result.ElapsedTime,
-            result.TicketReward);
+            result.TicketReward,
+            fromAdDouble);
 
         if ((double)result.Reward > 0d)
         {
@@ -163,7 +164,7 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
 
         _displayedReward = claimed;
         _view.ShowDoubledReward(claimed.Reward, claimed.TicketReward);
-        PlayClaim(claimed);
+        PlayClaim(claimed, fromAdDouble: true);
     }
 
     private static string GetAdFailureMessage(EAdShowResult result)

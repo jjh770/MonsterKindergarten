@@ -21,6 +21,8 @@ public class OfflineRewardPopupUI : MonoBehaviour
     [Header("Reward Fly Effect")]
     [Tooltip("보상 그림이 날아가기 시작하는 자리와 크기입니다. 팝업 안의 보상 그림입니다.")]
     [SerializeField] private RectTransform _rewardFlyVisual;
+    [Tooltip("광고 보고 2배 받기 버튼 안의 보상 그림입니다. 두 배로 받을 때는 여기서 날아갑니다.")]
+    [SerializeField] private RectTransform _adDoubleFlyVisual;
     [Tooltip("ECurrencyType 순서대로 포인트, 티켓 이미지를 연결합니다.")]
     [SerializeField] private Sprite[] _rewardFlySprites;
     [SerializeField] private RectTransform _pointTarget;
@@ -241,7 +243,8 @@ public class OfflineRewardPopupUI : MonoBehaviour
     // 받기를 누르면 보상 그림을 상단 바로 날려 보내고, 그와 동시에 팝업을 닫는다. 날아가는 동안
     // 팝업이 화면을 막을 이유가 없고, 보상은 이미 지급돼 있다. 돌려주는 값은 마지막 코인이 포인트
     // 아이콘에 닿을 때까지의 시간이라, 포인트 숫자가 그 시간에 맞춰 올라간다.
-    public float PlayCollect(TimeSpan elapsedTime, int ticketReward)
+    // 광고로 두 배를 받았으면 눌린 2배 버튼의 그림에서 날아간다.
+    public float PlayCollect(TimeSpan elapsedTime, int ticketReward, bool fromAdDouble = false)
     {
         if (_popupPanel == null || !_popupPanel.activeSelf)
         {
@@ -259,15 +262,18 @@ public class OfflineRewardPopupUI : MonoBehaviour
             _confirmButton.interactable = false;
         }
 
+        RectTransform flyFrom = fromAdDouble && _adDoubleFlyVisual != null
+            ? _adDoubleFlyVisual
+            : _rewardFlyVisual;
         if (!HasRewardFlyReferences() ||
-            !_iconFlight.TryGetLayerSize(_rewardFlyVisual, null, out Vector2 iconSize))
+            !_iconFlight.TryGetLayerSize(flyFrom, null, out Vector2 iconSize))
         {
             return FadeOutAndClose(playArrivalSound: true);
         }
 
         int pointCount = GetFlyVisualCount(elapsedTime);
         _iconFlight.PlayBundle(
-            _rewardFlyVisual.position,
+            flyFrom.position,
             _rewardFlySprites[(int)ECurrencyType.Point],
             iconSize,
             _pointTarget,
@@ -277,7 +283,7 @@ public class OfflineRewardPopupUI : MonoBehaviour
         if (ticketReward > 0)
         {
             _iconFlight.PlayBundle(
-                _rewardFlyVisual.position,
+                flyFrom.position,
                 _rewardFlySprites[(int)ECurrencyType.GachaTicket],
                 iconSize,
                 _ticketTarget,
