@@ -103,6 +103,7 @@ public static class UiMessages
     public static string AdLocked => Source.AdLocked;
     public static string AdFailed => Source.AdFailed;
     public static string AdClosedEarly => Source.AdClosedEarly;
+    public static string OfflineDoubleClaimFailed => Source.OfflineDoubleClaimFailed;
     public static string AdBoostRewarded => Source.AdBoostRewarded;
     public static string AdTicketRewarded => Source.AdTicketRewarded;
     public static string ExpeditionReturned => Source.ExpeditionReturned;

@@ -20,6 +20,9 @@ public sealed class GoogleMobileAdsService : IAdService
     private const int InitializeTimeoutMilliseconds = 15000;
     // 보상형 광고의 유효 시간은 한 시간이다. 여유를 두고 그 전에 쓸 수 없는 것으로 친다.
     private const float MaxAdAgeSeconds = 55f * 60f;
+    // 광고를 띄운 뒤 닫힘 신호를 기다리는 한계다. 신호가 끝내 오지 않으면 광고 중에 멈춘 게임 소리와 다음
+    // 광고 요청이 영영 풀리지 않으므로, 보상형 광고 한 편보다 넉넉히 기다린 뒤 끝난 것으로 본다.
+    private const int ShowTimeoutMilliseconds = 5 * 60 * 1000;
 
     private readonly string _adUnitId;
     private RewardedAd _ad;
@@ -84,8 +87,25 @@ public sealed class GoogleMobileAdsService : IAdService
         {
             ad.Show(_ => earned = true);
             using (token.Register(() => closed.TrySetResult(EAdShowResult.ClosedEarly)))
+            using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(token))
             {
-                result = await closed.Task;
+                // 시간 한도를 넘기면 그때까지 보상 신호를 받았는지로 판정한다. 끝까지 본 광고를 버리지 않는다.
+                await UniTask.WhenAny(
+                    closed.Task.AsUniTask(),
+                    UniTask.Delay(ShowTimeoutMilliseconds, DelayType.Realtime, cancellationToken: timeout.Token)
+                        .SuppressCancellationThrow()
+                        .AsUniTask());
+                timeout.Cancel();
+                if (closed.Task.Status.IsCompleted())
+                {
+                    result = await closed.Task;
+                }
+                else
+                {
+                    Debug.LogWarning("보상형 광고의 닫힘 신호가 오지 않아 끝난 것으로 봅니다.");
+                    result = earned ? EAdShowResult.Rewarded : EAdShowResult.Failed;
+                    closed.TrySetResult(result);
+                }
             }
         }
         catch (Exception exception)

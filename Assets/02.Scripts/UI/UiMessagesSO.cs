@@ -105,6 +105,7 @@ public sealed class UiMessagesSO : ScriptableObject
     [SerializeField] private string _adLocked = "뽑기가 열리면 볼 수 있어요.";
     [TextArea] [SerializeField] private string _adFailed = "광고를 보여 주지 못했어요.\n잠시 뒤에 다시 해 주세요.";
     [SerializeField] private string _adClosedEarly = "광고를 끝까지 봐야 보상을 받아요.";
+    [TextArea] [SerializeField] private string _offlineDoubleClaimFailed = "2배 보상을 받지 못했어요.\n보상 받기로 받아 주세요.";
     [SerializeField] private string _adBoostRewarded = "포인트 2배 시간이 늘었어요!";
     [SerializeField] private string _adTicketRewarded = "뽑기권을 받았어요!";
 
@@ -170,6 +171,7 @@ public sealed class UiMessagesSO : ScriptableObject
     public string AdLocked => _adLocked;
     public string AdFailed => _adFailed;
     public string AdClosedEarly => _adClosedEarly;
+    public string OfflineDoubleClaimFailed => _offlineDoubleClaimFailed;
     public string AdBoostRewarded => _adBoostRewarded;
     public string AdTicketRewarded => _adTicketRewarded;
 }

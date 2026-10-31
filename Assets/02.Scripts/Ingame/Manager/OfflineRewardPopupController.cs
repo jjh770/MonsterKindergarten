@@ -158,7 +158,11 @@ public sealed class OfflineRewardPopupController : MonoBehaviour
         double multiplier = _adRewardService.Table.OfflineRewardMultiplier;
         if (!_offlineRewardManager.TryClaim(multiplier, out OfflineRewardResult claimed))
         {
+            // 광고는 다 봤는데 지급이 막힌 경우다. 말없이 버튼만 돌아오면 광고를 헛본 것처럼 보이므로 알린다.
+            // 보상은 아직 남아 있어 보상 받기로 받을 수 있다.
             _view.SetBusy(false);
+            _toast?.Show(UiMessages.OfflineDoubleClaimFailed);
+            RefreshAdDoubleButton();
             return;
         }
 
