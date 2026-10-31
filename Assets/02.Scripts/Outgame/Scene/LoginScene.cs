@@ -24,6 +24,9 @@ public class LoginScene : MonoBehaviour
     [Tooltip("저장된 진행도가 앱보다 새 버전일 때 스토어로 보내는 업데이트 안내입니다. 비워 두면 공용 안내로 대신합니다.")]
     [SerializeField] private AppUpdatePopupUI _updatePopup;
 
+    [Tooltip("서버가 정한 최소 버전보다 낮은 앱일 때 띄우는 업데이트 안내입니다. 문구가 짧아 따로 낮게 만들었습니다. 비워 두면 위 안내로 대신합니다.")]
+    [SerializeField] private AppUpdatePopupUI _versionUpdatePopup;
+
     [Tooltip("처음 시작할 때 이용약관과 개인정보 수집·이용, 만 14세 이상 확인을 받는 화면입니다. 동의 전에는 로그인하지 않습니다.")]
     [SerializeField] private ConsentUI _consentUI;
 
@@ -51,6 +54,7 @@ public class LoginScene : MonoBehaviour
     private TMP_Text _loginButtonText;
     private Tween _titleTween;
     private bool _isLoggingIn;
+    private bool _isUpdateRequired;
 
     private void Start()
     {
@@ -70,6 +74,7 @@ public class LoginScene : MonoBehaviour
         Analytics.SetCollectionEnabled(ConsentRecord.HasConsented);
         AudioManager.Instance?.PlayLoginBgm();
         PlayIntro();
+        CheckAppVersionAsync().Forget();
 
         if (_recoveryUI != null)
         {
@@ -123,6 +128,13 @@ public class LoginScene : MonoBehaviour
     {
         AudioManager.Instance?.PlaySFX(EAudioSfx.LoginButton);
         PlayPressEffect();
+
+        // 오래된 앱은 로그인하지 않는다. 팝업을 닫고 다시 눌러도 같은 안내로 돌아온다.
+        if (_isUpdateRequired)
+        {
+            ShowOutdatedAppPopup();
+            return;
+        }
 
         // 동의하기 전에는 로그인을 시작하지 않는다. 로그인하면 계정 식별자와 클라우드 저장이 바로 시작된다.
         if (!ConsentRecord.HasConsented)
@@ -268,6 +280,15 @@ public class LoginScene : MonoBehaviour
             return;
         }
 
+        // 초기화한 뒤에 막히면 지운 보람 없이 들어가지 못하므로, 지우기 전에 묻는다.
+        if (await TryBlockOutdatedApp())
+        {
+            _recoveryUI.Hide();
+            _isLoggingIn = false;
+            SetRecoveryInteractable(true);
+            return;
+        }
+
         _recoveryUI.SetMessage("진행도를 초기화하고 있어요.\n인터넷 연결을 유지해 주세요.");
         try
         {
@@ -317,6 +338,50 @@ public class LoginScene : MonoBehaviour
         _updatePopup.Show(
             "저장된 진행도가\n지금 앱보다 새 버전이에요.\n\n업데이트 버튼을 눌러\n스토어에서 업데이트한 뒤\n다시 로그인해 주세요.");
         return true;
+    }
+
+    // 로그인 화면이 뜨자마자 서버에 묻고, 로고가 내려앉은 뒤에 안내한다. 떨어지는 도중에 팝업이 뜨면 연출을 가린다.
+    // 응답보다 먼저 눌러 로그인이 시작됐으면 로그인 뒤의 확인이 대신 막는다.
+    private async UniTask CheckAppVersionAsync()
+    {
+        if (!await MinimumAppVersion.IsUpdateRequiredAsync()) return;
+
+        bool isCanceled = await UniTask
+            .WaitUntil(() => _titleTween == null, cancellationToken: destroyCancellationToken)
+            .SuppressCancellationThrow();
+        if (isCanceled) return;
+
+        _isUpdateRequired = true;
+        if (!_isLoggingIn) ShowOutdatedAppPopup();
+    }
+
+    // 로그인 화면에서의 확인이 늦거나 실패했을 때를 위해 게임에 들어가기 전에 한 번 더 묻는다.
+    private async UniTask<bool> TryBlockOutdatedApp()
+    {
+        if (!_isUpdateRequired && !await MinimumAppVersion.IsUpdateRequiredAsync()) return false;
+
+        _isUpdateRequired = true;
+        ShowOutdatedAppPopup();
+        return true;
+    }
+
+    private void ShowOutdatedAppPopup()
+    {
+        const string message = "새 버전이 나왔어요!\n업데이트한 뒤\n다시 시작해 주세요.";
+        if (_versionUpdatePopup != null && _versionUpdatePopup.IsReady)
+        {
+            _versionUpdatePopup.Show(message);
+            return;
+        }
+
+        if (_updatePopup != null && _updatePopup.IsReady)
+        {
+            _updatePopup.Show(message);
+            return;
+        }
+
+        _popupText = message;
+        ShowLobbyPopup();
     }
 
     private void SetRecoveryInteractable(bool isInteractable)
@@ -400,6 +465,15 @@ public class LoginScene : MonoBehaviour
 
                 GameplaySaveGate.EndReset();
             }
+            // 삭제와 초기화 마무리는 오래된 앱으로도 끝낸다. 막는 것은 게임에 들어가는 것뿐이다.
+            if (await TryBlockOutdatedApp())
+            {
+                _isLoggingIn = false;
+                _loginButton.interactable = true;
+                _loginButtonText.text = IdleLabel;
+                return;
+            }
+
             if (!await TrySyncServerClock(result.UserId))
             {
                 _isLoggingIn = false;
