@@ -130,7 +130,9 @@ public class LoginScene : MonoBehaviour
         PlayPressEffect();
 
         // 오래된 앱은 로그인하지 않는다. 팝업을 닫고 다시 눌러도 같은 안내로 돌아온다.
-        if (_isUpdateRequired)
+        // 다만 이 기기에 마무리할 계정 삭제나 초기화가 남았으면 로그인해 그것부터 끝낸다. 게임에 들어가는
+        // 것은 로그인 뒤의 확인이 막는다.
+        if (_isUpdateRequired && !HasPendingCleanupOnDevice())
         {
             ShowOutdatedAppPopup();
             return;
@@ -352,7 +354,14 @@ public class LoginScene : MonoBehaviour
         if (isCanceled) return;
 
         _isUpdateRequired = true;
-        if (!_isLoggingIn) ShowOutdatedAppPopup();
+        // 마무리할 일이 남은 기기에서는 먼저 로그인하게 두고, 안내는 마무리 뒤에 띄운다.
+        if (!_isLoggingIn && !HasPendingCleanupOnDevice()) ShowOutdatedAppPopup();
+    }
+
+    private static bool HasPendingCleanupOnDevice()
+    {
+        return GameAccountDeletionService.HasPendingDeletionOnDevice ||
+               GameDataResetService.HasPendingResetOnDevice;
     }
 
     // 로그인 화면에서의 확인이 늦거나 실패했을 때를 위해 게임에 들어가기 전에 한 번 더 묻는다.

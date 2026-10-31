@@ -12,6 +12,11 @@ public static class GameDataResetService
 {
     private static bool s_isRunning;
     private static string PendingKey(string userId) => $"{userId}_GameDataResetPending";
+    // 계정과 상관없이 이 기기에 마무리할 초기화가 남았는지. 로그인 전에는 UID를 몰라 계정별 표식을 읽을
+    // 수 없는데, 최소 버전 안내가 로그인을 막기 전에 마무리할 일이 있는지 알아야 한다.
+    private const string DevicePendingKey = "GameDataResetPending_Device";
+
+    public static bool HasPendingResetOnDevice => PlayerPrefs.GetInt(DevicePendingKey, 0) == 1;
 
     public static bool HasPendingReset(string userId)
     {
@@ -41,6 +46,7 @@ public static class GameDataResetService
         {
             // 서버 삭제 직후 앱이 종료돼도 다음 로그인에서 로컬 정리까지 재개한다.
             PlayerPrefs.SetInt(PendingKey(userId), 1);
+            PlayerPrefs.SetInt(DevicePendingKey, 1);
             PlayerPrefs.Save();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -73,6 +79,7 @@ public static class GameDataResetService
             }
             TutorialProgress.DeleteForUser(userId);
             PlayerPrefs.DeleteKey(PendingKey(userId));
+            PlayerPrefs.DeleteKey(DevicePendingKey);
             PlayerPrefs.Save();
         }
         finally

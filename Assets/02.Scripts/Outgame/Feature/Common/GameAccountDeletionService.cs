@@ -8,6 +8,10 @@ public static class GameAccountDeletionService
 {
     private static bool s_isRunning;
     private static string PendingKey(string userId) => $"{userId}_GameAccountDeletionPending";
+    // 계정과 상관없이 이 기기에 마무리할 계정 삭제가 남았는지. GameDataResetService의 같은 표식과 같은 이유다.
+    private const string DevicePendingKey = "GameAccountDeletionPending_Device";
+
+    public static bool HasPendingDeletionOnDevice => PlayerPrefs.GetInt(DevicePendingKey, 0) == 1;
 
     public static bool HasPendingDeletion(string userId)
     {
@@ -29,12 +33,14 @@ public static class GameAccountDeletionService
         {
             // 데이터 삭제 뒤 앱이 종료돼도 다음 로그인에서 인증 계정 삭제를 재개한다.
             PlayerPrefs.SetInt(PendingKey(userId), 1);
+            PlayerPrefs.SetInt(DevicePendingKey, 1);
             PlayerPrefs.Save();
 
             await GameDataResetService.ResetAsync(userId);
             await AccountManager.Instance.DeleteAccount();
 
             PlayerPrefs.DeleteKey(PendingKey(userId));
+            PlayerPrefs.DeleteKey(DevicePendingKey);
             PlayerPrefs.Save();
 
             // 동의는 계정 삭제로만 철회된다. 삭제가 끝나면 이 기기의 동의 기록도 지워 다음 시작에서 다시 묻는다.

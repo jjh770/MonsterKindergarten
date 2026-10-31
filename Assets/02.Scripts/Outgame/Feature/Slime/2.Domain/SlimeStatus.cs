@@ -139,14 +139,15 @@ public class SlimeStatus
             : null;
         GraduationSnapshot = graduationSnapshot;
 
-        if (specialGachaMissCount < 0 ||
-            specialGachaMissCount > SpecialGachaFever.MaximumMissCount)
+        // 음수는 쓰는 쪽에서 나올 수 없다. 상한은 밸런스 값이라 낮추는 개편이 있으면 예전 저장이 넘을 수
+        // 있으므로 막지 않고 상한으로 자른다.
+        if (specialGachaMissCount < 0)
         {
             throw new ArgumentException(
                 $"스페셜 뽑기 실패 횟수가 올바르지 않습니다. : {specialGachaMissCount}");
         }
 
-        SpecialGachaMissCount = specialGachaMissCount;
+        SpecialGachaMissCount = Math.Min(specialGachaMissCount, SpecialGachaFever.MaximumMissCount);
 
         // 누적 값은 쓰는 쪽에서 음수가 나올 수 없다. 다른 손상과 같은 경로로 보낸다.
         if (gachaTicketsObtainedTotal < 0 || autoMergeUseCount < 0)
@@ -198,9 +199,11 @@ public class SlimeStatus
             _activeSlimes.Add(instance);
         }
 
+        // 동시 탐험 수와 팀 인원 상한은 밸런스 값이다. 낮추는 개편이 있어도 이미 떠난 탐험은 그대로
+        // 돌아오게 상한을 보지 않고 복원한다. 새 출발만 지금의 상한을 따른다.
         if (activeExpeditions != null)
             foreach (ExpeditionRun run in activeExpeditions)
-                if (!TryStartExpedition(run))
+                if (!TryAddExpedition(run, enforceLimits: false))
                     throw new ArgumentException("진행 중 탐험 목록을 복원할 수 없어요.");
 
         if (registeredNormalCollection == null)
@@ -250,10 +253,12 @@ public class SlimeStatus
             throw new ArgumentException("메인 엔딩 확인 기록에 도달 시각이 없습니다.");
         }
 
+        // 피버 해금 도감 수는 밸런스 값이다. 올리는 개편이 있으면 이미 센 실패 횟수가 해금 전 계정에
+        // 남을 수 있으므로 막지 않고 비운다. 다시 해금되면 처음부터 센다.
         if (SpecialGachaMissCount > 0 &&
             NormalCollectionCount < NormalCollectionRules.HiddenFeverCount)
         {
-            throw new ArgumentException("피버 해금 전에 실패 횟수가 저장되어 있습니다.");
+            SpecialGachaMissCount = 0;
         }
 
     }
@@ -297,8 +302,14 @@ public class SlimeStatus
 
     public bool TryStartExpedition(ExpeditionRun run)
     {
-        if (run == null || _activeExpeditions.Count >= ExpeditionDestination.MaxActiveExpeditions ||
-            run.Members.Count > ExpeditionDestination.MaxMembers ||
+        return TryAddExpedition(run, enforceLimits: true);
+    }
+
+    private bool TryAddExpedition(ExpeditionRun run, bool enforceLimits)
+    {
+        if (run == null ||
+            (enforceLimits && (_activeExpeditions.Count >= ExpeditionDestination.MaxActiveExpeditions ||
+                               run.Members.Count > ExpeditionDestination.MaxMembers)) ||
             ExpeditionSettlement.HasCompleted(run) ||
             _activeExpeditions.Exists(active => active.RunId == run.RunId ||
                 active.DestinationId == run.DestinationId || active.Sequence == run.Sequence))
